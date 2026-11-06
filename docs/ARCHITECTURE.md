@@ -68,10 +68,11 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 ├── emails/                       # React Email templates
 └── src/
     ├── app/
-    │   ├── [locale]/             # public website + customer account (VI default, /en)
-    │   │   ├── (site)/           # home, tours, tours/[slug], destinations, travel-styles,
-    │   │   │                     # tailor-made, journal, about, reviews, contact, faq,
-    │   │   │                     # policies/[slug], search
+    │   ├── (public)/[locale]/    # public website (VI default, /en): prerendered, nonce-free CSP
+    │   │   └── (site)/           # home, tours, tours/[slug], destinations, travel-styles,
+    │   │                         # tailor-made, journal, about, reviews, contact, faq,
+    │   │                         # policies/[slug], search, newsletter/confirm
+    │   ├── (secure)/[locale]/    # own root layout, fully dynamic with a nonce CSP (ADR-027; Phase 4–5)
     │   │   ├── (booking)/        # book/[tourSlug], checkout/[code] (payment, result),
     │   │   │                     # pay/[token], booking-lookup
     │   │   ├── (auth)/           # login, register, forgot-password, reset-password

@@ -36,7 +36,20 @@ describe("rateLimit", () => {
     expect(await rateLimit(["rl:a:1"], 5, 600)).toBe("limited");
   });
 
-  it("fails closed without Redis or when Redis fails", async () => {
+  it("fails open, with a warning, only when asked to", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    fetchMock.mockResolvedValue(new Response("down", { status: 500 }));
+    expect(await rateLimit(["rl:a:1"], 5, 600, { failOpen: true, scope: "booking" })).toBe("ok");
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("rate_limit.fail_open"));
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    expect(await rateLimit(["rl:a:1"], 5, 600, { failOpen: true })).toBe("ok");
+    // A real over-limit answer is never ignored.
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "token-123");
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([{ result: 9 }, { result: 0 }])));
+    expect(await rateLimit(["rl:a:1"], 5, 600, { failOpen: true })).toBe("limited");
+  });
+
+  it("fails closed by default without Redis or when Redis fails", async () => {
     fetchMock.mockResolvedValue(new Response("down", { status: 500 }));
     expect(await rateLimit(["rl:a:1"], 5, 600)).toBe("unavailable");
     vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");

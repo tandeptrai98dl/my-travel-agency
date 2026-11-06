@@ -49,8 +49,11 @@ export async function subscribe(input: SubscribeInput): Promise<SubscribeStatus>
     return "unavailable";
   }
 
+  // Requests without a usable IP (never the case behind Vercel) share one "unknown" bucket: a
+  // stricter limit for them, accepted rather than skipping the IP limit.
   const keys = [rateLimitKey("newsletter-ip", input.ip ?? "unknown")];
   const [byIp, byEmail] = await Promise.all([
+    // Fail closed (the default; ADR-029): an outage refuses sign-ups rather than opening them.
     rateLimit(keys, IP_LIMIT.limit, IP_LIMIT.window),
     rateLimit([rateLimitKey("newsletter-email", input.email)], EMAIL_LIMIT.limit, EMAIL_LIMIT.window),
   ]);

@@ -10,8 +10,8 @@ import type { HomeTravelStyle } from "@/modules/content/public/homepage.mapping"
 type Props = { locale: Locale; styles: HomeTravelStyle[] };
 
 /**
- * Up to four travel styles as portrait cards on white. Each opens the tour listing filtered by
- * that style (decision 18) until the style pages exist (PR J). Left out when none.
+ * Up to four travel styles as portrait cards on white, each opening its style page. Left out
+ * when none.
  */
 export async function TravelStyleCards({ locale, styles }: Props) {
   if (styles.length === 0) return null;
@@ -24,7 +24,7 @@ export async function TravelStyleCards({ locale, styles }: Props) {
           {styles.slice(0, 4).map((style) => (
             <li key={style.key}>
               <Link
-                href={{ pathname: "/tours", query: { style: style.key } }}
+                href={{ pathname: "/travel-styles/[slug]", params: { slug: style.slug } }}
                 className="group flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-card"
               >
                 <div className="relative aspect-[4/5] overflow-hidden bg-muted">

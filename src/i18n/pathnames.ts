@@ -1,6 +1,6 @@
 /**
  * Localized public routes (ARCHITECTURE.md "Routes"). Keys are the internal paths, which match
- * the English folder names under src/app/[locale]; values are the public URL per locale.
+ * the English folder names under src/app/(public)/[locale] (and (secure)/[locale] from Phase 4); values are the public URL per locale.
  * Vietnamese is served without a prefix, English under /en.
  */
 export const pathnames = {
