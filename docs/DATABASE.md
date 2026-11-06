@@ -609,6 +609,8 @@ Tour rules (Phase 2, `*_tour_rules.sql`, ADR-024): `guard_tour_prices()` and `gu
 
 Departure rules (Phase 2, `*_departure_rules.sql`, ADR-026): `check_departure_change()` keeps `capacity` at or above `seats_reserved`; through the API only an MFA-verified admin cancels or reopens a departure, and not while it has `pending_payment` or `confirmed` bookings (`departure_has_open_bookings()`); for every role, the last departure that is not cancelled of a published group tour cannot be cancelled, deleted or moved to another tour; that check and `check_tour_publishable()` first lock the tour row (`lock_tour_row()`), so concurrent removals and a concurrent publication are serialised.
 
+Content rules (Phase 2, `*_content_rules.sql`, ADR-030): `check_content_translation()` (post and page translations) requires a title, content (`rich_text_is_empty()`) and an SEO description on published translations, VI/EN alt text on their images (`rich_text_alt_complete()`, `rich_text_media_ids()`), keeps a published item's last published translation and stops translations moving to another item; `check_content_publishable()` requires a published translation (posts and pages) and a cover with both alt texts (posts); `keep_hero_alt()` also covers post covers and images inside published rich text; `guard_media_delete()` refuses deleting an image referenced in rich text or itinerary JSON (`media_used_in_content()`), with the foreign-key error code.
+
 Known Phase 0 limits:
 - Phase 5: a customer's row policy on their own `bookings` and `payments` exposes internal columns (`needs_attention`, `attention_reason`, `assigned_to`, `idempotency_key`, `utm`, payment `raw_response`, `note`, `recorded_by`). The account area must read through a customer-safe view or RPC, and the direct customer SELECT policies are then narrowed.
 
@@ -641,6 +643,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `default_cancellation_policy_id()` | authenticated (`security definer`) | The default policy for new tours (price guard) |
 | `departure_has_open_bookings(target_id)` | authenticated (`security definer`; false unless the caller may read bookings: sales, sales_manager, operator, accountant, admin) | Whether a departure has `pending_payment` or `confirmed` bookings (departure rules) |
 | `lock_tour_row(target_id)` | authenticated (`security definer`) | Locks a tour row (`for no key update`) for the caller's transaction, so the last-departure rule and publishing a tour cannot race (`SELECT ... FOR UPDATE` would apply UPDATE policies operators do not have) |
+| `rich_text_media_ids(doc)`, `rich_text_is_empty(doc)`, `rich_text_alt_complete(doc)` | everyone (`security invoker`) | Read Tiptap JSON in the content rules |
+| `media_used_in_content(target_id)` | authenticated (`security definer`) | Whether an image id appears in rich text or itinerary JSON (media delete guard) |
 | `set_default_cancellation_policy(policy_id)` | authenticated (`security invoker`; RLS lets only an MFA-verified admin write) | Move the default cancellation policy in one transaction |
 | `next_booking_code()` | service_role | Booking codes from the sequence |
 | `reserve_and_create_payment(...)` | service_role | Hold seats, booking → `pending_payment`, create payment |

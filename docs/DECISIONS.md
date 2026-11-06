@@ -271,3 +271,15 @@ Template:
   - Departures belong to group tours; private and archived tours take no new ones (service rule). Bulk creation skips dates the tour already has (`on conflict do nothing`) and reports them. Departure dates are not edited after creation; a wrong date is deleted (when it has no bookings) and created again.
   - Minimum travellers to operate stays a tour column (`tours.min_pax_to_operate`, edited with the tour's permission); the departure editor shows it.
 - **Consequences:** To retire a published group tour's last departure, publish another one or unpublish the tour first. Phase 4's `cancel_booking()` and a future departure-cancellation function run as the service role and must keep the last-departure rule in mind.
+
+## ADR-030: Journal and page rules; images inside JSON
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Step 18 of the Phase 2 spec adds the journal and the static pages with decision 3's publish rules, and the PR 9 known issue asked for a usage check on image ids kept inside JSON (rich text, itinerary `media_ids`), which are not foreign keys. ADR-027 to ADR-029 are reserved for stream B.
+- **Decision:**
+  - Rich text is stored only after `sanitizeRichText()` (decision 7) and rendered again through the same whitelist; images hold a media id, never a URL.
+  - A published post or page translation needs a title, content with text or an image, and an SEO description; images in it need VI/EN alt text. A published post needs a published translation and a cover image with both alt texts (journal cards and sharing previews); a published page needs a published translation. A published item keeps its last published translation, translations cannot move to another item, and images used as covers or inside published content keep their alt texts. Checked in `content.service.ts` first and by `check_content_translation()`, `check_content_publishable()` and `keep_hero_alt()`.
+  - A published article cannot be deleted (unpublish first); a topic only when no article uses it. The six page keys are fixed in code (`PAGE_KEYS`) and their rows are created on first save. A slug change on a published article, a topic or a policy page adds a 301 (decision 4); about and FAQ have fixed routes.
+  - `guard_media_delete()` refuses deleting an image whose id appears in rich text (posts, pages, destinations) or in a tour itinerary, with the foreign-key error code, so the media library shows its usual "in use" message. It matches the id as text in those JSON columns, which also covers JSON shapes added later.
+- **Consequences:** Public journal and page queries (stream B) read through `RichText` with a media map. A post without a cover stays a draft. The text match makes a delete scan a few JSON columns; fine at the expected content size.

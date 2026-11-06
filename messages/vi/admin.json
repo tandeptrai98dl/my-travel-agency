@@ -134,7 +134,9 @@
       "policies": "Chính sách huỷ",
       "groupCatalog": "Danh mục",
       "tours": "Tour",
-      "departures": "Lịch khởi hành"
+      "departures": "Lịch khởi hành",
+      "journal": "Tạp chí",
+      "pages": "Trang tĩnh"
     },
     "Shell": {
       "skipToContent": "Bỏ qua đến nội dung",

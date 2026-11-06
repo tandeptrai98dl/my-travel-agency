@@ -112,6 +112,8 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/admin/taxonomy` (Phase 2 PR C): DestinationForm, TravelStyleForm, CancellationPolicyForm (React Hook Form + Zod, server errors put back on their fields), TranslationFields (one language: name, slug with an on-blur availability check, text, SEO, its own publish switch), HeroField (MediaPicker), LocaleBadges, DeleteEntityButton; `AdminMessages` passes one page's admin strings to its client components; StatusBadge also maps `publish_status`
 - `src/components/admin/tours` (Phase 2 PR D): TourEditor (sections for general facts, admin-only prices, catalog links, media, VI/EN content, publishing), TourTranslationFields (itinerary day cards, lists, FAQs, SEO, sharing image), GalleryField and RowControls (button reordering with announcements), NewTourForm, DuplicateTourButton
 - `src/components/admin/departures` (Phase 2 PR E): DepartureCalendar (Monday-first month grid, a day list below `md`), DepartureBulkCreator (weekday pattern or date list, server preview, skipped duplicates), DepartureEditor, shared CountField, PriceFields and PriceSummary
+- `src/components/typography/rich-text.tsx` (Phase 2 PR F): RichText, the server-only whitelist renderer of Tiptap JSON into Prose (`renderImage` for public image components); `src/lib/rich-text.ts` holds the shared sanitizer
+- `src/components/admin` (Phase 2 PR F): RichTextEditor (Tiptap with the fixed extension set, labelled toolbar, link dialog, library images); `admin/content`: PostEditor, PageEditor, CategoryForm, ContentTranslationFields, DeleteContentButton
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -119,7 +121,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Group | Components |
 | --- | --- |
 | Primitives (shadcn) | Combobox, DatePicker, DateRangePicker, quantity Stepper, PhoneInput (with the forms that need them, Phases 2 and 4) |
-| Typography | Prose rendering of Tiptap JSON (Phase 2), DateText |
+| Typography | DateText |
 | Layout | Breadcrumbs |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
 | Marketing | Hero + HeroSearch, FeaturedTours, DestinationGrid, DestinationCard, TravelStyleCards, EditorialSplit, Testimonials, TrustBar, PressLogos, NewsletterSignup, CTABanner (tailor-made), JournalTeaser |
@@ -128,7 +130,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Consultation | TailorMadeWizard (destination → timing → travellers → budget & style → contact), InquirySuccess |
 | Account | AuthForm, GoogleButton, AccountNav, BookingListItem, BookingDetail, PaymentHistory, ProfileForm, DeleteAccountDialog |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
-| Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, RichTextEditor, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
+| Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
 
 Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.
