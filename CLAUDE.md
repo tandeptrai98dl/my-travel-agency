@@ -111,7 +111,8 @@ Environment: copy `.env.example` to `.env.local`. Variables are validated at ser
 
 ```
 src/
-  app/[locale]/   # public website + customer account (VI default, /en)
+  app/(public)/[locale]/  # public website (VI default, /en); prerendered
+  app/(secure)/[locale]/  # checkout and account: own dynamic root with a nonce CSP (Phase 4, ADR-027)
   app/admin/      # Vietnamese-only admin, role + MFA checked in the layout
   app/api/        # payment IPN/webhooks, cron, health, OG images
   app/auth/       # auth confirm/callback routes

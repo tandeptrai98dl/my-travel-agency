@@ -218,7 +218,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 | Database | `supabase/migrations/<ts>_tour_search.sql` (new), `supabase/tests/search_tours.test.sql` (new), `supabase/seed.sql` (change), `src/types/database.types.ts` (regenerate) |
 | Catalog module | `src/modules/catalog/{tour-search-params,tour-search.constants,catalog.types,catalog.repository,catalog.service}.ts`, `__tests__/tour-search-params.test.ts`, `__tests__/search-tours.test.ts` (integration against local Supabase) |
 | Lib | `src/lib/money.ts` (`formatPrice`), `src/lib/dates.ts` (today in Vietnam time, next 12 months) |
-| Route | `src/app/[locale]/(site)/tours/{page,error}.tsx` with `generateMetadata` and JSON-LD |
+| Route | `src/app/(public)/[locale]/(site)/tours/{page,error}.tsx` with `generateMetadata` and JSON-LD |
 | Components | 16+ files in `src/components/tour/`, `src/components/ui/pagination.tsx` |
 | i18n, tests | `messages/{vi,en}/public-tours.json` (`tourListing` namespace), `src/i18n/pathnames.ts` (check), `tests/e2e/tour-listing.spec.ts` |
 
