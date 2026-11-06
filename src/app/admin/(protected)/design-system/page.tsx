@@ -8,6 +8,7 @@ import {
   InteractiveShowcase,
   type ShowcaseLabels,
 } from "@/components/admin/design-system/interactive-showcase";
+import { AdminBlocksDemo, type AdminBlocksLabels } from "@/components/admin/design-system/admin-blocks-demo";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { Eyebrow } from "@/components/typography/eyebrow";
@@ -26,8 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tag } from "@/components/ui/tag";
 import { STAFF_ROLES } from "@/lib/auth/permissions";
-import { isDesignSystemEnabled } from "@/lib/env/design-system-flag";
-import { serverEnv } from "@/lib/env/server";
+import { designSystemEnabled } from "@/lib/env/flags";
 
 import { requireAdminAccess } from "../../admin-gate";
 
@@ -66,7 +66,7 @@ const BADGE_VARIANTS = ["default", "secondary", "outline", "gold", "success", "w
  * and the check below); in a production build it exists only when SHOW_DESIGN_SYSTEM=true (CI).
  */
 export default async function DesignSystemPage() {
-  if (!isDesignSystemEnabled(process.env.NODE_ENV, serverEnv.SHOW_DESIGN_SYSTEM)) notFound();
+  if (!designSystemEnabled()) notFound();
   await requireAdminAccess(STAFF_ROLES);
   const t = await getTranslations({ locale: "vi", namespace: "Admin.DesignSystem" });
 
@@ -91,7 +91,7 @@ export default async function DesignSystemPage() {
   } as ShowcaseLabels;
 
   return (
-    <main className="bg-background text-foreground">
+    <div className="bg-background text-foreground">
       <Container className="flex flex-col gap-16 py-12">
         <header className="flex flex-col gap-3">
           <Eyebrow>{t("eyebrow")}</Eyebrow>
@@ -186,6 +186,8 @@ export default async function DesignSystemPage() {
 
         <InteractiveShowcase labels={labels} />
 
+        <AdminBlocksDemo labels={await adminBlocksLabels()} />
+
         <section aria-labelledby="ds-feedback" className="flex flex-col gap-6">
           <h2 id="ds-feedback" className="font-serif text-h2 font-medium">
             {t("feedback")}
@@ -255,7 +257,45 @@ export default async function DesignSystemPage() {
           <p className="text-muted-foreground">{t("intro")}</p>
         </div>
       </Section>
-    </main>
+    </div>
   );
 }
 
+async function adminBlocksLabels(): Promise<AdminBlocksLabels> {
+  const t = await getTranslations({ locale: "vi", namespace: "Admin" });
+  const raw = (key: string) => t.raw(key) as string;
+  return {
+    heading: t("DesignSystem.adminBlocks"),
+    title: t("DesignSystem.tourTitle"),
+    price: t("DesignSystem.priceLabel"),
+    amountHint: t("Form.amountHint"),
+    locale: {
+      vi: t("Form.vi"),
+      en: t("Form.en"),
+      published: t("Form.published"),
+      unpublished: t("Form.unpublished"),
+      missing: t("Form.missing"),
+    },
+    slug: { label: t("Form.slug"), hint: t("Form.slugHint"), generate: t("Form.generateSlug"), invalid: t("Form.slugInvalid") },
+    seo: { title: t("Form.seoTitle"), description: t("Form.seoDescription"), count: raw("Form.charCount"), tooLong: t("Form.tooLong") },
+    list: {
+      label: t("DesignSystem.highlights"),
+      add: t("Form.addItem"),
+      item: raw("Form.item"),
+      remove: raw("Form.removeItem"),
+      moveUp: raw("Form.moveUp"),
+      moveDown: raw("Form.moveDown"),
+      moved: raw("Form.moved"),
+      removed: raw("Form.removed"),
+    },
+    confirm: {
+      trigger: t("DesignSystem.deleteDemo"),
+      title: t("DesignSystem.deleteTitle"),
+      description: t("DesignSystem.deleteBody"),
+      confirm: t("DesignSystem.deleteConfirm"),
+      cancel: t("Form.cancel"),
+      close: t("Shell.close"),
+      error: t("Form.actionFailed"),
+    },
+  };
+}

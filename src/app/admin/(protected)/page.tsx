@@ -2,36 +2,44 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { SignOutButton } from "@/components/admin/sign-out-button";
+import { PageHeader } from "@/components/admin/page-header";
 import { STAFF_ROLES } from "@/lib/auth/permissions";
-import { signOut } from "@/modules/identity/identity.actions";
 
 import { requireAdminAccess } from "../admin-gate";
 
 export const metadata: Metadata = { title: "Tổng quan" };
 
-/** Phase 0 placeholder: shows who is signed in. The dashboard comes in Phases 4–5. */
+/** Role-aware landing page; the dashboard metrics come in Phases 4–5. */
 export default async function AdminHomePage() {
   const user = await requireAdminAccess(STAFF_ROLES);
   const t = await getTranslations({ locale: "vi", namespace: "Admin" });
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-3xl font-medium">{t("title")}</h1>
-      <dl className="mt-8 space-y-2 text-sm">
-        <div>{t("signedInAs", { email: user.email })}</div>
-        <div data-testid="admin-role">{t("role", { role: t(`roles.${user.role}`) })}</div>
-        <div data-testid="admin-aal">
-          {t("mfaStatus", { status: user.aal === "aal2" ? t("mfaOn") : t("mfaOff") })}
+    <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 md:px-8">
+      <PageHeader title={t("Nav.dashboard")} description={t("placeholder")} />
+      <dl className="grid gap-4 text-small sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <dt className="text-muted-foreground">{t("Shell.account")}</dt>
+          <dd className="mt-1 break-all font-medium">{t("signedInAs", { email: user.email })}</dd>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <dt className="sr-only">{t("roleLabel")}</dt>
+          <dd data-testid="admin-role" className="font-medium">
+            {t("role", { role: t(`roles.${user.role}`) })}
+          </dd>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <dt className="sr-only">{t("mfaLabel")}</dt>
+          <dd data-testid="admin-aal" className="font-medium">
+            {t("mfaStatus", { status: user.aal === "aal2" ? t("mfaOn") : t("mfaOff") })}
+          </dd>
+          <dd>
+            <Link href="/admin/mfa" className="mt-2 inline-block text-small underline underline-offset-4">
+              {t("manageMfa")}
+            </Link>
+          </dd>
         </div>
       </dl>
-      <p className="mt-8 text-muted-foreground">{t("placeholder")}</p>
-      <div className="mt-8 flex items-center gap-6">
-        <Link href="/admin/mfa" className="text-sm underline underline-offset-4">
-          {t("manageMfa")}
-        </Link>
-        <SignOutButton label={t("signOut")} action={signOut} />
-      </div>
-    </main>
+    </div>
   );
 }

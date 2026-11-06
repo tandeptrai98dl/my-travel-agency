@@ -1,38 +1,10 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 import { signInAs } from "./support/auth";
+import { expectNoSeriousViolations } from "./support/axe";
 
 // Phase 1 acceptance (docs/specs/phase-1-design-system.md step 14): no serious or critical axe
 // violations against WCAG 2.2 AA on the public shell and the design system page.
-const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
-
-// Radix NavigationMenu inserts an aria-hidden, focusable sentinel after an open trigger. It never
-// keeps focus: on Tab it moves focus into the menu content (or past it). axe reports it as
-// aria-hidden-focus; it is excluded here by its exact shape and recorded in PROGRESS.md.
-const RADIX_FOCUS_PROXY = 'li > button[aria-expanded="true"] + span[aria-hidden="true"][tabindex="0"]';
-
-/**
- * `within` scopes the check to an open overlay: Radix marks everything outside a modal
- * aria-hidden while focus is trapped inside, which axe reports as aria-hidden-focus on the page
- * behind it. The page itself is checked separately with the overlay closed.
- */
-async function expectNoSeriousViolations(page: Page, label: string, within?: string) {
-  // Colour contrast is meaningless mid-fade: let open/close animations finish first.
-  // (Looping animations such as the spinner never finish and are ignored.)
-  await page.waitForFunction(() =>
-    document
-      .getAnimations()
-      .every((a) => a.playState !== "running" || a.effect?.getComputedTiming().iterations === Infinity),
-  );
-  let builder = new AxeBuilder({ page }).withTags(TAGS).exclude(RADIX_FOCUS_PROXY);
-  if (within) builder = builder.include(within);
-  const results = await builder.analyze();
-  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  const summary = serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
-  expect(summary, `${label}: ${summary.join("\n")}`).toEqual([]);
-}
-
 async function dismissConsent(page: Page) {
   const url = test.info().project.use.baseURL;
   if (!url) throw new Error("baseURL is not configured");
@@ -143,6 +115,44 @@ test.describe("design system page", () => {
     await expectNoSeriousViolations(page, "toast visible");
     await errorToast.getByRole("button", { name: "Đóng" }).click();
     await expect(errorToast).toBeHidden();
+  });
+
+  test("admin form blocks: slug, money, list editor, confirm", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/design-system");
+    const blocks = page.getByRole("region", { name: "Khối nhập liệu quản trị" });
+
+    // Slug from the Vietnamese title, diacritics removed.
+    await blocks.getByRole("button", { name: "Tạo từ tiêu đề" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Đường dẫn (slug)" })).toHaveValue("vinh-ha-long-tren-du-thuyen-rieng");
+
+    // Money: grouped input is read exactly; a decimal amount is refused (the field clears on blur
+    // instead of turning into a different number).
+    const price = blocks.getByRole("textbox", { name: "Giá người lớn (VND)" });
+    await price.fill("12900000");
+    await price.blur();
+    await expect(price).toHaveValue("12.900.000");
+    await price.fill("12.900.000,50");
+    await price.blur();
+    await expect(price).toHaveValue("");
+
+    // List editor: moving a line keeps focus on it and announces the move.
+    await blocks.getByRole("button", { name: "Chuyển dòng 2 xuống" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Dòng 3" })).toHaveValue("Bữa tối hải sản riêng");
+    await expect(blocks.getByRole("button", { name: "Chuyển dòng 3 lên" })).toBeFocused();
+    await expect(blocks.getByText("Đã chuyển dòng 2 đến vị trí 3")).toBeAttached();
+    // Removing a line moves focus to its neighbour.
+    await blocks.getByRole("button", { name: "Xoá dòng 1" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Dòng 1" })).toBeFocused();
+
+    // Confirm dialog for destructive actions.
+    await blocks.getByRole("button", { name: "Xoá tour mẫu" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "Xoá tour này?" });
+    await expect(dialog).toBeVisible();
+    await expectNoSeriousViolations(page, "confirm dialog", "[role=alertdialog]");
+    await dialog.getByRole("button", { name: "Huỷ" }).click();
+    await expect(dialog).toBeHidden();
+    await expectNoSeriousViolations(page, "admin form blocks");
   });
 
   test("customers cannot open it", async ({ page }) => {

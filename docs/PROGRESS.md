@@ -5,11 +5,27 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 spec (`docs/specs/phase-2-catalog-admin.md`), then AdminShell, DataTable, LocaleTabs, media upload. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR B (media library), then taxonomy, tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
 
+### 2026-11-06 (Phase 2 — PR 8: spec, admin shell, building blocks, audit log)
+
+Branch `feat/p2-admin-shell` (`docs/specs/phase-2-catalog-admin.md` steps 1–4).
+
+- Done:
+  - Phase 2 spec with the recommended defaults (price-column guards, audit trigger, publishing checks, slugs and redirects, media checks, rich-text whitelist, staff invitations, cache tags), taken under the owner's standing instruction.
+  - AdminShell: sidebar built from the permission matrix (items a role cannot use are hidden and still blocked on the server), a sheet below `lg` that returns focus to its button, top bar with user, role, MFA state and sign-out, skip link, PageHeader with breadcrumbs. The overview page now lives inside the shell.
+  - DataTable and FilterBar: list state in the URL (`parseListParams`/`listHref`, unit-tested, unknown values fall back to defaults), sortable headers as links with `aria-sort`, a GET filter form that works without JavaScript.
+  - Form blocks: LocaleTabs, SlugInput (`slugify` removes Vietnamese diacritics including đ; unit-tested), SeoFields, MoneyInput (`parseDongInput`/`formatDongInput`, unit-tested), ConfirmDialog, ListEditor.
+  - Audit: migration `20261106140000_audit_triggers.sql` (generic `audit_row_change()` trigger on 23 tables), 13 pgTAP assertions, `/admin/audit-log` (admin at aal2) with entity filter, sort and paging; the list streams in its own Suspense boundary.
+  - E2E: admin opens the audit log from the menu (`aria-current`), filters by entity, axe clean; editor has no audit link and gets a 404; the mobile admin menu sheet returns focus. axe helper shared in `tests/e2e/support/axe.ts`.
+- Verified locally: lint, typecheck, unit tests; pgTAP on the local Postgres shim (82 assertions, and dropping the triggers makes the audit assertions fail); production build; the shell, the audit page and the admin form blocks rendered with a temporarily faked staff user (not committed) at 1280 and 375 px with no axe violations. Signed-in E2E runs in CI.
+- First CI run: two E2E failures (an ambiguous "Đối tượng" label in the test; a link directly inside a `<dl>` group on the overview, flagged by axe), both fixed.
+- Independent review: changes requested, all addressed:
+  - Major: the overview `<dl>`; list-editor buttons submitting forms (IconButton now defaults to `type="button"`); profile audits copying personal data (now names only, values only for role/status); spec decision 1 allowing delete-and-recreate at a new price (now insert guards, prices copied from the tour's latest departure, ADR-023 with PR D); `parseDongInput` silently accepting decimals, signs and exponents (strict grouping, unit-tested); a vacuous pgTAP null-actor check.
+  - Minor: `audit_logs.actor_id` now `on delete set null`; IP/user-agent capture dropped (it would record the server); seat-only departure changes not logged; a page past the end shows an empty page instead of an error; admin error page; non-UUID entity search explained; form blocks shown and tested on the design system page; list editor keeps focus on moved rows and announces moves and removals; confirm dialog shows failures; slug errors announced; spec gaps (redirect resync, identity audit rows, publish checks in both directions, sharp) written into the spec. Deferred with a place in the spec: actor filter (PR G), status badges and row actions (PRs C–E), slug uniqueness checks (with each editor).
 ### 2026-11-06 (Phase 1 — PR 7: primitives, design system page, axe)
 
 Branch `feat/p1-primitives` (`docs/specs/phase-1-design-system.md` steps 12–14).
