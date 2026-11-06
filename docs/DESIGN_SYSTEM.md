@@ -38,12 +38,15 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 | `foreground` | Deep Navy |
 | `card`, `popover` | White |
 | `primary` / `primary-foreground` | Deep Navy / Warm Ivory |
-| `secondary` | a lighter ivory tint |
+| `secondary`, `muted` | lighter ivory tint `#FBF8F3` |
 | `accent` | Champagne Gold (with Deep Navy text) |
 | `muted-foreground` | Muted text `#726D65` |
-| `border`, `input` | a light tint of Warm Gray |
-| `ring` | Champagne Gold |
+| `border` | light warm-gray tint `#E2DBCF` (decorative dividers) |
+| `input` | Warm Gray `#8A847B` (form borders need 3:1) |
+| `ring` | deep gold `#A7823E` (3:1 focus indicator on ivory and white) |
 | `success`, `warning`, `destructive` | Success, Warning, Error |
+
+Navy sections (`.theme-navy`) re-map the tokens: background Deep Navy, text Warm Ivory, cards `#16253B`, muted text `#B9B4AA`, borders `#2A3A52`, ring Champagne Gold, destructive `#E89696` with navy text (the error red fails AA on navy).
 
 ### Theme
 
@@ -79,7 +82,7 @@ ADR-017: the public website uses a fixed light theme, with Deep Navy sections (i
 - Container: `mx-auto max-w-7xl px-4 md:px-8`; long text blocks max 680px.
 - Spacing scale in multiples of 4px; section spacing `py-16 md:py-28` (up to 160px on large editorial sections).
 - Grids: `grid gap-8 sm:grid-cols-2 lg:grid-cols-3`; 12-column grid for editorial layouts.
-- Radius: small (`--radius` around `0.25rem`; 2px inputs/buttons, 4px cards, none on images). Sharp corners read as more premium.
+- Radius: `--radius: 0.25rem` (`rounded-md` = 2px for inputs and buttons, `rounded-lg` = 4px for cards, none on images). Sharp corners read as more premium.
 - Shadows almost never; depth comes from ivory/white surfaces and 1px borders.
 - Imagery: 16:9 or 21:9 heroes, 4:5 tour cards, 3:2 content images; `next/image` with proper `sizes`; originals at least 2400px on the long edge.
 
