@@ -656,6 +656,7 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `is_homepage_hero(target_id)` | everyone (`security invoker`; reads `settings` under RLS) | Whether an image is the homepage hero (alt-text and delete rules) |
 | `media_used_in_content(target_id)` | authenticated (`security definer`; false unless staff or trusted) | Whether an image id appears in rich text or itinerary JSON, in any letter case (media delete guard) |
 | `is_staff_or_trusted()` | authenticated (`security definer`) | Staff, the service role or a session without `SET ROLE` (postgres); gates the definer helpers |
+| `set_tour_links(target_id, media_ids, destination_ids, travel_style_ids)` | authenticated (`security invoker`; RLS lets editors and admins write the link tables) | A tour's gallery (in order), destinations and travel styles in one transaction, writing only what changed |
 | `set_default_cancellation_policy(policy_id)` | authenticated (`security invoker`; RLS lets only an MFA-verified admin write) | Move the default cancellation policy in one transaction |
 | `next_booking_code()` | service_role | Booking codes from the sequence |
 | `reserve_and_create_payment(...)` | service_role | Hold seats, booking → `pending_payment`, create payment |

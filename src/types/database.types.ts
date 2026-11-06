@@ -910,6 +910,9 @@ isOneToOne: false
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined
                            },
+"set_tour_links":
+{ Args: { "destination_ids": (string)[],"media_ids": (string)[],"target_id": string,"travel_style_ids": (string)[] }; Returns: undefined
+                           },
 "tour_departures":
 { Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
               "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
