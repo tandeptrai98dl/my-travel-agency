@@ -8,8 +8,9 @@ import type { Json } from "@/types/database.types";
 
 import { vnpayConfig } from "./payment.config";
 import * as repo from "./payment.repository";
-import type { GatewayEvent } from "./provider";
-import { checkIpn } from "./providers/vnpay";
+import type { GatewayEvent, PaymentInstructions, PaymentToStart } from "./provider";
+import { type BankAccount, vietQrProvider } from "./providers/vietqr";
+import { checkIpn, vnpayProvider } from "./providers/vnpay";
 
 /** What record_payment_event() returns (decision 4). */
 export type RecordResult = {
@@ -92,10 +93,36 @@ export async function handleVnpayIpn(params: Record<string, string>): Promise<Ip
 export async function vnpayReturnTarget(query: URLSearchParams): Promise<{ code: string; locale: "vi" | "en" } | null> {
   const config = vnpayConfig();
   if (!config) return null;
-  const { vnpayProvider } = await import("./providers/vnpay");
   const verified = vnpayProvider(config).verifyReturn?.(query);
   if (!verified?.valid || !verified.reference) return null;
   const { data: payment } = await repo.findPaymentByReference(verified.reference, "vnpay");
   if (!payment?.bookings) return null;
   return { code: payment.bookings.code, locale: payment.bookings.locale };
+}
+
+/** The receiving account from settings.bank_account, or null while it is incomplete (method hidden). */
+export async function bankAccount(): Promise<BankAccount | null> {
+  const { data } = await repo.bankAccountSetting();
+  const value = (data?.value ?? {}) as Record<string, unknown>;
+  const text = (key: string) => (typeof value[key] === "string" ? (value[key] as string) : "");
+  const account = { bankBin: text("bank_bin"), accountNumber: text("account_number"), accountHolder: text("account_holder") };
+  return /^\d{6}$/.test(account.bankBin) && account.accountNumber && account.accountHolder ? account : null;
+}
+
+/** Methods the checkout may offer: only those whose credentials or account exist (decision 6). */
+export async function availableMethods(): Promise<("vnpay" | "bank_transfer")[]> {
+  const methods: ("vnpay" | "bank_transfer")[] = [];
+  if (vnpayConfig()) methods.push("vnpay");
+  if (await bankAccount()) methods.push("bank_transfer");
+  return methods;
+}
+
+/** What the customer does next for a payment started by reserve_and_create_payment(). */
+export async function instructionsFor(provider: "vnpay" | "bank_transfer", payment: PaymentToStart): Promise<PaymentInstructions | null> {
+  if (provider === "vnpay") {
+    const config = vnpayConfig();
+    return config ? vnpayProvider(config).createPayment(payment) : null;
+  }
+  const account = await bankAccount();
+  return account ? vietQrProvider(account).createPayment(payment) : null;
 }

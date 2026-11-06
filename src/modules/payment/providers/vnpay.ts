@@ -94,8 +94,9 @@ export function checkIpn(config: VnpayConfig, params: Record<string, string>): I
     ok: true,
     reportedAmount,
     event: {
-      // One IPN per gateway transaction; a retry repeats the same key.
-      eventKey: `${params.vnp_TxnRef}:${transactionNo ?? "none"}:${params.vnp_ResponseCode}`,
+      // Keyed on the gateway transaction (per reference: VNPay may send 0 for some failures), so
+      // a retry is a duplicate in webhook_events, not a second payment.
+      eventKey: `${params.vnp_TxnRef}:${transactionNo ?? "none"}`,
       reference: params.vnp_TxnRef ?? "",
       amount: reportedAmount,
       providerTxnId: transactionNo,

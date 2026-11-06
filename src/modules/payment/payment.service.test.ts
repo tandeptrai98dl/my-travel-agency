@@ -52,7 +52,7 @@ describe("VNPay IPN", () => {
   it("records a valid success and answers 00", async () => {
     expect(await handleVnpayIpn(ipn())).toEqual({ RspCode: "00", Message: "Confirm Success" });
     expect(repo.recordPaymentEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: "vnpay", reference: "PTA2611004201", amount: 12_900_000, succeeded: true, eventKey: "PTA2611004201:14012345:00" }),
+      expect.objectContaining({ provider: "vnpay", reference: "PTA2611004201", amount: 12_900_000, succeeded: true, eventKey: "PTA2611004201:14012345" }),
     );
     expect(revalidateTag).toHaveBeenCalledWith("tour:t-1", "max");
   });

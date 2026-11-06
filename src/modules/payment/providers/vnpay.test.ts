@@ -90,7 +90,7 @@ describe("IPN checks", () => {
     expect(check).toMatchObject({
       ok: true,
       reportedAmount: 12_900_000,
-      event: { eventKey: "PTA2611004201:14012345:00", reference: "PTA2611004201", amount: 12_900_000, providerTxnId: "14012345", succeeded: true },
+      event: { eventKey: "PTA2611004201:14012345", reference: "PTA2611004201", amount: 12_900_000, providerTxnId: "14012345", succeeded: true },
     });
     if (check.ok) expect(check.event.payload).not.toHaveProperty("vnp_SecureHash");
     const odd = checkIpn(config, signed({ vnp_Amount: "12345" }));
