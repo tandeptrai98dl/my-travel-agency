@@ -2,8 +2,14 @@ import { createHmac } from "node:crypto";
 
 import { adminApi } from "./admin-api";
 
-/** Test setup for payment E2E: a departure of its own, drafts and holds through the functions. */
-export async function testDeparture(capacity: number, price = 9_000_000) {
+const created: string[] = [];
+
+/**
+ * Test setup for payment E2E: a departure of its own (at the seeded tour's own adult price, far
+ * out, so other tests' view of the tour does not change), drafts and holds through the functions.
+ * Call closeTestDepartures() after the tests.
+ */
+export async function testDeparture(capacity: number, price = 12_900_000) {
   const db = adminApi();
   const { data: tour, error } = await db.from("tours").select("id").eq("code", "VN-HLB-03").single();
   if (error) throw error;
@@ -15,7 +21,10 @@ export async function testDeparture(capacity: number, price = 9_000_000) {
       .insert({ tour_id: tour.id, start_date: day(offset), end_date: day(offset + 2), capacity, price_adult: price })
       .select("id")
       .single();
-    if (!inserted.error) return { tourId: tour.id, departureId: inserted.data.id, price };
+    if (!inserted.error) {
+      created.push(inserted.data.id);
+      return { tourId: tour.id, departureId: inserted.data.id, price };
+    }
   }
   throw new Error("could not create a test departure");
 }
@@ -76,4 +85,8 @@ export function vnpaySign(params: Record<string, string>, secret: string): strin
     .map((key) => `${encode(key)}=${encode(params[key])}`)
     .join("&");
   return createHmac("sha512", secret).update(data, "utf8").digest("hex");
+}
+
+export async function closeTestDepartures() {
+  if (created.length) await adminApi().from("departures").update({ status: "closed" }).in("id", created.splice(0));
 }

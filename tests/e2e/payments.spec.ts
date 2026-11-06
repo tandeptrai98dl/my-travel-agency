@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { adminApi } from "./support/admin-api";
-import { booking, heldBooking, pay, testDeparture, vnpaySign } from "./support/booking";
+import { booking, closeTestDepartures, heldBooking, pay, testDeparture, vnpaySign } from "./support/booking";
 
 // Phase 4 PR 4C: the VNPay IPN, the CI stub and the bank-transfer webhook against the running app
 // and the local database. CI sets VNPAY_TMN_CODE/_HASH_SECRET, VNPAY_STUB and
@@ -13,6 +13,7 @@ const BANK_SECRET = process.env.BANK_WEBHOOK_SECRET ?? "";
 
 test.skip(!TMN || !SECRET || !BANK_SECRET || !process.env.E2E_SUPABASE_SECRET_KEY, "needs the CI payment settings");
 test.describe.configure({ mode: "serial" });
+test.afterAll(closeTestDepartures);
 
 let txn = Math.floor(Math.random() * 1_000_000) * 100;
 function ipn(reference: string, amount: number, patch: Record<string, string> = {}) {
