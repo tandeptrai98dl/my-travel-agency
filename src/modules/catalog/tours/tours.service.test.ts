@@ -15,6 +15,8 @@ const repo = vi.hoisted(() => {
     countActiveDepartures: vi.fn(async () => ({ count: 1, error: null })),
     findTourSlugOwner: vi.fn(async () => ({ ownerId: null, error: null })),
     saveRedirect: ok(),
+    deleteTourTranslation: ok([{ id: "tr-en" }]),
+    deleteRedirectFrom: ok([]),
   };
 });
 const user = vi.hoisted(() => ({ current: { id: "u1", role: "editor" } }));
@@ -22,8 +24,8 @@ vi.mock("./tours.repository", () => repo);
 vi.mock("@/lib/auth/require-role", () => ({ requirePermission: vi.fn(async () => user.current) }));
 vi.mock("next/cache", () => ({ updateTag: vi.fn() }));
 vi.mock("@/i18n/navigation", () => ({
-  getPathname: ({ href, locale }: { href: { params: { slug: string } }; locale: string }) =>
-    `${locale === "vi" ? "" : "/en"}/tours/${href.params.slug}`,
+  getPathname: ({ href, locale }: { href: string | { params: { slug: string } }; locale: string }) =>
+    `${locale === "vi" ? "" : "/en"}/tours${typeof href === "string" ? "" : `/${href.params.slug}`}`,
 }));
 vi.mock("@/modules/media/media.service", () => ({ getMediaUrl: (path: string) => `https://cdn.test/${path}` }));
 
@@ -162,14 +164,14 @@ describe("saveTour", () => {
     expect(repo.updateTour.mock.calls[0][1]).toMatchObject({ status: "archived" });
   });
 
-  it("rewrites links with what was stored before, so unchanged links are left alone", async () => {
+  it("writes all links in one call with the edited lists (set_tour_links diffs in the database)", async () => {
     repo.findTour.mockResolvedValue({
       data: stored({ tour_media: [{ media_id: "m1", sort_order: 0 }], tour_destinations: [], tour_travel_styles: [] }),
       error: null,
     });
     await service.saveTour(values());
-    expect(repo.updateTourLinks.mock.calls[0][1]).toMatchObject({ media: ["m1"] });
-    expect(repo.updateTourLinks.mock.calls[0][2]).toMatchObject({ media: [] });
+    expect(repo.updateTourLinks).toHaveBeenCalledTimes(1);
+    expect(repo.updateTourLinks.mock.calls[0][1]).toMatchObject({ media: [] });
   });
 
   it("never sends price columns for a non-admin (the price guard would refuse)", async () => {
@@ -257,6 +259,56 @@ describe("duplicateTour", () => {
     expect(await service.duplicateTour({ id: "t1", code: "VN-HLB-03-B" })).toEqual({ ok: true, id: "t-new" });
     expect(repo.insertTour.mock.calls[0][0]).toMatchObject({ status: "draft", code: "VN-HLB-03-B", from_price: 0 });
     expect(repo.upsertTourTranslation.mock.calls[0][0]).toMatchObject({ slug: "du-thuyen-ban-sao", is_published: false });
-    expect(repo.updateTourLinks.mock.calls[0][2]).toMatchObject({ media: ["m1", "m2"] });
+    expect(repo.updateTourLinks.mock.calls[0][1]).toMatchObject({ media: ["m1", "m2"] });
+  });
+});
+
+describe("removeTourLanguage", () => {
+  const row = (locale: "vi" | "en", is_published: boolean) => ({ locale, slug: `slug-${locale}`, is_published });
+  const id = "0f8fad5b-d9cb-469f-a165-70867728950e";
+
+  it("refuses removing the only language", async () => {
+    repo.findTour.mockResolvedValueOnce({ data: stored({ tour_translations: [row("vi", false)] }), error: null });
+    expect(await service.removeTourLanguage({ id, locale: "vi" })).toEqual({ ok: false, error: "onlyLanguage" });
+    expect(repo.deleteTourTranslation).not.toHaveBeenCalled();
+  });
+
+  it("refuses removing the last published language of a published tour", async () => {
+    repo.findTour.mockResolvedValueOnce({
+      data: stored({ status: "published", tour_translations: [row("vi", true), row("en", false)] }),
+      error: null,
+    });
+    expect(await service.removeTourLanguage({ id, locale: "vi" })).toEqual({ ok: false, error: "lastTranslation" });
+  });
+
+  it("removes a published language with a 301 to the other published language", async () => {
+    repo.findTour.mockResolvedValueOnce({
+      data: stored({ status: "published", tour_translations: [row("vi", true), row("en", true)] }),
+      error: null,
+    });
+    expect(await service.removeTourLanguage({ id, locale: "en" })).toEqual({ ok: true, id: "t1" });
+    expect(repo.deleteTourTranslation).toHaveBeenCalledWith("t1", "en");
+    expect(repo.saveRedirect).toHaveBeenCalledWith("/en/tours/slug-en", "/tours/slug-vi");
+    expect(updateTag).toHaveBeenCalledWith("tour:t1");
+  });
+
+  it("sends a published language to its tour list when the other is unpublished, and a draft gets no 301", async () => {
+    repo.findTour.mockResolvedValueOnce({ data: stored({ tour_translations: [row("vi", false), row("en", true)] }), error: null });
+    await service.removeTourLanguage({ id, locale: "en" });
+    expect(repo.saveRedirect).toHaveBeenCalledWith("/en/tours/slug-en", "/en/tours");
+    vi.mocked(repo.saveRedirect).mockClear();
+    repo.findTour.mockResolvedValueOnce({ data: stored({ tour_translations: [row("vi", true), row("en", false)] }), error: null });
+    await service.removeTourLanguage({ id, locale: "en" });
+    expect(repo.saveRedirect).not.toHaveBeenCalled();
+  });
+});
+
+describe("published paths are not shadowed by old redirects", () => {
+  it("drops a redirect away from the path a published language serves", async () => {
+    repo.findTour.mockResolvedValue({ data: stored(), error: null });
+    await service.saveTour(values());
+    expect(repo.deleteRedirectFrom).toHaveBeenCalledWith("/tours/du-thuyen");
+    // The unpublished English language serves nothing, so its path is left alone.
+    expect(repo.deleteRedirectFrom).toHaveBeenCalledTimes(1);
   });
 });

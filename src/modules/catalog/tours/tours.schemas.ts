@@ -152,6 +152,27 @@ export const duplicateTourSchema = z.object({
   code: tourSchema.shape.code,
 });
 
+/** A language that has not been saved (or was just removed), as the editor's form holds it. */
+export const emptyTourTranslation = (): TourInput["translations"]["vi"] => ({
+  slug: "",
+  title: "",
+  subtitle: "",
+  summary: "",
+  highlights: [],
+  itinerary: [],
+  inclusions: [],
+  exclusions: [],
+  practicalInfo: "",
+  faqs: [],
+  seoTitle: "",
+  seoDescription: "",
+  ogMediaId: null,
+  isPublished: false,
+});
+
+/** Removes one language of a tour, with its slug, content and SEO (explicit action, confirmed). */
+export const removeTourLanguageSchema = z.object({ id: z.uuid(), locale: z.enum(TOUR_LOCALES) });
+
 export const tourSlugCheckSchema = z.object({
   locale: z.enum(TOUR_LOCALES),
   slug: z.string().trim().max(80),

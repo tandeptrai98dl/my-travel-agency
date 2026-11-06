@@ -5,7 +5,7 @@ import type { z } from "zod";
 import type { Permission } from "@/lib/auth/permissions";
 import { AccessDeniedError, requirePermission } from "@/lib/auth/require-role";
 
-import { duplicateTourSchema, newTourSchema, tourSchema, tourSlugCheckSchema } from "./tours.schemas";
+import { duplicateTourSchema, newTourSchema, removeTourLanguageSchema, tourSchema, tourSlugCheckSchema } from "./tours.schemas";
 import * as service from "./tours.service";
 
 export type FieldErrors = Record<string, string>;
@@ -50,6 +50,10 @@ export async function saveTourAction(input: unknown): Promise<TourActionResult> 
 
 export async function duplicateTourAction(input: unknown): Promise<TourActionResult> {
   return guarded("tours.edit_content", duplicateTourSchema, input, service.duplicateTour);
+}
+
+export async function removeTourLanguageAction(input: unknown): Promise<TourActionResult> {
+  return guarded("tours.edit_content", removeTourLanguageSchema, input, service.removeTourLanguage);
 }
 
 export async function checkTourSlugAction(input: unknown): Promise<{ available: boolean } | { error: string }> {

@@ -12,6 +12,7 @@ import { getMediaUrl } from "@/modules/media/media.service";
 
 import * as repo from "./tours.repository";
 import {
+  emptyTourTranslation,
   type NewTourInput,
   TOUR_LOCALES,
   type TourInput,
@@ -43,6 +44,7 @@ export type TourSaveError =
   | "requiredToPublish"
   | "lastTranslation"
   | "keepLanguage"
+  | "onlyLanguage"
   | "adminOnly"
   | "failed";
 export type TourSaveResult = { ok: true; id: string } | { ok: false; error: TourSaveError; field?: string };
@@ -165,22 +167,6 @@ export type TourEditorData = {
   publishedAt: string | null;
 };
 
-const emptyTranslation = () => ({
-  slug: "",
-  title: "",
-  subtitle: "",
-  summary: "",
-  highlights: [],
-  itinerary: [],
-  inclusions: [],
-  exclusions: [],
-  practicalInfo: "",
-  faqs: [],
-  seoTitle: "",
-  seoDescription: "",
-  ogMediaId: null,
-  isPublished: false,
-});
 
 const stringList = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -232,7 +218,7 @@ export async function getTourEditor(id: string): Promise<TourEditorData | null> 
   if (!data) return null;
   const translation = (locale: TourLocale): TourInput["translations"]["vi"] => {
     const row = data.tour_translations.find((t) => t.locale === locale);
-    if (!row) return emptyTranslation();
+    if (!row) return emptyTourTranslation();
     return {
       slug: row.slug,
       title: row.title,
@@ -486,6 +472,14 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
       is_published: t.isPublished,
     });
     if (error) return done(mapTourError(error, locale));
+    // A published language serves its path again: a redirect left from an earlier removal or
+    // slug change would shadow it (the proxy reads Redis before the page).
+    if (t.isPublished) {
+      const path = tourPath(locale, t.slug);
+      const cleared = await repo.deleteRedirectFrom(path);
+      if (cleared.error) logger.error("tours.redirect_clear_failed", { locale, message: cleared.error.message });
+      else if (cleared.data?.length) await syncSlugRedirect(path);
+    }
     // Decision 4: right after this language is saved, so a later failure cannot lose it.
     if (before?.is_published && before.slug !== t.slug) {
       const redirect = await repo.saveRedirect(tourPath(locale, before.slug), tourPath(locale, t.slug));
@@ -494,15 +488,11 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     }
   }
 
-  const links = await repo.updateTourLinks(
-    id,
-    {
-      media: [...existing.tour_media].sort((a, b) => a.sort_order - b.sort_order).map((m) => m.media_id),
-      destinations: existing.tour_destinations.map((d) => d.destination_id),
-      styles: existing.tour_travel_styles.map((s) => s.travel_style_id),
-    },
-    { media: values.galleryIds, destinations: values.destinationIds, styles: values.travelStyleIds },
-  );
+  const links = await repo.updateTourLinks(id, {
+    media: values.galleryIds,
+    destinations: values.destinationIds,
+    styles: values.travelStyleIds,
+  });
   if (links.error) return done(mapTourError(links.error));
 
   if (firstStatus !== values.status || firstHero !== values.heroMediaId) {
@@ -514,6 +504,39 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     if (last.error) return done(mapTourError(last.error));
   }
   return done({ ok: true, id });
+}
+
+/**
+ * Removes one language of a tour (Phase 2 polish). The tour keeps at least one language, and a
+ * published tour keeps a published one (check_tour_translation() refuses otherwise). When the
+ * removed language was published, its page gets a 301: to the tour in the other language when that
+ * is published, else to the tour listing of the removed language (decision 4).
+ */
+export async function removeTourLanguage(input: { id: string; locale: TourLocale }): Promise<TourSaveResult> {
+  await requirePermission("tours.edit_content");
+  const { data: tour } = await repo.findTour(input.id);
+  if (!tour) return { ok: false, error: "not_found" };
+  const removed = tour.tour_translations.find((row) => row.locale === input.locale);
+  if (!removed) return { ok: false, error: "not_found" };
+  const other = tour.tour_translations.find((row) => row.locale !== input.locale);
+  if (!other) return { ok: false, error: "onlyLanguage" };
+  if (tour.status === "published" && removed.is_published && !other.is_published) {
+    return { ok: false, error: "lastTranslation" };
+  }
+  const deleted = await repo.deleteTourTranslation(tour.id, input.locale);
+  if (deleted.error) return mapTourError(deleted.error, input.locale);
+  if (!deleted.data?.length) return { ok: false, error: "not_found" };
+  if (removed.is_published) {
+    const from = tourPath(input.locale, removed.slug);
+    const to = other.is_published
+      ? tourPath(other.locale, other.slug)
+      : getPathname({ href: "/tours", locale: input.locale });
+    const redirect = await repo.saveRedirect(from, to);
+    if (redirect.error) logger.error("tours.redirect_failed", { locale: input.locale, message: redirect.error.message });
+    else await syncSlugRedirect(to);
+  }
+  refresh(tour.id);
+  return { ok: true, id: tour.id };
 }
 
 /** Copies content, links and media, never departures; the copy is a draft (step 12). */
@@ -568,7 +591,7 @@ export async function duplicateTour(input: { id: string; code: string }): Promis
     });
     if (error) return undo(mapTourError(error, locale));
   }
-  const links = await repo.updateTourLinks(id, { media: [], destinations: [], styles: [] }, {
+  const links = await repo.updateTourLinks(id, {
     media: [...source.tour_media].sort((a, b) => a.sort_order - b.sort_order).map((m) => m.media_id),
     destinations: source.tour_destinations.map((d) => d.destination_id),
     styles: source.tour_travel_styles.map((s) => s.travel_style_id),

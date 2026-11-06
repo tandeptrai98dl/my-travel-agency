@@ -101,60 +101,23 @@ export async function upsertTourTranslation(row: Tables["tour_translations"]["In
   return (await db()).from("tour_translations").upsert(row, { onConflict: "tour_id,locale" });
 }
 
+export async function deleteTourTranslation(tourId: string, locale: "vi" | "en") {
+  return (await db()).from("tour_translations").delete().eq("tour_id", tourId).eq("locale", locale).select("id");
+}
+
 type Links = { media: string[]; destinations: string[]; styles: string[] };
 
 /**
- * Brings a tour's links from `before` to `after`, touching only what changed (so an unchanged
- * save writes nothing and adds no audit rows). The gallery is rewritten only when its order or
- * content changed.
+ * Gallery (in order), destinations and travel styles in one transaction (set_tour_links,
+ * *_tour_links_function.sql): a failure partway leaves the links as they were. RLS applies.
  */
-export async function updateTourLinks(tourId: string, before: Links, after: Links) {
-  const supabase = await db();
-  const removed = (a: string[], b: string[]) => a.filter((id) => !b.includes(id));
-  const sameGallery = before.media.length === after.media.length && before.media.every((id, i) => id === after.media[i]);
-  if (!sameGallery) {
-    // New and reordered rows first, removals last: a failure (an image deleted meanwhile) leaves
-    // the old images in place rather than an emptied gallery.
-    const rows = after.media.map((media_id, sort_order) => ({ tour_id: tourId, media_id, sort_order }));
-    if (rows.length) {
-      const upserted = await supabase.from("tour_media").upsert(rows, { onConflict: "tour_id,media_id" });
-      if (upserted.error) return upserted;
-    }
-    const gone = removed(before.media, after.media);
-    if (gone.length) {
-      const deleted = await supabase.from("tour_media").delete().eq("tour_id", tourId).in("media_id", gone);
-      if (deleted.error) return deleted;
-    }
-  }
-  const destinationsGone = removed(before.destinations, after.destinations);
-  if (destinationsGone.length) {
-    const deleted = await supabase
-      .from("tour_destinations")
-      .delete()
-      .eq("tour_id", tourId)
-      .in("destination_id", destinationsGone);
-    if (deleted.error) return deleted;
-  }
-  const destinationsNew = removed(after.destinations, before.destinations);
-  if (destinationsNew.length) {
-    const inserted = await supabase
-      .from("tour_destinations")
-      .insert(destinationsNew.map((destination_id) => ({ tour_id: tourId, destination_id })));
-    if (inserted.error) return inserted;
-  }
-  const stylesGone = removed(before.styles, after.styles);
-  if (stylesGone.length) {
-    const deleted = await supabase.from("tour_travel_styles").delete().eq("tour_id", tourId).in("travel_style_id", stylesGone);
-    if (deleted.error) return deleted;
-  }
-  const stylesNew = removed(after.styles, before.styles);
-  if (stylesNew.length) {
-    const inserted = await supabase
-      .from("tour_travel_styles")
-      .insert(stylesNew.map((travel_style_id) => ({ tour_id: tourId, travel_style_id })));
-    if (inserted.error) return inserted;
-  }
-  return { error: null };
+export async function updateTourLinks(tourId: string, links: Links) {
+  return (await db()).rpc("set_tour_links", {
+    target_id: tourId,
+    media_ids: links.media,
+    destination_ids: links.destinations,
+    travel_style_ids: links.styles,
+  });
 }
 
 export async function defaultCancellationPolicyId() {
@@ -195,6 +158,11 @@ export async function editorOptions() {
     supabase.from("cancellation_policies").select("id, name, version, is_default").order("name"),
   ]);
   return { destinations, styles, policies };
+}
+
+/** Drops a redirect away from a path that a published translation now serves again. */
+export async function deleteRedirectFrom(path: string) {
+  return (await db()).from("redirects").delete().eq("from_path", path).select("id");
 }
 
 export async function saveRedirect(fromPath: string, toPath: string) {

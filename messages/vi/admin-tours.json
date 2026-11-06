@@ -136,12 +136,21 @@
         "adminOnly": "Chỉ quản trị viên sửa giá và điều khoản.",
         "fixFields": "Vui lòng sửa các trường được đánh dấu.",
         "keepLanguage": "Không xoá được cả một ngôn ngữ bằng cách xoá tên tour. Hãy giữ tên, hoặc bỏ xuất bản ngôn ngữ này.",
-        "dayImageAlt": "Ảnh của ngày cần mô tả tiếng Việt và tiếng Anh trước khi đăng ngôn ngữ này."
+        "dayImageAlt": "Ảnh của ngày cần mô tả tiếng Việt và tiếng Anh trước khi đăng ngôn ngữ này.",
+        "onlyLanguage": "Tour cần ít nhất một ngôn ngữ. Thêm ngôn ngữ khác trước khi xoá ngôn ngữ này.",
+        "removeFailed": "Không xoá được. Vui lòng thử lại."
       },
       "publishLanguage": "Xuất bản bản {language}",
       "dayImage": "Ảnh của ngày",
       "preview": "Xem trước VI",
-      "previewEn": "Xem trước EN"
+      "previewEn": "Xem trước EN",
+      "removeLanguage": "Xoá bản {language}",
+      "removeLanguageTitle": "Xoá bản {language} của tour?",
+      "removeLanguagePublished": "Nội dung, đường dẫn và SEO của ngôn ngữ này bị xoá. Trang đã xuất bản sẽ chuyển hướng 301 sang ngôn ngữ còn lại (hoặc danh sách tour). Thay đổi chưa lưu ở biểu mẫu sẽ không được giữ cho ngôn ngữ này.",
+      "removeLanguageDraft": "Nội dung, đường dẫn và SEO của ngôn ngữ này bị xoá. Thay đổi chưa lưu ở biểu mẫu sẽ không được giữ cho ngôn ngữ này.",
+      "removeLanguageConfirm": "Xoá ngôn ngữ",
+      "removeLanguageCancel": "Huỷ",
+      "languageRemoved": "Đã xoá bản {language}"
     }
   }
 }
