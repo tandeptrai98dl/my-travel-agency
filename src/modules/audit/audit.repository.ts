@@ -7,6 +7,7 @@ import type { AuditSort } from "./audit.schemas";
 export type AuditQuery = {
   entityType?: string;
   entityId?: string;
+  actorId?: string;
   sort: AuditSort;
   dir: "asc" | "desc";
   range: [number, number];
@@ -28,5 +29,6 @@ export async function findAuditLogs(query: AuditQuery) {
     .range(query.range[0], query.range[1]);
   if (query.entityType) request = request.eq("entity_type", query.entityType);
   if (query.entityId) request = request.eq("entity_id", query.entityId);
+  if (query.actorId) request = request.eq("actor_id", query.actorId);
   return request;
 }

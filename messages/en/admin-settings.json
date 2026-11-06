@@ -103,6 +103,92 @@
         "forbidden": "You may not change settings.",
         "failed": "Could not save. Please try again."
       }
+    },
+    "Staff": {
+      "title": "Staff",
+      "description": "Invite new staff, change roles and deactivate accounts. Admins and accountants must turn on two-factor authentication.",
+      "inviteTitle": "Invite staff",
+      "inviteDescription": "The system sends an invitation email; the invitee sets their own password. The role is chosen at invitation.",
+      "email": "Email",
+      "fullName": "Full name",
+      "role": "Role",
+      "invite": "Send invitation",
+      "inviting": "Sending…",
+      "invited": "Invitation sent to {email}",
+      "listTitle": "Staff list",
+      "name": "Staff member",
+      "status": "Status",
+      "mfa": "Two-factor",
+      "lastSignIn": "Last sign-in",
+      "actions": "Actions",
+      "never": "Never signed in",
+      "mfaOn": "On",
+      "mfaOff": "Off",
+      "you": "You",
+      "statuses": {
+        "invited": "Invited",
+        "active": "Active",
+        "deactivated": "Deactivated"
+      },
+      "roleFor": "Role of {name}",
+      "saveRole": "Change role",
+      "roleSaved": "Changed the role of {name}",
+      "actionsFor": "Actions for {name}",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "deactivateTitle": "Deactivate {name}?",
+      "deactivateDescription": "They lose admin access at once. Their change history is kept.",
+      "reactivateTitle": "Reactivate {name}?",
+      "reactivateDescription": "They get back the access of their current role.",
+      "deactivated": "Deactivated {name}",
+      "reactivated": "Reactivated {name}",
+      "cancel": "Cancel",
+      "close": "Close",
+      "selfHint": "You cannot change your own role or deactivate yourself.",
+      "viewAudit": "View change history",
+      "empty": "No staff yet.",
+      "emailDependency": "Invitation emails go through Supabase Auth's mail server. Production needs SMTP (Resend) and the invitation email template configured.",
+      "errors": {
+        "invalid": "Invalid value.",
+        "required": "This field is required.",
+        "tooLong": "Too long.",
+        "emailInvalid": "Invalid email.",
+        "roleInvalid": "Choose a staff role.",
+        "emailTaken": "This email already has an account. Change that account's role instead of inviting again.",
+        "inviteFailed": "The invitation email could not be sent. Check the email setup and try again.",
+        "selfChange": "You cannot change your own role or deactivate yourself.",
+        "lastAdmin": "At least one active admin must remain.",
+        "notFound": "Staff member not found.",
+        "forbidden": "You may not manage staff.",
+        "failed": "Could not save. Please try again."
+      }
+    },
+    "Dashboard": {
+      "description": "The areas your role can use. Business figures arrive in Phases 4–5.",
+      "sectionsTitle": "Shortcuts",
+      "account": "Account",
+      "links": {
+        "tours": "Tours and their content",
+        "departures": "Departures, seats and prices",
+        "destinations": "Destination tree",
+        "travelStyles": "Travel styles",
+        "policies": "Refund tiers on cancellation",
+        "journal": "Journal articles",
+        "pages": "About, FAQ, policies",
+        "reviews": "Moderate and feature reviews",
+        "media": "Images and alt text",
+        "redirects": "301s when paths change",
+        "subscribers": "Newsletter subscribers",
+        "settings": "Company, contacts, receiving account, homepage",
+        "staff": "Invite staff and assign roles",
+        "auditLog": "Who changed what, and when",
+        "designSystem": "UI review (development only)"
+      }
+    },
+    "Audit": {
+      "actorFilter": "Changed by",
+      "allActors": "Everyone",
+      "unknownActor": "Account {id}"
     }
   }
 }

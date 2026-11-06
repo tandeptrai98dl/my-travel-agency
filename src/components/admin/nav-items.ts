@@ -51,6 +51,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     labelKey: "groupSystem",
     items: [
       { href: "/admin/settings", labelKey: "settings", icon: "settings", permission: "settings.manage" },
+      { href: "/admin/staff", labelKey: "staff", icon: "staff", permission: "staff.manage" },
       { href: "/admin/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read" },
       {
         href: "/admin/design-system",

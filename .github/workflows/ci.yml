@@ -106,9 +106,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # E2E runs against a real local stack: sign-in, roles, MFA and the health check.
+      # E2E runs against a real local stack: sign-in, roles, MFA and the health check. Mailpit
+      # stays on: the staff invitation test reads the invitation email (ADR-032).
       - name: Start local Supabase
-        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,mailpit
+        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime
         timeout-minutes: 10
       - name: Read local Supabase settings
         id: supabase
@@ -117,6 +118,7 @@ jobs:
           echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
           echo "publishable_key=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_OUTPUT"
           echo "service_key=${SERVICE_ROLE_KEY:-$SECRET_KEY}" >> "$GITHUB_OUTPUT"
+          echo "mail_url=${MAILPIT_URL:-${INBUCKET_URL:-http://127.0.0.1:54324}}" >> "$GITHUB_OUTPUT"
       - name: Seed sample users
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
@@ -208,6 +210,8 @@ jobs:
           # Test setup only (generating email-link tokens).
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
+          # Mailpit's API, for the staff invitation email (staff.spec.ts).
+          E2E_MAIL_URL: ${{ steps.supabase.outputs.mail_url }}
           # Serves /admin/design-system in the production build so axe can check it.
           SHOW_DESIGN_SYSTEM: "true"
         run: npm run test:e2e
