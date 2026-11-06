@@ -179,8 +179,8 @@ export default async function TourDetailPage({ params }: Props) {
           <TourFactsBar facts={facts} label={t("facts.label")} />
         </div>
 
-        <div className="grid gap-x-16 lg:grid-cols-[minmax(0,1fr)_25rem]">
-          <aside aria-label={t("booking.label")} className="pb-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start lg:pt-12">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 lg:grid-cols-[minmax(0,1fr)_25rem]">
+          <aside aria-label={t("booking.label")} className="min-w-0 pb-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start lg:pt-12">
             <DeparturesErrorBoundary message={t("booking.unavailable")} retryLabel={t("departures.retry")}>
               <Suspense fallback={<Skeleton className="h-80 w-full" />}>
                 <LiveBookingBox locale={locale} tour={tour} />

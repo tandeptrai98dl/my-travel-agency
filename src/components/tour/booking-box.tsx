@@ -50,7 +50,7 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
       )}
       <div className="flex flex-col gap-3">
         {tel && (
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <a href={tel}>
               <Phone aria-hidden="true" strokeWidth={1.5} />
               {isPrivate ? t("callPrivate", { phone: contact.phone! }) : t("call", { phone: contact.phone! })}
@@ -58,7 +58,7 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
           </Button>
         )}
         {mail && (
-          <Button asChild variant={tel ? "secondary" : "default"} size="lg">
+          <Button asChild variant={tel ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <a href={mail}>
               <Mail aria-hidden="true" strokeWidth={1.5} />
               {t("email")}

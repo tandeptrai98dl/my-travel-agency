@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { imageTransformsEnabled, supabaseImageLoader, type ImageData } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -26,11 +26,18 @@ type Props = {
  */
 export function ResponsiveImage({ image, sizes, priority = false, className, zoomOnHover = false }: Props) {
   const [failed, setFailed] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+  // An image that failed before hydration never fires onError: check once after mounting.
+  useEffect(() => {
+    const element = ref.current;
+    if (element && element.complete && element.naturalWidth === 0) setFailed(true);
+  }, []);
   if (!image || failed) return <ImageFrame label={image?.alt} />;
 
   const transforms = imageTransformsEnabled();
   return (
     <Image
+      ref={ref}
       src={image.src}
       alt={image.alt}
       fill
