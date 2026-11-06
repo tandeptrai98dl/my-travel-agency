@@ -162,22 +162,38 @@ jobs:
           for attempt in 1 2 3; do
             timeout -k 15 240 npx playwright install --with-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # `timeout` stops npx but not the apt-get it started, which keeps the dpkg lock and
+            # makes every retry fail. Let it finish (up to 2 min), then stop it.
+            for wait in $(seq 1 60); do
+              sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break
+              sleep 2
+            done
+            sudo pkill -x apt-get || true
+            sudo pkill -x dpkg || true
             # A killed apt/dpkg run can leave the package database half-configured.
             sudo dpkg --configure -a || true
           done
           exit 1
-        timeout-minutes: 14
+        timeout-minutes: 20
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: |
           for attempt in 1 2 3; do
             timeout -k 15 180 npx playwright install-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # `timeout` stops npx but not the apt-get it started, which keeps the dpkg lock and
+            # makes every retry fail. Let it finish (up to 2 min), then stop it.
+            for wait in $(seq 1 60); do
+              sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break
+              sleep 2
+            done
+            sudo pkill -x apt-get || true
+            sudo pkill -x dpkg || true
             # A killed apt/dpkg run can leave the package database half-configured.
             sudo dpkg --configure -a || true
           done
           exit 1
-        timeout-minutes: 10
+        timeout-minutes: 16
       - name: E2E tests
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
