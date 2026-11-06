@@ -32,8 +32,12 @@ export async function Hero({ locale, eyebrow, title, image, destinations, styles
       {image && (
         <div className="absolute inset-0 -z-10">
           <ResponsiveImage image={image} sizes="100vw" priority fallback="none" />
-          {/* Keeps the ivory text readable on any photo (WCAG 1.4.3). */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" aria-hidden="true" />
+          {/* Keeps the text block at 4.5:1 or more on any photo, even a white one (WCAG 1.4.3):
+              behind the text the navy is at least 85-90% opaque (bottom on mobile, left on desktop). */}
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/50 md:bg-gradient-to-r md:from-background md:via-background/85 md:to-background/20"
+            aria-hidden="true"
+          />
         </div>
       )}
       <Container className="flex flex-col gap-8 md:gap-10">
@@ -41,7 +45,7 @@ export async function Hero({ locale, eyebrow, title, image, destinations, styles
           <Eyebrow>{eyebrow ?? t("defaultEyebrow")}</Eyebrow>
           <h1 className="text-balance font-serif text-display font-medium md:text-display-lg">{title ?? t("defaultTitle")}</h1>
           <div aria-hidden="true" className="h-px w-16 bg-gold" />
-          <p className="max-w-2xl text-body-lg text-muted-foreground md:text-body-lg-lg">{t("lead")}</p>
+          <p className={`max-w-2xl text-body-lg md:text-body-lg-lg ${image ? "text-foreground" : "text-muted-foreground"}`}>{t("lead")}</p>
         </div>
         <HeroSearch locale={locale} destinations={destinations} styles={styles} months={months} />
       </Container>
