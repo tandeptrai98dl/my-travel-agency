@@ -47,32 +47,48 @@ None of the gateway accounts exist yet. Every integration has an off mode, and n
    - **`next_booking_code()`** returns codes like `PTA-2611-0042`: the prefix, the Vietnam year and month of creation, then the sequence.
    - **`create_draft_booking(payload jsonb)`** writes the booking, its lines, the tour and cancellation-policy snapshots and the idempotency key, in one transaction. It is idempotent: the same key returns the existing booking. It takes no seats.
    - **`reserve_and_create_payment(booking_id, provider, kind)`**, for `kind` = `deposit` or `full`:
-     - Takes a conditional seat update (`seats_reserved + n <= capacity` on an `open` or `guaranteed` departure), or raises `sold_out`.
+     - Takes a conditional seat update (`seats_reserved + n <= capacity` on an `open` or `guaranteed` departure), or raises `sold_out`. A `quoted` booking takes seats only when it has a `departure_id`; quotes for private tours without a departure take none.
      - Moves the booking to `pending_payment` and creates a `pending` payment whose `expires_at` equals `hold_expires_at`. Hold times come from `settings.booking_rules.hold_minutes` (30 min VNPay, 120 min transfer).
      - Switching method cancels the open payment and starts a new hold window from now, keeping the seats. At most 5 payment attempts per booking, so a hold cannot be extended forever.
      - Also accepts `quoted` bookings (4D), and `balance` payments for confirmed bookings (no seats taken).
    - **`record_payment_event(provider, event_key, payload, reference, amount, provider_txn_id, succeeded)`** is the only way a gateway result reaches the database:
      1. Inserts into `webhook_events` (unique per provider and event key). A repeat returns `duplicate` and changes nothing.
      2. Finds the payment by `reference`. With no match (for example a wrong transfer memo), it stores `error = 'unmatched'` for 4F.
-     3. Checks the amount and records the payment as `succeeded` with the amount actually received. A different amount sets `needs_attention` (`underpaid` or `overpaid`).
-     4. Updates `amount_paid` and `payment_state`, and confirms when paid ≥ deposit.
-     5. A payment arriving after the booking expired tries to take the seats again. If none remain, it keeps the money, sets `needs_attention` (`late_payment_no_seats`) and leaves the booking `expired` (ADR-016).
+     3. **Failed result:** a verified failed result (VNPay `vnp_ResponseCode` other than `00`) marks a `pending` payment `failed`. The booking stays `pending_payment` with its seats until the hold expires, so the customer can retry or switch method. Money is never recorded for a failed result.
+     4. **Success for a `pending` payment:** the payment is recorded as `succeeded` with the amount actually received. A different amount sets `needs_attention` (`underpaid` or `overpaid`); the expected amount goes in the payment's `note`.
+     5. **Success for a payment that is no longer `pending`:**
+        - Covers the old VNPay attempt paid after a method switch cancelled it, a second transfer with the same memo, and a payment for a cancelled or expired booking.
+        - Always inserts a **new** `payments` row for the amount received; a succeeded row is never overwritten. The new row's reference is the old one plus `-<n>`, and its note names the original attempt.
+        - Adds the amount to `amount_paid` and sets `needs_attention`: `overpaid` when the attempt was already paid, `paid_after_switch` when it was cancelled by a method switch, `paid_after_cancel` when the booking is cancelled.
+        - Never confirms a cancelled booking. An expired booking is handled by step 7.
+     6. Updates `amount_paid` and `payment_state`, and confirms a `pending_payment` booking when paid ≥ deposit.
+     7. A payment arriving after the booking expired tries to take the seats again. If none remain, it keeps the money, sets `needs_attention` (`late_payment_no_seats`) and leaves the booking `expired` (ADR-016).
    - **`confirm_payment()`** in `DATABASE.md` is this function; the docs are renamed in 4A.
    - **`expire_holds()`**: overdue `pending_payment` bookings → `expired`, seats released, open payments → `expired`. Scheduled with `pg_cron` every 5 minutes. A job only cleans up; correctness never depends on it.
    - **`cancel_booking(booking_id, actor_id, reason)`**: releases seats held or confirmed, sets `cancelled`, writes the event, and returns the refund the snapshot policy suggests. The refund itself is recorded in 4F.
    - **`complete_bookings()`**: nightly. Confirmed bookings whose end date has passed → `completed`.
    - **`check_seat_invariant()`**: nightly. For each departure, `seats_reserved` must equal the adults + children of its `pending_payment`, `confirmed` and `completed` bookings. Mismatches are written to `audit_logs` (`departures.seat_mismatch`) and raised as a warning for the `pg_cron` failure alert. It never "fixes" seats.
    - **`record_manual_payment(...)`** (4F): accountant or admin at aal2, called from the session client through a definer wrapper that checks `can_act_as('{accountant,admin}')`. A note is required. Used for cash and transfers with a wrong memo.
+   - **`record_refund(booking_id, amount, provider, note)`** (4F), with the same definer wrapper and role check:
+     - A note is required, and the amount must be above 0.
+     - It never refunds more than `amount_paid` (already net of earlier refunds), so the total refunded never exceeds what was received.
+     - It writes a `kind = 'refund'` row, subtracts the amount from `amount_paid` and recomputes `payment_state`.
 5. **Payment references.** A reference is the booking code without dashes plus a 2-digit attempt number, for example `PTA2611004201`. It is a valid bank memo and the VNPay `vnp_TxnRef`. Bank-transfer matching looks for that exact token in the memo, ignoring case and spaces.
 6. **Payment adapter** (`src/modules/payment/providers/*`). Each gateway implements `PaymentProvider` with `createPayment(payment) → { redirectUrl | qr }`, `verifyReturn(query)` (display only), `parseWebhook(request) → verified event | rejection` and `refund?()`.
-   - **VNPay:** HMAC-SHA512 over the sorted, encoded params with `vnp_SecureHash`; amount × 100; `vnp_ExpireDate` = `expires_at` in GMT+7; the IPN answers with VNPay's `RspCode`/`Message` JSON.
+   - **VNPay:** HMAC-SHA512 over the sorted, encoded params with `vnp_SecureHash`; amount × 100; `vnp_ExpireDate` = `expires_at` in GMT+7. The IPN:
+     - checks the signature, then that `vnp_TmnCode` is ours, then that `vnp_Amount / 100` equals the payment's amount;
+     - answers with VNPay's JSON: `97` bad signature, `01` order not found, `04` invalid amount, `02` already confirmed, `00` recorded;
+     - records a signed IPN whose amount does not match through `record_payment_event` with the amount received, so it is flagged (`underpaid`/`overpaid`) and confirms only if the deposit is covered. It answers `04`.
    - **VietQR:** the EMVCo payload is built locally from `settings.bank_account` (BIN, account, amount, memo = reference) and rendered as an SVG QR on the server. The QR library is a dependency added in 4C with its own ADR.
    - **SePay/Casso:** API-key header check with a constant-time comparison; the payload is mapped to the event fields. Source IPs are restricted where the provider publishes them.
+     - **Incoming credits only:** an event is mapped only when SePay sends `transferType = "in"`, or Casso sends `amount > 0`. Anything else (an outgoing refund that quotes the reference, a fee) is logged and ignored with a 200, so it can never count as a payment.
    - **Return pages** show "Đang chờ xác nhận thanh toán" and poll the booking status. They never confirm.
-7. **Checkout access without an account.** Creating the draft sets a `booking_access` cookie: an HMAC (`BOOKING_ACCESS_SECRET`) of the booking id with a 7-day expiry, `httpOnly`, `secure`, `sameSite=lax`, path-scoped to the checkout routes. Checkout pages need that cookie, or a signed-in customer who owns the booking, or (4E) a signed link token from the email. Knowing a booking code alone shows nothing. Guest lookup by code and email arrives in Phase 5.
+7. **Checkout access without an account.** Creating the draft sets a `booking_access` cookie: an HMAC (`BOOKING_ACCESS_SECRET`) of the booking id with a 7-day expiry, `httpOnly`, `secure` and `sameSite=lax`. The path is `/`, because the checkout paths are localized (`/thanh-toan/…`, `/en/checkout/…`); it is one cookie per booking (`booking_access_<code>`), and only checkout routes read it. Checkout pages need that cookie, or a signed-in customer who owns the booking, or (4E) a signed link token from the email. Knowing a booking code alone shows nothing. Guest lookup by code and email arrives in Phase 5.
 8. **Guest writes** follow `ARCHITECTURE.md` "Data flow". A Server Action validates with Zod, checks Turnstile and rate limits, then calls the service, which uses the service role only inside `src/modules/booking`.
    - Rate limits use a fixed window on Upstash REST (the `src/lib/redis.ts` client; no new SDK): 10 draft creations and 10 payment starts per IP per 10 minutes, plus 5 payment starts per booking.
    - Every submit carries an idempotency key generated in the browser and stored with the draft.
+   - **Failure modes:** rate limits fail **open**: if Upstash is unreachable or not configured, the request goes through and the miss is logged (`ratelimit.skipped`). Turnstile fails **closed** in production: a failed or unreachable check refuses the submit.
+   - **What counts as production:** `VERCEL_ENV === "production"`, not `NODE_ENV` (Vercel previews run with `NODE_ENV=production`). Previews and CI use Cloudflare's test keys, and the env schema requires real Turnstile keys only when `VERCEL_ENV` is `production`. The same rule refuses `VNPAY_STUB`.
 9. **Consent and terms.** Paying requires accepting the terms and the privacy policy. Each acceptance is written to `consent_records` with `document_version` = the page key and its `updated_at` (Phase 2 pages), and `bookings.terms_version` stores the same value. Marketing consent is a separate, unticked box.
 10. **VAT invoice** details (company name, tax code validated as in settings, address, email) are optional at checkout. They are stored in `invoice_info` with `invoice_requested`; invoices are issued manually (ADR-016).
 11. **Cache (Phase 3 decision 3).**
@@ -98,7 +114,13 @@ None of the gateway accounts exist yet. Every integration has an off mode, and n
 ## Cross-stream items
 
 - **Cache:** booking functions refresh `tours` and `tour:<id>` (decision 11). Stream B keeps cached cards free of seat counts.
-- **CSP:** checkout and account get their own root layout (decision 12). The move of the public tree into `(public)` is agreed with Stream B before 4B.
+- **CSP and the route-group move:** checkout and account get their own root layout (decision 12).
+  - **Owner:** Stream B. A standalone, mechanical PR (`git mv src/app/[locale]/… src/app/(public)/[locale]/…`, no other changes) lands after one of Stream B's PRs and before 4B.
+  - **Stream A's part:** a throwaway spike during 4A that checks three things and reports them in the 4A PR:
+    1. Next.js 16 accepts two root layouts with a `[locale]` segment in sibling groups;
+    2. the public `[...rest]` catch-all does not swallow the localized checkout paths under next-intl's rewrites;
+    3. each root has its own not-found page.
+  - 4B then only adds the `(secure)` tree.
 - **Booking box:** PR H's `BookingBox` becomes the entry to 4B (decision 13). The URL contract above is fixed now so Stream B can link to it.
 - **`settings.booking_rules`** keeps its shape. Phase 4 reads `hold_minutes`, `balance_reminder_days_before_due`, `booking_lookup_link_minutes` and `booking_cutoff_days` (via `booking_cutoff_days()`). It adds nothing without the settings editor (Stream A owns `settings.schemas.ts`).
 
@@ -111,12 +133,16 @@ One pull request per group, one commit per step. Every function and policy gets 
 1. `pricing.ts` and `state-machine.ts` with unit tests: party rules, deposit rounding, plans, child and infant prices, single rooms, `price_changed`, every allowed and refused transition.
 2. Migration `*_booking_functions.sql`: `next_booking_code()`, `expire_booking_if_due()`, `create_draft_booking()`, `reserve_and_create_payment()`, `record_payment_event()`, `expire_holds()`, `cancel_booking()`, `complete_bookings()`, `check_seat_invariant()`, and a `booking_events` row for each transition. pgTAP covers:
    - draft idempotency;
-   - holds and `sold_out`;
+   - holds and `sold_out`, and a quoted booking without a departure holding no seats;
    - method switch and the attempt limit;
    - `price_changed`;
    - deposit and full confirmation;
    - repeated IPN → `duplicate` with one payment;
+   - a verified failed result → payment `failed`, booking still `pending_payment` with its seats;
    - underpaid and overpaid;
+   - success for a cancelled attempt after a method switch → a new payment row, `paid_after_switch`;
+   - a second success for an attempt already paid → a new row, `overpaid`, the first row unchanged;
+   - success for a cancelled booking → a new row, `paid_after_cancel`, the booking stays cancelled;
    - unmatched references;
    - late payment with and without seats;
    - expiry releasing seats;
@@ -146,7 +172,7 @@ One pull request per group, one commit per step. Every function and policy gets 
 
 10. VNPay adapter with unit tests on VNPay's published test vectors; `/api/payments/vnpay/ipn` (verify, `record_payment_event`, `RspCode`); return route; the CI stub.
 11. VietQR: payload builder (unit-tested), the QR SVG with an ADR for the library, a VietQRPanel with the memo, amount and copy buttons.
-12. `/api/webhooks/bank-transfer` for SePay/Casso: key check, mapping, the source-IP list. E2E with signed test payloads covering underpaid, overpaid, wrong memo and late payment.
+12. `/api/webhooks/bank-transfer` for SePay/Casso: key check, mapping, the source-IP list. E2E with signed test payloads covering underpaid, overpaid, wrong memo, late payment, a second transfer with the same memo, a transfer for a cancelled booking, and an outgoing transfer quoting the reference (ignored, nothing recorded). VNPay IPN E2E: wrong `vnp_TmnCode`, amount mismatch (`04`, flagged), repeated IPN (`02`), failed result, and the old attempt paid after a method switch.
 
 ### PR 4D — Private-tour quotes and payment links
 
@@ -168,6 +194,8 @@ One pull request per group, one commit per step. Every function and policy gets 
 - [ ] E2E booking with a sandbox (stub) payment passes: draft → hold → signed IPN → confirmed, with emails logged
 - [ ] Two customers booking the last seat → exactly one hold succeeds (concurrent test)
 - [ ] A repeated IPN or webhook creates no duplicate payment and no second confirmation
+- [ ] A success for a payment that is no longer pending adds a new payment row and flags the booking; it never overwrites a succeeded row or confirms a cancelled booking
+- [ ] Bank webhooks count incoming credits only
 - [ ] A late IPN is handled on both branches: seats free → confirmed; no seats → money kept, `needs_attention`, staff alerted
 - [ ] The seat invariant holds after the full test run (`check_seat_invariant()` reports nothing)
 - [ ] Prices are never taken from the browser; a price change between draft and payment is shown before paying
