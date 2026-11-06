@@ -128,7 +128,83 @@
       "eyebrow": "Giai đoạn 1",
       "switchDemo": "Nhắc tôi khi có lịch khởi hành mới",
       "notification": "Thông báo"
-    }
+    },
+    "Nav": {
+      "label": "Điều hướng quản trị",
+      "dashboard": "Tổng quan",
+      "auditLog": "Nhật ký thay đổi",
+      "designSystem": "Hệ thống thiết kế",
+      "openMenu": "Mở menu quản trị",
+      "closeMenu": "Đóng menu",
+      "groupGeneral": "Chung",
+      "groupSystem": "Hệ thống",
+      "site": "Xem trang web"
+    },
+    "Shell": {
+      "skipToContent": "Bỏ qua đến nội dung",
+      "account": "Tài khoản",
+      "mfaVerified": "Đã xác thực hai lớp",
+      "mfaNotVerified": "Chưa xác thực hai lớp",
+      "breadcrumb": "Đường dẫn"
+    },
+    "Table": {
+      "empty": "Chưa có dữ liệu.",
+      "emptyFiltered": "Không có kết quả phù hợp với bộ lọc.",
+      "clearFilters": "Xoá bộ lọc",
+      "search": "Tìm kiếm",
+      "apply": "Lọc",
+      "sortBy": "Sắp xếp theo {column}",
+      "pagination": "Phân trang",
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "page": "Trang {page}",
+      "total": "{count, plural, other {# mục}}",
+      "error": "Không tải được dữ liệu. Vui lòng thử lại.",
+      "actions": "Thao tác"
+    },
+    "Form": {
+      "vi": "Tiếng Việt",
+      "en": "Tiếng Anh",
+      "published": "Đã xuất bản",
+      "unpublished": "Chưa xuất bản",
+      "missing": "Còn thiếu thông tin",
+      "slug": "Đường dẫn (slug)",
+      "slugHint": "Chữ thường không dấu, nối bằng gạch ngang.",
+      "generateSlug": "Tạo từ tiêu đề",
+      "slugInvalid": "Đường dẫn chỉ gồm chữ thường không dấu, số và gạch ngang.",
+      "seoTitle": "Tiêu đề SEO",
+      "seoDescription": "Mô tả SEO",
+      "charCount": "{count}/{max} ký tự",
+      "tooLong": "Dài hơn mức hiển thị trên kết quả tìm kiếm.",
+      "amountHint": "Số tiền bằng đồng, không có phần thập phân.",
+      "addItem": "Thêm dòng",
+      "removeItem": "Xoá dòng {index}",
+      "moveUp": "Chuyển dòng {index} lên",
+      "moveDown": "Chuyển dòng {index} xuống",
+      "item": "Dòng {index}",
+      "cancel": "Huỷ",
+      "confirm": "Xác nhận"
+    },
+    "Audit": {
+      "title": "Nhật ký thay đổi",
+      "description": "Mọi thay đổi về tour, nội dung, cài đặt và tài khoản nhân viên, kèm giá trị trước và sau.",
+      "entity": "Đối tượng",
+      "action": "Thao tác",
+      "actor": "Người thực hiện",
+      "time": "Thời gian",
+      "system": "Hệ thống",
+      "details": "Xem thay đổi",
+      "allEntities": "Tất cả đối tượng",
+      "entityId": "Mã đối tượng",
+      "actions": {
+        "insert": "Tạo",
+        "update": "Sửa",
+        "delete": "Xoá"
+      },
+      "changes": "Thay đổi"
+    },
+    "roleLabel": "Vai trò",
+    "mfaLabel": "Xác thực hai lớp"
   },
   "Navigation": {
     "primary": "Điều hướng chính",

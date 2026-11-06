@@ -1,0 +1,45 @@
+import type { Permission } from "@/lib/auth/permissions";
+
+/** Icons are named, not imported, so this list stays importable from server and client code. */
+export type AdminNavIcon = "dashboard" | "audit" | "design";
+
+export type AdminNavItem = {
+  href: string;
+  /** Key in the `Admin.Nav` messages. */
+  labelKey: "dashboard" | "auditLog" | "designSystem";
+  icon: AdminNavIcon;
+  /** Shown only to roles holding it; the page and its actions check it again on the server. */
+  permission: Permission;
+  /** Only in development (or when SHOW_DESIGN_SYSTEM is set). */
+  devOnly?: boolean;
+};
+
+export type AdminNavGroup = { labelKey: "groupGeneral" | "groupSystem"; items: AdminNavItem[] };
+
+// Sections are added here as their pages land (Phase 2 PRs B–G), so the menu never links to a
+// page that does not exist yet.
+export const ADMIN_NAV: AdminNavGroup[] = [
+  {
+    labelKey: "groupGeneral",
+    items: [{ href: "/admin", labelKey: "dashboard", icon: "dashboard", permission: "dashboard.view" }],
+  },
+  {
+    labelKey: "groupSystem",
+    items: [
+      { href: "/admin/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read" },
+      {
+        href: "/admin/design-system",
+        labelKey: "designSystem",
+        icon: "design",
+        permission: "dashboard.view",
+        devOnly: true,
+      },
+    ],
+  },
+];
+
+/** Whether `pathname` is the item's page or one of its sub-pages (/admin only matches itself). */
+export function isActive(href: string, pathname: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}

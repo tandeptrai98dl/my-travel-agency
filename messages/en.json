@@ -128,7 +128,83 @@
       "eyebrow": "Phase 1",
       "switchDemo": "Remind me about new departures",
       "notification": "Notification"
-    }
+    },
+    "Nav": {
+      "label": "Admin navigation",
+      "dashboard": "Overview",
+      "auditLog": "Audit log",
+      "designSystem": "Design system",
+      "openMenu": "Open admin menu",
+      "closeMenu": "Close menu",
+      "groupGeneral": "General",
+      "groupSystem": "System",
+      "site": "View website"
+    },
+    "Shell": {
+      "skipToContent": "Skip to content",
+      "account": "Account",
+      "mfaVerified": "Two-factor verified",
+      "mfaNotVerified": "Two-factor not verified",
+      "breadcrumb": "Breadcrumb"
+    },
+    "Table": {
+      "empty": "Nothing here yet.",
+      "emptyFiltered": "Nothing matches these filters.",
+      "clearFilters": "Clear filters",
+      "search": "Search",
+      "apply": "Filter",
+      "sortBy": "Sort by {column}",
+      "pagination": "Pagination",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {page}",
+      "total": "{count, plural, one {# item} other {# items}}",
+      "error": "Could not load the data. Please try again.",
+      "actions": "Actions"
+    },
+    "Form": {
+      "vi": "Vietnamese",
+      "en": "English",
+      "published": "Published",
+      "unpublished": "Not published",
+      "missing": "Missing information",
+      "slug": "URL slug",
+      "slugHint": "Lower-case letters without accents, joined by hyphens.",
+      "generateSlug": "Generate from title",
+      "slugInvalid": "Use only lower-case letters without accents, digits and hyphens.",
+      "seoTitle": "SEO title",
+      "seoDescription": "SEO description",
+      "charCount": "{count}/{max} characters",
+      "tooLong": "Longer than search results usually show.",
+      "amountHint": "Amount in dong, no decimals.",
+      "addItem": "Add line",
+      "removeItem": "Remove line {index}",
+      "moveUp": "Move line {index} up",
+      "moveDown": "Move line {index} down",
+      "item": "Line {index}",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "Audit": {
+      "title": "Audit log",
+      "description": "Every change to tours, content, settings and staff accounts, with before and after values.",
+      "entity": "Entity",
+      "action": "Action",
+      "actor": "Actor",
+      "time": "Time",
+      "system": "System",
+      "details": "Show changes",
+      "allEntities": "All entities",
+      "entityId": "Entity ID",
+      "actions": {
+        "insert": "Created",
+        "update": "Updated",
+        "delete": "Deleted"
+      },
+      "changes": "Changes"
+    },
+    "roleLabel": "Role",
+    "mfaLabel": "Two-factor authentication"
   },
   "Navigation": {
     "primary": "Main navigation",
