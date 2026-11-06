@@ -94,9 +94,9 @@ jobs:
           test "$roles" = "customer,sales,sales_manager,operator,accountant,editor,admin"
 
   build-e2e:
-    name: Build and E2E smoke
+    name: Build and E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -104,7 +104,30 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # E2E runs against a real local stack: sign-in, roles, MFA and the health check.
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,mailpit
+        timeout-minutes: 10
+      - name: Read local Supabase settings
+        id: supabase
+        run: |
+          eval "$(npx supabase status -o env)"
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+          echo "publishable_key=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_OUTPUT"
+          echo "service_key=${SERVICE_ROLE_KEY:-$SECRET_KEY}" >> "$GITHUB_OUTPUT"
+      - name: Seed sample users
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
+          SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
+          SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
+        run: npm run seed:users
+      # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
+      # Phase 0 never uses the service role in the app, and the leak check below needs them.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
+        run: npm run build
       - name: Check that server-only values did not leak into client bundles
         run: |
           if grep -rlE "sb_secret_ci_sentinel_value_never_in_client|ci_cron_sentinel_never_in_client" .next/static; then
@@ -132,8 +155,13 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
         timeout-minutes: 5
-      - run: npm run test:e2e
-        timeout-minutes: 5
+      - name: E2E tests
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
+          SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
+        run: npm run test:e2e
+        timeout-minutes: 8
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
