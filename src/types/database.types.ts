@@ -879,7 +879,7 @@ isOneToOne: false
 { Args: { "doc": Json }; Returns: boolean
                            },
 "rich_text_media_ids":
-{ Args: { "doc": Json }; Returns: string[]
+{ Args: { "doc": Json }; Returns: (string)[]
                            },
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined

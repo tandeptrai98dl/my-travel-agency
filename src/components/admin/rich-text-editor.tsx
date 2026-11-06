@@ -117,7 +117,7 @@ export function RichTextEditor({ value, onChange, onBlur, media, pickerLabels, l
         ...(invalid ? { "aria-invalid": "true" } : {}),
         class: cn(
           "min-h-48 max-w-none px-4 py-3 text-body focus-visible:outline-none",
-          "[&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gold [&_blockquote]:pl-4 [&_blockquote]:italic",
+          "[&_a]:py-1 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gold [&_blockquote]:pl-4 [&_blockquote]:italic",
           "[&_h2]:mt-6 [&_h2]:font-serif [&_h2]:text-h3 [&_h3]:mt-4 [&_h3]:font-semibold",
           "[&_img]:my-4 [&_img]:max-h-80 [&_img]:w-auto [&_img.ProseMirror-selectednode]:outline [&_img.ProseMirror-selectednode]:outline-2 [&_img.ProseMirror-selectednode]:outline-ring",
           "[&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&>*:first-child]:mt-0",
