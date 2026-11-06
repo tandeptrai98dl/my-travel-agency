@@ -121,9 +121,20 @@ export async function getDestinationPage(locale: Locale, slug: string): Promise<
   }
 
   const destination = data.destinations;
-  const [index, slugs] = await Promise.all([loadIndex(locale), repo.findDestinationSlugs(destination.id)]);
+  const [indexes, slugs] = await Promise.all([
+    Promise.all(LOCALES.map(async (l) => [l, await loadIndex(l)] as const)),
+    repo.findDestinationSlugs(destination.id),
+  ]);
   if (slugs.error) fail("destination slugs", slugs.error);
+  const indexOf = new Map(indexes);
+  const index = indexOf.get(locale)!;
   const found = findInIndex(index, destination.id);
+  // A language is available only where the destination is reachable in that language's tree (a
+  // hidden parent there would make its page a 404), not merely where its translation is published.
+  const visibleSlugs = (slugs.data ?? []).filter((row) => {
+    const tree = indexOf.get(row.locale as Locale);
+    return tree ? findInIndex(tree, destination.id) !== null : false;
+  });
   // Published and translated, but under a hidden parent: not reachable from the tree, so not shown.
   if (!found) return { kind: "missing" };
 
@@ -151,7 +162,7 @@ export async function getDestinationPage(locale: Locale, slug: string): Promise<
       children: found.node.children,
       tourCount: found.node.tourCount,
       tours,
-      alternates: localeLinks("/destinations/[slug]", slugs.data ?? [], "/destinations"),
+      alternates: localeLinks("/destinations/[slug]", visibleSlugs, "/destinations"),
     },
   };
 }

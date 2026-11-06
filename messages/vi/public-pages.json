@@ -8,6 +8,7 @@
     "eyebrow": "Nơi chúng tôi đưa bạn đến",
     "intro": "Từ vịnh đá vôi phía Bắc đến những khu vườn thiền ở Kyoto: chọn một vùng đất để xem các hành trình ở đó.",
     "tourCount": "{count, plural, =0 {Chưa có hành trình} other {# hành trình}}",
+    "tourCountCapped": "{shown} trên {count} hành trình",
     "bestTime": "Thời điểm đẹp: {value}",
     "bestTimeLabel": "Thời điểm đẹp nhất",
     "toursLabel": "Hành trình",

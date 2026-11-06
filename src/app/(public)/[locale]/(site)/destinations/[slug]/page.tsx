@@ -83,7 +83,14 @@ export default async function DestinationPageRoute({ params }: Props) {
   const parent = page.ancestors.at(-1);
   const facts = [
     page.bestTime ? { label: t("bestTimeLabel"), value: page.bestTime } : null,
-    { label: t("toursLabel"), value: t("tourCount", { count: page.tourCount }) },
+    {
+      label: t("toursLabel"),
+      // The grid stops at the search_tours cap (48) until the listing's "see all" link (PR L).
+      value:
+        page.tourCount > page.tours.length
+          ? t("tourCountCapped", { shown: page.tours.length, count: page.tourCount })
+          : t("tourCount", { count: page.tourCount }),
+    },
   ].filter((fact): fact is { label: string; value: string } => fact !== null);
 
   return (

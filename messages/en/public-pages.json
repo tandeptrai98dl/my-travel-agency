@@ -8,6 +8,7 @@
     "eyebrow": "Where we take you",
     "intro": "From the limestone bays of the north to the Zen gardens of Kyoto: choose a place to see its journeys.",
     "tourCount": "{count, plural, =0 {No journeys yet} one {# journey} other {# journeys}}",
+    "tourCountCapped": "{shown} of {count} journeys",
     "bestTime": "Best time: {value}",
     "bestTimeLabel": "Best time to visit",
     "toursLabel": "Journeys",
