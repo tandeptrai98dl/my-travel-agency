@@ -30,7 +30,7 @@
         "status": "Trạng thái",
         "seats": "Đã giữ / sức chứa",
         "price": "Giá người lớn",
-        "note": "Ghi chú",
+        "note": "Ghi chú cho khách",
         "start": "Khởi hành",
         "end": "Về",
         "result": "Kết quả"
@@ -68,7 +68,7 @@
       "capacity": "Sức chứa (chỗ)",
       "capacityHint": "Số chỗ cho người lớn và trẻ em; em bé không chiếm chỗ.",
       "initialStatus": "Trạng thái ban đầu",
-      "note": "Ghi chú nội bộ",
+      "note": "Ghi chú (hiển thị cho khách)",
       "pricesTitle": "Giá",
       "pricesPrefilled": "Đã điền sẵn giá của chuyến gần nhất; bạn có thể sửa.",
       "pricesFirst": "Tour chưa có chuyến nào: nhập giá cho chuyến đầu tiên.",
@@ -136,7 +136,8 @@
         "hasBookings": "Chuyến đã có booking nên không xoá được; hãy đổi trạng thái thay vì xoá.",
         "duplicate": "Tour đã có chuyến khởi hành vào ngày này.",
         "failed": "Không lưu được. Vui lòng thử lại."
-      }
+      },
+      "noteHint": "Khách thấy ghi chú này trên trang tour, ví dụ “Khởi hành sớm 6:00”. Không ghi chú nội bộ ở đây."
     }
   }
 }

@@ -331,6 +331,7 @@ export function DepartureBulkCreator({ tours, initialTourId, canEditPrices }: Pr
                 <FormControl>
                   <Textarea rows={2} maxLength={500} {...field} value={field.value ?? ""} />
                 </FormControl>
+                <FormDescription>{t("noteHint")}</FormDescription>
                 <FormMessage formatMessage={errorText} />
               </FormItem>
             )}

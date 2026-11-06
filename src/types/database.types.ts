@@ -863,8 +863,23 @@ isOneToOne: false
 "is_valid_slug":
 { Args: { "slug": string }; Returns: boolean
                            },
+"lock_tour_row":
+{ Args: { "target_id": string }; Returns: undefined
+                           },
 "media_alt_complete":
 { Args: { "media_id": string }; Returns: boolean
+                           },
+"media_used_in_content":
+{ Args: { "target_id": string }; Returns: boolean
+                           },
+"rich_text_alt_complete":
+{ Args: { "doc": Json }; Returns: boolean
+                           },
+"rich_text_is_empty":
+{ Args: { "doc": Json }; Returns: boolean
+                           },
+"rich_text_media_ids":
+{ Args: { "doc": Json }; Returns: (string)[]
                            },
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined

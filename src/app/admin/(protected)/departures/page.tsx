@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { currentQuery, listHref, parseListParams } from "@/lib/admin/list-params";
 import { can, rolesFor } from "@/lib/auth/permissions";
-import { addMonths, monthOf, monthWeeks, todayInVietnam } from "@/lib/dates";
+import { monthOf, monthWeeks, todayInVietnam } from "@/lib/dates";
 import { formatVnd } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +24,8 @@ import {
   departureListFilters,
   DEPARTURES_PAGE_SIZE,
   departureView,
+  monthSteps,
+  monthWindow,
 } from "@/modules/catalog/departures/departures.schemas";
 import {
   CALENDAR_LIMIT,
@@ -103,7 +105,7 @@ async function DepartureList({ searchParams, canEdit }: Props & { canEdit: boole
 
   // Months to filter by: a year back, a year and a half ahead (the seed and sales plan seasons).
   const thisMonth = monthOf(today);
-  const months = Array.from({ length: 31 }, (_, i) => addMonths(thisMonth, i - 12));
+  const months = monthWindow(thisMonth);
   const monthLabel = (month: string) =>
     t("Departures.monthOption", { month: Number(month.slice(5)), year: month.slice(0, 4) });
 
@@ -161,6 +163,7 @@ async function DepartureList({ searchParams, canEdit }: Props & { canEdit: boole
           filters={filters}
           query={query}
           today={today}
+          steps={monthSteps(filters.month ?? thisMonth, thisMonth)}
           editHref={editHref}
           labels={{
             status: statusLabel,
@@ -317,11 +320,14 @@ async function CalendarView({
   filters,
   query,
   today,
+  steps,
   editHref,
   labels,
 }: Shared & {
   month: string;
   today: string;
+  /** Clamped to the months the filter offers. */
+  steps: { previous: string | null; next: string | null };
   labels: {
     status: (status: DepartureListItem["status"]) => string;
     seats: (item: DepartureListItem) => string;
@@ -340,18 +346,32 @@ async function CalendarView({
           {labels.monthLabel(month)}
         </h2>
         <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={monthHref(addMonths(month, -1))}>
+          {steps.previous ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={monthHref(steps.previous)}>
+                <ChevronLeft strokeWidth={1.5} aria-hidden="true" />
+                {t("previousMonth")}
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
               <ChevronLeft strokeWidth={1.5} aria-hidden="true" />
               {t("previousMonth")}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href={monthHref(addMonths(month, 1))}>
+            </Button>
+          )}
+          {steps.next ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={monthHref(steps.next)}>
+                {t("nextMonth")}
+                <ChevronRight strokeWidth={1.5} aria-hidden="true" />
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
               {t("nextMonth")}
               <ChevronRight strokeWidth={1.5} aria-hidden="true" />
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
       <p className="text-small text-muted-foreground">{t("monthTotal", { count: total })}</p>

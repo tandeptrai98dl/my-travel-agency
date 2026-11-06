@@ -2,7 +2,7 @@
 -- reserved seats, cancelling only by an MFA-verified admin and only without open bookings, and a
 -- published group tour keeps a departure that is not cancelled.
 begin;
-select plan(18);
+select plan(23);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -18,9 +18,11 @@ $$;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-4000-8000-000000000512', 'operator-d@example.test', '{}'),
   ('00000000-0000-4000-8000-000000000515', 'admin-d@example.test', '{}'),
-  ('00000000-0000-4000-8000-000000000516', 'customer-d@example.test', '{}');
+  ('00000000-0000-4000-8000-000000000516', 'customer-d@example.test', '{}'),
+  ('00000000-0000-4000-8000-000000000517', 'editor-d@example.test', '{}');
 update public.profiles set role = 'operator' where id = '00000000-0000-4000-8000-000000000512';
 update public.profiles set role = 'admin' where id = '00000000-0000-4000-8000-000000000515';
+update public.profiles set role = 'editor' where id = '00000000-0000-4000-8000-000000000517';
 
 insert into public.media (id, path, mime_type, size_bytes, alt) values
   ('80000000-0000-4000-8000-000000000501', '2026/01/80000000-0000-4000-8000-000000000501.jpg',
@@ -164,6 +166,45 @@ reset role;
 select ok(
   not has_function_privilege('anon', 'public.departure_has_open_bookings(uuid)', 'execute'),
   'anon cannot call the booking helper'
+);
+
+-- Moving a departure to another tour (PR 13 review) ----------------------------------------------
+-- D2 is now the published tour's only departure that is not cancelled.
+select pg_temp.claims('00000000-0000-4000-8000-000000000512');
+set local role authenticated;
+select throws_ok(
+  $$ update public.departures set tour_id = '40000000-0000-4000-8000-000000000502'
+     where id = '20000000-0000-4000-8000-000000000502' $$,
+  '42501', null, 'the API cannot move a departure to another tour (no column grant)'
+);
+reset role;
+select throws_ok(
+  $$ update public.departures set tour_id = '40000000-0000-4000-8000-000000000502'
+     where id = '20000000-0000-4000-8000-000000000502' $$,
+  '23514', 'a published group tour keeps at least one departure that is not cancelled',
+  'even the owner cannot move a published tour''s last departure away'
+);
+
+-- The booking helper answers only for roles with booking access (PR 13 review) -------------------
+select pg_temp.claims('00000000-0000-4000-8000-000000000512');
+set local role authenticated;
+select is(
+  public.departure_has_open_bookings('20000000-0000-4000-8000-000000000502'),
+  true,
+  'an operator sees open bookings on a departure'
+);
+reset role;
+select pg_temp.claims('00000000-0000-4000-8000-000000000517');
+set local role authenticated;
+select is(
+  public.departure_has_open_bookings('20000000-0000-4000-8000-000000000502'),
+  false,
+  'an editor (no booking access) learns nothing from the helper'
+);
+reset role;
+select ok(
+  not has_function_privilege('anon', 'public.lock_tour_row(uuid)', 'execute'),
+  'anon cannot call the tour lock helper'
 );
 
 select * from finish();

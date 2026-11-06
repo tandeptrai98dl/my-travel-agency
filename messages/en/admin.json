@@ -134,7 +134,9 @@
       "policies": "Cancellation policies",
       "groupCatalog": "Catalog",
       "tours": "Tours",
-      "departures": "Departures"
+      "departures": "Departures",
+      "journal": "Journal",
+      "pages": "Pages"
     },
     "Shell": {
       "skipToContent": "Skip to content",
