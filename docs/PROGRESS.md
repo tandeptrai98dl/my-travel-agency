@@ -5,18 +5,31 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR E (departures), then journal, pages, reviews, redirects, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 — design system and mockups in Claude Design, then homepage, tour detail, destinations, static pages and tour listing. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR F (journal, pages, reviews, redirects), then PR G (settings and staff) (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 — design system and mockups in Claude Design, then homepage, tour detail, destinations, static pages and tour listing. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
 Phase 2 polish PR:
 - `updateTourLinks` writes destinations, styles and gallery one after another without a transaction; a failure partway leaves some link changes applied (move into a Postgres function if it matters).
-- PR E: an operator can cancel or delete every departure of a published group tour, leaving nothing to book; add a check or warning.
+- Departure rules (PR E review): lock the tour row in the last-departure trigger (two concurrent removals can both pass; same race in `check_tour_publishable`); narrow `departure_has_open_bookings()` to roles with booking access; pgTAP for moving a departure to another tour; calendar links past year 9999. Stream A fixes these first in PR F.
 - No explicit "remove language" action on tours (clearing the title is refused); add one with a confirmation and a 301 when the language was published.
 - `tests/e2e/tours.spec.ts` finds the header status badge with `xpath=../..`; give `PageHeader` a labelled container.
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR E: departures)
+
+PR #13, branch `feat/p2-departures` (spec steps 14–16, ADR-026).
+
+- Done:
+  - `/admin/departures`: table and month calendar, filtered by tour, status and month; seats shown as reserved / capacity.
+  - Bulk creation: weekday pattern or a list of dates, with a server preview; duplicates are skipped and reported; prices copied from the latest departure for non-admins.
+  - Editor: status, capacity (never below the reserved seats), note, admin-only prices, delete.
+  - Migration `20261108100000_departure_rules.sql`: capacity check; cancel and reopen only by an MFA-verified admin and never with pending or confirmed bookings; a published group tour keeps a departure that is not cancelled (closes the PR 11 backlog item).
+- Verified: lint, typecheck, 298 unit tests, pgTAP 171 assertions locally (05: 18; dropping the trigger fails 7), production build; CI green incl. 64 E2E (3 new: operator bulk create, edit, delete; calendar; read-only sales).
+- Deviations: minimum travellers is read-only on the departure (it is a tour field); dates cannot be edited after creation; the admin-only paths are tested in pgTAP and unit tests, not E2E.
+- Independent review: approved; backlog below.
 
 ### 2026-11-07 (workflow — ADR-025: parallel streams, messages per area)
 
