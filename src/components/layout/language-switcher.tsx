@@ -2,13 +2,14 @@
 
 import NextLink from "next/link";
 import { useParams } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
 import { useLocaleAlternates } from "./locale-alternates";
+import { useLabels } from "./labels";
 
 type Props = {
   className?: string;
@@ -26,7 +27,7 @@ type Props = {
  * mobile menu and the footer; colours follow the surrounding theme.
  */
 export function LanguageSwitcher({ className, landmark = true }: Props) {
-  const t = useTranslations("LanguageSwitcher");
+  const t = useLabels("LanguageSwitcher");
   const currentLocale = useLocale();
   const pathname = usePathname();
   const params = useParams();

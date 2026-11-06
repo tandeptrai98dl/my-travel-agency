@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import {
   ESSENTIAL_ONLY,
   readConsentCookie,
 } from "@/lib/consent";
+import { useLabels } from "./labels";
 
 // The settings dialog (Radix dialog + switch) loads only when opened, keeping it out of the
 // initial JS on public pages.
@@ -32,7 +32,7 @@ function focusMain() {
  * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
  */
 export function CookieConsentBanner() {
-  const t = useTranslations("Consent");
+  const t = useLabels("Consent");
   const titleId = useId();
   const [decided, setDecided] = useState<ConsentChoice | null | undefined>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);

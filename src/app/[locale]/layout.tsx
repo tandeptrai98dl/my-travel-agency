@@ -6,6 +6,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { fontVariables } from "@/app/fonts";
 import { ContactFloatingButton } from "@/components/layout/contact-floating-button";
 import { CookieConsentBanner } from "@/components/layout/cookie-consent-banner";
+import { LabelsProvider, type LabelTree } from "@/components/layout/labels";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { routing } from "@/i18n/routing";
@@ -47,13 +48,17 @@ export default async function LocaleLayout({ children, params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
-  // Only the namespaces client components use; everything else stays on the server.
+  // Client strings: the shell's plain labels go through a light context (no message formatter in
+  // the initial JS, Phase 3 spec decision 16); next-intl's provider keeps only what client
+  // components format with it (the tour error page).
   const messages = await getMessages();
+  const plain = (namespace: string) => messages[namespace] as Record<string, string>;
+  const labels: LabelTree = {
+    LanguageSwitcher: plain("LanguageSwitcher"),
+    Navigation: plain("Navigation"),
+    Consent: plain("Consent"),
+  };
   const clientMessages = {
-    LanguageSwitcher: messages.LanguageSwitcher,
-    Navigation: messages.Navigation,
-    Consent: messages.Consent,
-    // The tour page's error boundary is a client component (Phase 3 spec decision 12).
     TourDetail: { error: (messages.TourDetail as Record<string, unknown> | undefined)?.error },
   } as typeof messages;
 
@@ -70,6 +75,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} className={fontVariables}>
       <body className="flex min-h-screen flex-col">
         <NextIntlClientProvider messages={clientMessages}>
+          <LabelsProvider labels={labels}>
           <a
             href="#main"
             className="sr-only z-50 rounded-md bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -83,6 +89,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <SiteFooter settings={settings} brandName={brandName} locale={locale} />
           <ContactFloatingButton contact={settings.contact} />
           <CookieConsentBanner />
+          </LabelsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

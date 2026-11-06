@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -9,6 +8,7 @@ import type { DestinationNode } from "@/modules/catalog/destinations";
 
 import { LanguageSwitcher } from "./language-switcher";
 import { PRIMARY_NAV } from "./nav-items";
+import { useLabels } from "./labels";
 
 type Props = {
   destinations: DestinationNode[];
@@ -19,7 +19,7 @@ type Props = {
 
 /** The mobile menu sheet: focus trap, closed by Escape or any link. Loaded on first open. */
 export default function MobileNavSheet({ destinations, open, onOpenChange, returnFocusTo }: Props) {
-  const t = useTranslations("Navigation");
+  const t = useLabels("Navigation");
   const [tours, ...rest] = PRIMARY_NAV;
   const itemClass = "flex min-h-11 items-center border-b border-border py-3 text-body-lg font-medium";
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Link, usePathname } from "@/i18n/navigation";
@@ -11,6 +10,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { MegaMenu } from "./mega-menu";
 import { MobileNav } from "./mobile-nav";
 import { OVERLAY_HEADER_ROUTES } from "./nav-items";
+import { useLabels } from "./labels";
 
 type Props = { brandName: string; destinations: DestinationNode[] };
 
@@ -19,7 +19,7 @@ type Props = { brandName: string; destinations: DestinationNode[] };
  * scrolls. Desktop shows the mega menu; small screens get the mobile sheet.
  */
 export function SiteHeader({ brandName, destinations }: Props) {
-  const t = useTranslations("Navigation");
+  const t = useLabels("Navigation");
   const pathname = usePathname();
   const overlay = OVERLAY_HEADER_ROUTES.has(pathname);
   const [scrolled, setScrolled] = useState(false);
