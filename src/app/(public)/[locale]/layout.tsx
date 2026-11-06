@@ -13,7 +13,7 @@ import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
-import "../globals.css";
+import "../../globals.css";
 
 type Props = {
   children: React.ReactNode;
