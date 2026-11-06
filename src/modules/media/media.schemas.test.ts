@@ -20,12 +20,28 @@ describe("media schemas", () => {
     expect(createUploadSchema.safeParse({ fileName: "a.jpg", size: 0, contentType: "image/jpeg" }).success).toBe(false);
   });
 
-  it("only finalizes server-generated paths", () => {
-    const ok = "2026/11/0f8fad5b-d9cb-469f-a165-70867728950e.jpg";
-    expect(finalizeUploadSchema.safeParse({ path: ok }).success).toBe(true);
-    for (const path of ["../2026/11/x.jpg", "2026/11/0f8fad5b-d9cb-469f-a165-70867728950e.svg", "private/x.jpg", `${ok}/..`]) {
-      expect(finalizeUploadSchema.safeParse({ path }).success, path).toBe(false);
+  it("only finalizes server-generated staging paths", () => {
+    const user = "00000000-0000-4000-8000-000000000014";
+    const ok = `pending/${user}/0f8fad5b-d9cb-469f-a165-70867728950e.jpg`;
+    expect(finalizeUploadSchema.safeParse({ path: ok, fileName: "a.jpg" }).success).toBe(true);
+    for (const path of [
+      "2026/11/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+      `pending/${user}/../x.jpg`,
+      `pending/${user}/0f8fad5b-d9cb-469f-a165-70867728950e.svg`,
+      `pending/x/0f8fad5b-d9cb-469f-a165-70867728950e.jpg`,
+      `${ok}/..`,
+    ]) {
+      expect(finalizeUploadSchema.safeParse({ path, fileName: "a.jpg" }).success, path).toBe(false);
     }
+  });
+
+  it("keeps the uploaded file name without control characters, capped at 255", () => {
+    const parsed = finalizeUploadSchema.parse({
+      path: "pending/00000000-0000-4000-8000-000000000014/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+      fileName: ` Vịnh\u0000 Hạ Long\n.jpg${"x".repeat(300)}`,
+    });
+    expect(parsed.fileName.startsWith("Vịnh Hạ Long.jpg")).toBe(true);
+    expect(parsed.fileName).toHaveLength(255);
   });
 
   it("checks that the real type matches the stored extension", () => {

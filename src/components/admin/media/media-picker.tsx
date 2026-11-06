@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Search } from "lucide-react";
-import { useCallback, useEffect, useId, useState, useTransition } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,9 @@ type Props = {
  */
 export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Props) {
   const searchId = useId();
+  const baseId = useId();
+  /** Only the latest request may change the grid (a slow first page must not replace a search). */
+  const requestRef = useRef(0);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -64,7 +67,9 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
   const load = useCallback(
     (query: string, nextPage: number) =>
       startTransition(async () => {
+        const request = ++requestRef.current;
         const result = await browseMedia({ q: query, page: nextPage });
+        if (request !== requestRef.current) return;
         if (!result.ok) {
           setError(labels.forbidden);
           return;
@@ -72,7 +77,12 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
         setError(null);
         setPageCount(result.value.pageCount);
         setPage(nextPage);
-        setItems((current) => (nextPage === 1 ? result.value.items : [...current, ...result.value.items]));
+        setItems((current) => {
+          if (nextPage === 1) return result.value.items;
+          // Uploads made in the dialog are already at the top; do not list them twice.
+          const known = new Set(current.map((item) => item.id));
+          return [...current, ...result.value.items.filter((item) => !known.has(item.id))];
+        });
       }),
     [labels.forbidden],
   );
@@ -134,13 +144,15 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5">
               {items.map((item) => {
                 const isSelected = selected.has(item.id);
-                const name = item.alt.vi || item.alt.en || item.path;
+                const name = item.alt.vi || item.alt.en || item.originalName || item.path;
+                const altNoteId = `${baseId}-alt-${item.id}`;
                 return (
                   <li key={item.id}>
                     <button
                       type="button"
                       aria-pressed={isSelected}
                       aria-label={name}
+                      aria-describedby={item.altComplete ? undefined : altNoteId}
                       onClick={() => toggle(item)}
                       className={cn(
                         "relative block aspect-square w-full overflow-hidden bg-secondary bg-cover outline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -156,7 +168,10 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
                         </span>
                       )}
                       {!item.altComplete && (
-                        <span className="absolute inset-x-0 bottom-0 bg-warning px-1 text-[0.6875rem] font-semibold text-warning-foreground">
+                        <span
+                          id={altNoteId}
+                          className="absolute inset-x-0 bottom-0 bg-warning px-1 text-[0.6875rem] font-semibold text-warning-foreground"
+                        >
                           {labels.altMissing}
                         </span>
                       )}
@@ -167,9 +182,10 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
             </ul>
           )}
           {pending && <Spinner label={labels.loading} className="mt-4" />}
-          {page < pageCount && !pending && (
+          {/* Stays mounted while loading so keyboard focus is not lost. */}
+          {page < pageCount && (
             <div className="mt-4 flex justify-center">
-              <Button type="button" variant="ghost" onClick={() => load(q, page + 1)}>
+              <Button type="button" variant="ghost" aria-disabled={pending} onClick={() => !pending && load(q, page + 1)}>
                 {labels.loadMore}
               </Button>
             </div>

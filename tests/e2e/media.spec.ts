@@ -14,7 +14,7 @@ const PNG = Buffer.from(
 const FAKE_PNG = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
 
 async function upload(page: Page, name: string, buffer: Buffer) {
-  await page.getByLabel("Chọn ảnh").setInputFiles({ name, mimeType: "image/png", buffer });
+  await page.locator('input[type="file"]').setInputFiles({ name, mimeType: "image/png", buffer });
 }
 
 test.describe("media library", () => {
@@ -40,6 +40,18 @@ test.describe("media library", () => {
     const card = page.getByRole("button", { name: /^Sửa ảnh:/ }).first();
     await expect(card).toContainText("Thiếu mô tả");
     await expect(card).toContainText("Ảnh nhỏ hơn 2400 px");
+    // Only the server's re-encoded copy is public, at a server-generated path (ADR-023).
+    await expect(card.locator("img")).toHaveAttribute(
+      "src",
+      /\/storage\/v1\/object\/public\/media\/\d{4}\/\d{2}\/[0-9a-f-]{36}\.png$/,
+    );
+
+    // Search by the file name as uploaded.
+    const search = page.getByRole("searchbox", { name: "Tìm theo mô tả hoặc tên tệp" });
+    await search.fill("vinh-ha-long");
+    await page.getByRole("button", { name: "Lọc" }).click();
+    await expect(page).toHaveURL(/q=vinh-ha-long/);
+    await expect(card).toBeVisible();
 
     // Alt text in both languages.
     await card.click();
@@ -55,7 +67,7 @@ test.describe("media library", () => {
     await expect(described).not.toContainText("Thiếu mô tả");
 
     // Search by alt text.
-    await page.getByRole("searchbox", { name: "Tìm theo mô tả hoặc tên tệp" }).fill("bình minh");
+    await search.fill("bình minh");
     await page.getByRole("button", { name: "Lọc" }).click();
     await expect(page).toHaveURL(/q=b%C3%ACnh/);
     await expect(described).toBeVisible();
@@ -67,6 +79,8 @@ test.describe("media library", () => {
     await confirm.getByRole("button", { name: "Xoá ảnh" }).click();
     await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText("Đã xoá ảnh")).toBeVisible();
     await expect(described).toHaveCount(0);
+    // The card (and the dialog's trigger) is gone, so focus moves to the page, not the body.
+    await expect(page.locator("#admin-main")).toBeFocused();
   });
 
   test("the media picker selects images and can upload inline", async ({ page }) => {
@@ -75,7 +89,7 @@ test.describe("media library", () => {
     await page.goto("/admin/design-system");
     await page.getByRole("button", { name: "Mở thư viện ảnh" }).click();
     const picker = page.getByRole("dialog", { name: "Chọn ảnh" });
-    await picker.getByLabel("Chọn ảnh").setInputFiles({ name: "picker.png", mimeType: "image/png", buffer: PNG });
+    await picker.locator('input[type="file"]').setInputFiles({ name: "picker.png", mimeType: "image/png", buffer: PNG });
     // Uploaded images are selected straight away.
     const selected = picker.getByRole("button", { pressed: true });
     await expect(selected).toHaveCount(1);

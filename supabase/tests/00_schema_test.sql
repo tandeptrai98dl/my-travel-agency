@@ -1,7 +1,7 @@
 -- Schema shape: every approved table exists, RLS is enabled everywhere, and the security definer
 -- helpers are locked down (docs/DATABASE.md, ARCHITECTURE.md "Security").
 begin;
-select plan(11);
+select plan(14);
 
 select tables_are(
   'public',
@@ -105,15 +105,36 @@ select ok(
 );
 
 select is(
-  (select array_agg(id::text order by id) from storage.buckets where id in ('media', 'private')),
-  array['media', 'private'],
-  'the media and private storage buckets exist'
+  (select array_agg(id::text order by id) from storage.buckets where id in ('media', 'media-uploads', 'private')),
+  array['media', 'media-uploads', 'private'],
+  'the media, media-uploads and private storage buckets exist'
 );
 
 select is(
   (select public from storage.buckets where id = 'private'),
   false,
   'the private bucket is not public'
+);
+
+select is(
+  (select public from storage.buckets where id = 'media-uploads'),
+  false,
+  'the upload staging bucket is not public'
+);
+
+select is(
+  (select count(*)::int from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+      and (coalesce(qual, '') || coalesce(with_check, '')) like '%media-uploads%'),
+  0,
+  'no API-role policy opens the upload staging bucket'
+);
+
+select is(
+  (select array_agg(cmd::text order by cmd) from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname like 'media bucket:%'),
+  array['DELETE', 'SELECT'],
+  'staff may only list and delete in the public media bucket'
 );
 
 select * from finish();

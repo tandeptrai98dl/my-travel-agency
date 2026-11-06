@@ -108,7 +108,7 @@ async function MediaList({ searchParams }: Props) {
 type T = Awaited<ReturnType<typeof getTranslations<"Admin">>>;
 
 function MediaCard({ item, t }: { item: MediaItem; t: T }) {
-  const name = item.alt.vi || item.alt.en || item.path.split("/").pop() || item.path;
+  const name = item.alt.vi || item.alt.en || item.originalName || item.path.split("/").pop() || item.path;
   return (
     <MediaEditDialog
       item={item}
@@ -154,7 +154,7 @@ function MediaCard({ item, t }: { item: MediaItem; t: T }) {
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none"
             />
           </span>
-          <span className="line-clamp-2 text-small">{item.alt.vi || <span className="text-muted-foreground">{item.path}</span>}</span>
+          <span className="line-clamp-2 text-small">{item.alt.vi || <span className="text-muted-foreground">{item.originalName ?? item.path}</span>}</span>
           <span className="flex flex-wrap gap-1">
             {!item.altComplete && <Badge variant="warning">{t("Media.altMissing")}</Badge>}
             {item.small && <Badge variant="outline">{t("Media.small")}</Badge>}

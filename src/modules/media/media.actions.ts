@@ -61,9 +61,10 @@ export async function removeMedia(input: unknown) {
 
 /** For the MediaPicker dialog. */
 export async function browseMedia(input: unknown) {
-  const params = listMediaSchema.parse(input ?? {});
+  const parsed = listMediaSchema.safeParse(input ?? {});
+  if (!parsed.success) return { ok: false as const, error: "invalid" as const };
   try {
-    return { ok: true as const, value: await listMedia(params) };
+    return { ok: true as const, value: await listMedia(parsed.data) };
   } catch (error) {
     if (error instanceof AccessDeniedError) return { ok: false as const, error: "forbidden" as const };
     throw error;

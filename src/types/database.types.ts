@@ -325,14 +325,14 @@ isOneToOne: false
                   ]
                 },"media": {
                   Row: {
-                    "alt": NonNullable<Json>,"blur_data_url": string | null,"bucket": string,"created_at": string,"created_by": string | null,"credit": string | null,"height": number | null,"id": string,"mime_type": string,"path": string,"size_bytes": number,"width": number | null
+                    "alt": NonNullable<Json>,"blur_data_url": string | null,"bucket": string,"created_at": string,"created_by": string | null,"credit": string | null,"height": number | null,"id": string,"mime_type": string,"original_name": string | null,"path": string,"size_bytes": number,"width": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "alt"?: NonNullable<Json>,"blur_data_url"?: string | null,"bucket"?: string,"created_at"?: string,"created_by"?: string | null,"credit"?: string | null,"height"?: number | null,"id"?: string,"mime_type": string,"path": string,"size_bytes": number,"width"?: number | null
+                    "alt"?: NonNullable<Json>,"blur_data_url"?: string | null,"bucket"?: string,"created_at"?: string,"created_by"?: string | null,"credit"?: string | null,"height"?: number | null,"id"?: string,"mime_type": string,"original_name"?: string | null,"path": string,"size_bytes": number,"width"?: number | null
                   }
                   Update: {
-                    "alt"?: NonNullable<Json>,"blur_data_url"?: string | null,"bucket"?: string,"created_at"?: string,"created_by"?: string | null,"credit"?: string | null,"height"?: number | null,"id"?: string,"mime_type"?: string,"path"?: string,"size_bytes"?: number,"width"?: number | null
+                    "alt"?: NonNullable<Json>,"blur_data_url"?: string | null,"bucket"?: string,"created_at"?: string,"created_by"?: string | null,"credit"?: string | null,"height"?: number | null,"id"?: string,"mime_type"?: string,"original_name"?: string | null,"path"?: string,"size_bytes"?: number,"width"?: number | null
                   }
                   Relationships: [
                     {

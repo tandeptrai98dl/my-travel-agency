@@ -36,9 +36,10 @@ type Props = {
 };
 
 /**
- * Two-step upload (docs/specs/phase-2 decision 6): the server hands out a signed URL, the file
- * goes straight to Storage, then the server checks the real type, size and dimensions and records
- * it. One file at a time, with a live status per file.
+ * Two-step upload (docs/specs/phase-2 decision 6, ADR-023): the server hands out a signed URL
+ * into a private staging bucket, the file goes straight to Storage, then the server checks the
+ * real type, size and dimensions, publishes a re-encoded copy and records it. One file at a time,
+ * with a live status per file.
  */
 export function MediaUploader({ labels, onUploaded, refreshOnDone, className }: Props) {
   const router = useRouter();
@@ -62,14 +63,11 @@ export function MediaUploader({ labels, onUploaded, refreshOnDone, className }: 
     const put = await fetch(start.value.signedUrl, {
       method: "PUT",
       body: file,
-      headers: {
-        "content-type": file.type,
-        "x-upsert": "false",
-        apikey: publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-      },
+      // The signed token fixes the path and forbids overwriting; the file stays private until checked.
+      headers: { "content-type": file.type, apikey: publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY },
     }).catch(() => null);
     if (!put?.ok) return fail(put?.status === 413 ? "too_large" : "failed");
-    const done = await completeMediaUpload({ path: start.value.path });
+    const done = await completeMediaUpload({ path: start.value.path, fileName: file.name });
     if (!done.ok) return fail(done.error);
     update(id, { state: "done", message: fill(labels.uploaded, { name: file.name }) });
     onUploaded?.(done.value);
@@ -118,20 +116,28 @@ export function MediaUploader({ labels, onUploaded, refreshOnDone, className }: 
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
           multiple
-          className="sr-only"
+          className="peer sr-only"
           disabled={busy}
           onChange={(event) => void uploadAll(Array.from(event.target.files ?? []))}
         />
         <Button asChild variant="outline" aria-disabled={busy}>
-          <label htmlFor={inputId} className={cn("cursor-pointer", busy && "pointer-events-none opacity-50")}>
+          <label
+            htmlFor={inputId}
+            className={cn(
+              "cursor-pointer peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
+              busy && "pointer-events-none opacity-50",
+            )}
+          >
             {labels.chooseFiles}
           </label>
         </Button>
         <p className="text-small text-muted-foreground">{labels.dropHint}</p>
       </div>
-      {statuses.length > 0 && (
-        <section aria-label={labels.uploadsTitle}>
-          <ul className="flex flex-col gap-2" aria-live="polite">
+      {/* Always rendered (visually hidden while empty), so screen readers already watch it when
+          the first status appears. */}
+      <section aria-label={labels.uploadsTitle} aria-live="polite" className={cn(statuses.length === 0 && "sr-only")}>
+        {statuses.length > 0 && (
+          <ul className="flex flex-col gap-2">
             {statuses.map((status) => (
               <li key={status.id} className="flex items-center gap-2 text-small" data-state={status.state}>
                 {status.state === "uploading" && <Spinner label={labels.loading} className="[&_svg]:h-4 [&_svg]:w-4" />}
@@ -145,8 +151,8 @@ export function MediaUploader({ labels, onUploaded, refreshOnDone, className }: 
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

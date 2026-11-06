@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,8 @@ export function MediaEditDialog({ item, labels, trigger }: { item: MediaItem; la
   const [credit, setCredit] = useState(item.credit ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** After a delete the trigger disappears with the card, so focus goes to the page instead. */
+  const deletedRef = useRef(false);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -77,11 +79,19 @@ export function MediaEditDialog({ item, labels, trigger }: { item: MediaItem; la
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent closeLabel={labels.close} className="max-w-2xl">
+      <DialogContent
+        closeLabel={labels.close}
+        className="max-w-2xl"
+        onCloseAutoFocus={(event) => {
+          if (!deletedRef.current) return;
+          event.preventDefault();
+          document.getElementById("admin-main")?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{labels.editTitle}</DialogTitle>
           <DialogDescription>
-            <span className="break-all">{item.path}</span> · {labels.dimensions} · {labels.fileSize}
+            <span className="break-all">{item.originalName ?? item.path}</span> · {labels.dimensions} · {labels.fileSize}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 md:grid-cols-[minmax(0,14rem)_1fr]">
@@ -148,6 +158,7 @@ export function MediaEditDialog({ item, labels, trigger }: { item: MediaItem; la
                 return;
               }
               toast({ title: labels.deleted, variant: "success" });
+              deletedRef.current = true;
               setOpen(false);
               router.refresh();
             }}
