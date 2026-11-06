@@ -9,6 +9,7 @@ import {
   type ShowcaseLabels,
 } from "@/components/admin/design-system/interactive-showcase";
 import { AdminBlocksDemo, type AdminBlocksLabels } from "@/components/admin/design-system/admin-blocks-demo";
+import { MediaPickerDemo } from "@/components/admin/media/media-picker-demo";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { Eyebrow } from "@/components/typography/eyebrow";
@@ -28,6 +29,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Tag } from "@/components/ui/tag";
 import { STAFF_ROLES } from "@/lib/auth/permissions";
 import { designSystemEnabled } from "@/lib/env/flags";
+import { getMediaPickerLabels } from "@/modules/media/media-labels";
 
 import { requireAdminAccess } from "../../admin-gate";
 
@@ -187,6 +189,16 @@ export default async function DesignSystemPage() {
         <InteractiveShowcase labels={labels} />
 
         <AdminBlocksDemo labels={await adminBlocksLabels()} />
+        <section aria-labelledby="ds-media" className="flex flex-col gap-6">
+          <h2 id="ds-media" className="font-serif text-h2 font-medium">
+            {t("mediaPicker")}
+          </h2>
+          <MediaPickerDemo
+            labels={await getMediaPickerLabels()}
+            openLabel={t("openPicker")}
+            chosenLabel={t.raw("chosen") as string}
+          />
+        </section>
 
         <section aria-labelledby="ds-feedback" className="flex flex-col gap-6">
           <h2 id="ds-feedback" className="font-serif text-h2 font-medium">
