@@ -52,7 +52,8 @@
       "title": "A journey made only for you",
       "text": "Tell us where you would like to go, when, and who is coming. A travel designer will send you a private itinerary.",
       "call": "Call {phone}",
-      "email": "Email us"
+      "email": "Email us",
+      "contact": "Talk to a travel designer"
     },
     "newsletter": {
       "eyebrow": "Newsletter",

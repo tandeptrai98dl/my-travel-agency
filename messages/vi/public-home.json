@@ -52,7 +52,8 @@
       "title": "Một hành trình chỉ dành cho bạn",
       "text": "Kể cho chúng tôi nơi bạn muốn đến, thời gian và người đi cùng. Chuyên viên tư vấn sẽ gửi lại một lịch trình riêng.",
       "call": "Gọi {phone}",
-      "email": "Gửi email cho chúng tôi"
+      "email": "Gửi email cho chúng tôi",
+      "contact": "Liên hệ tư vấn"
     },
     "newsletter": {
       "eyebrow": "Bản tin",

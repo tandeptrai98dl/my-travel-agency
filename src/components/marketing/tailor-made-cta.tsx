@@ -4,6 +4,8 @@ import { Section } from "@/components/layout/section";
 import { ResponsiveImage } from "@/components/media/responsive-image";
 import { Eyebrow } from "@/components/typography/eyebrow";
 import { buttonVariants } from "@/components/ui/button-variants";
+import { Link } from "@/i18n/navigation";
+import { features } from "@/lib/features";
 import type { ImageData } from "@/lib/images";
 import type { Locale } from "@/modules/catalog/public/types";
 import type { ContactSettings } from "@/modules/settings/settings.schemas";
@@ -18,7 +20,7 @@ type Props = { locale: Locale; contact: ContactSettings | null; image: ImageData
 export async function TailorMadeCta({ locale, contact, image }: Props) {
   const phone = contact?.phone ?? null;
   const email = contact?.email ?? null;
-  if (!phone && !email) return null;
+  if (!phone && !email && !features.contactPage) return null;
   const t = await getTranslations({ locale, namespace: "Home.tailorMade" });
   return (
     <Section tone="navy" spacing="none" contained={false} aria-labelledby="home-tailor-made">
@@ -35,8 +37,13 @@ export async function TailorMadeCta({ locale, contact, image }: Props) {
           </h2>
           <p className="max-w-prose text-body-lg text-muted-foreground">{t("text")}</p>
           <div className="flex flex-wrap gap-3">
+            {features.contactPage && (
+              <Link href="/contact" className={buttonVariants({ variant: "gold", size: "lg" })}>
+                {t("contact")}
+              </Link>
+            )}
             {phone && (
-              <a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className={buttonVariants({ variant: "gold", size: "lg" })}>
+              <a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className={buttonVariants({ variant: features.contactPage ? "outline" : "gold", size: "lg" })}>
                 {t("call", { phone })}
               </a>
             )}
