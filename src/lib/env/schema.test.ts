@@ -50,7 +50,28 @@ describe("publicEnvSchema", () => {
     ).toThrow(/never the secret key/);
   });
 
+  it("rejects a legacy service_role JWT used as the publishable key", () => {
+    const payload = Buffer.from(JSON.stringify({ role: "service_role" })).toString("base64url");
+    expect(() =>
+      parseEnv("public", publicEnvSchema, {
+        ...validPublic,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: `header.${payload}.signature`,
+      }),
+    ).toThrow(/never the secret key/);
+  });
+
+  it("accepts a legacy anon JWT", () => {
+    const payload = Buffer.from(JSON.stringify({ role: "anon" })).toString("base64url");
+    expect(
+      parseEnv("public", publicEnvSchema, {
+        ...validPublic,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: `header.${payload}.signature`,
+      }).NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    ).toContain("header.");
+  });
+
   it("never includes variable values in the error message", () => {
+    expect.assertions(1);
     try {
       parseEnv("public", publicEnvSchema, {
         ...validPublic,

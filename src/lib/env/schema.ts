@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+/** Returns true for keys that grant service-role access (new or legacy JWT format). */
+export function isSecretSupabaseKey(key: string): boolean {
+  if (key.startsWith("sb_secret_")) return true;
+  const parts = key.split(".");
+  if (parts.length !== 3 || !parts[1]) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as {
+      role?: unknown;
+    };
+    return payload.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 /** Treats empty strings (common in .env files) as "not set". */
 const optionalString = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -20,7 +35,7 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(1)
-    .refine((key) => !key.startsWith("sb_secret_"), {
+    .refine((key) => !isSecretSupabaseKey(key), {
       message: "must be the publishable (anon) key, never the secret key",
     }),
   NEXT_PUBLIC_SENTRY_DSN: z.preprocess(

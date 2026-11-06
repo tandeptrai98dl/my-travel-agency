@@ -52,7 +52,7 @@ One commit per step. After each step: `npm run lint`, `npx tsc --noEmit`, and (f
 
 ### Step 3 — Environment validation
 
-`src/lib/env.ts` validates variables with Zod, split into server-only and public; missing or invalid values fail fast with the variable name. Update `.env.example` (no real values):
+`src/lib/env/` validates variables with Zod: `schema.ts` (schemas), `public.ts` (client-safe literals, no Zod in the browser) and `server.ts` (`server-only`, validates public and server values at startup); missing or invalid values fail fast with the variable name. Update `.env.example` (no real values):
 
 | Variable | Scope | Notes |
 | --- | --- | --- |

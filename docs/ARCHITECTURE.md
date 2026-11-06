@@ -89,7 +89,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── supabase/             # client.ts, server.ts, proxy.ts (existing) + admin.ts (service role)
     │   ├── auth/                 # get-user.ts, require-role.ts, permissions.ts
     │   ├── money.ts · dates.ts · email.ts · rate-limit.ts · turnstile.ts · logger.ts
-    │   ├── env.ts                # Zod-validated environment variables
+    │   ├── env/                  # schema.ts (Zod), public.ts (client-safe), server.ts (server-only, validated)
     │   └── utils.ts
     ├── i18n/                     # routing.ts, request.ts, pathnames.ts
     ├── types/database.types.ts   # generated, never edited by hand

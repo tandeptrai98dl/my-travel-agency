@@ -104,7 +104,7 @@ npx supabase db lint   # schema lint
 npm run db:types       # regenerate src/types/database.types.ts
 ```
 
-Environment: copy `.env.example` to `.env.local`. Required variables are validated in `src/lib/env.ts` (added in Phase 0).
+Environment: copy `.env.example` to `.env.local`. Variables are validated at server start by `src/lib/env/server.ts` (via `src/instrumentation.ts`); client code imports `src/lib/env/public.ts`.
 
 ## PROJECT STRUCTURE
 

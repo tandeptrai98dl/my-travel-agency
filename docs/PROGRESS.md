@@ -14,15 +14,16 @@ Update this log at the start and end of each work session. Newest first.
 
 Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
-- Done (verified locally: `npm run lint`, `npm run typecheck`, `npm test` — 8 tests pass):
+- Done:
   - Removed starter tutorial content, the `/protected` example and starter branding; placeholder home page (`noindex`).
   - Fixed the `tailwind.config.ts` lint error; ESLint ignores build output and generated files.
-  - Vitest and Playwright configured; Playwright smoke test for the home page.
-  - Environment validation with Zod in `src/lib/env/` (public and server-only modules), checked at server start via `src/instrumentation.ts`; `.env.example` complete.
-  - GitHub Actions CI: lint, typecheck, unit tests, production build, secret-key leak check on client bundles, Playwright smoke.
+  - Vitest and Playwright configured; Playwright smoke test for the home page (the spec's `/api/health` smoke test moves to PR 3, where the route is added).
+  - Environment validation with Zod in `src/lib/env/`: `public.ts` exports client-safe literals (no Zod in the browser), `server.ts` (`server-only`) validates public and server values at startup via `src/instrumentation.ts`; rejects secret keys (new `sb_secret_` and legacy `service_role` JWT) used as the publishable key; `.env.example` complete.
+  - GitHub Actions CI: lint, typecheck, unit tests, production build, sentinel-based check that server-only values never reach client bundles, Playwright smoke.
   - ADR-020 (delivery workflow) and the matching `CLAUDE.md` section.
-- Verified in CI only: production build and E2E (the cloud workspace blocks Google Fonts, so `next build` cannot run there).
-- Deviations from the spec: env code lives in `src/lib/env/{schema,public,server}.ts` instead of one `env.ts` (keeps server-only values out of client bundles); `SUPABASE_SECRET_KEY` stays optional until the admin client lands in step 7; no Prettier (not in ADR-014).
+- Verified: `npm run lint`, `npm run typecheck`, `npm test` (10 tests) locally and in CI; production build, client-bundle leak check and E2E smoke in CI (the cloud workspace blocks Google Fonts, so `next build` cannot run there).
+- Independent review: changes requested, then addressed (leak check, Zod removed from the client, legacy JWT check, doc paths, test assertion count, CI concurrency).
+- Deviations from the spec: env code lives in `src/lib/env/{schema,public,server}.ts` instead of one `env.ts`; `SUPABASE_SECRET_KEY` stays optional until the admin client lands in step 7; no Prettier (not in ADR-014); the `server-only` package is added (required by `ARCHITECTURE.md` for the admin client; not listed in ADR-014); `@types/node` raised to 22 to match the runtime.
 - Remaining Phase 0: Supabase schema, RLS, pgTAP, seed (PR 2); clients, auth helpers, i18n, admin shell, health check (PR 3); Sentry, Vercel, README (PR 4).
 
 ### 2026-11-06 (documentation update — full scope)
