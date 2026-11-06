@@ -5,10 +5,23 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 1 (Design system and UI shell); Phase 0 code-complete
-- **Next up:** Phase 1 PR 6 (public layout shell: header, mega menu, mobile nav, footer, floating contact, cookie banner, 404), then PR 7 (remaining primitives, `/admin/design-system`, axe checks). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's accounts
+- **Next up:** Phase 1 PR 7 (remaining primitives, `/admin/design-system`, axe accessibility checks). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-06 (Phase 1 — PR 6: public layout shell)
+
+Branch `feat/p1-layout-shell` (`docs/specs/phase-1-design-system.md` steps 5–11).
+
+- Done:
+  - `src/modules/settings` and `src/modules/catalog/destinations*`: cached (`"use cache"`, tags `settings` and `destinations`) public settings (Zod-validated) and the published destination tree per locale, read as anon; database errors give an empty shell, not a failed page.
+  - Primitives: dialog, sheet, accordion, switch (shadcn new-york on Radix, ADR-021).
+  - SiteHeader (transparent over the navy home hero, solid elsewhere and on scroll; brand from `settings`), destinations MegaMenu (Radix navigation menu, keyboard operable), MobileNav (sheet loaded on first open), SiteFooter (legal details, contact, social and policy links from `settings`, each only when set), ContactFloatingButton (hotline, Zalo, WhatsApp from `settings.contact`), CookieConsentBanner (essential only in one click, per-category settings dialog loaded on demand and reopenable from the footer, first-party `consent` cookie, `consentchange` event), designed 404, skip link and a single `<main id="main">`.
+  - VI/EN strings for all of it.
+  - E2E (`tests/e2e/shell.spec.ts`): database-driven header and footer, skip link, keyboard mega menu, localized navigation, hotline, consent flows, mobile sheet, floating contact stepping aside for the banner.
+- Verified locally against a stub of the two REST reads (no Supabase containers here): lint, typecheck, unit tests, production build, 17 shell and smoke E2E tests, screenshots at 375 and 1280 px (mega menu, mobile sheet, banner, 404 with footer). CI runs the same tests against real Supabase with the seed.
+- Measured: home initial JS ≈ 179 KB gzip (local webpack; ≈ 158 KB before the shell). Over the 150 KB budget; see known issues.
 
 ### 2026-11-06 (Phase 1 — PR 5: decisions, tokens, fonts, primitives)
 
@@ -123,7 +136,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
-- Phase 3/6: initial JS on public pages is ~158 KB gzip (local webpack measurement) against the 150 KB budget.
+- Phase 3/6: initial JS on public pages is ≈ 179 KB gzip with the shell (≈ 158 KB framework baseline; local webpack measurement) against the 150 KB budget. Next steps: measure the Turbopack production build in CI, then consider rendering the desktop nav statically and loading the mega-menu panel on first hover/focus.
+- Phase 3: footer and banner policy links use page keys (`/chinh-sach/privacy`); resolve the per-language slugs from `page_translations` when the policy pages are built.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
 - Phase 4: when the `/pay/[token]` routes land, extend the Sentry unit test to check the envelope header (`trace.transaction`) for tokens too.
 - Phase 3: the CSP needs `connect-src` for the Sentry ingest host (or a Sentry `tunnelRoute`). Phase 6 legal pages: the privacy policy must name Sentry as a processor.

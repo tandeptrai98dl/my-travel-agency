@@ -26,7 +26,7 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 
 - [x] Confirm palette and fonts; apply tokens to `globals.css` and `tailwind.config.ts` (`DESIGN_SYSTEM.md`)
 - [ ] Restyle shadcn primitives; add the planned primitives
-- [ ] `SiteHeader`, `MegaMenu`, `MobileNav`, `SiteFooter`, `LanguageSwitcher`, `ContactFloatingButton`, `CookieConsentBanner`, 404 page; public layout with a fixed light theme (ADR-017)
+- [x] `SiteHeader`, `MegaMenu`, `MobileNav`, `SiteFooter`, `LanguageSwitcher`, `ContactFloatingButton`, `CookieConsentBanner`, 404 page; public layout with a fixed light theme (ADR-017)
 - [ ] Dev-only `/admin/design-system`
 - [ ] Acceptance: Lighthouse Accessibility ≥ 95; Vietnamese diacritics render correctly at every size
 
