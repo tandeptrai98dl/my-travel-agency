@@ -100,9 +100,12 @@
         "in_use": "Đang được tour hoặc mục con sử dụng, không xoá được.",
         "default_required": "Phải luôn có một chính sách mặc định. Hãy chọn chính sách khác làm mặc định trước.",
         "is_default": "Không xoá được chính sách mặc định. Hãy chọn chính sách khác làm mặc định trước.",
-        "default_not_moved": "Đã lưu chính sách nhưng chưa đặt được làm mặc định. Vui lòng thử lại."
+        "default_not_moved": "Đã lưu chính sách nhưng chưa đặt được làm mặc định. Vui lòng thử lại.",
+        "contentImageAlt": "Ảnh trong nội dung cần mô tả tiếng Việt và tiếng Anh trước khi xuất bản."
       },
-      "defaultHint": "Chính sách mặc định không bỏ chọn được; hãy đặt chính sách khác làm mặc định."
+      "defaultHint": "Chính sách mặc định không bỏ chọn được; hãy đặt chính sách khác làm mặc định.",
+      "content": "Nội dung chi tiết",
+      "contentHint": "Không bắt buộc. Khi để trống, trang điểm đến dùng phần tóm tắt."
     }
   }
 }

@@ -8,6 +8,7 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { LocaleTabs } from "@/components/admin/locale-tabs";
 import type { MediaPickerLabels } from "@/components/admin/media/media-picker";
+import type { EditorMedia } from "@/components/admin/rich-text-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -39,6 +40,8 @@ type Props = {
   parents: ParentOption[];
   prefixes: Record<"vi" | "en", string>;
   pickerLabels: MediaPickerLabels;
+  /** Previews of the images inside the rich text. */
+  contentMedia?: EditorMedia;
   /** Delete button for an existing destination (rendered by the page). */
   deleteAction?: React.ReactNode;
 };
@@ -47,7 +50,7 @@ const NONE = "none";
 const PARENT_TYPE = { country: null, region: "country", city: "region" } as const;
 
 /** Create or edit a destination (spec Phase 2 step 8): tree position, key, hero image, VI/EN text. */
-export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels, deleteAction }: Props) {
+export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels, contentMedia, deleteAction }: Props) {
   const t = useTranslations("Admin.Taxonomy");
   const tf = useTranslations("Admin.Form");
   const router = useRouter();
@@ -224,6 +227,8 @@ export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels
               locale={locale}
               kind="destination"
               prefix={prefixes[locale]}
+              contentMedia={contentMedia}
+              pickerLabels={pickerLabels}
             />
           )}
         </LocaleTabs>

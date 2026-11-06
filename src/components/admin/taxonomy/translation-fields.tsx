@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useId, useRef } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
+import type { MediaPickerLabels } from "@/components/admin/media/media-picker";
+import { type EditorMedia, RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SeoFields } from "@/components/admin/seo-fields";
 import { SlugInput } from "@/components/admin/slug-input";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -25,6 +27,7 @@ type TranslationValues = {
   summary?: string | null;
   bestTimeToVisit?: string | null;
   description?: string | null;
+  content?: unknown;
 };
 /** The part of the destination and travel-style forms these fields edit. */
 export type TranslationForm = { id?: string; translations: Record<Locale, TranslationValues> };
@@ -35,10 +38,13 @@ type Props = {
   kind: "destination" | "travelStyle";
   /** Public path before the slug for this language, e.g. "/en/destinations/". */
   prefix: string;
+  /** Destinations: the rich text editor's image previews and media picker. */
+  contentMedia?: EditorMedia;
+  pickerLabels?: MediaPickerLabels;
 };
 
 /** One language of a destination or travel style: name, slug, text, SEO and its own publish switch. */
-export function TranslationFields({ form, locale, kind, prefix }: Props) {
+export function TranslationFields({ form, locale, kind, prefix, contentMedia = {}, pickerLabels }: Props) {
   const t = useTranslations("Admin.Taxonomy");
   const tf = useTranslations("Admin.Form");
   const errorText = useErrorText();
@@ -133,6 +139,35 @@ export function TranslationFields({ form, locale, kind, prefix }: Props) {
               </FormItem>
             )}
           />
+          {pickerLabels && (
+            <Controller
+              control={form.control}
+              name={`${base}.content`}
+              render={({ field, fieldState }) => (
+                <div className="flex flex-col gap-2">
+                  <p id={`${switchId}-content-label`} className="text-small font-medium leading-none">
+                    {t("content")}
+                  </p>
+                  <RichTextEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    media={contentMedia}
+                    pickerLabels={pickerLabels}
+                    labelledBy={`${switchId}-content-label`}
+                    describedBy={`${switchId}-content-hint ${switchId}-content-error`}
+                    invalid={Boolean(fieldState.error)}
+                  />
+                  <p id={`${switchId}-content-hint`} className="text-small text-muted-foreground">
+                    {t("contentHint")}
+                  </p>
+                  <p id={`${switchId}-content-error`} aria-live="polite" className="text-small font-medium text-destructive empty:hidden">
+                    {fieldState.error?.message ? errorText(fieldState.error.message) : null}
+                  </p>
+                </div>
+              )}
+            />
+          )}
         </>
       ) : (
         <FormField

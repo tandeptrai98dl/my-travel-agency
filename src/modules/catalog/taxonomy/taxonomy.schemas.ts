@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { RICH_TEXT_MAX_BYTES, richTextBytes, sanitizeRichText } from "@/lib/rich-text";
 import { isValidSlug } from "@/lib/slug";
 
 /**
@@ -52,8 +53,15 @@ const translationBase = {
   isPublished: z.boolean(),
 };
 
+/** Tiptap JSON (decision 7), sanitized on parse; optional, public pages fall back to the summary. */
+const richText = z
+  .unknown()
+  .optional()
+  .refine((value) => richTextBytes(value) <= RICH_TEXT_MAX_BYTES, "tooLong")
+  .transform((value) => sanitizeRichText(value));
+
 export const destinationTranslationSchema = z
-  .object({ ...translationBase, summary: optionalText(400), bestTimeToVisit: optionalText(200) })
+  .object({ ...translationBase, summary: optionalText(400), bestTimeToVisit: optionalText(200), content: richText })
   .superRefine((value, ctx) => checkTranslation(value, { field: "summary", value: value.summary }, ctx));
 
 export const travelStyleTranslationSchema = z
