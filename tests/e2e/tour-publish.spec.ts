@@ -25,8 +25,8 @@ async function pickPhoto(page: Page, trigger: Locator, confirm: string) {
   const picker = page.getByRole("dialog", { name: "Chọn ảnh" });
   await picker.getByRole("searchbox", { name: "Tìm theo mô tả hoặc tên tệp" }).fill(run);
   await picker.getByRole("searchbox", { name: "Tìm theo mô tả hoặc tên tệp" }).press("Enter");
-  await picker.getByRole("button", { name: altVi }).click();
-  await picker.getByRole("button", { name: confirm }).click();
+  await picker.getByRole("button", { name: altVi, exact: true }).click();
+  await picker.getByRole("button", { name: confirm, exact: true }).click();
   await expect(picker).toBeHidden();
 }
 
