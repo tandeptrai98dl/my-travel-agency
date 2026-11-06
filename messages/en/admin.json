@@ -8,7 +8,6 @@
     "mfaOff": "not verified",
     "manageMfa": "Set up two-factor authentication",
     "signOut": "Sign out",
-    "placeholder": "The dashboard is built in Phases 4 and 5.",
     "roles": {
       "customer": "Customer",
       "sales": "Sales",
@@ -139,7 +138,9 @@
       "pages": "Pages",
       "reviews": "Reviews",
       "redirects": "Redirects",
-      "subscribers": "Newsletter"
+      "subscribers": "Newsletter",
+      "settings": "Settings",
+      "staff": "Staff"
     },
     "Shell": {
       "skipToContent": "Skip to content",

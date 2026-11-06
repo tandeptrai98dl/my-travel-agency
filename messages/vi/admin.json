@@ -8,7 +8,6 @@
     "mfaOff": "chưa xác minh",
     "manageMfa": "Thiết lập xác thực hai lớp",
     "signOut": "Đăng xuất",
-    "placeholder": "Bảng điều khiển sẽ được xây dựng ở giai đoạn 4 và 5.",
     "roles": {
       "customer": "Khách hàng",
       "sales": "Kinh doanh",
@@ -139,7 +138,9 @@
       "pages": "Trang tĩnh",
       "reviews": "Đánh giá",
       "redirects": "Chuyển hướng",
-      "subscribers": "Bản tin"
+      "subscribers": "Bản tin",
+      "settings": "Cài đặt",
+      "staff": "Nhân viên"
     },
     "Shell": {
       "skipToContent": "Bỏ qua đến nội dung",

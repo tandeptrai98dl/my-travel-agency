@@ -20,17 +20,30 @@ export function isRedisConfigured(): boolean {
   return config() !== null;
 }
 
+/** Upstash answers well within this; a slower call is treated as a failure (the save still stands). */
+const TIMEOUT_MS = 3000;
+
 /** Runs the commands in one round trip; never throws (failures are logged and reported). */
-export async function redisPipeline(commands: RedisCommand[]): Promise<RedisResult> {
+export function redisPipeline(commands: RedisCommand[]): Promise<RedisResult> {
+  return send("pipeline", commands);
+}
+
+/** Like `redisPipeline`, but all or nothing (Upstash `/multi-exec`, a Redis MULTI/EXEC). */
+export function redisTransaction(commands: RedisCommand[]): Promise<RedisResult> {
+  return send("multi-exec", commands);
+}
+
+async function send(endpoint: "pipeline" | "multi-exec", commands: RedisCommand[]): Promise<RedisResult> {
   const settings = config();
   if (!settings) return { configured: false };
   if (commands.length === 0) return { configured: true, ok: true, results: [] };
   try {
-    const response = await fetch(`${settings.url}/pipeline`, {
+    const response = await fetch(`${settings.url}/${endpoint}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${settings.token}`, "Content-Type": "application/json" },
       body: JSON.stringify(commands),
       cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!response.ok) {
       logger.error("redis.request_failed", { status: response.status });

@@ -47,7 +47,8 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: booleanFlag,
 });
 
-export const serverEnvSchema = z.object({
+export const serverEnvSchema = z
+  .object({
   // Service-role key for src/lib/supabase/admin.ts. It must really be a secret key, so a
   // publishable key pasted by mistake fails at startup instead of on the first guest write.
   SUPABASE_SECRET_KEY: z
@@ -73,6 +74,16 @@ export const serverEnvSchema = z.object({
     z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
   ),
   UPSTASH_REDIS_REST_TOKEN: optionalString,
+}).superRefine((env, ctx) => {
+  // Both or neither: one without the other would make every redirect sync fail at run time.
+  const missing = env.UPSTASH_REDIS_REST_URL && !env.UPSTASH_REDIS_REST_TOKEN
+    ? "UPSTASH_REDIS_REST_TOKEN"
+    : env.UPSTASH_REDIS_REST_TOKEN && !env.UPSTASH_REDIS_REST_URL
+      ? "UPSTASH_REDIS_REST_URL"
+      : null;
+  if (missing) {
+    ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both Upstash variables or neither)` });
+  }
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

@@ -12,6 +12,7 @@ import { currentQuery, listHref, parseListParams } from "@/lib/admin/list-params
 import { rolesFor } from "@/lib/auth/permissions";
 import { AUDIT_SORTS, AUDITED_ENTITIES, type AuditEntry } from "@/modules/audit/audit.schemas";
 import { listAuditLogs } from "@/modules/audit/audit.service";
+import { listStaffOptions } from "@/modules/identity/staff.service";
 
 import { requireAdminAccess } from "../../admin-gate";
 
@@ -56,10 +57,16 @@ async function AuditLogList({ searchParams }: Props) {
     defaultSort: DEFAULTS.sort,
     defaultDir: DEFAULTS.dir,
     pageSize: 50,
-    filters: { entity: AUDITED_ENTITIES },
+    filters: { entity: AUDITED_ENTITIES, actor: null },
   });
   const query = currentQuery(params, DEFAULTS);
-  const { entries, total, pageCount, invalidEntityId } = await listAuditLogs(params);
+  const [{ entries, total, pageCount, invalidEntityId }, staff] = await Promise.all([listAuditLogs(params), listStaffOptions()]);
+  const actor = params.filters.actor;
+  const actorOptions = staff.map((member) => ({ value: member.id, label: member.label }));
+  // A link from the staff list for someone no longer on it (e.g. now a customer) still filters.
+  if (actor && !actorOptions.some((option) => option.value === actor)) {
+    actorOptions.push({ value: actor, label: t("Audit.unknownActor", { id: actor.slice(0, 8) }) });
+  }
 
   const columns: DataTableColumn<AuditEntry>[] = [
     {
@@ -128,7 +135,7 @@ async function AuditLogList({ searchParams }: Props) {
     },
   ];
 
-  const filtered = Boolean((params.q && !invalidEntityId) || params.filters.entity);
+  const filtered = Boolean((params.q && !invalidEntityId) || params.filters.entity || params.filters.actor);
 
   return (
     <div className="flex flex-col gap-6">
@@ -142,6 +149,13 @@ async function AuditLogList({ searchParams }: Props) {
             value: params.filters.entity,
             allLabel: t("Audit.allEntities"),
             options: AUDITED_ENTITIES.map((entity) => ({ value: entity, label: entity })),
+          },
+          {
+            name: "actor",
+            label: t("Audit.actorFilter"),
+            value: actor,
+            allLabel: t("Audit.allActors"),
+            options: actorOptions,
           },
         ]}
         hidden={{ sort: query.sort, dir: query.dir }}

@@ -21,20 +21,13 @@ export async function allRedirectRows(from: number, to: number) {
   return (await db()).from("redirects").select("from_path, to_path, status_code").order("from_path").range(from, to);
 }
 
-export async function findRedirectByFrom(path: string) {
-  return (await db()).from("redirects").select("id, to_path").eq("from_path", path).maybeSingle();
-}
-
 export async function redirectsTo(path: string) {
   return (await db()).from("redirects").select("from_path, to_path, status_code").eq("to_path", path);
 }
 
-export async function insertRedirect(row: { from_path: string; to_path: string; status_code: number }) {
-  return (await db()).from("redirects").insert(row).select("id").single();
-}
-
-export async function retargetRedirects(fromTarget: string, toTarget: string) {
-  return (await db()).from("redirects").update({ to_path: toTarget }).eq("to_path", fromTarget).select("from_path");
+/** Checks, flattening and insert in one transaction (create_redirect, *_review_followups.sql). */
+export async function createRedirect(row: { from_path: string; to_path: string; status_code: number }) {
+  return (await db()).rpc("create_redirect", { source: row.from_path, target: row.to_path, status: row.status_code });
 }
 
 export async function deleteRedirectRow(id: string) {

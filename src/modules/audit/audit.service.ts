@@ -21,9 +21,12 @@ export async function listAuditLogs(params: ListParams<AuditSort>): Promise<Audi
   await requirePermission("audit.read");
   const entityId = z.guid().safeParse(params.q).success ? params.q : undefined;
   const invalidEntityId = params.q !== "" && entityId === undefined;
+  // `?actor=` comes from the staff list (spec Phase 2 step 22); anything but a UUID is ignored.
+  const actorId = z.guid().safeParse(params.filters.actor).success ? params.filters.actor : undefined;
   const query = {
     entityType: params.filters.entity,
     entityId,
+    actorId,
     sort: params.sort,
     dir: params.dir,
   };

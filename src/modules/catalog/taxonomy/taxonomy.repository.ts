@@ -129,11 +129,8 @@ export async function findSlugOwner(kind: "destination" | "travelStyle", locale:
 
 /** 301 from an old public path to the new one; earlier redirects to the old path follow along. */
 export async function saveRedirect(fromPath: string, toPath: string) {
-  const supabase = await db();
-  // A redirect away from the new path would now loop.
-  await supabase.from("redirects").delete().eq("from_path", toPath);
-  await supabase.from("redirects").update({ to_path: toPath }).eq("to_path", fromPath);
-  return supabase.from("redirects").upsert({ from_path: fromPath, to_path: toPath, status_code: 301 }, { onConflict: "from_path" });
+  // One transaction (record_slug_redirect, *_review_followups.sql): no half-moved redirects.
+  return (await db()).rpc("record_slug_redirect", { source: fromPath, target: toPath });
 }
 
 // Cancellation policies -----------------------------------------------------------------------------------

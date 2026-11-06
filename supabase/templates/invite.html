@@ -1,0 +1,14 @@
+<!-- Staff invitation (docs/specs/phase-2-catalog-admin.md step 22, ADR-032). The link goes to the
+     app's /auth/confirm route with a token hash, which verifies it on the server and then opens the
+     set-password page. The same template must be set on hosted Supabase projects
+     (Authentication > Email Templates > Invite user). -->
+<h2>Lời mời tham gia trang quản trị</h2>
+<p>Bạn được mời làm nhân viên trên trang quản trị của chúng tôi.</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=invite&amp;next=/auth/update-password">
+    Chấp nhận lời mời và đặt mật khẩu
+  </a>
+</p>
+<p>Nếu bạn không chờ lời mời này, hãy bỏ qua email.</p>
+<hr />
+<p lang="en">You have been invited to the staff admin. Follow the link above to set your password. If you did not expect this invitation, ignore this email.</p>

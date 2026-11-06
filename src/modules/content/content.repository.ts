@@ -161,10 +161,8 @@ export async function findMediaRows(ids: string[]) {
 }
 
 export async function saveRedirect(fromPath: string, toPath: string) {
-  const supabase = await db();
-  await supabase.from("redirects").delete().eq("from_path", toPath);
-  await supabase.from("redirects").update({ to_path: toPath }).eq("to_path", fromPath);
-  return supabase.from("redirects").upsert({ from_path: fromPath, to_path: toPath, status_code: 301 }, { onConflict: "from_path" });
+  // One transaction (record_slug_redirect, *_review_followups.sql): no half-moved redirects.
+  return (await db()).rpc("record_slug_redirect", { source: fromPath, target: toPath });
 }
 
 export type PostRow = NonNullable<Awaited<ReturnType<typeof findPost>>["data"]>;

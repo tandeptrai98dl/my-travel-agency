@@ -1,1 +1,194 @@
-{}
+{
+  "Admin": {
+    "Settings": {
+      "title": "Cài đặt",
+      "description": "Thông tin công ty, liên hệ, tài khoản nhận tiền, quy tắc đặt tour và nội dung trang chủ. Mỗi phần được lưu riêng.",
+      "save": "Lưu phần này",
+      "saving": "Đang lưu…",
+      "saved": "Đã lưu",
+      "fixErrors": "Vui lòng sửa các trường được đánh dấu.",
+      "public": "Hiển thị trên trang web",
+      "private": "Chỉ nhân viên xem",
+      "vi": "Tiếng Việt",
+      "en": "Tiếng Anh",
+      "policiesTitle": "Chính sách huỷ",
+      "policiesDescription": "Các mức hoàn tiền theo số ngày trước khởi hành được quản lý ở trang riêng.",
+      "policiesLink": "Mở chính sách huỷ",
+      "sections": {
+        "company": {
+          "title": "Công ty và pháp lý",
+          "description": "Hiển thị ở chân trang: tên thương hiệu, pháp nhân, mã số thuế, giấy phép lữ hành và thông báo website TMĐT."
+        },
+        "contact": {
+          "title": "Liên hệ",
+          "description": "Hotline, email và các kênh chat trên nút liên hệ nổi và chân trang."
+        },
+        "social": {
+          "title": "Mạng xã hội",
+          "description": "Đường dẫn https:// tới trang của thương hiệu. Để trống để ẩn."
+        },
+        "bank_account": {
+          "title": "Tài khoản nhận tiền",
+          "description": "Dùng để tạo mã VietQR khi khách chuyển khoản (giai đoạn 4). Không bao giờ công khai."
+        },
+        "booking_rules": {
+          "title": "Quy tắc đặt tour",
+          "description": "Thời gian giữ chỗ, nhắc thanh toán phần còn lại và hạn chót đặt tour trước ngày khởi hành."
+        },
+        "homepage": {
+          "title": "Trang chủ",
+          "description": "Tiêu đề, ảnh nền và các điểm đến nổi bật. Các phần trang chủ cố định trong mã."
+        }
+      },
+      "fields": {
+        "name": "Tên thương hiệu",
+        "legal_name": "Tên pháp nhân",
+        "tax_code": "Mã số thuế",
+        "tax_codeHint": "10 chữ số, hoặc 13 với mã chi nhánh (0101234567-001).",
+        "tour_operator_licence": "Số giấy phép lữ hành",
+        "ecommerce_notification_url": "Đường dẫn thông báo website với Bộ Công Thương",
+        "address": "Địa chỉ",
+        "phone": "Hotline",
+        "email": "Email",
+        "zalo": "Số Zalo",
+        "whatsapp": "Số WhatsApp",
+        "office_hours": "Giờ làm việc",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "bank_name": "Ngân hàng",
+        "bank_bin": "Mã BIN ngân hàng (VietQR)",
+        "bank_binHint": "6 chữ số theo NAPAS, ví dụ 970436 cho Vietcombank.",
+        "account_number": "Số tài khoản",
+        "account_holder": "Chủ tài khoản",
+        "account_holderHint": "Viết hoa không dấu, đúng như trên ngân hàng.",
+        "branch": "Chi nhánh",
+        "holdVnpay": "Giữ chỗ khi thanh toán VNPay (phút)",
+        "holdVnpayHint": "10–60 phút.",
+        "holdBank": "Giữ chỗ khi chuyển khoản (phút)",
+        "holdBankHint": "30–1440 phút.",
+        "reminders": "Nhắc thanh toán phần còn lại (số ngày trước hạn)",
+        "remindersHint": "Tối đa 5 mốc, cách nhau bằng dấu phẩy, ví dụ 7, 2.",
+        "lookupMinutes": "Thời hạn liên kết tra cứu booking (phút)",
+        "lookupMinutesHint": "10–120 phút.",
+        "cutoffDays": "Hạn chót đặt tour (số ngày trước khởi hành)",
+        "cutoffDaysHint": "0–60 ngày. Lịch khởi hành gần hơn không còn nhận đặt trực tuyến.",
+        "heroEyebrow": "Dòng giới thiệu",
+        "heroTitle": "Tiêu đề",
+        "heroImage": "Ảnh nền trang chủ",
+        "featured": "Điểm đến nổi bật",
+        "featuredHint": "Tối đa 6 quốc gia hoặc vùng đã xuất bản.",
+        "noDestinations": "Chưa có điểm đến nào được xuất bản.",
+        "journalCount": "Số bài tạp chí trên trang chủ",
+        "journalCountHint": "0–6 bài; 0 để ẩn phần này."
+      },
+      "errors": {
+        "invalid": "Giá trị không hợp lệ.",
+        "required": "Trường này là bắt buộc.",
+        "tooLong": "Nội dung quá dài.",
+        "httpsOnly": "Đường dẫn phải bắt đầu bằng https://.",
+        "urlInvalid": "Đường dẫn không hợp lệ (http:// hoặc https://).",
+        "taxCodeInvalid": "Mã số thuế gồm 10 chữ số, hoặc 10 chữ số, gạch ngang và 3 chữ số.",
+        "phoneInvalid": "Số điện thoại không hợp lệ.",
+        "emailInvalid": "Email không hợp lệ.",
+        "bankBinInvalid": "Mã BIN gồm đúng 6 chữ số.",
+        "accountNumberInvalid": "Số tài khoản gồm 4–30 chữ hoặc số.",
+        "wholeNumber": "Nhập một số nguyên.",
+        "outOfRange": "Giá trị nằm ngoài khoảng cho phép.",
+        "tooMany": "Quá nhiều mục.",
+        "heroAltMissing": "Ảnh trên trang chủ cần mô tả (alt) bằng cả tiếng Việt và tiếng Anh. Bổ sung trong Thư viện ảnh.",
+        "unknownDestination": "Chỉ chọn được điểm đến đã xuất bản.",
+        "not_found": "Không tìm thấy ảnh này.",
+        "forbidden": "Bạn không có quyền thay đổi cài đặt.",
+        "failed": "Không lưu được. Vui lòng thử lại."
+      }
+    },
+    "Staff": {
+      "title": "Nhân viên",
+      "description": "Mời nhân viên mới, đổi vai trò và khoá tài khoản. Quản trị viên và kế toán phải bật xác thực hai lớp.",
+      "inviteTitle": "Mời nhân viên",
+      "inviteDescription": "Hệ thống gửi email mời; người được mời tự đặt mật khẩu. Vai trò được chọn ngay khi mời.",
+      "email": "Email",
+      "fullName": "Họ và tên",
+      "role": "Vai trò",
+      "invite": "Gửi lời mời",
+      "inviting": "Đang gửi…",
+      "invited": "Đã gửi lời mời tới {email}",
+      "listTitle": "Danh sách nhân viên",
+      "name": "Nhân viên",
+      "status": "Trạng thái",
+      "mfa": "Xác thực hai lớp",
+      "lastSignIn": "Đăng nhập gần nhất",
+      "actions": "Thao tác",
+      "never": "Chưa đăng nhập",
+      "mfaOn": "Đã bật",
+      "mfaOff": "Chưa bật",
+      "you": "Bạn",
+      "statuses": {
+        "invited": "Đã mời",
+        "active": "Đang hoạt động",
+        "deactivated": "Đã khoá"
+      },
+      "roleFor": "Vai trò của {name}",
+      "saveRole": "Đổi vai trò",
+      "roleSaved": "Đã đổi vai trò của {name}",
+      "actionsFor": "Thao tác cho {name}",
+      "deactivate": "Khoá tài khoản",
+      "reactivate": "Mở khoá",
+      "deactivateTitle": "Khoá tài khoản {name}?",
+      "deactivateDescription": "Người này mất quyền vào trang quản trị ngay lập tức. Lịch sử thay đổi vẫn được giữ.",
+      "reactivateTitle": "Mở khoá tài khoản {name}?",
+      "reactivateDescription": "Người này lấy lại quyền theo vai trò hiện tại.",
+      "deactivated": "Đã khoá tài khoản của {name}",
+      "reactivated": "Đã mở khoá tài khoản của {name}",
+      "cancel": "Huỷ",
+      "close": "Đóng",
+      "selfHint": "Bạn không thể tự đổi vai trò hoặc khoá tài khoản của mình.",
+      "viewAudit": "Xem nhật ký thay đổi",
+      "empty": "Chưa có nhân viên nào.",
+      "emailDependency": "Email mời được gửi qua máy chủ email của Supabase Auth. Trên môi trường thật cần cấu hình SMTP (Resend) và mẫu email mời.",
+      "errors": {
+        "invalid": "Giá trị không hợp lệ.",
+        "required": "Trường này là bắt buộc.",
+        "tooLong": "Nội dung quá dài.",
+        "emailInvalid": "Email không hợp lệ.",
+        "roleInvalid": "Chọn một vai trò nhân viên.",
+        "emailTaken": "Email này đã có tài khoản. Đổi vai trò của tài khoản đó thay vì mời lại.",
+        "inviteFailed": "Không gửi được email mời. Kiểm tra cấu hình email và thử lại.",
+        "selfChange": "Bạn không thể tự đổi vai trò hoặc khoá tài khoản của mình.",
+        "lastAdmin": "Luôn phải còn ít nhất một quản trị viên đang hoạt động.",
+        "notFound": "Không tìm thấy nhân viên này.",
+        "forbidden": "Bạn không có quyền quản lý nhân viên.",
+        "failed": "Không lưu được. Vui lòng thử lại."
+      }
+    },
+    "Dashboard": {
+      "description": "Các khu vực bạn có thể sử dụng với vai trò hiện tại. Số liệu kinh doanh sẽ có ở giai đoạn 4–5.",
+      "sectionsTitle": "Lối tắt",
+      "account": "Tài khoản",
+      "links": {
+        "tours": "Tour và nội dung tour",
+        "departures": "Lịch khởi hành, chỗ và giá",
+        "destinations": "Cây điểm đến",
+        "travelStyles": "Phong cách du lịch",
+        "policies": "Mức hoàn tiền khi huỷ",
+        "journal": "Bài viết tạp chí",
+        "pages": "Giới thiệu, câu hỏi thường gặp, chính sách",
+        "reviews": "Duyệt và chọn đánh giá nổi bật",
+        "media": "Ảnh và mô tả ảnh",
+        "redirects": "Chuyển hướng 301 khi đổi đường dẫn",
+        "subscribers": "Người đăng ký bản tin",
+        "settings": "Công ty, liên hệ, tài khoản nhận tiền, trang chủ",
+        "staff": "Mời nhân viên và phân quyền",
+        "auditLog": "Ai đã thay đổi gì, khi nào",
+        "designSystem": "Kiểm tra giao diện (chỉ môi trường phát triển)"
+      }
+    },
+    "Audit": {
+      "actorFilter": "Người thực hiện",
+      "allActors": "Tất cả",
+      "unknownActor": "Tài khoản {id}"
+    }
+  }
+}

@@ -6,10 +6,8 @@ const repo = vi.hoisted(() => {
   return {
     listRedirectRows: ok([]),
     allRedirectRows: ok([]),
-    findRedirectByFrom: ok(null),
     redirectsTo: ok([]),
-    insertRedirect: ok({ id: "r-new" }),
-    retargetRedirects: ok([]),
+    createRedirect: ok("r-new"),
     deleteRedirectRow: ok([{ from_path: "/cu" }]),
   };
 });
@@ -17,9 +15,14 @@ const redis = vi.hoisted(() => ({
   configured: false,
   isRedisConfigured: vi.fn(),
   redisPipeline: vi.fn(async () => ({ configured: true, ok: true, results: [] })),
+  redisTransaction: vi.fn(async () => ({ configured: true, ok: true, results: [] })),
 }));
 vi.mock("./redirects.repository", () => repo);
-vi.mock("@/lib/redis", () => ({ isRedisConfigured: redis.isRedisConfigured, redisPipeline: redis.redisPipeline }));
+vi.mock("@/lib/redis", () => ({
+  isRedisConfigured: redis.isRedisConfigured,
+  redisPipeline: redis.redisPipeline,
+  redisTransaction: redis.redisTransaction,
+}));
 vi.mock("@/lib/auth/require-role", () => ({ requirePermission: vi.fn(async () => ({ id: "u1", role: "editor" })) }));
 
 const { requirePermission } = await import("@/lib/auth/require-role");
@@ -31,7 +34,6 @@ beforeEach(() => {
   vi.spyOn(console, "info").mockImplementation(() => {});
   redis.configured = false;
   redis.isRedisConfigured.mockImplementation(() => redis.configured);
-  repo.findRedirectByFrom.mockResolvedValue({ data: null, error: null });
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -52,28 +54,33 @@ describe("redirect input", () => {
 });
 
 describe("createRedirect", () => {
-  it("refuses a taken source and a target that is itself redirected", async () => {
-    repo.findRedirectByFrom.mockImplementation(async (...args: unknown[]) => ({ data: args[0] === "/cu" ? { id: "x" } : null, error: null }));
+  it("maps the function's refusals to their fields", async () => {
+    repo.createRedirect.mockResolvedValueOnce({ data: null, error: { code: "23505", message: "this path already has a redirect" } });
     expect(await service.createRedirect({ fromPath: "/cu", toPath: "/moi", statusCode: 301 })).toEqual({ ok: false, error: "fromTaken", field: "fromPath" });
+    repo.createRedirect.mockResolvedValueOnce({ data: null, error: { code: "23514", message: "the target is itself redirected" } });
     expect(await service.createRedirect({ fromPath: "/khac", toPath: "/cu", statusCode: 301 })).toEqual({
       ok: false,
       error: "targetRedirected",
       field: "toPath",
     });
-    expect(repo.insertRedirect).not.toHaveBeenCalled();
   });
 
-  it("moves redirects that pointed at the new source, then saves; Redis is skipped when not configured", async () => {
+  it("saves through one database function; Redis is skipped when not configured", async () => {
     expect(await service.createRedirect({ fromPath: "/cu", toPath: "/moi", statusCode: 301 })).toEqual({ ok: true, id: "r-new", synced: false });
     expect(requirePermission).toHaveBeenCalledWith("redirects.manage");
-    expect(repo.retargetRedirects).toHaveBeenCalledWith("/cu", "/moi");
-    expect(repo.retargetRedirects.mock.invocationCallOrder[0]).toBeLessThan(repo.insertRedirect.mock.invocationCallOrder[0]);
+    expect(repo.createRedirect).toHaveBeenCalledWith({ from_path: "/cu", to_path: "/moi", status_code: 301 });
     expect(redis.redisPipeline).not.toHaveBeenCalled();
   });
 
   it("writes the new and the flattened redirects to the Redis hash", async () => {
     redis.configured = true;
-    repo.redirectsTo.mockResolvedValueOnce({ data: [{ from_path: "/rat-cu", to_path: "/moi", status_code: 301 }], error: null });
+    repo.redirectsTo.mockResolvedValueOnce({
+      data: [
+        { from_path: "/cu", to_path: "/moi", status_code: 302 },
+        { from_path: "/rat-cu", to_path: "/moi", status_code: 301 },
+      ],
+      error: null,
+    });
     await service.createRedirect({ fromPath: "/cu", toPath: "/moi", statusCode: 302 });
     expect(redis.redisPipeline).toHaveBeenCalledWith([
       ["HSET", "redirects", "/cu", '{"to":"/moi","status":302}', "/rat-cu", '{"to":"/moi","status":301}'],
@@ -92,7 +99,7 @@ describe("delete, resync and slug changes", () => {
     redis.configured = true;
     repo.allRedirectRows.mockResolvedValueOnce({ data: [{ from_path: "/a", to_path: "/b", status_code: 301 }], error: null });
     expect(await service.resyncRedirects()).toEqual({ ok: true, count: 1, synced: true });
-    expect(redis.redisPipeline).toHaveBeenCalledWith([
+    expect(redis.redisTransaction).toHaveBeenCalledWith([
       ["DEL", "redirects:resync"],
       ["HSET", "redirects:resync", "/a", '{"to":"/b","status":301}'],
       ["RENAME", "redirects:resync", "redirects"],
@@ -104,7 +111,7 @@ describe("delete, resync and slug changes", () => {
     expect(await service.resyncRedirects()).toEqual({ ok: true, count: 1, synced: false });
     redis.configured = true;
     await service.resyncRedirects();
-    expect(redis.redisPipeline).toHaveBeenLastCalledWith([["DEL", "redirects:resync"], ["DEL", "redirects"]]);
+    expect(redis.redisTransaction).toHaveBeenLastCalledWith([["DEL", "redirects:resync"], ["DEL", "redirects"]]);
   });
 
   it("after a slug change, drops the new target from Redis and writes what points to it", async () => {
