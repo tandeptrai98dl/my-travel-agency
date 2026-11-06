@@ -91,7 +91,7 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
 
   // Hero and gallery.
   await pickPhoto(page, page.getByRole("group", { name: "Ảnh đại diện" }).getByRole("button", { name: "Chọn ảnh" }), "Chọn");
-  await pickPhoto(page, page.getByRole("button", { name: "Thêm ảnh" }), "Chọn 1 ảnh");
+  await pickPhoto(page, page.getByRole("button", { name: "Thêm ảnh", exact: true }), "Chọn 1 ảnh");
 
   // Vietnamese, then English.
   const vi = page.getByRole("tabpanel", { name: /^Tiếng Việt/ });
