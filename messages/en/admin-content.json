@@ -84,7 +84,37 @@
         "keepLanguage": "A saved language is not removed by emptying its title.",
         "published": "The article is published: unpublish it before deleting.",
         "in_use": "Used by articles; it cannot be deleted.",
-        "not_found": "This item no longer exists."
+        "not_found": "This item no longer exists.",
+        "featureNeedsApproved": "Only an approved review can be featured."
+      },
+      "reviews": {
+        "title": "Reviews",
+        "description": "Approve, reject and feature reviews. The text is the customer's and cannot be edited; the system marks a review “verified” when it comes from a completed trip.",
+        "status": "Status",
+        "statuses": {
+          "pending": "Pending",
+          "approved": "Approved",
+          "rejected": "Rejected"
+        },
+        "verifiedFilter": "Verification",
+        "allReviews": "All reviews",
+        "verified": "Verified",
+        "unverified": "Not verified",
+        "sort": "Sort",
+        "newest": "Newest",
+        "byRating": "Lowest rating first",
+        "empty": "No reviews yet.",
+        "rating": "{rating} out of 5 stars",
+        "featuredBadge": "Featured",
+        "travelled": "Travelled {date}",
+        "approve": "Approve",
+        "reject": "Reject",
+        "feature": "Featured",
+        "approved": "Review approved",
+        "rejected": "Review rejected",
+        "featuredDone": "Marked as featured",
+        "unfeatured": "No longer featured",
+        "actionsFor": "Actions for {author}'s review"
       }
     }
   }

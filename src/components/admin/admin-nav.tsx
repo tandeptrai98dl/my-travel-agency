@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, FileClock, FileText, Newspaper, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
+import { CalendarDays, FileClock, FileText, MessageSquareQuote, Newspaper, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -25,6 +25,7 @@ const ICONS = {
   departures: CalendarDays,
   journal: Newspaper,
   pages: FileText,
+  reviews: MessageSquareQuote,
 } as const;
 
 type Props = {

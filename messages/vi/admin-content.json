@@ -84,7 +84,37 @@
         "keepLanguage": "Không xoá bản ngôn ngữ đã lưu bằng cách để trống tiêu đề.",
         "published": "Bài đang xuất bản: hãy ngừng xuất bản trước khi xoá.",
         "in_use": "Đang được bài viết sử dụng, không xoá được.",
-        "not_found": "Mục này không còn tồn tại."
+        "not_found": "Mục này không còn tồn tại.",
+        "featureNeedsApproved": "Chỉ đánh giá đã duyệt mới được chọn nổi bật."
+      },
+      "reviews": {
+        "title": "Đánh giá",
+        "description": "Duyệt, từ chối và chọn đánh giá nổi bật. Nội dung là lời của khách và không sửa được; nhãn “đã xác minh” do hệ thống gắn khi đánh giá gắn với một chuyến đã đi.",
+        "status": "Trạng thái",
+        "statuses": {
+          "pending": "Chờ duyệt",
+          "approved": "Đã duyệt",
+          "rejected": "Đã từ chối"
+        },
+        "verifiedFilter": "Xác minh",
+        "allReviews": "Mọi đánh giá",
+        "verified": "Đã xác minh",
+        "unverified": "Chưa xác minh",
+        "sort": "Sắp xếp",
+        "newest": "Mới nhất",
+        "byRating": "Điểm thấp trước",
+        "empty": "Chưa có đánh giá nào.",
+        "rating": "{rating} trên 5 sao",
+        "featuredBadge": "Nổi bật",
+        "travelled": "Đi {date}",
+        "approve": "Duyệt",
+        "reject": "Từ chối",
+        "feature": "Nổi bật",
+        "approved": "Đã duyệt đánh giá",
+        "rejected": "Đã từ chối đánh giá",
+        "featuredDone": "Đã đánh dấu nổi bật",
+        "unfeatured": "Đã bỏ nổi bật",
+        "actionsFor": "Thao tác cho đánh giá của {author}"
       }
     }
   }
