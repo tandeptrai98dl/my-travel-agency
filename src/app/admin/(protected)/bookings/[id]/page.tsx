@@ -189,7 +189,8 @@ async function Prices({ booking }: { booking: BookingDetail }) {
   const balance = Math.max(booking.total - booking.amountPaid, 0);
   return (
     <Section id="booking-prices" title={t("BookingDetail.priceTitle")}>
-      <div className="overflow-x-auto">
+      {/* Scrolls sideways on narrow screens, so it must be reachable by keyboard (axe). */}
+      <div className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" tabIndex={0} role="region" aria-label={t("BookingDetail.priceTitle")}>
         <table className="w-full min-w-[32rem] text-small">
           <caption className="sr-only">{t("BookingDetail.priceTitle")}</caption>
           <thead>
@@ -278,7 +279,7 @@ async function Payments({ booking }: { booking: BookingDetail }) {
       {booking.payments.length === 0 ? (
         <p className="text-small text-muted-foreground">{t("BookingDetail.noPayments")}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" tabIndex={0} role="region" aria-label={t("BookingDetail.paymentsTitle")}>
           <table className="w-full min-w-[40rem] text-small">
             <caption className="sr-only">{t("BookingDetail.paymentsTitle")}</caption>
             <thead>

@@ -164,7 +164,7 @@ async function Ledger({ searchParams }: Props) {
 
   const filtered = Boolean(params.q || Object.keys(params.filters).length > 0);
   return (
-    <section aria-label={t("Payments.title")} className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <FilterBar
         action={BASE}
         search={{ label: t("Payments.search"), value: params.q }}
@@ -222,6 +222,6 @@ async function Ledger({ searchParams }: Props) {
           total: t("Table.total", { count: total }),
         }}
       />
-    </section>
+    </div>
   );
 }

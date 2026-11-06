@@ -79,7 +79,13 @@ export function DataTable<Row>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      {/* Wide tables scroll sideways on narrow screens; a focusable region keeps that reachable by keyboard. */}
+      <div
+        className="overflow-x-auto rounded-lg border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        tabIndex={0}
+        role="region"
+        aria-label={labels.caption}
+      >
         <table className="w-full min-w-[40rem] border-collapse text-left text-small">
           <caption className="sr-only">{labels.caption}</caption>
           <thead>
