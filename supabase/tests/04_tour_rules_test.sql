@@ -1,7 +1,7 @@
 -- Tour price guards and publish rules (docs/specs/phase-2-catalog-admin.md decisions 1 and 3,
 -- step 11, ADR-024).
 begin;
-select plan(30);
+select plan(31);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -186,6 +186,10 @@ select throws_ok(
 select throws_ok(
   $$ delete from public.tour_translations where slug = 'r-group' $$,
   '23514', null, 'the last published translation of a published tour cannot be deleted'
+);
+select throws_ok(
+  $$ update public.tour_translations set tour_id = '40000000-0000-4000-8000-000000000402' where slug = 'r-group' $$,
+  '23514', null, 'a translation cannot move to another tour'
 );
 select throws_ok(
   $$ update public.tour_translations set seo_description = '' where slug = 'r-group' $$,

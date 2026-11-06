@@ -63,6 +63,7 @@ export function MediaEditDialog({ item, labels, trigger }: { item: MediaItem; la
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    event.stopPropagation();
     setSaving(true);
     setError(null);
     const result = await saveMediaDetails({ id: item.id, alt: { vi: altVi, en: altEn }, credit: credit.trim() || null });

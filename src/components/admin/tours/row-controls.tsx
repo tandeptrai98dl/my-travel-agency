@@ -57,6 +57,19 @@ export function useAnnouncer() {
 }
 
 /**
+ * After a removal the pressed button is gone: focus the row that took its place (or the one
+ * before it), or `fallback` (the add button) when the list is now empty.
+ */
+export function focusAfterRemove(container: HTMLElement | null, rowIndex: number, fallback?: HTMLElement | null) {
+  requestAnimationFrame(() => {
+    const rows = container?.querySelectorAll<HTMLElement>("[data-row]") ?? [];
+    const row = rows[Math.min(rowIndex, rows.length - 1)];
+    const target = row?.querySelector<HTMLElement>("button:not([disabled]), input, textarea") ?? fallback;
+    target?.focus();
+  });
+}
+
+/**
  * After a move the row keeps its React key, so focus stays on the button that was pressed; when
  * that button becomes disabled (top or bottom), focus moves to the row's other arrow.
  */

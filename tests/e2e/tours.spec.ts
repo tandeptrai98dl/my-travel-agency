@@ -68,14 +68,21 @@ test.describe("tours admin", () => {
   test("editor duplicates a published tour as a draft", async ({ page }) => {
     await signInAs(page, "editor");
     await openTours(page);
-    await page.getByRole("link", { name: "Du thuyền vịnh Hạ Long" }).click();
+    // Scoped to the seeded row: earlier runs may have left copies with the same title.
+    await page
+      .getByRole("row")
+      .filter({ hasText: "VN-HLB-03" })
+      .getByRole("link", { name: "Du thuyền vịnh Hạ Long", exact: true })
+      .click();
     await page.getByRole("button", { name: "Nhân bản" }).click();
     const dialog = page.getByRole("dialog", { name: "Nhân bản tour này?" });
     await dialog.getByLabel("Mã cho bản sao").fill(`HLB-${run}`);
     await dialog.getByRole("button", { name: "Nhân bản" }).click();
     await expect(page).toHaveURL(/\/admin\/tours\/[0-9a-f-]{36}$/);
     await expect(page.getByText(`HLB-${run}`, { exact: true })).toBeVisible();
-    await expect(page.getByText("Nháp", { exact: true }).first()).toBeVisible();
+    // The status badge next to the page title (the editor's status select also says "Nháp").
+    const header = page.getByRole("heading", { level: 1 }).locator("xpath=../..");
+    await expect(header.getByText("Nháp", { exact: true })).toBeVisible();
   });
 
   test("operators read the tour list but cannot edit", async ({ page }) => {

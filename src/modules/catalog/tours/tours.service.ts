@@ -19,8 +19,14 @@ import {
   type TourValues,
 } from "./tours.schemas";
 
-/** Cache tag for public tour reads (Phase 3 listing and detail pages). */
+/** Cache tags for public tour reads: every list (`tours`) and one tour's pages (`tour:<id>`). */
 export const TOURS_TAG = "tours";
+export const tourTag = (id: string) => `tour:${id}`;
+
+function refresh(id: string) {
+  updateTag(TOURS_TAG);
+  updateTag(tourTag(id));
+}
 
 export type TourSaveError =
   | "not_found"
@@ -34,6 +40,7 @@ export type TourSaveError =
   | "publishNeedsDeparture"
   | "requiredToPublish"
   | "lastTranslation"
+  | "keepLanguage"
   | "adminOnly"
   | "failed";
 export type TourSaveResult = { ok: true; id: string } | { ok: false; error: TourSaveError; field?: string };
@@ -322,6 +329,7 @@ async function freeSlug(locale: TourLocale, base: string, excludeId?: string): P
 /** Creates a draft from the short form; the editor fills in the rest (step 12). */
 export async function createTour(input: Required<Pick<NewTourInput, "code" | "type" | "scope" | "durationDays" | "durationNights" | "title">>): Promise<TourSaveResult> {
   await requirePermission("tours.edit_content");
+  const { data: defaultPolicy } = await repo.defaultCancellationPolicyId();
   const saved = await repo.insertTour({
     code: input.code,
     type: input.type,
@@ -329,8 +337,9 @@ export async function createTour(input: Required<Pick<NewTourInput, "code" | "ty
     status: "draft",
     duration_days: input.durationDays,
     duration_nights: input.durationNights,
-    // The price guard sets prices and terms for non-admins; admins set them in the editor.
+    // The price guard sets prices and terms for non-admins; admins start from the same defaults.
     from_price: 0,
+    cancellation_policy_id: defaultPolicy ?? null,
   });
   if (saved.error || !saved.data) return mapTourError(saved.error);
   const id = saved.data.id;
@@ -346,7 +355,7 @@ export async function createTour(input: Required<Pick<NewTourInput, "code" | "ty
     await repo.deleteTourRow(id);
     return mapTourError(error, "vi");
   }
-  updateTag(TOURS_TAG);
+  refresh(id);
   return { ok: true, id };
 }
 
@@ -370,10 +379,24 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     const departures = await repo.countActiveDepartures(id);
     if (departures.count === 0) return { ok: false, error: "publishNeedsDeparture", field: "status" };
   }
+  // Decision 3, checked before anything is written (the database checks again at the end).
+  if (publishing && values.heroMediaId) {
+    const { data: hero } = await repo.findMediaRows([values.heroMediaId]);
+    const alt = readAlt(hero?.[0]?.alt);
+    if (!alt.vi.trim() || !alt.en.trim()) return { ok: false, error: "publishNeedsHero", field: "heroMediaId" };
+  }
+  // Removing a whole language is not done by clearing its title (it would silently drop the
+  // itinerary, FAQs and SEO of that language).
+  for (const locale of TOUR_LOCALES) {
+    const before = existing.tour_translations.find((row) => row.locale === locale);
+    if (before && !values.translations[locale].title) {
+      return { ok: false, error: "keepLanguage", field: `translations.${locale}.title` };
+    }
+  }
 
   let wrote = false;
   const done = (result: TourSaveResult) => {
-    if (wrote) updateTag(TOURS_TAG);
+    if (wrote) refresh(id);
     return result;
   };
 
@@ -400,7 +423,8 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
         }
       : {}),
   };
-  const firstStatus = publishing ? existing.status === "published" ? "published" : "draft" : values.status;
+  // Not yet published: keep the stored status (draft or archived) until the final update.
+  const firstStatus = publishing ? existing.status : values.status;
   // A published tour keeps its hero until the end, so the publish trigger never sees it without one.
   const firstHero = publishing && existing.status === "published" ? existing.hero_media_id ?? values.heroMediaId : values.heroMediaId;
   const first = await repo.updateTour(id, { ...base, hero_media_id: firstHero, status: firstStatus });
@@ -414,13 +438,8 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
   for (const locale of order) {
     const t = values.translations[locale];
     const before = existing.tour_translations.find((row) => row.locale === locale);
-    if (!t.title) {
-      if (before) {
-        const { error } = await repo.deleteTourTranslation(id, locale);
-        if (error) return done(mapTourError(error, locale));
-      }
-      continue;
-    }
+    // A language without a title was never saved (an existing one was refused above).
+    if (!t.title) continue;
     const { error } = await repo.upsertTourTranslation({
       tour_id: id,
       locale,
@@ -454,11 +473,15 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     }
   }
 
-  const links = await repo.replaceTourLinks(id, {
-    media: values.galleryIds,
-    destinations: values.destinationIds,
-    styles: values.travelStyleIds,
-  });
+  const links = await repo.updateTourLinks(
+    id,
+    {
+      media: [...existing.tour_media].sort((a, b) => a.sort_order - b.sort_order).map((m) => m.media_id),
+      destinations: existing.tour_destinations.map((d) => d.destination_id),
+      styles: existing.tour_travel_styles.map((s) => s.travel_style_id),
+    },
+    { media: values.galleryIds, destinations: values.destinationIds, styles: values.travelStyleIds },
+  );
   if (links.error) return done(mapTourError(links.error));
 
   if (firstStatus !== values.status || firstHero !== values.heroMediaId) {
@@ -507,7 +530,7 @@ export async function duplicateTour(input: { id: string; code: string }): Promis
     const { error } = await repo.upsertTourTranslation({
       tour_id: id,
       locale,
-      slug: await freeSlug(locale, `${row.slug.slice(0, 66)}-ban-sao`),
+      slug: await freeSlug(locale, `${row.slug.slice(0, 66)}-${locale === "vi" ? "ban-sao" : "copy"}`),
       title: row.title,
       subtitle: row.subtitle,
       summary: row.summary,
@@ -524,13 +547,13 @@ export async function duplicateTour(input: { id: string; code: string }): Promis
     });
     if (error) return undo(mapTourError(error, locale));
   }
-  const links = await repo.replaceTourLinks(id, {
+  const links = await repo.updateTourLinks(id, { media: [], destinations: [], styles: [] }, {
     media: [...source.tour_media].sort((a, b) => a.sort_order - b.sort_order).map((m) => m.media_id),
     destinations: source.tour_destinations.map((d) => d.destination_id),
     styles: source.tour_travel_styles.map((s) => s.travel_style_id),
   });
   if (links.error) return undo(mapTourError(links.error));
-  updateTag(TOURS_TAG);
+  refresh(id);
   return { ok: true, id };
 }
 

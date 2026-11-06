@@ -8,7 +8,7 @@ import { MediaPicker, type MediaPickerLabels } from "@/components/admin/media/me
 import { Button } from "@/components/ui/button";
 import type { MediaSummary } from "@/modules/catalog/tours/tours.service";
 
-import { focusAfterMove, RowControls, useAnnouncer } from "./row-controls";
+import { focusAfterMove, focusAfterRemove, RowControls, useAnnouncer } from "./row-controls";
 
 /**
  * Ordered gallery (spec step 13). Reordering uses buttons rather than drag and drop, so it works
@@ -28,6 +28,7 @@ export function GalleryField({
   const t = useTranslations("Admin.Tours");
   const [known, setKnown] = useState<Record<string, MediaSummary>>(initial);
   const listRef = useRef<HTMLOListElement>(null);
+  const addRef = useRef<HTMLButtonElement>(null);
   const { announce, region } = useAnnouncer();
 
   const move = (from: number, to: number) => {
@@ -72,6 +73,7 @@ export function GalleryField({
                   onRemove={(at) => {
                     onChange(value.filter((_, i) => i !== at));
                     announce(t("imageRemoved", { index: at + 1 }));
+                    focusAfterRemove(listRef.current, at, addRef.current);
                   }}
                 />
               </div>
@@ -84,7 +86,7 @@ export function GalleryField({
           multiple
           labels={pickerLabels}
           trigger={
-            <Button type="button" variant="outline">
+            <Button ref={addRef} type="button" variant="outline">
               <ImagePlus strokeWidth={1.5} aria-hidden="true" />
               {t("addImages")}
             </Button>

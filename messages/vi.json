@@ -259,7 +259,8 @@
         "forbidden": "bạn không có quyền",
         "invalid": "dữ liệu không hợp lệ",
         "in_use": "ảnh đang được dùng trong nội dung",
-        "not_found": "ảnh không còn tồn tại"
+        "not_found": "ảnh không còn tồn tại",
+        "hero_alt_required": "ảnh này là ảnh đại diện của nội dung đang xuất bản nên cần đủ mô tả tiếng Việt và tiếng Anh"
       },
       "search": "Tìm theo mô tả hoặc tên tệp",
       "empty": "Chưa có ảnh nào.",
@@ -528,7 +529,8 @@
         "publishNeedsDeparture": "Tour ghép đoàn cần ít nhất một lịch khởi hành trước khi xuất bản.",
         "lastTranslation": "Không bỏ xuất bản được ngôn ngữ cuối cùng của một tour đang xuất bản. Hãy chuyển tour về nháp trước.",
         "adminOnly": "Chỉ quản trị viên sửa giá và điều khoản.",
-        "fixFields": "Vui lòng sửa các trường được đánh dấu."
+        "fixFields": "Vui lòng sửa các trường được đánh dấu.",
+        "keepLanguage": "Không xoá được cả một ngôn ngữ bằng cách xoá tên tour. Hãy giữ tên, hoặc bỏ xuất bản ngôn ngữ này."
       },
       "publishLanguage": "Xuất bản bản {language}"
     }

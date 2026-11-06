@@ -21,7 +21,7 @@ import { checkTourSlugAction } from "@/modules/catalog/tours/tours.actions";
 import { MEALS, type TourInput } from "@/modules/catalog/tours/tours.schemas";
 import type { MediaSummary } from "@/modules/catalog/tours/tours.service";
 
-import { focusAfterMove, RowControls, useAnnouncer } from "./row-controls";
+import { focusAfterMove, focusAfterRemove, RowControls, useAnnouncer } from "./row-controls";
 import { useTourErrorText } from "./use-tour-error-text";
 
 type Props = {
@@ -45,6 +45,8 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
   const faqs = useFieldArray({ control: form.control, name: `${base}.faqs` });
   const daysRef = useRef<HTMLOListElement>(null);
   const faqsRef = useRef<HTMLOListElement>(null);
+  const addDayRef = useRef<HTMLButtonElement>(null);
+  const addFaqRef = useRef<HTMLButtonElement>(null);
   const { announce, region } = useAnnouncer();
   const errors = form.formState.errors.translations?.[locale];
   const language = tf(locale);
@@ -168,6 +170,7 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
                   onRemove={(at) => {
                     days.remove(at);
                     announce(t("dayRemoved", { index: at + 1 }));
+                    focusAfterRemove(daysRef.current, at, addDayRef.current);
                   }}
                 />
               </div>
@@ -246,6 +249,7 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
         </ol>
         <div>
           <Button
+            ref={addDayRef}
             type="button"
             variant="outline"
             disabled={days.fields.length >= 60}
@@ -297,6 +301,7 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
                   onRemove={(at) => {
                     faqs.remove(at);
                     announce(tf("removed", { index: at + 1 }));
+                    focusAfterRemove(faqsRef.current, at, addFaqRef.current);
                   }}
                 />
               </div>
@@ -331,6 +336,7 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
         </ol>
         <div>
           <Button
+            ref={addFaqRef}
             type="button"
             variant="outline"
             disabled={faqs.fields.length >= 20}

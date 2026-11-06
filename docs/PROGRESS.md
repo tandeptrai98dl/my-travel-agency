@@ -28,13 +28,18 @@ Branch `feat/p2-tours` (`docs/specs/phase-2-catalog-admin.md` steps 11–13, ADR
     - Saving publishes in an order the database accepts (content and links first, status last; the reverse when unpublishing), sends prices only for admins, adds 301s language by language, refreshes the `tours` cache tag and maps the database rules back to their fields.
   - Duplicate: content, images and links as an unpublished draft with free slugs, no departures.
 - Verified locally:
-  - lint, typecheck, 251 unit tests (schemas, including parsing their own output again; save order, admin-only prices, publish checks, redirects, error mapping, duplication);
-  - pgTAP on the local Postgres shim: 152 assertions;
+  - lint, typecheck, 256 unit tests (schemas, including parsing their own output again; save order, admin-only prices, publish checks, hero alt and kept languages, link diffs, cache tags, redirects, error mapping, duplication);
+  - pgTAP on the local Postgres shim: 153 assertions;
   - production build.
   - Signed-in E2E (CI only; results in the PR): editor filters, creates a draft, is refused publishing without a language and a hero, saves the itinerary; duplication; operators read without edit links; the aal2 admin edits a from price.
 - Deviations:
   - Gallery reordering uses move buttons (keyboard and screen-reader friendly) instead of drag and drop.
   - Day images in the itinerary and the signed preview link move to Phase 3 with the public tour page.
+- Independent review: changes requested, addressed:
+  - Major: the media picker search and the media edit dialog submitted the tour editor form through the React tree (portal); both now stop the event.
+  - Minor: a translation cannot move to another tour; the hero alt text is checked before anything is written; a failed publish keeps an archived tour archived; new tours get the default policy for admins too; clearing a saved language's title is refused (`keepLanguage`) instead of deleting it; links are diffed (gallery upserts before removals); the `tour:<id>` tag is refreshed; the media dialog explains a hero alt refusal; focus moves to the next row (or the add button) after a removal; E2E locators scoped to the seeded row and the page header.
+  - Nits: `default_cancellation_policy_id()` is security invoker; audit entity ids use `z.guid()`; the read-only price uses `formatVnd`; English copies get `-copy` slugs; the default copy code fits the format; the form alert is announced again on a second failed save.
+  - Left for PR E: the publish rules do not stop an operator cancelling a published group tour's last departure.
 
 ### 2026-11-07 (Phase 2 — PR 10: destinations, travel styles, cancellation policies)
 

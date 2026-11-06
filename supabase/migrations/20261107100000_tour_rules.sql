@@ -6,13 +6,13 @@
 -- whatever a non-admin sent, so deleting and re-creating a row cannot get round it. The service
 -- role and `postgres` (seeding, Phase 4 functions) are trusted, as in guard_profile_update().
 
--- The default policy for new tours; security definer because a trigger running as the editor must
--- see it whatever the policies on cancellation_policies become.
+-- The default policy for new tours (cancellation policies are publicly readable, so the editor's
+-- own rights are enough).
 create function public.default_cancellation_policy_id()
 returns uuid
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select id from public.cancellation_policies where is_default
@@ -147,6 +147,10 @@ as $$
 declare
   row_tour_id uuid := coalesce(new.tour_id, old.tour_id);
 begin
+  -- Moving a translation to another tour would take it from a published tour unnoticed.
+  if tg_op = 'UPDATE' and new.tour_id is distinct from old.tour_id then
+    raise exception 'a translation cannot move to another tour' using errcode = '23514';
+  end if;
   if tg_op <> 'DELETE' and new.is_published and (
        coalesce(trim(new.title), '') = ''
        or coalesce(trim(new.summary), '') = ''

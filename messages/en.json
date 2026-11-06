@@ -259,7 +259,8 @@
         "forbidden": "you do not have permission",
         "invalid": "invalid data",
         "in_use": "the image is used in content",
-        "not_found": "the image no longer exists"
+        "not_found": "the image no longer exists",
+        "hero_alt_required": "this image is the hero of published content, so it needs both alt texts"
       },
       "search": "Search by description or file name",
       "empty": "No images yet.",
@@ -528,7 +529,8 @@
         "publishNeedsDeparture": "A group tour needs at least one departure before publishing.",
         "lastTranslation": "The last published language of a published tour cannot be unpublished. Set the tour to draft first.",
         "adminOnly": "Only an admin edits prices and terms.",
-        "fixFields": "Please fix the highlighted fields."
+        "fixFields": "Please fix the highlighted fields.",
+        "keepLanguage": "A whole language cannot be removed by clearing the tour title. Keep the title, or unpublish this language."
       },
       "publishLanguage": "Publish the {language} version"
     }

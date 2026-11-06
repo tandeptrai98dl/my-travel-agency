@@ -112,6 +112,9 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
           className="flex gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            // The dialog is portalled, but React still bubbles its submit to an enclosing form
+            // (a tour or destination editor); it must not save that form.
+            event.stopPropagation();
             load(q, 1);
           }}
         >

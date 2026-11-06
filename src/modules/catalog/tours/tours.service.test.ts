@@ -9,8 +9,9 @@ const repo = vi.hoisted(() => {
     insertTour: ok({ id: "t-new" }),
     deleteTourRow: ok(),
     upsertTourTranslation: ok(),
-    deleteTourTranslation: ok(),
-    replaceTourLinks: ok(),
+    updateTourLinks: ok(),
+    defaultCancellationPolicyId: ok("policy-default"),
+    findMediaRows: ok([{ id: "7c9e6679-7425-40de-944b-e07fc1f90ae7", path: "a.jpg", alt: { vi: "Vịnh", en: "The bay" } }]),
     countActiveDepartures: vi.fn(async () => ({ count: 1, error: null })),
     findTourSlugOwner: vi.fn(async () => ({ ownerId: null, error: null })),
     saveRedirect: ok(),
@@ -77,6 +78,9 @@ const stored = (overrides: Record<string, unknown> = {}) => ({
   hero_media_id: null,
   published_at: null,
   tour_translations: [],
+  tour_media: [],
+  tour_destinations: [],
+  tour_travel_styles: [],
   ...overrides,
 });
 
@@ -85,6 +89,10 @@ beforeEach(() => {
   user.current = { id: "u1", role: "editor" };
   repo.findTour.mockResolvedValue({ data: stored(), error: null });
   repo.countActiveDepartures.mockResolvedValue({ count: 1, error: null });
+  repo.findMediaRows.mockResolvedValue({
+    data: [{ id: "7c9e6679-7425-40de-944b-e07fc1f90ae7", path: "a.jpg", alt: { vi: "Vịnh", en: "The bay" } }],
+    error: null,
+  });
 });
 
 describe("saveTour", () => {
@@ -97,6 +105,41 @@ describe("saveTour", () => {
     expect(lastUpdate.published_at).toEqual(expect.any(String));
     expect(repo.upsertTourTranslation.mock.invocationCallOrder[0]).toBeLessThan(repo.updateTour.mock.invocationCallOrder.at(-1)!);
     expect(updateTag).toHaveBeenCalledWith("tours");
+    expect(updateTag).toHaveBeenCalledWith("tour:t1");
+  });
+
+  it("refuses to publish with a hero missing an alt text, before writing anything", async () => {
+    repo.findMediaRows.mockResolvedValue({ data: [{ id: "h", path: "a.jpg", alt: { vi: "Vịnh" } }], error: null });
+    expect(await service.saveTour(values())).toEqual({ ok: false, error: "publishNeedsHero", field: "heroMediaId" });
+    expect(repo.updateTour).not.toHaveBeenCalled();
+  });
+
+  it("refuses to drop a saved language by clearing its title", async () => {
+    repo.findTour.mockResolvedValue({
+      data: stored({ tour_translations: [{ locale: "en", slug: "cruise", is_published: false }] }),
+      error: null,
+    });
+    expect(await service.saveTour(values())).toEqual({ ok: false, error: "keepLanguage", field: "translations.en.title" });
+    expect(repo.upsertTourTranslation).not.toHaveBeenCalled();
+  });
+
+  it("keeps an archived tour archived when publishing fails at the end", async () => {
+    repo.findTour.mockResolvedValue({ data: stored({ status: "archived" }), error: null });
+    repo.updateTour
+      .mockResolvedValueOnce({ data: { id: "t1" }, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code: "23514", message: "a published tour needs a hero image with Vietnamese and English alt text" } });
+    expect(await service.saveTour(values())).toMatchObject({ ok: false, error: "publishNeedsHero" });
+    expect(repo.updateTour.mock.calls[0][1]).toMatchObject({ status: "archived" });
+  });
+
+  it("rewrites links with what was stored before, so unchanged links are left alone", async () => {
+    repo.findTour.mockResolvedValue({
+      data: stored({ tour_media: [{ media_id: "m1", sort_order: 0 }], tour_destinations: [], tour_travel_styles: [] }),
+      error: null,
+    });
+    await service.saveTour(values());
+    expect(repo.updateTourLinks.mock.calls[0][1]).toMatchObject({ media: ["m1"] });
+    expect(repo.updateTourLinks.mock.calls[0][2]).toMatchObject({ media: [] });
   });
 
   it("never sends price columns for a non-admin (the price guard would refuse)", async () => {
@@ -159,6 +202,14 @@ describe("mapTourError", () => {
   });
 });
 
+describe("createTour", () => {
+  it("gives a new tour the default cancellation policy (also for admins)", async () => {
+    user.current = { id: "u2", role: "admin" };
+    await service.createTour({ code: "VN-NEW-01", type: "group", scope: "domestic", title: "Tour mới", durationDays: 2, durationNights: 1 });
+    expect(repo.insertTour.mock.calls[0][0]).toMatchObject({ cancellation_policy_id: "policy-default" });
+  });
+});
+
 describe("duplicateTour", () => {
   it("copies content as an unpublished draft with free slugs, and no departures", async () => {
     repo.findTour.mockResolvedValue({
@@ -176,6 +227,6 @@ describe("duplicateTour", () => {
     expect(await service.duplicateTour({ id: "t1", code: "VN-HLB-03-B" })).toEqual({ ok: true, id: "t-new" });
     expect(repo.insertTour.mock.calls[0][0]).toMatchObject({ status: "draft", code: "VN-HLB-03-B", from_price: 0 });
     expect(repo.upsertTourTranslation.mock.calls[0][0]).toMatchObject({ slug: "du-thuyen-ban-sao", is_published: false });
-    expect(repo.replaceTourLinks.mock.calls[0][1]).toMatchObject({ media: ["m1", "m2"] });
+    expect(repo.updateTourLinks.mock.calls[0][2]).toMatchObject({ media: ["m1", "m2"] });
   });
 });

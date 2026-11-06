@@ -31,12 +31,14 @@ export function DuplicateTourButton({ id, code }: { id: string; code: string }) 
   const router = useRouter();
   const fieldId = useId();
   const [open, setOpen] = useState(false);
-  const [newCode, setNewCode] = useState(`${code}-B`.slice(0, 20));
+  const [newCode, setNewCode] = useState(`${code.slice(0, 18).replace(/-+$/, "")}-B`);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function duplicate(event: React.FormEvent) {
     event.preventDefault();
+    // Rendered inside the tour editor's form: React bubbles portal events to it.
+    event.stopPropagation();
     setBusy(true);
     setError(null);
     const result = await duplicateTourAction({ id, code: newCode });

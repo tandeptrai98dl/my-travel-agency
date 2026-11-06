@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toaster";
+import { formatVnd } from "@/lib/money";
 import { saveTourAction } from "@/modules/catalog/tours/tours.actions";
 import { type TourInput, tourSchema } from "@/modules/catalog/tours/tours.schemas";
 import type { MediaSummary } from "@/modules/catalog/tours/tours.service";
@@ -45,7 +46,6 @@ type Props = {
 export function TourEditor({ initial, media, canEditPrices, activeDepartures, options, prefixes, pickerLabels, actions }: Props) {
   const t = useTranslations("Admin.Tours");
   const tf = useTranslations("Admin.Form");
-  const format = useFormatter();
   const router = useRouter();
   const errorText = useTourErrorText();
   const id = useId();
@@ -130,7 +130,9 @@ export function TourEditor({ initial, media, canEditPrices, activeDepartures, op
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit, (errors) => {
-          setAlert(t("errors.fixFields"));
+          // Cleared first, so the same message is announced again on a second failed attempt.
+          setAlert(null);
+          requestAnimationFrame(() => setAlert(t("errors.fixFields")));
           revealErrors(errorPaths(errors));
         })}
         className="flex max-w-4xl flex-col gap-10"
@@ -252,7 +254,7 @@ export function TourEditor({ initial, media, canEditPrices, activeDepartures, op
                 <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="text-small text-muted-foreground">{t("fromPrice")}</dt>
-                    <dd className="font-medium">{format.number(prices.fromPrice, { style: "currency", currency: "VND" })}</dd>
+                    <dd className="font-medium">{formatVnd(prices.fromPrice, "vi")}</dd>
                   </div>
                   <div>
                     <dt className="text-small text-muted-foreground">{t("depositPercent")}</dt>
