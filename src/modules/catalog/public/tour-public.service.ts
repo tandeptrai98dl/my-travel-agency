@@ -452,3 +452,22 @@ export async function getFeaturedTourCards(locale: Locale, limit = 3): Promise<T
     return [];
   }
 }
+
+/**
+ * Tours of some destinations (with their descendants already expanded by the caller) or travel
+ * styles, recommended order, as cards (cached; no seat badges, decision 3). Used by the
+ * destination and travel style pages. Database errors throw: the page shows its error state.
+ */
+export async function getTourCards(
+  locale: Locale,
+  filter: { destinationIds?: string[]; travelStyleIds?: string[] },
+  limit = 48,
+): Promise<TourCardItem[]> {
+  "use cache";
+  cacheTag(TOURS_TAG, DESTINATIONS_TAG, TRAVEL_STYLES_TAG);
+  cacheLife("hours");
+  const { data, error } = await repo.searchTours({ locale, ...filter, limit });
+  if (error) fail("tour cards", error);
+  return cardsFor(locale, data ?? []);
+}
+
