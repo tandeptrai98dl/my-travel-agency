@@ -50,4 +50,44 @@ export async function listTourOptions() {
     .order("code");
 }
 
+// Create (step 15) ----------------------------------------------------------------------------------
+
+export async function findTourForDepartures(id: string) {
+  const supabase = await db();
+  return supabase
+    .from("tours")
+    .select("id, code, type, status, duration_days, max_pax, tour_translations(locale, title)")
+    .eq("id", id)
+    .maybeSingle();
+}
+
+/** Prices of the tour's latest departure: what guard_departure_prices() copies for non-admins. */
+export async function latestDeparturePrices(tourId: string) {
+  const supabase = await db();
+  return supabase
+    .from("departures")
+    .select("price_adult, price_child, price_infant, single_supplement")
+    .eq("tour_id", tourId)
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+export async function existingStartDates(tourId: string, dates: string[]) {
+  const supabase = await db();
+  return supabase.from("departures").select("start_date").eq("tour_id", tourId).in("start_date", dates);
+}
+
+/**
+ * Inserts the rows, skipping dates the tour already has (`unique (tour_id, start_date)`, so a
+ * departure created meanwhile is skipped too); returns the start dates actually created.
+ */
+export async function insertDepartures(rows: Tables["departures"]["Insert"][]) {
+  const supabase = await db();
+  return supabase
+    .from("departures")
+    .upsert(rows, { onConflict: "tour_id,start_date", ignoreDuplicates: true })
+    .select("start_date");
+}
+
 export type DepartureListRow = NonNullable<Awaited<ReturnType<typeof listDepartureRows>>["data"]>[number];

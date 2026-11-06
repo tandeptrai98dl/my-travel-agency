@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { isIsoMonth } from "@/lib/dates";
 
+import { expandPlan } from "./departure-dates";
+
 /**
  * Admin input for departures (docs/specs/phase-2-catalog-admin.md steps 14–16). Messages are keys
  * in `Admin.Departures.errors`. The database repeats the important rules (*_tour_rules.sql for
@@ -40,3 +42,61 @@ export function departureView(raw: string | string[] | undefined): DepartureView
     .catch("table")
     .parse(Array.isArray(raw) ? raw[0] : raw);
 }
+
+// Create (step 15) ---------------------------------------------------------------------------------
+
+const money = (required: boolean) =>
+  z
+    .number(required ? "required" : "wholeNumber")
+    .int("wholeNumber")
+    .min(0, "outOfRange")
+    .max(10_000_000_000, "outOfRange");
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, "tooLong")
+    .nullish()
+    .transform((value) => (value ? value : null));
+const count = (min: number, max: number) =>
+  z.number("wholeNumber").int("wholeNumber").min(min, "outOfRange").max(max, "outOfRange");
+
+/** Admin-only columns (ADR-016, ADR-024); other roles never send them. */
+export const departurePricesSchema = z.object({
+  priceAdult: money(true),
+  priceChild: money(false).nullable(),
+  priceInfant: money(false).nullable(),
+  singleSupplement: money(false).nullable(),
+});
+export type DeparturePrices = z.output<typeof departurePricesSchema>;
+
+/** Statuses a new departure may start with (closing and cancelling come later, on the edit page). */
+export const NEW_DEPARTURE_STATUSES = ["open", "guaranteed"] as const;
+export const MAX_CAPACITY = 500;
+
+export const departurePlanSchema = z
+  .object({
+    tourId: z.uuid("required"),
+    mode: z.enum(["weekly", "dates"]),
+    from: z.string().trim().max(10, "dateInvalid"),
+    to: z.string().trim().max(10, "dateInvalid"),
+    weekdays: z.array(z.number().int().min(0).max(6)).max(7),
+    dates: z.string().max(5000, "tooLong"),
+    capacity: count(1, MAX_CAPACITY),
+    status: z.enum(NEW_DEPARTURE_STATUSES),
+    note: optionalText(500),
+    prices: departurePricesSchema.nullable(),
+  })
+  .superRefine((value, ctx) => {
+    // The shape of the dates; the service checks them again against today.
+    const result = expandPlan(
+      value.mode === "weekly"
+        ? { mode: "weekly", from: value.from, to: value.to, weekdays: value.weekdays }
+        : { mode: "dates", dates: value.dates },
+    );
+    if (!result.ok) ctx.addIssue({ code: "custom", path: [result.field], message: result.error });
+  });
+export type DeparturePlanInput = z.input<typeof departurePlanSchema>;
+export type DeparturePlanValues = z.output<typeof departurePlanSchema>;
+
+export const departureTourSchema = z.object({ tourId: z.uuid() });
