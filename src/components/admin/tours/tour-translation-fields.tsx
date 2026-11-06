@@ -244,6 +244,21 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
                   )}
                 />
               </div>
+              <Controller
+                control={form.control}
+                name={`${base}.itinerary.${index}.mediaId`}
+                render={({ field, fieldState }) => (
+                  <HeroField
+                    id={`${id}-${day.id}-image`}
+                    legend={t("dayImage")}
+                    value={field.value ?? null}
+                    onChange={field.onChange}
+                    initial={field.value ? (media[field.value] ?? null) : null}
+                    pickerLabels={pickerLabels}
+                    error={fieldState.error?.message ? errorText(fieldState.error.message) : undefined}
+                  />
+                )}
+              />
             </li>
           ))}
         </ol>
@@ -253,7 +268,7 @@ export function TourTranslationFields({ form, locale, prefix, media, pickerLabel
             type="button"
             variant="outline"
             disabled={days.fields.length >= 60}
-            onClick={() => days.append({ title: "", description: "", meals: [], accommodation: "" })}
+            onClick={() => days.append({ title: "", description: "", meals: [], accommodation: "", mediaId: null })}
           >
             <Plus strokeWidth={1.5} aria-hidden="true" />
             {t("addDay")}

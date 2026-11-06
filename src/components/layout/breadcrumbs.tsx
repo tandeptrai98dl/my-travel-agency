@@ -16,11 +16,13 @@ type Props = {
   label: string;
   /** Absolute URL of the current page, for the last BreadcrumbList item. */
   currentUrl: string;
+  /** Off for staff previews, which must not carry structured data. */
+  withJsonLd?: boolean;
   className?: string;
 };
 
 /** Visible trail plus its `BreadcrumbList` (Phase 3 spec decision 10). */
-export function Breadcrumbs({ items, label, currentUrl, className }: Props) {
+export function Breadcrumbs({ items, label, currentUrl, withJsonLd = true, className }: Props) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -53,7 +55,7 @@ export function Breadcrumbs({ items, label, currentUrl, className }: Props) {
           </li>
         ))}
       </ol>
-      <JsonLd data={jsonLd} />
+      {withJsonLd && <JsonLd data={jsonLd} />}
     </nav>
   );
 }

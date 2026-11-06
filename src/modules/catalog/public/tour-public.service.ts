@@ -3,6 +3,8 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { getPathname } from "@/i18n/navigation";
+import { requirePermission } from "@/lib/auth/require-role";
+import { createClient } from "@/lib/supabase/server";
 import { todayInVietnam, type IsoDate } from "@/lib/dates";
 import type { ImageData } from "@/lib/images";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
@@ -155,14 +157,21 @@ export async function getTourPage(locale: Locale, slug: string): Promise<TourPag
 
   const tour = data.tours;
   cacheTag(tourTag(tour.id));
+  return { kind: "found", tour: await assembleTourPage(data, locale) };
+}
+
+type TourPageRow = NonNullable<Awaited<ReturnType<typeof repo.findTranslationBySlug>>["data"]>;
+
+async function assembleTourPage(data: TourPageRow, locale: Locale, client?: repo.ReadClient): Promise<TourPage> {
+  const tour = data.tours;
 
   const itinerary = readItinerary(data.itinerary);
   const dayMediaIds = [...new Set(itinerary.flatMap((day) => (day.mediaId ? [day.mediaId] : [])))];
   const [lookup, slugs, defaultPolicy, dayMedia] = await Promise.all([
     destinationLookup(locale),
-    repo.findTranslationSlugs([tour.id]),
-    tour.policy ? Promise.resolve(null) : repo.findDefaultPolicy(),
-    dayMediaIds.length ? repo.findMediaByIds(dayMediaIds) : Promise.resolve(null),
+    repo.findTranslationSlugs([tour.id], client),
+    tour.policy ? Promise.resolve(null) : repo.findDefaultPolicy(client),
+    dayMediaIds.length ? repo.findMediaByIds(dayMediaIds, client) : Promise.resolve(null),
   ]);
   if (slugs.error) fail("tour slugs", slugs.error);
   if (defaultPolicy?.error) fail("default policy", defaultPolicy.error);
@@ -185,53 +194,72 @@ export async function getTourPage(locale: Locale, slug: string): Promise<TourPag
   >;
 
   return {
-    kind: "found",
-    tour: {
-      id: tour.id,
-      code: tour.code,
-      type: tour.type,
-      scope: tour.scope,
-      locale,
-      slug: data.slug,
-      title: data.title,
-      subtitle: data.subtitle,
-      summary: data.summary,
-      highlights: readStrings(data.highlights),
-      itinerary: itinerary.map((day) => ({ ...day, image: day.mediaId ? (dayImages.get(day.mediaId) ?? null) : null })),
-      inclusions: readStrings(data.inclusions),
-      exclusions: readStrings(data.exclusions),
-      practicalInfo: typeof data.practical_info === "string" && data.practical_info.trim() ? data.practical_info.trim() : null,
-      faqs: readFaqs(data.faqs),
-      seoTitle: data.seo_title,
-      seoDescription: data.seo_description,
-      durationDays: tour.duration_days,
-      durationNights: tour.duration_nights,
-      minPax: tour.min_pax,
-      maxPax: tour.max_pax,
-      minPaxToOperate: tour.min_pax_to_operate,
-      fromPrice: tour.from_price,
-      depositPercent: tour.deposit_percent,
-      balanceDueDays: tour.balance_due_days,
-      childAgeMax: tour.child_age_max,
-      infantAgeMax: tour.infant_age_max,
-      hero,
-      gallery,
-      ogImage: toImage(data.og as MediaRow | null, locale) ?? hero,
-      destinations,
-      countryIds: [...new Set(destinations.map((d) => countryOf(d.id, lookup.all)))],
-      styles: tour.tour_travel_styles.flatMap((link) => {
-        const style = link.travel_styles;
-        const translation = style?.travel_style_translations.find((row) => row.locale === locale);
-        return style && translation
-          ? [{ id: link.travel_style_id, key: style.key, name: translation.name, slug: translation.slug }]
-          : [];
-      }),
-      policy: readPolicy(tour.policy ?? defaultPolicy?.data ?? null, locale),
-      priceTiers: readPriceTiers(tour.price_tiers, todayInVietnam()),
-      alternates: tourLocaleLinks(slugByLocale),
-      updatedAt: tour.updated_at,
-    },
+    id: tour.id,
+    code: tour.code,
+    type: tour.type,
+    scope: tour.scope,
+    locale,
+    slug: data.slug,
+    title: data.title,
+    subtitle: data.subtitle,
+    summary: data.summary,
+    highlights: readStrings(data.highlights),
+    itinerary: itinerary.map((day) => ({ ...day, image: day.mediaId ? (dayImages.get(day.mediaId) ?? null) : null })),
+    inclusions: readStrings(data.inclusions),
+    exclusions: readStrings(data.exclusions),
+    practicalInfo: typeof data.practical_info === "string" && data.practical_info.trim() ? data.practical_info.trim() : null,
+    faqs: readFaqs(data.faqs),
+    seoTitle: data.seo_title,
+    seoDescription: data.seo_description,
+    durationDays: tour.duration_days,
+    durationNights: tour.duration_nights,
+    minPax: tour.min_pax,
+    maxPax: tour.max_pax,
+    minPaxToOperate: tour.min_pax_to_operate,
+    fromPrice: tour.from_price,
+    depositPercent: tour.deposit_percent,
+    balanceDueDays: tour.balance_due_days,
+    childAgeMax: tour.child_age_max,
+    infantAgeMax: tour.infant_age_max,
+    hero,
+    gallery,
+    ogImage: toImage(data.og as MediaRow | null, locale) ?? hero,
+    destinations,
+    countryIds: [...new Set(destinations.map((d) => countryOf(d.id, lookup.all)))],
+    styles: tour.tour_travel_styles.flatMap((link) => {
+      const style = link.travel_styles;
+      const translation = style?.travel_style_translations.find((row) => row.locale === locale);
+      return style && translation
+        ? [{ id: link.travel_style_id, key: style.key, name: translation.name, slug: translation.slug }]
+        : [];
+    }),
+    policy: readPolicy(tour.policy ?? defaultPolicy?.data ?? null, locale),
+    priceTiers: readPriceTiers(tour.price_tiers, todayInVietnam()),
+    alternates: tourLocaleLinks(slugByLocale),
+    updatedAt: tour.updated_at,
   };
+}
+
+
+/**
+ * A tour as its public page would show it, read with the staff session (drafts included) for the
+ * admin preview (decision 17). Uncached. Null when the tour has no row in that language.
+ */
+export async function getTourPreview(tourId: string, locale: Locale): Promise<TourPage | null> {
+  await requirePermission("tours.read");
+  const client = await createClient();
+  const { data, error } = await repo.findTranslationByTourId(client, tourId, locale);
+  if (error) fail("tour preview", error);
+  return data ? assembleTourPage(data, locale, client) : null;
+}
+
+/** Departures for the preview, with the staff session. */
+export async function getTourPreviewDepartures(tourId: string): Promise<Departure[]> {
+  await requirePermission("tours.read");
+  const client = await createClient();
+  const { data, error } = await repo.findDepartures(tourId, client);
+  if (error) fail("departures", error);
+  return mapDepartures(data ?? []);
 }
 
 export type Departure = {
@@ -252,7 +280,13 @@ export type Departure = {
 export async function getTourDepartures(tourId: string): Promise<Departure[]> {
   const { data, error } = await repo.findDepartures(tourId);
   if (error) fail("departures", error);
-  return (data ?? []).map((row) => ({
+  return mapDepartures(data ?? []);
+}
+
+type DepartureRow = NonNullable<Awaited<ReturnType<typeof repo.findDepartures>>["data"]>[number];
+
+function mapDepartures(rows: DepartureRow[]): Departure[] {
+  return rows.map((row) => ({
     id: row.id,
     startDate: row.start_date,
     endDate: row.end_date,

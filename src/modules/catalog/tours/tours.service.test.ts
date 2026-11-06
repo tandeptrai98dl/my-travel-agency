@@ -114,6 +114,36 @@ describe("saveTour", () => {
     expect(repo.updateTour).not.toHaveBeenCalled();
   });
 
+  it("stores a day photo and refuses to publish it without both alt texts", async () => {
+    const dayImage = "9b2c6f1e-3a4d-4c5b-8e7f-1a2b3c4d5e6f";
+    const withDay = (itineraryAlt: Record<string, string>) => {
+      repo.findMediaRows.mockImplementation(async (...args: unknown[]) => ({
+        data: (args[0] as string[]).map((id) =>
+          id === dayImage
+            ? { id, path: "d.jpg", alt: itineraryAlt }
+            : { id, path: "a.jpg", alt: { vi: "Vịnh", en: "The bay" } },
+        ),
+        error: null,
+      }));
+      return values({
+        translations: {
+          vi: translation({ itinerary: [{ title: "Ngày 1", description: "", meals: [], accommodation: "", mediaId: dayImage }] }),
+          en: translation({ title: "", slug: "", summary: "", seoDescription: "", isPublished: false }),
+        },
+      });
+    };
+    expect(await service.saveTour(withDay({ vi: "Hang" }))).toEqual({
+      ok: false,
+      error: "dayImageAlt",
+      field: "translations.vi.itinerary.0.mediaId",
+    });
+    expect(repo.updateTour).not.toHaveBeenCalled();
+
+    expect(await service.saveTour(withDay({ vi: "Hang", en: "Cave" }))).toEqual({ ok: true, id: "t1" });
+    const saved = repo.upsertTourTranslation.mock.calls[0][0] as { itinerary: { media_ids: string[] }[] };
+    expect(saved.itinerary[0].media_ids).toEqual([dayImage]);
+  });
+
   it("refuses to drop a saved language by clearing its title", async () => {
     repo.findTour.mockResolvedValue({
       data: stored({ tour_translations: [{ locale: "en", slug: "cruise", is_published: false }] }),

@@ -1,24 +1,26 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createPublicClient } from "@/lib/supabase/public";
+import type { Database } from "@/types/database.types";
 
 import type { Locale } from "./types";
 
 /**
  * Public catalog reads as anon (Phase 3 spec decision 2): RLS returns only published tours and
- * translations. Explicit columns only. Callers turn `error` into an exception.
+ * translations. Explicit columns only. Callers turn `error` into an exception. The staff preview
+ * passes its session client instead (staff RLS shows drafts).
  */
+
+export type ReadClient = SupabaseClient<Database>;
 
 export const MEDIA_COLUMNS = "id, path, width, height, alt, blur_data_url";
 
 const TOUR_COLUMNS =
   "id, code, type, scope, duration_days, duration_nights, min_pax, max_pax, min_pax_to_operate, from_price, deposit_percent, balance_due_days, child_age_max, infant_age_max, published_at, updated_at";
 
-export async function findTranslationBySlug(locale: Locale, slug: string) {
-  return createPublicClient()
-    .from("tour_translations")
-    .select(
-      `tour_id, locale, slug, title, subtitle, summary, highlights, itinerary, inclusions, exclusions, practical_info, faqs, seo_title, seo_description,
+const TOUR_PAGE_SELECT = `tour_id, locale, slug, title, subtitle, summary, highlights, itinerary, inclusions, exclusions, practical_info, faqs, seo_title, seo_description,
        og:media!tour_translations_og_media_id_fkey(${MEDIA_COLUMNS}),
        tours!inner(${TOUR_COLUMNS},
          hero:media!tours_hero_media_id_fkey(${MEDIA_COLUMNS}),
@@ -26,11 +28,15 @@ export async function findTranslationBySlug(locale: Locale, slug: string) {
          tour_media(sort_order, media(${MEDIA_COLUMNS})),
          tour_destinations(destination_id),
          tour_travel_styles(travel_style_id, travel_styles(key, travel_style_translations(locale, slug, name))),
-         price_tiers(min_pax, max_pax, price_per_adult, valid_from, valid_to))`,
-    )
-    .eq("locale", locale)
-    .eq("slug", slug)
-    .maybeSingle();
+         price_tiers(min_pax, max_pax, price_per_adult, valid_from, valid_to))`;
+
+export async function findTranslationBySlug(locale: Locale, slug: string) {
+  return createPublicClient().from("tour_translations").select(TOUR_PAGE_SELECT).eq("locale", locale).eq("slug", slug).maybeSingle();
+}
+
+/** One tour's translation by id, with the caller's client (the staff preview). */
+export async function findTranslationByTourId(client: ReadClient, tourId: string, locale: Locale) {
+  return client.from("tour_translations").select(TOUR_PAGE_SELECT).eq("tour_id", tourId).eq("locale", locale).maybeSingle();
 }
 
 /** The tour a slug of the other language belongs to (a switched or shared link). */
@@ -44,20 +50,20 @@ export async function findTourIdBySlugInOtherLocale(locale: Locale, slug: string
 }
 
 /** Published translations (slug per language) of some tours. */
-export async function findTranslationSlugs(tourIds: string[]) {
-  return createPublicClient().from("tour_translations").select("tour_id, locale, slug").in("tour_id", tourIds);
+export async function findTranslationSlugs(tourIds: string[], client: ReadClient = createPublicClient()) {
+  return client.from("tour_translations").select("tour_id, locale, slug").in("tour_id", tourIds);
 }
 
-export async function findDefaultPolicy() {
-  return createPublicClient()
+export async function findDefaultPolicy(client: ReadClient = createPublicClient()) {
+  return client
     .from("cancellation_policies")
     .select("summary, rules")
     .eq("is_default", true)
     .maybeSingle();
 }
 
-export async function findMediaByIds(ids: string[]) {
-  return createPublicClient().from("media").select(MEDIA_COLUMNS).in("id", ids);
+export async function findMediaByIds(ids: string[], client: ReadClient = createPublicClient()) {
+  return client.from("media").select(MEDIA_COLUMNS).in("id", ids);
 }
 
 /** Card data for tours found by `search_tours` (translation, hero, destination ids). */
@@ -110,8 +116,8 @@ export async function findTourReviews(tourId: string) {
     .limit(200);
 }
 
-export async function findDepartures(tourId: string) {
-  return createPublicClient().rpc("tour_departures", { p_tour_id: tourId });
+export async function findDepartures(tourId: string, client: ReadClient = createPublicClient()) {
+  return client.rpc("tour_departures", { p_tour_id: tourId });
 }
 
 /** Every published slug per language, for generateStaticParams (decision 4). */

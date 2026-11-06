@@ -135,9 +135,13 @@
         "lastTranslation": "The last published language of a published tour cannot be unpublished. Set the tour to draft first.",
         "adminOnly": "Only an admin edits prices and terms.",
         "fixFields": "Please fix the highlighted fields.",
-        "keepLanguage": "A whole language cannot be removed by clearing the tour title. Keep the title, or unpublish this language."
+        "keepLanguage": "A whole language cannot be removed by clearing the tour title. Keep the title, or unpublish this language.",
+        "dayImageAlt": "A day photo needs Vietnamese and English alt text before this language is published."
       },
-      "publishLanguage": "Publish the {language} version"
+      "publishLanguage": "Publish the {language} version",
+      "dayImage": "Day photo",
+      "preview": "Preview VI",
+      "previewEn": "Preview EN"
     }
   }
 }
