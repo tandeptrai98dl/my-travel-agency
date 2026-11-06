@@ -80,19 +80,21 @@ test.describe("departures admin", () => {
     await expect(page.getByRole("heading", { level: 1, name: new RegExp(`^VN-NTH-06 · ${dmy(fresh[0])}$`) })).toBeVisible();
     await expect(page.getByTestId("departure-seats")).toHaveText("0/14");
     await expect(page.getByText("Chỉ quản trị viên (đã xác thực hai lớp) sửa giá.", { exact: true })).toBeVisible();
-    await expect(page.getByLabel("Giá người lớn (đồng)")).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Giá người lớn (đồng)" })).toHaveCount(0);
     await page.getByRole("combobox", { name: "Trạng thái" }).click();
     await expect(page.getByRole("option", { name: "Đã huỷ" })).toBeDisabled();
     await page.getByRole("option", { name: "Ngừng nhận khách" }).click();
-    await page.getByLabel("Sức chứa (chỗ)").fill("20");
-    await page.getByLabel("Ghi chú nội bộ").fill("Đóng sớm");
+    await expect(page.getByRole("listbox")).toBeHidden();
+    // Role locators skip the previous page, which the router keeps hidden in the DOM.
+    await page.getByRole("spinbutton", { name: "Sức chứa (chỗ)" }).fill("20");
+    await page.getByRole("textbox", { name: "Ghi chú nội bộ" }).fill("Đóng sớm");
     await expectNoSeriousViolations(page, "departure editor");
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
     await expect(toasts(page).getByText("Đã lưu chuyến khởi hành.")).toBeVisible();
     await page.reload();
     await expect(page.getByTestId("departure-seats")).toHaveText("0/20");
     await expect(page.getByRole("combobox", { name: "Trạng thái" })).toHaveText("Ngừng nhận khách");
-    await expect(page.getByLabel("Ghi chú nội bộ")).toHaveValue("Đóng sớm");
+    await expect(page.getByRole("textbox", { name: "Ghi chú nội bộ" })).toHaveValue("Đóng sớm");
 
     // Delete (no bookings, not the tour's last departure).
     await page.getByRole("button", { name: "Xoá chuyến" }).click();
