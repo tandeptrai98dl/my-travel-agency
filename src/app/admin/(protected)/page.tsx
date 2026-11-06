@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { LogoutButton } from "@/components/logout-button";
+import { SignOutButton } from "@/components/admin/sign-out-button";
 import { STAFF_ROLES } from "@/lib/auth/permissions";
+import { signOut } from "@/modules/identity/identity.actions";
 
 import { requireAdminAccess } from "../admin-gate";
 
@@ -29,7 +30,7 @@ export default async function AdminHomePage() {
         <Link href="/admin/mfa" className="text-sm underline underline-offset-4">
           {t("manageMfa")}
         </Link>
-        <LogoutButton label={t("signOut")} />
+        <SignOutButton label={t("signOut")} action={signOut} />
       </div>
     </main>
   );

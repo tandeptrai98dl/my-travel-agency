@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
 import { bodyFont } from "@/app/fonts";
 import { routing } from "@/i18n/routing";
@@ -36,10 +36,14 @@ export default async function LocaleLayout({ children, params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
+  // Only the namespaces client components use; everything else stays on the server.
+  const messages = await getMessages();
+  const clientMessages = { LanguageSwitcher: messages.LanguageSwitcher };
+
   return (
     <html lang={locale}>
       <body className={`${bodyFont.className} antialiased`}>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

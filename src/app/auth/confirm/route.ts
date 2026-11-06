@@ -26,5 +26,5 @@ export async function GET(request: NextRequest) {
   }
 
   // Only same-site paths: `next` comes from the URL and must not become an open redirect.
-  redirect(safeRedirectPath(next, "/admin"));
+  redirect(safeRedirectPath(next, "/"));
 }

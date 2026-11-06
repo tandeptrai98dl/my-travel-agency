@@ -10,6 +10,12 @@ export const routing = defineRouting({
   // No Accept-Language redirects: every URL serves one fixed language, which keeps pages
   // cacheable and lets search engines index both versions.
   localeDetection: false,
+  // No NEXT_LOCALE cookie: detection is off, so it would never be read and would only add
+  // Set-Cookie to otherwise cacheable pages.
+  localeCookie: false,
+  // No automatic hreflang Link header: pages declare hreflang in generateMetadata, and only for
+  // languages with a published translation (ARCHITECTURE.md "Routes").
+  alternateLinks: false,
   pathnames,
 });
 

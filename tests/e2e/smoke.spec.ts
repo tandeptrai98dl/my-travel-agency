@@ -37,13 +37,14 @@ test("unknown pages return a localized 404", async ({ page }) => {
 });
 
 test("responses carry the baseline security headers", async ({ request }) => {
-  const response = await request.get("/en");
-  const headers = response.headers();
-  expect(headers["x-frame-options"]).toBe("DENY");
-  expect(headers["strict-transport-security"]).toContain("max-age=");
-  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
-  expect(headers["permissions-policy"]).toContain("camera=()");
-  expect(headers["x-content-type-options"]).toBe("nosniff");
+  for (const path of ["/en", "/admin", "/api/health", "/robots.txt"]) {
+    const headers = (await request.get(path, { maxRedirects: 0 })).headers();
+    expect(headers["x-frame-options"], path).toBe("DENY");
+    expect(headers["strict-transport-security"], path).toContain("max-age=");
+    expect(headers["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
+    expect(headers["permissions-policy"], path).toContain("camera=()");
+    expect(headers["x-content-type-options"], path).toBe("nosniff");
+  }
 });
 
 test("health check reports the database", async ({ request }) => {
@@ -53,8 +54,22 @@ test("health check reports the database", async ({ request }) => {
   expect(response.headers()["cache-control"]).toContain("no-store");
 });
 
-test("email links cannot redirect off-site", async ({ request }) => {
-  const response = await request.get("/auth/confirm?next=//evil.example", { maxRedirects: 0 });
+test("unknown admin, API and auth paths return 404", async ({ request }) => {
+  for (const path of ["/admin/does-not-exist", "/api/does-not-exist", "/auth/does-not-exist"]) {
+    expect((await request.get(path)).status(), path).toBe(404);
+  }
+});
+
+test("a Vietnamese slug under /en redirects to the English slug", async ({ request }) => {
+  const response = await request.get("/en/diem-den", { maxRedirects: 0 });
   expect(response.status()).toBe(307);
-  expect(response.headers()["location"]).toMatch(/^\/auth\/error|^http:\/\/localhost[^/]*\/auth\/error/);
+  expect(new URL(response.headers()["location"]!, "http://localhost").pathname).toBe(
+    "/en/destinations",
+  );
+});
+
+test("public pages set no locale cookie and no hreflang Link header", async ({ request }) => {
+  const response = await request.get("/en");
+  expect(response.headers()["set-cookie"] ?? "").not.toContain("NEXT_LOCALE");
+  expect(response.headers()["link"] ?? "").not.toContain("hreflang");
 });

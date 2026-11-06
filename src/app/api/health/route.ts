@@ -1,8 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import { connection, NextResponse } from "next/server";
 
-import { publicEnv } from "@/lib/env/public";
-import type { Database } from "@/types/database.types";
+import { createPublicClient } from "@/lib/supabase/public";
 
 /**
  * Uptime check (ARCHITECTURE.md "Monitoring"): `{ status, db }`, 200 when the database answers,
@@ -13,17 +11,13 @@ export async function GET() {
   // Always run at request time; never prerender the result.
   await connection();
 
-  const supabase = createClient<Database>(
-    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
-    publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
-  );
+  const supabase = createPublicClient();
 
   let db: "ok" | "error" = "error";
   try {
     const { error } = await supabase
       .from("settings")
-      .select("key", { head: true, count: "exact" })
+      .select("key", { head: true })
       .eq("is_public", true)
       .abortSignal(AbortSignal.timeout(3000));
     if (!error) db = "ok";

@@ -6,7 +6,6 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 export type MfaSetupMessages = {
@@ -27,17 +26,28 @@ export type MfaSetupMessages = {
 type Mode = "enrol" | "verify" | "done";
 type Enrolment = { factorId: string; qrCode: string; secret: string };
 
+export type MfaActions = {
+  start: () => Promise<({ ok: true } & Enrolment) | { ok: false; error: string }>;
+  verify: (input: {
+    code: string;
+    factorId?: string;
+  }) => Promise<{ ok: true } | { ok: false; error: "invalid_code" | "failed" }>;
+};
+
 type Props = {
   initialMode: Mode;
   messages: MfaSetupMessages;
+  /** Server Actions from src/modules/identity, passed in by the page. */
+  actions: MfaActions;
   className?: string;
 };
 
 /**
- * TOTP enrolment and verification with Supabase Auth MFA. Verifying a code upgrades the session
- * to aal2 in place; the server then re-checks it on the next request (requireRole()).
+ * TOTP enrolment and verification UI. The work happens in Server Actions (Supabase Auth MFA on
+ * the server); a verified code upgrades the session to aal2, which the server re-checks on the
+ * next request (requireRole()).
  */
-export function MfaSetup({ initialMode, messages, className }: Props) {
+export function MfaSetup({ initialMode, messages, actions, className }: Props) {
   const router = useRouter();
   const codeId = useId();
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -49,21 +59,13 @@ export function MfaSetup({ initialMode, messages, className }: Props) {
   async function startEnrolment() {
     setBusy(true);
     setError(null);
-    const supabase = createClient();
     try {
-      // Remove abandoned, never-verified factors so a fresh enrolment can start.
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      for (const factor of factors?.all ?? []) {
-        if (factor.status === "unverified") {
-          await supabase.auth.mfa.unenroll({ factorId: factor.id });
-        }
+      const result = await actions.start();
+      if (!result.ok) {
+        setError(messages.genericError);
+        return;
       }
-      const { data, error: enrolError } = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        friendlyName: `Authenticator ${new Date().toISOString().slice(0, 10)}`,
-      });
-      if (enrolError || !data) throw enrolError ?? new Error("enrol failed");
-      setEnrolment({ factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret });
+      setEnrolment({ factorId: result.factorId, qrCode: result.qrCode, secret: result.secret });
     } catch {
       setError(messages.genericError);
     } finally {
@@ -75,21 +77,10 @@ export function MfaSetup({ initialMode, messages, className }: Props) {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const supabase = createClient();
     try {
-      let factorId = enrolment?.factorId;
-      if (!factorId) {
-        const { data: factors } = await supabase.auth.mfa.listFactors();
-        factorId = factors?.totp.find((factor) => factor.status === "verified")?.id;
-      }
-      if (!factorId) throw new Error("no factor");
-
-      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({
-        factorId,
-        code: code.trim(),
-      });
-      if (verifyError) {
-        setError(messages.invalidCode);
+      const result = await actions.verify({ code: code.trim(), factorId: enrolment?.factorId });
+      if (!result.ok) {
+        setError(result.error === "invalid_code" ? messages.invalidCode : messages.genericError);
         return;
       }
       setMode("done");

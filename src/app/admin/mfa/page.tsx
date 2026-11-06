@@ -4,17 +4,19 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { MfaSetup, type MfaSetupMessages } from "@/components/admin/mfa-setup";
-import { getCurrentUser } from "@/lib/auth/get-user";
+import { getAuthState } from "@/lib/auth/get-user";
 import { isStaffRole, requiresMfa } from "@/lib/auth/permissions";
+import { startTotpEnrolment, verifyTotpCode } from "@/modules/identity/identity.actions";
 
 export const metadata: Metadata = { title: "Xác thực hai lớp" };
 
 async function MfaContent() {
   // Open to every staff member at any assurance level (this is where aal2 is reached), so it
   // cannot use the gate that redirects here.
-  const user = await getCurrentUser();
-  if (!user) redirect("/auth/login");
-  if (!isStaffRole(user.role)) notFound();
+  const state = await getAuthState();
+  if (state.status === "signed_out") redirect("/auth/login");
+  if (state.status === "inactive" || !isStaffRole(state.user.role)) notFound();
+  const { user } = state;
 
   const t = await getTranslations({ locale: "vi", namespace: "Admin.Mfa" });
   const messages: MfaSetupMessages = {
@@ -40,7 +42,12 @@ async function MfaContent() {
       <p className="mt-4 text-sm text-muted-foreground">
         {requiresMfa(user.role) ? t("requiredNotice") : t("optionalNotice")}
       </p>
-      <MfaSetup className="mt-8" initialMode={mode} messages={messages} />
+      <MfaSetup
+        className="mt-8"
+        initialMode={mode}
+        messages={messages}
+        actions={{ start: startTotpEnrolment, verify: verifyTotpCode }}
+      />
     </main>
   );
 }

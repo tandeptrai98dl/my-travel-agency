@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { magicLinkTokenHash } from "./support/admin-api";
 import { signInAs } from "./support/auth";
 import { totp } from "./support/totp";
 
@@ -17,12 +18,35 @@ test("signed-out visitors are sent to sign-in", async ({ page }) => {
 test("a customer cannot open the admin", async ({ page }) => {
   await signInAs(page, "customer");
   await page.goto("/admin");
+  await expect(page.getByText("This page could not be found.")).toBeVisible();
   await expect(page.getByTestId("admin-role")).toHaveCount(0);
-  await expect(page.getByText("404")).toBeVisible();
+});
+
+test("email links only redirect to same-site paths", async ({ request }) => {
+  // A real, verifiable token, so the request gets past validation to the redirect itself.
+  for (const next of ["//evil.example", "/.//evil.example", "/%2e//evil.example", "https://evil.example"]) {
+    const tokenHash = await magicLinkTokenHash("customer@example.test");
+    const response = await request.get(
+      `/auth/confirm?token_hash=${tokenHash}&type=magiclink&next=${encodeURIComponent(next)}`,
+      { maxRedirects: 0 },
+    );
+    expect(response.status(), next).toBe(307);
+    const location = new URL(response.headers()["location"]!, "http://localhost:3000");
+    expect(location.host, next).toBe("localhost:3000");
+    expect(location.pathname, next).toBe("/");
+  }
+
+  const tokenHash = await magicLinkTokenHash("customer@example.test");
+  const response = await request.get(
+    `/auth/confirm?token_hash=${tokenHash}&type=magiclink&next=${encodeURIComponent("/en")}`,
+    { maxRedirects: 0 },
+  );
+  expect(new URL(response.headers()["location"]!, "http://localhost:3000").pathname).toBe("/en");
 });
 
 for (const [role, label] of [
   ["sales", "Kinh doanh"],
+  ["sales_manager", "Quản lý kinh doanh"],
   ["operator", "Điều hành"],
   ["editor", "Biên tập"],
 ] as const) {
@@ -44,6 +68,8 @@ test("accountant is sent to MFA enrolment", async ({ page }) => {
 test("admin enrols TOTP, reaches aal2, and must verify again after signing in", async ({
   page,
 }) => {
+  // Two sign-ins plus up to 30 s waiting for a fresh TOTP window.
+  test.setTimeout(90_000);
   await signInAs(page, "admin");
   await expect(page).toHaveURL(/\/admin\/mfa$/);
 

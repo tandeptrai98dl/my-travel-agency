@@ -160,6 +160,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
+          # Test setup only (generating email-link tokens); the app keeps the sentinel key.
+          E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
+          E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
         run: npm run test:e2e
         timeout-minutes: 8
       - uses: actions/upload-artifact@v4

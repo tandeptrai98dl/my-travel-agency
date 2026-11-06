@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
-import { applySecurityHeaders } from "@/lib/security-headers";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
@@ -11,7 +10,8 @@ const handleLocale = createIntlMiddleware(routing);
 const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
 
 /**
- * Next.js proxy: Supabase session refresh, locale routing and security headers.
+ * Next.js proxy: Supabase session refresh and locale routing. Security headers are set for every
+ * path in next.config.ts.
  * Not an authentication layer (ARCHITECTURE.md "Auth"): protected pages check the user
  * themselves. Redirects from Redis are added in Phase 2.
  */
@@ -32,7 +32,6 @@ export async function proxy(request: NextRequest) {
     response.headers.set(name, value);
   }
 
-  applySecurityHeaders(response.headers);
   return response;
 }
 
