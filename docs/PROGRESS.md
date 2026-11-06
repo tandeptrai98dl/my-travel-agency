@@ -5,11 +5,23 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 spec (`docs/specs/phase-2-catalog-admin.md`), then AdminShell, DataTable, LocaleTabs, media upload. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR B (media library), then taxonomy, tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
 
+### 2026-11-06 (Phase 2 — PR 8: spec, admin shell, building blocks, audit log)
+
+Branch `feat/p2-admin-shell` (`docs/specs/phase-2-catalog-admin.md` steps 1–4).
+
+- Done:
+  - Phase 2 spec with the recommended defaults (price-column guards, audit trigger, publishing checks, slugs and redirects, media checks, rich-text whitelist, staff invitations, cache tags), taken under the owner's standing instruction.
+  - AdminShell: sidebar built from the permission matrix (items a role cannot use are hidden and still blocked on the server), a sheet below `lg` that returns focus to its button, top bar with user, role, MFA state and sign-out, skip link, PageHeader with breadcrumbs. The overview page now lives inside the shell.
+  - DataTable and FilterBar: list state in the URL (`parseListParams`/`listHref`, unit-tested, unknown values fall back to defaults), sortable headers as links with `aria-sort`, a GET filter form that works without JavaScript.
+  - Form blocks: LocaleTabs, SlugInput (`slugify` removes Vietnamese diacritics including đ; unit-tested), SeoFields, MoneyInput (`parseDongInput`/`formatDongInput`, unit-tested), ConfirmDialog, ListEditor.
+  - Audit: migration `20261106140000_audit_triggers.sql` (generic `audit_row_change()` trigger on 23 tables), 13 pgTAP assertions, `/admin/audit-log` (admin at aal2) with entity filter, sort and paging; the list streams in its own Suspense boundary.
+  - E2E: admin opens the audit log from the menu (`aria-current`), filters by entity, axe clean; editor has no audit link and gets a 404; the mobile admin menu sheet returns focus. axe helper shared in `tests/e2e/support/axe.ts`.
+- Verified locally: lint, typecheck, unit tests; pgTAP on the local Postgres shim (77 assertions); production build; the shell and audit page rendered with a temporarily faked admin (not committed) at 1280 and 375 px with no axe violations. Signed-in E2E runs in CI.
 ### 2026-11-06 (Phase 1 — PR 7: primitives, design system page, axe)
 
 Branch `feat/p1-primitives` (`docs/specs/phase-1-design-system.md` steps 12–14).
