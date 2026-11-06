@@ -10,6 +10,21 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Log
 
+### 2026-11-06 (Phase 0 — PR 1 of 4: housekeeping, test tooling, env validation, CI)
+
+Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
+
+- Done (verified locally: `npm run lint`, `npm run typecheck`, `npm test` — 8 tests pass):
+  - Removed starter tutorial content, the `/protected` example and starter branding; placeholder home page (`noindex`).
+  - Fixed the `tailwind.config.ts` lint error; ESLint ignores build output and generated files.
+  - Vitest and Playwright configured; Playwright smoke test for the home page.
+  - Environment validation with Zod in `src/lib/env/` (public and server-only modules), checked at server start via `src/instrumentation.ts`; `.env.example` complete.
+  - GitHub Actions CI: lint, typecheck, unit tests, production build, secret-key leak check on client bundles, Playwright smoke.
+  - ADR-020 (delivery workflow) and the matching `CLAUDE.md` section.
+- Verified in CI only: production build and E2E (the cloud workspace blocks Google Fonts, so `next build` cannot run there).
+- Deviations from the spec: env code lives in `src/lib/env/{schema,public,server}.ts` instead of one `env.ts` (keeps server-only values out of client bundles); `SUPABASE_SECRET_KEY` stays optional until the admin client lands in step 7; no Prettier (not in ADR-014).
+- Remaining Phase 0: Supabase schema, RLS, pgTAP, seed (PR 2); clients, auth helpers, i18n, admin shell, health check (PR 3); Sentry, Vercel, README (PR 4).
+
 ### 2026-11-06 (documentation update — full scope)
 
 - Owner chose the full-scope MVP. Recorded ADR-005 to ADR-019 in `DECISIONS.md` (ADR-005 to ADR-015 accepted; ADR-016 to ADR-019 proposed).
@@ -38,6 +53,5 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Known issues
 
-- Starter tutorial content (`src/components/tutorial/`, `src/app/protected/`) is still present. Remove it in Phase 0.
-- `tailwind.config.ts` uses `require()` (ESLint error); `npm run lint` scans `.next/`. Fix in Phase 0 step 1.
-- The `src/` restructure is staged but not committed.
+- `src/lib/supabase/proxy.ts` (from the starter) redirects every signed-out visitor to `/auth/login` on any path except `/`. Must be replaced in PR 3 so public pages stay public.
+- The root layout still uses the starter Geist font and a user-selectable theme; replaced in Phase 1 (design tokens, ADR-017).

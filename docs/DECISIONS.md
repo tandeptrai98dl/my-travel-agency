@@ -179,3 +179,17 @@ Template:
 - **Context:** The full scope (ADR-005) replaces the original five-phase plan.
 - **Decision:** Phases 0–6 as described in `DEVELOPMENT_PLAN.md`, about 16 weeks for one developer or 12–13 weeks for two.
 - **Consequences:** `PROGRESS.md` tracks phases by these numbers. Non-code tracks (VNPay contract, e-commerce notification, bilingual content) start in Phase 0.
+
+## ADR-020: Delivery workflow — branches, pull requests, review and merge
+
+- **Date:** 2026-11-06
+- **Status:** Accepted
+- **Context:** Work is implemented by Claude (Claude Code) against the GitHub repository `tandeptrai98dl/my-travel-agency`, with the project owner approving scope and decisions.
+- **Decision:**
+  - `main` is always deployable. All work happens on short-lived branches (`feat/…`, `fix/…`, `chore/…`, `docs/…`), one task or spec slice per branch, one commit per spec step, Conventional Commits.
+  - Every change reaches `main` through a pull request whose description lists each acceptance criterion as pass/fail with evidence and anything blocked by missing accounts or secrets.
+  - Each pull request gets an independent review by a separate agent that did not write the code, checking it against the spec, `DATABASE.md` (RLS) and the security rules in `ARCHITECTURE.md`.
+  - The owner authorises Claude to squash-merge when CI is green and the review has no unresolved critical or major findings. Changes to architecture, the database design or approved ADRs still need the owner's confirmation before implementation (`CLAUDE.md` workflow step 5).
+  - At most two implementation streams run in parallel, and only one stream owns `supabase/migrations/` at a time.
+  - `docs/PROGRESS.md` is updated in every pull request.
+- **Consequences:** GitHub (pull requests, CI runs, commit history) is the record of what is done. Branch protection on `main` (require the CI checks) should be enabled by the owner.
