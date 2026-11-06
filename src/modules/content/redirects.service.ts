@@ -2,7 +2,7 @@ import "server-only";
 
 import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
-import { isRedisConfigured, type RedisCommand, redisPipeline } from "@/lib/redis";
+import { isRedisConfigured, type RedisCommand, redisPipeline, redisTransaction } from "@/lib/redis";
 
 import * as repo from "./redirects.repository";
 import { REDIRECTS_PAGE_SIZE, type RedirectValues } from "./redirects.schemas";
@@ -19,12 +19,12 @@ const REDIS_STAGING_KEY = "redirects:resync";
 type Row = { from_path: string; to_path: string; status_code: number };
 const entry = (row: Row) => JSON.stringify({ to: row.to_path, status: row.status_code });
 
-async function sync(commands: RedisCommand[], op: string): Promise<boolean> {
+async function sync(commands: RedisCommand[], op: string, atomic = false): Promise<boolean> {
   if (!isRedisConfigured()) {
     logger.info("redirects.redis_skipped", { op, reason: "not_configured" });
     return false;
   }
-  const result = await redisPipeline(commands);
+  const result = await (atomic ? redisTransaction(commands) : redisPipeline(commands));
   if (result.configured && !result.ok) logger.error("redirects.redis_sync_failed", { op });
   return result.configured && result.ok;
 }
@@ -61,27 +61,17 @@ export type RedirectResult = { ok: true; id: string; synced: boolean } | { ok: f
  */
 export async function createRedirect(values: RedirectValues): Promise<RedirectResult> {
   await requirePermission("redirects.manage");
-  const [{ data: taken }, { data: chained }] = await Promise.all([
-    repo.findRedirectByFrom(values.fromPath),
-    repo.findRedirectByFrom(values.toPath),
-  ]);
-  if (taken) return { ok: false, error: "fromTaken", field: "fromPath" };
-  if (chained) return { ok: false, error: "targetRedirected", field: "toPath" };
-  const moved = await repo.retargetRedirects(values.fromPath, values.toPath);
-  if (moved.error) return mapRedirectError(moved.error);
-  const saved = await repo.insertRedirect({ from_path: values.fromPath, to_path: values.toPath, status_code: values.statusCode });
+  const saved = await repo.createRedirect({ from_path: values.fromPath, to_path: values.toPath, status_code: values.statusCode });
   if (saved.error || !saved.data) return mapRedirectError(saved.error);
-  const rows: Row[] = [
-    { from_path: values.fromPath, to_path: values.toPath, status_code: values.statusCode },
-    ...((await repo.redirectsTo(values.toPath)).data ?? []),
-  ];
+  // The new redirect and those flattened onto the same target.
+  const rows: Row[] = (await repo.redirectsTo(values.toPath)).data ?? [];
   const synced = await sync([["HSET", REDIS_REDIRECTS_KEY, ...rows.flatMap((row) => [row.from_path, entry(row)])]], "create");
-  return { ok: true, id: saved.data.id, synced };
+  return { ok: true, id: saved.data, synced };
 }
 
 function mapRedirectError(error: { code?: string; message?: string } | null): { ok: false; error: string; field?: string } {
   const text = error?.message ?? "";
-  if (error?.code === "23505") return { ok: false, error: "fromTaken", field: "fromPath" };
+  if (error?.code === "23505" || text.includes("already has a redirect")) return { ok: false, error: "fromTaken", field: "fromPath" };
   if (error?.code === "23514") {
     if (text.includes("target is itself redirected")) return { ok: false, error: "targetRedirected", field: "toPath" };
     if (text.includes("point to this path")) return { ok: false, error: "fromIsTarget", field: "fromPath" };
@@ -120,7 +110,8 @@ export async function resyncRedirects(): Promise<{ ok: true; count: number; sync
     commands.push(["HSET", REDIS_STAGING_KEY, ...rows.slice(i, i + 500).flatMap((row) => [row.from_path, entry(row)])]);
   }
   commands.push(rows.length ? ["RENAME", REDIS_STAGING_KEY, REDIS_REDIRECTS_KEY] : ["DEL", REDIS_REDIRECTS_KEY]);
-  const synced = await sync(commands, "resync");
+  // All or nothing: the proxy never reads a half-built hash.
+  const synced = await sync(commands, "resync", true);
   return synced ? { ok: true, count: rows.length, synced } : { ok: false, error: "syncFailed" };
 }
 

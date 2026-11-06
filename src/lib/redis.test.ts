@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { isRedisConfigured, redisPipeline } from "./redis";
+import { isRedisConfigured, redisPipeline, redisTransaction } from "./redis";
 
 const fetchMock = vi.fn();
 
@@ -33,6 +33,15 @@ describe("redisPipeline", () => {
     expect(url).toBe("https://eu1.upstash.io/pipeline");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer token-123");
     expect(JSON.parse(String(init.body))).toEqual([["HSET", "redirects", "/a", "{}"], ["PING"]]);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("sends transactions to /multi-exec", async () => {
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://eu1.upstash.io");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "token-123");
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([{ result: "OK" }])));
+    await redisTransaction([["RENAME", "a", "b"]]);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://eu1.upstash.io/multi-exec");
   });
 
   it("reports HTTP errors, command errors and network failures without throwing", async () => {

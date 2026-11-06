@@ -2,7 +2,7 @@
 -- their text, published posts a described cover, images in published content keep their alt texts,
 -- and images referenced inside JSON cannot be deleted.
 begin;
-select plan(33);
+select plan(41);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -209,6 +209,81 @@ select ok(not public.is_staff_or_trusted(), 'a customer is neither');
 select ok(
   not public.media_used_in_content('80000000-0000-4000-8000-000000000601'),
   'a customer learns nothing about where images are used'
+);
+reset role;
+
+-- Images inside a published destination description keep both alt texts (PR 17 review).
+insert into public.media (id, path, mime_type, size_bytes, alt) values
+  ('80000000-0000-4000-8000-0000000006bb', '2026/01/80000000-0000-4000-8000-0000000006bb.jpg', 'image/jpeg', 1,
+   '{"vi": "Hang động", "en": "A cave"}');
+update public.destination_translations
+   set content = pg_temp.doc('80000000-0000-4000-8000-0000000006bb')
+ where locale = 'vi' and is_published
+   and destination_id = (select id from public.destinations where key = 'vietnam');
+select pg_temp.claims('00000000-0000-4000-8000-000000000614');
+set local role authenticated;
+select throws_ok(
+  $$ update public.media set alt = '{"vi": "Hang động"}' where id = '80000000-0000-4000-8000-0000000006bb' $$,
+  '23514', null, 'an image inside a published destination description keeps both alt texts'
+);
+reset role;
+update public.destination_translations set is_published = false
+ where locale = 'vi' and destination_id = (select id from public.destinations where key = 'vietnam');
+select pg_temp.claims('00000000-0000-4000-8000-000000000614');
+set local role authenticated;
+select lives_ok(
+  $$ update public.media set alt = '{"vi": "Hang động"}' where id = '80000000-0000-4000-8000-0000000006bb' $$,
+  'once that language is unpublished the alt text may change'
+);
+reset role;
+-- And it cannot be published again while its image lacks the English alt text.
+select throws_ok(
+  $$ update public.destination_translations set is_published = true
+      where locale = 'vi' and destination_id = (select id from public.destinations where key = 'vietnam') $$,
+  '23514', 'images in published content need Vietnamese and English alt text',
+  'a destination description with an image lacking an alt text cannot be published'
+);
+
+-- Images in a published tour itinerary keep both alt texts, and a translation is published only
+-- when they have them (PR 18 added one photo per day).
+insert into public.media (id, path, mime_type, size_bytes, alt) values
+  ('80000000-0000-4000-8000-0000000006cc', '2026/01/80000000-0000-4000-8000-0000000006cc.jpg', 'image/jpeg', 1,
+   '{"vi": "Ruộng bậc thang", "en": "Rice terraces"}'),
+  ('80000000-0000-4000-8000-0000000006cd', '2026/01/80000000-0000-4000-8000-0000000006cd.jpg', 'image/jpeg', 1,
+   '{"vi": "Chỉ tiếng Việt"}');
+insert into public.tours (id, code, type, scope, duration_days, duration_nights, from_price) values
+  ('40000000-0000-4000-8000-0000000006aa', 'C-ITINERARY', 'private', 'domestic', 2, 1, 0);
+insert into public.tour_translations (tour_id, locale, slug, title, summary, seo_description, itinerary) values
+  ('40000000-0000-4000-8000-0000000006aa', 'vi', 'lich-trinh-anh', 'Lịch trình có ảnh', 'Hai ngày ở Sa Pa.', 'Hai ngày ở Sa Pa.',
+   '[{"day": 1, "title": "Ngày một", "media_ids": ["80000000-0000-4000-8000-0000000006CD"]}]');
+select is(
+  public.itinerary_media_ids((select itinerary from public.tour_translations where slug = 'lich-trinh-anh')),
+  array['80000000-0000-4000-8000-0000000006cd']::uuid[],
+  'itinerary image ids are read in any letter case'
+);
+select throws_ok(
+  $$ update public.tour_translations set is_published = true where slug = 'lich-trinh-anh' $$,
+  '23514', 'itinerary images of a published tour translation need Vietnamese and English alt text',
+  'a tour translation with an itinerary image lacking an alt text cannot be published'
+);
+update public.tour_translations
+   set itinerary = '[{"day": 1, "title": "Ngày một", "media_ids": ["80000000-0000-4000-8000-0000000006cc"]}]'
+ where slug = 'lich-trinh-anh';
+select lives_ok(
+  $$ update public.tour_translations set is_published = true where slug = 'lich-trinh-anh' $$,
+  'with both alt texts the itinerary can be published'
+);
+select throws_ok(
+  $$ update public.tour_translations
+        set itinerary = '[{"day": 1, "title": "Ngày một", "media_ids": ["80000000-0000-4000-8000-0000000006cd"]}]'
+      where slug = 'lich-trinh-anh' $$,
+  '23514', null, 'a published itinerary cannot take an image without both alt texts'
+);
+select pg_temp.claims('00000000-0000-4000-8000-000000000614');
+set local role authenticated;
+select throws_ok(
+  $$ update public.media set alt = '{"vi": "Ruộng bậc thang"}' where id = '80000000-0000-4000-8000-0000000006cc' $$,
+  '23514', null, 'an image in a published tour itinerary keeps both alt texts'
 );
 reset role;
 

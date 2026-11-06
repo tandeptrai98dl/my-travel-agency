@@ -1,6 +1,6 @@
 -- Redirect rules (docs/specs/phase-2-catalog-admin.md step 20).
 begin;
-select plan(9);
+select plan(16);
 
 create function pg_temp.claims(uid uuid)
 returns void
@@ -46,6 +46,44 @@ select throws_ok(
   '23514', 'other redirects point to this path', 'a path other redirects point to cannot be redirected'
 );
 reset role;
+
+-- Functions (PR 17 review): one transaction each ------------------------------------------------------
+select pg_temp.claims('00000000-0000-4000-8000-000000000814');
+set local role authenticated;
+insert into public.redirects (from_path, to_path) values ('/le-hoi-cu', '/le-hoi');
+select lives_ok(
+  $$ select public.create_redirect('/le-hoi', '/tours/le-hoi-2027', 301) $$,
+  'an editor adds a redirect from a path others point to'
+);
+select is(
+  (select to_path from public.redirects where from_path = '/le-hoi-cu'),
+  '/tours/le-hoi-2027',
+  'redirects that pointed at the new source now go straight to its target'
+);
+select throws_ok(
+  $$ select public.create_redirect('/le-hoi', '/tours') $$,
+  '23505', 'this path already has a redirect', 'a source has one redirect'
+);
+select throws_ok(
+  $$ select public.create_redirect('/khac', '/le-hoi') $$,
+  '23514', 'the target is itself redirected', 'a target that is itself redirected is refused'
+);
+select lives_ok(
+  $$ select public.record_slug_redirect('/tours/a', '/tours/b');
+     select public.record_slug_redirect('/tours/b', '/tours/c');
+     select public.record_slug_redirect('/tours/c', '/tours/a') $$,
+  'slug changes back and forth keep the table flat'
+);
+select is(
+  (select string_agg(from_path || '>' || to_path, ' ' order by from_path) from public.redirects where from_path like '/tours/%'),
+  '/tours/b>/tours/a /tours/c>/tours/a',
+  'after A→B→C→A, B and C point to A and A is not redirected'
+);
+reset role;
+select ok(
+  not has_function_privilege('anon', 'public.create_redirect(text, text, integer)', 'execute'),
+  'anon cannot call the redirect functions'
+);
 
 select pg_temp.claims('00000000-0000-4000-8000-000000000812');
 set local role authenticated;

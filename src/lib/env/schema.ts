@@ -47,7 +47,8 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: booleanFlag,
 });
 
-export const serverEnvSchema = z.object({
+export const serverEnvSchema = z
+  .object({
   // Service-role key for src/lib/supabase/admin.ts. It must really be a secret key, so a
   // publishable key pasted by mistake fails at startup instead of on the first guest write.
   SUPABASE_SECRET_KEY: z
@@ -73,7 +74,10 @@ export const serverEnvSchema = z.object({
     z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
   ),
   UPSTASH_REDIS_REST_TOKEN: optionalString,
-});
+}).refine(
+  (env) => Boolean(env.UPSTASH_REDIS_REST_URL) === Boolean(env.UPSTASH_REDIS_REST_TOKEN),
+  { message: "set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or neither", path: ["UPSTASH_REDIS_REST_TOKEN"] },
+);
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
