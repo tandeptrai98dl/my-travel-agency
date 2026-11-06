@@ -11,6 +11,7 @@ import { readAlt } from "@/modules/media/media.schemas";
 import { getMediaUrl } from "@/modules/media/media.service";
 
 import * as repo from "./content.repository";
+import { syncSlugRedirect } from "./redirects.service";
 import {
   type CategoryInput,
   type CategoryValues,
@@ -83,6 +84,7 @@ async function redirectIfSlugChanged(
   if (!from || !to) return;
   const { error } = await repo.saveRedirect(from, to);
   if (error) logger.error("content.redirect_failed", { kind, locale, message: error.message });
+  else await syncSlugRedirect(to);
 }
 
 export async function isSlugAvailable(input: { kind: ContentKind; locale: ContentLocale; slug: string; excludeId?: string }) {

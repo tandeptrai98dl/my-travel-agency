@@ -1,4 +1,7 @@
-/** Tables that carry the audit trigger (supabase/migrations/20261106140000_audit_triggers.sql). */
+/**
+ * Tables that carry the audit trigger (supabase/migrations/20261106140000_audit_triggers.sql),
+ * plus `subscribers`, whose CSV exports the content module records itself.
+ */
 export const AUDITED_ENTITIES = [
   "tours",
   "tour_translations",
@@ -23,6 +26,7 @@ export const AUDITED_ENTITIES = [
   "redirects",
   "settings",
   "profiles",
+  "subscribers",
 ] as const;
 
 export type AuditedEntity = (typeof AUDITED_ENTITIES)[number];

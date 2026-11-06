@@ -126,4 +126,20 @@ describe("serverEnvSchema", () => {
       }),
     ).toThrow(/CRON_SECRET/);
   });
+
+  it("keeps the Upstash variables optional and needs an https URL", () => {
+    const env = parseEnv("server", serverEnvSchema, {
+      SUPABASE_SECRET_KEY: "sb_secret_example",
+      UPSTASH_REDIS_REST_URL: "",
+      UPSTASH_REDIS_REST_TOKEN: "",
+    });
+    expect(env.UPSTASH_REDIS_REST_URL).toBeUndefined();
+    expect(env.UPSTASH_REDIS_REST_TOKEN).toBeUndefined();
+    expect(() =>
+      parseEnv("server", serverEnvSchema, {
+        SUPABASE_SECRET_KEY: "sb_secret_example",
+        UPSTASH_REDIS_REST_URL: "http://example.upstash.io",
+      }),
+    ).toThrow(/UPSTASH_REDIS_REST_URL/);
+  });
 });

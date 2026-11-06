@@ -85,7 +85,13 @@
         "published": "Bài đang xuất bản: hãy ngừng xuất bản trước khi xoá.",
         "in_use": "Đang được bài viết sử dụng, không xoá được.",
         "not_found": "Mục này không còn tồn tại.",
-        "featureNeedsApproved": "Chỉ đánh giá đã duyệt mới được chọn nổi bật."
+        "featureNeedsApproved": "Chỉ đánh giá đã duyệt mới được chọn nổi bật.",
+        "fromTaken": "Địa chỉ này đã có chuyển hướng.",
+        "targetRedirected": "Địa chỉ đích đang được chuyển hướng tiếp; hãy trỏ thẳng tới đích cuối.",
+        "fromIsTarget": "Có chuyển hướng khác đang trỏ tới địa chỉ này.",
+        "pathInvalid": "Đường dẫn trên trang này, bắt đầu bằng / (không dùng // hay khoảng trắng).",
+        "redirectToItself": "Địa chỉ đích phải khác địa chỉ nguồn.",
+        "syncFailed": "Không đồng bộ được sang Redis. Vui lòng thử lại."
       },
       "reviews": {
         "title": "Đánh giá",
@@ -115,6 +121,56 @@
         "featuredDone": "Đã đánh dấu nổi bật",
         "unfeatured": "Đã bỏ nổi bật",
         "actionsFor": "Thao tác cho đánh giá của {author}"
+      },
+      "redirects": {
+        "title": "Chuyển hướng",
+        "description": "Chuyển hướng 301 từ địa chỉ cũ sang địa chỉ mới. Đổi đường dẫn của nội dung đã xuất bản sẽ tự thêm chuyển hướng.",
+        "fromPath": "Từ địa chỉ",
+        "toPath": "Đến địa chỉ",
+        "fromPathPlaceholder": "/khuyen-mai-he",
+        "toPathPlaceholder": "/tours",
+        "fromPathHint": "Đường dẫn cũ trên trang, không có ? hoặc #.",
+        "toPathHint": "Đường dẫn trên trang này, bắt đầu bằng /.",
+        "statusCode": "Loại",
+        "permanent": "Vĩnh viễn (301)",
+        "temporary": "Tạm thời (302)",
+        "add": "Thêm chuyển hướng",
+        "created": "Đã thêm chuyển hướng",
+        "hits": "Lượt dùng",
+        "created_at": "Ngày tạo",
+        "search": "Tìm theo địa chỉ",
+        "empty": "Chưa có chuyển hướng nào.",
+        "delete": "Xoá",
+        "deleteLabel": "Xoá chuyển hướng {path}",
+        "deleteTitle": "Xoá chuyển hướng này?",
+        "deleteBody": "Khách vào {path} sẽ không được chuyển đi nữa.",
+        "deleted": "Đã xoá chuyển hướng",
+        "resync": "Đồng bộ lại Redis",
+        "resyncCheck": "Kiểm tra đồng bộ",
+        "resynced": "Đã đồng bộ {count, plural, other {# chuyển hướng}} sang Redis.",
+        "resyncSkipped": "Redis chưa được cấu hình: {count, plural, other {# chuyển hướng}} được lưu trong cơ sở dữ liệu và sẽ đồng bộ khi có Redis.",
+        "redisMissing": "Redis (Upstash) chưa được cấu hình. Chuyển hướng vẫn được lưu; khi có tài khoản, bấm “Đồng bộ lại Redis” để máy chủ dùng được chúng.",
+        "syncFailed": "Đã lưu, nhưng chưa đồng bộ được sang Redis. Hãy bấm “Đồng bộ lại Redis”."
+      },
+      "subscribers": {
+        "title": "Người nhận bản tin",
+        "description": "Danh sách chỉ để xem. Tệp CSV chỉ gồm người đã xác nhận và chưa huỷ đăng ký; mỗi lần xuất được ghi vào nhật ký.",
+        "email": "Email",
+        "state": "Trạng thái",
+        "states": {
+          "active": "Đang nhận",
+          "pending": "Chờ xác nhận",
+          "unsubscribed": "Đã huỷ"
+        },
+        "allStates": "Mọi trạng thái",
+        "locale": "Ngôn ngữ",
+        "source": "Nguồn",
+        "confirmed": "Xác nhận",
+        "created": "Đăng ký",
+        "search": "Tìm theo email",
+        "empty": "Chưa có người đăng ký.",
+        "export": "Xuất CSV",
+        "exported": "Đã xuất {count, plural, other {# người nhận}}."
       }
     }
   }

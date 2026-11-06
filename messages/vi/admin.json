@@ -137,7 +137,9 @@
       "departures": "Lịch khởi hành",
       "journal": "Tạp chí",
       "pages": "Trang tĩnh",
-      "reviews": "Đánh giá"
+      "reviews": "Đánh giá",
+      "redirects": "Chuyển hướng",
+      "subscribers": "Bản tin"
     },
     "Shell": {
       "skipToContent": "Bỏ qua đến nội dung",

@@ -18,4 +18,6 @@ export const serverEnv = parseEnv("server", serverEnvSchema, {
   EMAIL_FROM: process.env.EMAIL_FROM,
   SENTRY_DSN: process.env.SENTRY_DSN,
   CRON_SECRET: process.env.CRON_SECRET,
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 });

@@ -63,6 +63,13 @@ export const serverEnvSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().min(16, "must be at least 16 characters").optional(),
   ),
+  // Upstash Redis REST (redirects, decision 5; rate limits later). Optional until the account
+  // exists: without both, redirect sync is a logged no-op. Required in production from Phase 3.
+  UPSTASH_REDIS_REST_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
+  ),
+  UPSTASH_REDIS_REST_TOKEN: optionalString,
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

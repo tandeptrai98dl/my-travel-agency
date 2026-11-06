@@ -6,9 +6,11 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { getPathname } from "@/i18n/navigation";
 import { readAlt } from "@/modules/media/media.schemas";
+import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
 
 import { DESTINATIONS_TAG } from "../destinations.service";
+
 import * as repo from "./taxonomy.repository";
 import {
   type CancellationPolicyInput,
@@ -113,8 +115,10 @@ async function redirectIfSlugChanged(
 ) {
   const old = before.find((row) => row.locale === locale);
   if (!old?.is_published || old.slug === nextSlug) return;
-  const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), publicPath(kind, locale, nextSlug));
+  const to = publicPath(kind, locale, nextSlug);
+  const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), to);
   if (error) logger.error("taxonomy.redirect_failed", { kind, locale, message: error.message });
+  else await syncSlugRedirect(to);
 }
 
 /** Free slug for this kind and language (the editor checks on blur; saving checks again). */

@@ -613,6 +613,8 @@ Content rules (Phase 2, `*_content_rules.sql`, ADR-030): `check_content_translat
 
 Review rules (Phase 2, `*_review_rules.sql`): API roles may update only `reviews.status` and `is_featured` (column grants), a featured review must be approved (`reviews_featured_approved`), and `guard_review_insert()` makes reviews written in by staff unverified and unlinked to a booking (the service role is trusted for P1 post-trip reviews).
 
+Redirect rules (Phase 2, `*_redirect_rules.sql`, ADR-031): `from_path` and `to_path` are site paths (sources without `?` or `#`, not `/`), a redirect never points to itself, `status_code` is 301, 302, 307 or 308, and `check_redirect_chain()` refuses a target that is itself redirected and a source other redirects point to. Redis keeps a copy (hash `redirects`).
+
 Known Phase 0 limits:
 - Phase 5: a customer's row policy on their own `bookings` and `payments` exposes internal columns (`needs_attention`, `attention_reason`, `assigned_to`, `idempotency_key`, `utm`, payment `raw_response`, `note`, `recorded_by`). The account area must read through a customer-safe view or RPC, and the direct customer SELECT policies are then narrowed.
 

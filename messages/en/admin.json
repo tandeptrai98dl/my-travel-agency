@@ -137,7 +137,9 @@
       "departures": "Departures",
       "journal": "Journal",
       "pages": "Pages",
-      "reviews": "Reviews"
+      "reviews": "Reviews",
+      "redirects": "Redirects",
+      "subscribers": "Newsletter"
     },
     "Shell": {
       "skipToContent": "Skip to content",
