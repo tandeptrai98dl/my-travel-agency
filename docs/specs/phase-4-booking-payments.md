@@ -207,6 +207,15 @@ One pull request per group, one commit per step. Every function and policy gets 
 - [ ] Staff see and act on bookings and payments per the `ARCHITECTURE.md` matrix; RLS and per-role E2E
 - [ ] Lint, typecheck, unit, pgTAP, E2E green in CI
 
+## Before go-live (owner accounts needed; no code yet)
+
+Found in the 4C review. Each needs a real gateway or bank-webhook account, so it is checked on staging before production:
+
+- **VNPay empty values:** check how the signature treats `vnp_*` parameters with empty values against real sandbox IPNs for a cancelled payment and a failed one, and add both as test vectors in `providers/vnpay.test.ts`.
+- **Webhook source IPs:** add the source-IP allow-list that SePay or Casso publishes to `/api/webhooks/bank-transfer` (and VNPay's to the IPN route), configured by env.
+- **Casso signature:** check whether Casso's current webhooks sign with `X-Casso-Signature` (HMAC) instead of the `secure-token` header, and switch `authorized()` if so.
+- **`VNPAY_STUB`:** never set on a staging or preview that holds real-looking data (`README.md`).
+
 ## Out of scope
 
 Balance reminder scheduling, booking lookup by code and email, customer accounts and attaching earlier bookings (Phase 5). MoMo, international cards, coupons, add-ons, date changes, PDF vouchers and quotes, and e-invoice integration (P1). Automatic refunds through the gateway (the adapter's optional `refund()` stays unimplemented until a contract allows it).

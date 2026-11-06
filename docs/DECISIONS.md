@@ -364,3 +364,12 @@ Template:
   - Terms and privacy acceptance is written to `consent_records` with the page's version.
   - Checkout and account move into their own root layout, so the ADR-027 nonce CSP can apply while the public site stays prerendered. Stream B moves the public tree into `src/app/(public)/[locale]/…` in a standalone PR before 4B, after a Stream A spike confirms Next.js accepts it.
 - **Consequences:** Phase 4 can be built and tested end to end without owner accounts; production needs the VNPay contract, the bank account with SePay or Casso, Resend and Turnstile keys. Libraries (a QR encoder for VietQR, React Email) are added with their own ADRs in the PRs that need them. Cached tour cards can show a sold-out departure as available for up to an hour after a hold lapses through `pg_cron`; the tour page's live section is always current.
+
+## ADR-034: QR codes for VietQR rendered on the server with `qrcode`
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Bank transfers show a VietQR code (`docs/specs/phase-4-booking-payments.md` decision 6). Image services such as img.vietqr.io would receive the account, amount and memo of every booking, and need a CSP exception.
+- **Decision:** Build the EMVCo/NAPAS 247 payload in `src/modules/payment/providers/vietqr.ts` and render it to SVG on the server with `qrcode` 1.5.4 (MIT; exact version pinned, `@types/qrcode` as a dev dependency). No QR code is drawn in the browser and no third party sees the payment.
+- **Consequences:** One small server-only dependency. The SVG is inlined in the checkout page (4B), so no extra request and no CSP change.
+

@@ -158,3 +158,23 @@ describe("serverEnvSchema", () => {
     expect(env.UPSTASH_REDIS_REST_TOKEN).toBe("token");
   });
 });
+
+describe("payment variables", () => {
+  const base = { SUPABASE_SECRET_KEY: "sb_secret_example" };
+  it("needs VNPay keys and bank webhook settings in pairs", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, VNPAY_TMN_CODE: "CODE1234" })).toThrow(/VNPAY_HASH_SECRET is missing/);
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, BANK_WEBHOOK_SECRET: "a-long-enough-secret" })).toThrow(
+      /BANK_WEBHOOK_PROVIDER is missing/,
+    );
+    const env = parseEnv("server", serverEnvSchema, base);
+    expect(env.VNPAY_PAYMENT_URL).toBe("https://sandbox.vnpayment.vn/paymentv2/vpcpay.html");
+    expect(env.VNPAY_STUB).toBe(false);
+  });
+
+  it("never allows the VNPay stub in production", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, VNPAY_STUB: "true", VERCEL_ENV: "production" })).toThrow(
+      /never allowed in production/,
+    );
+    expect(parseEnv("server", serverEnvSchema, { ...base, VNPAY_STUB: "true", VERCEL_ENV: "preview" }).VNPAY_STUB).toBe(true);
+  });
+});

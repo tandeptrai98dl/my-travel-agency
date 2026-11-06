@@ -217,6 +217,12 @@ jobs:
           E2E_MAIL_URL: ${{ steps.supabase.outputs.mail_url }}
           # A second database session for the deadlock regression test (booking-core.spec.ts).
           E2E_DB_URL: ${{ steps.supabase.outputs.db_url }}
+          # CI-only payment settings (never real keys): VNPay through the local stub, a SePay key.
+          VNPAY_TMN_CODE: CITEST01
+          VNPAY_HASH_SECRET: ci-only-vnpay-secret-${{ github.run_id }}
+          VNPAY_STUB: "true"
+          BANK_WEBHOOK_PROVIDER: sepay
+          BANK_WEBHOOK_SECRET: ci-only-bank-webhook-key-${{ github.run_id }}
           # Serves /admin/design-system in the production build so axe can check it.
           SHOW_DESIGN_SYSTEM: "true"
         run: npm run test:e2e

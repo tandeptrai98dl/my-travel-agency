@@ -79,7 +79,42 @@ export const serverEnvSchema = z
   UPSTASH_REDIS_REST_TOKEN: optionalString,
   // Cloudflare Turnstile secret (server-side verification of public form submissions).
   TURNSTILE_SECRET_KEY: optionalString,
+  // Vercel sets this; "production" is the only environment that takes real payments
+  // (docs/specs/phase-4-booking-payments.md decision 8). NODE_ENV is "production" on previews too.
+  VERCEL_ENV: z.preprocess((value) => (value === "" ? undefined : value), z.enum(["production", "preview", "development"]).optional()),
+  // VNPay (decision 6). Without both, the VNPay method is hidden and its routes never confirm.
+  VNPAY_TMN_CODE: optionalString,
+  VNPAY_HASH_SECRET: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().min(16, "must be at least 16 characters").optional(),
+  ),
+  VNPAY_PAYMENT_URL: z.preprocess(
+    (value) => (value === "" || value === undefined ? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html" : value),
+    z.url({ protocol: /^https?$/ }),
+  ),
+  // CI only: a local stand-in for VNPay's payment page that signs its IPN with VNPAY_HASH_SECRET.
+  VNPAY_STUB: booleanFlag,
+  // SePay or Casso (ADR-013). Without both, the bank webhook answers 503 and records nothing.
+  BANK_WEBHOOK_PROVIDER: z.preprocess((value) => (value === "" ? undefined : value), z.enum(["sepay", "casso"]).optional()),
+  BANK_WEBHOOK_SECRET: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().min(16, "must be at least 16 characters").optional(),
+  ),
 }).superRefine((env, ctx) => {
+  const pairs = [
+    ["VNPAY_TMN_CODE", "VNPAY_HASH_SECRET"],
+    ["BANK_WEBHOOK_PROVIDER", "BANK_WEBHOOK_SECRET"],
+  ] as const;
+  for (const [a, b] of pairs) {
+    const missing = env[a] && !env[b] ? b : env[b] && !env[a] ? a : null;
+    if (missing) ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both or neither)` });
+  }
+  if (env.VNPAY_STUB && env.VERCEL_ENV === "production") {
+    ctx.addIssue({ code: "custom", path: ["VNPAY_STUB"], message: "the VNPay stub is never allowed in production" });
+  }
+  if (env.VNPAY_STUB && env.VNPAY_PAYMENT_URL.startsWith("https://pay.vnpay.vn")) {
+    ctx.addIssue({ code: "custom", path: ["VNPAY_STUB"], message: "the VNPay stub cannot run against the production gateway" });
+  }
   // Both or neither: one without the other would make every redirect sync fail at run time.
   const missing = env.UPSTASH_REDIS_REST_URL && !env.UPSTASH_REDIS_REST_TOKEN
     ? "UPSTASH_REDIS_REST_TOKEN"
