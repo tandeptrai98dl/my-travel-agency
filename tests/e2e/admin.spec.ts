@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { magicLinkTokenHash } from "./support/admin-api";
 import { signInAs } from "./support/auth";
+import { expectNoSeriousViolations } from "./support/axe";
 import { totp } from "./support/totp";
 
 // The MFA test enrols a factor on the shared admin account; a retry would find it already
@@ -116,4 +117,42 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   await expect(page.getByRole("status")).toHaveText("Đã bật xác thực hai lớp.");
   await page.getByRole("button", { name: "Vào trang quản trị" }).click();
   await expect(page.getByTestId("admin-aal")).toHaveText("Xác thực hai lớp: đã xác minh");
+
+  // The admin menu offers the audit log; it lists the seed changes, filters by entity and keeps
+  // the filter in the URL.
+  const menu = page.getByRole("navigation", { name: "Điều hướng quản trị" });
+  await menu.getByRole("link", { name: "Nhật ký thay đổi" }).click();
+  await expect(page).toHaveURL(/\/admin\/audit-log$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Nhật ký thay đổi" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Nhật ký thay đổi" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("table", { name: "Nhật ký thay đổi" }).getByRole("row").nth(1)).toBeVisible();
+  await expectNoSeriousViolations(page, "/admin/audit-log");
+  await page.getByLabel("Đối tượng").selectOption("settings");
+  await page.getByRole("button", { name: "Lọc" }).click();
+  await expect(page).toHaveURL(/entity=settings/);
+  const rows = page.getByRole("table", { name: "Nhật ký thay đổi" }).getByRole("row");
+  await expect(rows.nth(1)).toContainText("settings");
+  await expect(rows.filter({ hasText: "tours" })).toHaveCount(0);
+});
+
+test("only admins see and open the audit log", async ({ page }) => {
+  await signInAs(page, "editor");
+  await expect(page).toHaveURL(/\/admin$/);
+  const menu = page.getByRole("navigation", { name: "Điều hướng quản trị" });
+  await expect(menu.getByRole("link", { name: "Tổng quan" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Nhật ký thay đổi" })).toHaveCount(0);
+  await expectNoSeriousViolations(page, "/admin as editor");
+  await page.goto("/admin/audit-log");
+  await expect(page.getByText("This page could not be found.")).toBeVisible();
+});
+
+test("the admin menu opens in a sheet on small screens", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signInAs(page, "operator");
+  await page.getByRole("button", { name: "Mở menu quản trị" }).click();
+  const sheet = page.getByRole("dialog", { name: "Điều hướng quản trị" });
+  await expect(sheet.getByRole("link", { name: "Tổng quan" })).toHaveAttribute("aria-current", "page");
+  await expectNoSeriousViolations(page, "admin menu sheet", "[role=dialog]");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Mở menu quản trị" })).toBeFocused();
 });
