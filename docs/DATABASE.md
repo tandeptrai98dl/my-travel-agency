@@ -2,7 +2,7 @@
 
 Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 
-> Status: **approved design** (ADR-005, ADR-009, ADR-010, ADR-011, ADR-012). **Migrated** in Phase 0 (`supabase/migrations/20261106120000_*` to `20261106121300_*`). Update this file whenever a migration changes the schema.
+> Status: **approved design** (ADR-005, ADR-009, ADR-010, ADR-011, ADR-012). **Migrated** from Phase 0 (`supabase/migrations/`, starting with `20261106120000_*`). Update this file whenever a migration changes the schema.
 
 ## Conventions
 

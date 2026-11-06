@@ -5,10 +5,29 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 0 (Foundation) of the full-scope plan (ADR-005, ADR-019)
-- **Next up:** Phase 0 PR 3 (`docs/specs/phase-0-foundation.md` steps 7–9): Supabase admin client, auth helpers and `requireRole()`, next-intl routing, proxy rewrite, admin shell with MFA, `/api/health`
+- **Next up:** Phase 0 PR 4 (step 10): Sentry, Vercel previews, README; then Phase 1 (design system)
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; confirm the proposed ADRs (016–019) and the palette/fonts
 
 ## Log
+
+### 2026-11-06 (Phase 0 — PR 3 of 4: clients, auth helpers, i18n, proxy, admin shell, health)
+
+Branch `feat/p0-app-shell` (spec steps 7–9 + E2E against local Supabase in CI).
+
+- Done:
+  - `src/lib/supabase/admin.ts` (service role, `server-only`); browser and server clients typed with the generated `Database`; `SUPABASE_SECRET_KEY` now required and must be a secret key.
+  - `src/lib/auth/`: `getCurrentUser()` (verified with `getClaims()`, profile under RLS, session `aal`), `checkAccess()`/`requireRole()`/`requirePermission()` (aal2 for admin and accountant), `permissions.ts` (the `ARCHITECTURE.md` matrix).
+  - next-intl: `src/i18n/{routing,pathnames,navigation,request}.ts`, `messages/{vi,en}.json`; VI without prefix, EN under `/en`, no Accept-Language redirects; localized 404; minimal `LanguageSwitcher` that keeps the path.
+  - Separate root layouts: `[locale]` (`lang` from the URL), `admin` (`vi`), `auth` (`en`, starter pages).
+  - `src/proxy.ts`: session refresh first (forwarded to rewrites), locale routing outside `/admin`, `/api`, `/auth`, session cookies with no-store headers, security headers. The starter "redirect every signed-out visitor" behaviour is gone.
+  - Admin shell: `/admin` for every staff role (non-staff get a 404, signed-out visitors go to `/auth/login`, admin/accountant below aal2 go to `/admin/mfa`); `/admin/mfa` enrols or verifies TOTP; placeholder page shows email, role and MFA status. Staff sign-in now lands on `/admin`.
+  - `/api/health`: `{ status, db }`, 200/503, no secrets, never cached.
+  - Fix: `/auth/confirm` validated with Zod and no longer an open redirect (`safeRedirectPath`).
+  - PR #2 review follow-up: sales note inserts scoped to inquiries they can see (new migration, 2 pgTAP assertions).
+  - CI "Build and E2E" now runs against local Supabase with seeded accounts: home in VI/EN, language switch, localized 404, security headers, health, open-redirect check, signed-out and customer access, sales/operator/editor sign-in, accountant sent to MFA, admin TOTP enrolment and re-verification after a new sign-in.
+- Verified locally: lint, typecheck, 82 unit tests; production build (webpack with Next.js's mocked Google Fonts, since font hosts are blocked here); routing, `lang`, 404s, headers, signed-out admin redirect and the language switch in Chromium; 64/64 pgTAP on the local shim. Sign-in, MFA and health with a database are verified only in CI (see the PR).
+- Independent review: changes requested, then addressed: the redirect guard now checks the normalised path (`/.//host` bypass) and E2E proves it with real email-link tokens; MFA E2E timeout raised; next-intl `alternateLinks` and `localeCookie` off; MFA and sign-out moved to Server Actions in `src/modules/identity` (Zod-validated); only the `LanguageSwitcher` messages reach the client; deactivated accounts get a 404 instead of a sign-in loop; security headers set in `next.config.ts` for every path (HSTS without `includeSubDomains`/`preload` until the domain is known); email-link fallback is `/`; more E2E (unknown admin/API/auth paths, VI slug under `/en`, `sales_manager`, headers on several paths) and pathname unit tests; pgTAP for the admin side of the note policy.
+- Deviations: MFA is required for admin and accountant only (other staff may enrol from `/admin/mfa`), per ADR-009; non-staff and deactivated accounts see a 404 on `/admin`; the admin gate renders inside `<Suspense>` (Cache Components), so its redirects and 404 are streamed (HTTP 200 shell, client-side redirect); security headers live in `next.config.ts` rather than the proxy, so static files get them too; unknown `/admin`, `/api` and `/auth` paths show Next.js's plain 404 (no root layout above them).
 
 ### 2026-11-06 (Phase 0 — PR 2 of 4: schema, RLS, storage, pgTAP, seed)
 
@@ -72,5 +91,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 - Phase 2: tour and departure price columns are not yet guarded per role (`DATABASE.md` "Known Phase 0 limits").
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
-- `src/lib/supabase/proxy.ts` (from the starter) redirects every signed-out visitor to `/auth/login` on any path except `/`. Must be replaced in PR 3 so public pages stay public.
-- The root layout still uses the starter Geist font and a user-selectable theme; replaced in Phase 1 (design tokens, ADR-017).
+- The root layouts still use the starter Geist font (`src/app/fonts.ts`); replaced in Phase 1 (design tokens). The theme switcher is no longer rendered; next-themes stays installed (ADR-017).
+- Next.js warns that `partialPrefetching` is not set alongside `cacheComponents`; decide in Phase 1 together with the navigation work.
+- The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
+- Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
+- Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.

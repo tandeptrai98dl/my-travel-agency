@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { publicEnv } from "@/lib/env/public";
 import { cookies } from "next/headers";
 
+import type { Database } from "@/types/database.types";
+
 /**
  * Especially important if using Fluid compute: Don't put this client in a
  * global variable. Always create a new client within each function when using
@@ -10,7 +12,7 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {

@@ -1,7 +1,7 @@
 -- Access rules for anon, customers and staff roles (docs/specs/phase-0-foundation.md step 5,
 -- docs/DATABASE.md "RLS policy summary", ARCHITECTURE.md permission matrix).
 begin;
-select plan(49);
+select plan(53);
 
 -- Helpers (called only as the test owner; role switches happen inline) ------------------------
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
@@ -226,6 +226,18 @@ select is(
   'sales cannot read notes on an inquiry assigned to someone else'
 );
 select throws_ok(
+  $$ insert into public.internal_notes (body, author_id, inquiry_id)
+     values ('Sneaky', '00000000-0000-4000-8000-000000000011', '40000000-0000-4000-8000-000000000002') $$,
+  '42501',
+  null,
+  'sales cannot add notes to an inquiry assigned to someone else'
+);
+select lives_ok(
+  $$ insert into public.internal_notes (body, author_id, inquiry_id)
+     values ('Called back', '00000000-0000-4000-8000-000000000011', '40000000-0000-4000-8000-000000000001') $$,
+  'sales can add notes to an unassigned inquiry'
+);
+select throws_ok(
   $$ update public.profiles set role = 'admin' where id = '00000000-0000-4000-8000-000000000011' $$,
   '42501',
   null,
@@ -330,6 +342,13 @@ with u as (
   returning 1
 )
 select is(count(*)::int, 0, 'an admin without aal2 cannot change roles (no row is visible)') from u;
+select throws_ok(
+  $$ insert into public.internal_notes (body, author_id, inquiry_id)
+     values ('Admin note', '00000000-0000-4000-8000-000000000015', '40000000-0000-4000-8000-000000000001') $$,
+  '42501',
+  null,
+  'an admin without aal2 cannot add notes'
+);
 
 reset role;
 select pg_temp.claims('00000000-0000-4000-8000-000000000015', 'aal2');
@@ -338,6 +357,11 @@ set local role authenticated;
 select lives_ok(
   $$ update public.profiles set role = 'sales' where id = '00000000-0000-4000-8000-000000000002' $$,
   'an admin with aal2 can change roles'
+);
+select lives_ok(
+  $$ insert into public.internal_notes (body, author_id, inquiry_id)
+     values ('Admin note', '00000000-0000-4000-8000-000000000015', '40000000-0000-4000-8000-000000000002') $$,
+  'an admin with aal2 can add notes to any inquiry'
 );
 
 reset role;

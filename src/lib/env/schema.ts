@@ -45,8 +45,14 @@ export const publicEnvSchema = z.object({
 });
 
 export const serverEnvSchema = z.object({
-  // Required from Phase 0 step 7, when the service-role client is introduced.
-  SUPABASE_SECRET_KEY: optionalString,
+  // Service-role key for src/lib/supabase/admin.ts. It must really be a secret key, so a
+  // publishable key pasted by mistake fails at startup instead of on the first guest write.
+  SUPABASE_SECRET_KEY: z
+    .string()
+    .min(1)
+    .refine(isSecretSupabaseKey, {
+      message: "must be the secret (service_role) key",
+    }),
   GOOGLE_OAUTH_ENABLED: booleanFlag,
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,

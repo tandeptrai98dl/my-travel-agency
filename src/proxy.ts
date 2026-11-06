@@ -1,20 +1,41 @@
-import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
 
+import { routing } from "@/i18n/routing";
+import { refreshSession } from "@/lib/supabase/proxy";
+
+const handleLocale = createIntlMiddleware(routing);
+
+/** Paths outside the localized website: no locale prefix or rewrite. */
+const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
+
+/**
+ * Next.js proxy: Supabase session refresh and locale routing. Security headers are set for every
+ * path in next.config.ts.
+ * Not an authentication layer (ARCHITECTURE.md "Auth"): protected pages check the user
+ * themselves. Redirects from Redis are added in Phase 2.
+ */
 export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+  // 1. Refresh the session first, so the locale handler forwards the refreshed cookies.
+  const session = await refreshSession(request);
+
+  // 2. Locale routing for the public website; everything else passes through.
+  const response = NON_LOCALIZED.test(request.nextUrl.pathname)
+    ? NextResponse.next({ request })
+    : handleLocale(request);
+
+  // 3. Hand the refreshed cookies (and their no-store cache headers) to the browser.
+  for (const { name, value, options } of session.cookies) {
+    response.cookies.set(name, value, options);
+  }
+  for (const [name, value] of Object.entries(session.headers)) {
+    response.headers.set(name, value);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  // Everything except Next.js internals and files with an extension (images, fonts, robots.txt…).
+  matcher: ["/((?!_next/|_vercel/|.*\\..*).*)"],
 };
