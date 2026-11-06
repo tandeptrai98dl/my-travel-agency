@@ -45,6 +45,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 | Spam protection | Cloudflare Turnstile | ADR-014 |
 | Scheduled jobs | `pg_cron` for data jobs; Vercel Cron for jobs that need the app | ADR-012 |
 | Search | Postgres `unaccent` + `pg_trgm` inside `search_tours()` | |
+| Images | `sharp` for upload checks and blur placeholders; uploads go straight to Storage through signed URLs | ADR-023 |
 | Monitoring | Sentry, Vercel Speed Insights | ADR-014 |
 | Analytics | GA4 via GTM with Consent Mode v2 | |
 | Testing | Vitest (unit), Playwright (E2E), pgTAP (`supabase test db`) | ADR-014 |

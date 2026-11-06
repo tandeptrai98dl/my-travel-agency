@@ -219,3 +219,13 @@ Template:
   - Radix packages for the shadcn primitives (avatar, popover, radio-group, select, separator, tabs, toast, tooltip), as ADR-021 describes. Toasts use Radix Toast rather than another toast library.
 - **Consequences:** No new services. Every form follows one pattern (Zod schema → `zodResolver` → `FormField`, Zod messages as translation keys). axe runs in CI; a serious or critical violation fails the build.
 
+## ADR-023: Image processing with sharp and direct-to-Storage uploads
+
+- **Date:** 2026-11-06
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** The media library (Phase 2) must record each image's real type, width and height and a blur placeholder (`DESIGN_SYSTEM.md` imagery, `docs/specs/phase-2-catalog-admin.md` decision 6). Originals may be up to 20 MB, but Vercel Functions accept request bodies of at most 4.5 MB.
+- **Decision:**
+  - Add `sharp` as a direct dependency (the same version Next.js already installs for image optimisation) to read dimensions and EXIF orientation and to render a 16 px WebP blur placeholder. Decoding is limited to 12 000 × 12 000 px.
+  - Uploads go from the browser straight to the `media` bucket through a signed upload URL issued by a Server Action after `requirePermission("media.manage")`; a second Server Action downloads the object, checks the real type from its first bytes (JPEG, PNG, WebP, AVIF; never SVG), size and dimensions, records it, and deletes anything rejected. Storage RLS (editor, admin) and the bucket's MIME and size limits stay in place as the database-side checks.
+- **Consequences:** No large bodies through serverless functions. An upload abandoned between the two steps leaves an unrecorded object; a cleanup job removes objects without a `media` row after a day (Phase 6). The Supabase project must allow the site's origin for Storage CORS (default: all origins).
+
