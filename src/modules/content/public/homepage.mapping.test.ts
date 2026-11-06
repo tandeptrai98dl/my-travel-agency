@@ -74,22 +74,22 @@ describe("hero", () => {
 describe("sections", () => {
   it("lists featured destinations in the setting's order, published translations only", () => {
     const rows = [
-      { key: "japan", hero: null, destination_translations: [{ locale: "vi", name: "Nhật Bản", summary: "Đền chùa", best_time_to_visit: "Tháng 4" }] },
-      { key: "vietnam", hero: media(), destination_translations: [{ locale: "vi", name: "Việt Nam", summary: null, best_time_to_visit: null }] },
-      { key: "france", hero: null, destination_translations: [{ locale: "vi", name: " " }] },
+      { key: "japan", hero: null, destination_translations: [{ locale: "vi", slug: "nhat-ban", name: "Nhật Bản", summary: "Đền chùa", best_time_to_visit: "Tháng 4" }] },
+      { key: "vietnam", hero: media(), destination_translations: [{ locale: "vi", slug: "viet-nam", name: "Việt Nam", summary: null, best_time_to_visit: null }] },
+      { key: "france", hero: null, destination_translations: [{ locale: "vi", slug: "phap", name: " " }] },
     ];
     const list = toDestinations(["vietnam", "france", "japan", "peru"], rows, "vi");
     expect(list.map((item) => item.key)).toEqual(["vietnam", "japan"]);
     expect(list[0].image?.alt).toBe("Vịnh Hạ Long lúc bình minh");
-    expect(list[1]).toMatchObject({ name: "Nhật Bản", summary: "Đền chùa", bestTime: "Tháng 4", image: null });
+    expect(list[1]).toMatchObject({ slug: "nhat-ban", name: "Nhật Bản", summary: "Đền chùa", bestTime: "Tháng 4", image: null });
   });
 
   it("maps travel styles and drops those without a name", () => {
     const rows = [
-      { key: "honeymoon", hero: null, travel_style_translations: [{ locale: "en", name: "Honeymoon", description: "For two" }] },
-      { key: "family", hero: null, travel_style_translations: [{ locale: "en", name: "" }] },
+      { key: "honeymoon", hero: null, travel_style_translations: [{ locale: "en", slug: "honeymoon", name: "Honeymoon", description: "For two" }] },
+      { key: "family", hero: null, travel_style_translations: [{ locale: "en", slug: "family", name: "" }] },
     ];
-    expect(toTravelStyles(rows, "en")).toEqual([{ key: "honeymoon", name: "Honeymoon", description: "For two", image: null }]);
+    expect(toTravelStyles(rows, "en")).toEqual([{ key: "honeymoon", slug: "honeymoon", name: "Honeymoon", description: "For two", image: null }]);
   });
 
   it("prefers a featured review written in this language", () => {

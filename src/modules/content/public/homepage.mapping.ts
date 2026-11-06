@@ -7,8 +7,8 @@ import type { HomepageSetting } from "./homepage.schemas";
 
 /** Pure mapping of the homepage rows (unit-tested; no I/O). */
 
-export type HomeDestination = { key: string; name: string; summary: string | null; bestTime: string | null; image: ImageData | null };
-export type HomeTravelStyle = { key: string; name: string; description: string | null; image: ImageData | null };
+export type HomeDestination = { key: string; slug: string; name: string; summary: string | null; bestTime: string | null; image: ImageData | null };
+export type HomeTravelStyle = { key: string; slug: string; name: string; description: string | null; image: ImageData | null };
 export type HomeTestimonial = {
   id: string;
   authorName: string;
@@ -62,10 +62,12 @@ export function toDestinations(keys: string[], rows: DestinationRow[], locale: L
     const row = byKey.get(key);
     const translation = translationOf(row?.destination_translations, locale);
     const name = text(translation?.name);
-    if (!row || !name) return [];
+    const slug = text(translation?.slug);
+    if (!row || !name || !slug) return [];
     return [
       {
         key,
+        slug,
         name,
         summary: text(translation?.summary),
         bestTime: text(translation?.best_time_to_visit),
@@ -79,8 +81,9 @@ export function toTravelStyles(rows: StyleRow[], locale: Locale): HomeTravelStyl
   return rows.flatMap((row) => {
     const translation = translationOf(row.travel_style_translations, locale);
     const name = text(translation?.name);
-    if (!name) return [];
-    return [{ key: row.key, name, description: text(translation?.description), image: imageWithAlt(row.hero, locale) }];
+    const slug = text(translation?.slug);
+    if (!name || !slug) return [];
+    return [{ key: row.key, slug, name, description: text(translation?.description), image: imageWithAlt(row.hero, locale) }];
   });
 }
 

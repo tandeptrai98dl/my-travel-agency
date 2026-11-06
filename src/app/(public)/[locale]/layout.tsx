@@ -57,6 +57,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     Navigation: plain(messages.Navigation),
     Consent: plain(messages.Consent),
     TourDetailError: plain((messages.TourDetail as Record<string, unknown> | undefined)?.error),
+    PageError: plain(messages.PageError),
   };
 
   // Shell data from Supabase (cached; CLAUDE.md rule 8: no business data in code).

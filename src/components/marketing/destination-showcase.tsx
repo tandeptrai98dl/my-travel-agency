@@ -17,8 +17,8 @@ type Props = {
 
 /**
  * Featured destinations as an editorial 7/5 split: the first one large, the next two stacked
- * (one large and two half-width cards on mobile). Each card lists that destination's journeys on
- * the tour listing until the destination pages exist (Phase 3 PR J). Left out when none.
+ * (one large and two half-width cards on mobile). Each card opens the destination's page. Left
+ * out when none.
  */
 export async function DestinationShowcase({ locale, destinations, flushTop = false }: Props) {
   if (destinations.length === 0) return null;
@@ -51,7 +51,7 @@ type CardProps = { destination: HomeDestination; large?: boolean; bestTime: stri
 function DestinationCard({ destination, large = false, bestTime }: CardProps) {
   return (
     <Link
-      href={{ pathname: "/tours", query: { dest: destination.key } }}
+      href={{ pathname: "/destinations/[slug]", params: { slug: destination.slug } }}
       className="group flex h-full flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
     >
       <div className={cx("relative overflow-hidden bg-muted", large ? "aspect-[4/5] sm:aspect-[3/2] lg:aspect-auto lg:min-h-[36rem] lg:flex-1" : "aspect-[4/5] lg:aspect-[3/2]")}>

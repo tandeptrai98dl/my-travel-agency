@@ -1,1 +1,45 @@
-{}
+{
+  "Destinations": {
+    "metaTitle": "Điểm đến",
+    "metaDescription": "Những điểm đến của chúng tôi ở Việt Nam và trên thế giới: thời điểm đẹp nhất và các hành trình ở từng vùng.",
+    "breadcrumbLabel": "Đường dẫn",
+    "home": "Trang chủ",
+    "title": "Điểm đến",
+    "eyebrow": "Nơi chúng tôi đưa bạn đến",
+    "intro": "Từ vịnh đá vôi phía Bắc đến những khu vườn thiền ở Kyoto: chọn một vùng đất để xem các hành trình ở đó.",
+    "tourCount": "{count, plural, =0 {Chưa có hành trình} other {# hành trình}}",
+    "bestTime": "Thời điểm đẹp: {value}",
+    "bestTimeLabel": "Thời điểm đẹp nhất",
+    "toursLabel": "Hành trình",
+    "regions": "Các vùng ở {name}",
+    "cities": "Điểm đến ở {name}",
+    "viewDestination": "Xem {name}",
+    "empty": "Chưa có điểm đến nào được công bố.",
+    "listName": "Điểm đến",
+    "toursEyebrow": "Hành trình",
+    "toursTitle": "Hành trình ở {name}",
+    "toursListName": "Hành trình ở {name}",
+    "noTours": "Chưa có hành trình nào ở đây. Hãy cho chúng tôi biết bạn muốn đi thế nào, chuyên viên tư vấn sẽ thiết kế một lịch trình riêng.",
+    "call": "Gọi {phone}",
+    "email": "Gửi email cho chúng tôi",
+    "aboutTitle": "Về {name}"
+  },
+  "TravelStyles": {
+    "eyebrow": "Phong cách",
+    "breadcrumbLabel": "Đường dẫn",
+    "home": "Trang chủ",
+    "toursEyebrow": "Hành trình",
+    "toursTitle": "Hành trình {name}",
+    "toursListName": "Hành trình {name}",
+    "noTours": "Chưa có hành trình nào theo phong cách này. Chuyên viên tư vấn có thể thiết kế riêng cho bạn.",
+    "call": "Gọi {phone}",
+    "email": "Gửi email cho chúng tôi",
+    "others": "Phong cách khác"
+  },
+  "PageError": {
+    "title": "Chưa tải được trang này",
+    "text": "Đã có lỗi khi tải nội dung. Bạn thử lại sau ít phút nhé.",
+    "retry": "Thử lại",
+    "back": "Về trang chủ"
+  }
+}

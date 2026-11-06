@@ -1,1 +1,45 @@
-{}
+{
+  "Destinations": {
+    "metaTitle": "Destinations",
+    "metaDescription": "Our destinations in Vietnam and around the world: the best time to go and the journeys in each region.",
+    "breadcrumbLabel": "Breadcrumb",
+    "home": "Home",
+    "title": "Destinations",
+    "eyebrow": "Where we take you",
+    "intro": "From the limestone bays of the north to the Zen gardens of Kyoto: choose a place to see its journeys.",
+    "tourCount": "{count, plural, =0 {No journeys yet} one {# journey} other {# journeys}}",
+    "bestTime": "Best time: {value}",
+    "bestTimeLabel": "Best time to visit",
+    "toursLabel": "Journeys",
+    "regions": "Regions of {name}",
+    "cities": "Places in {name}",
+    "viewDestination": "View {name}",
+    "empty": "No destinations have been published yet.",
+    "listName": "Destinations",
+    "toursEyebrow": "Journeys",
+    "toursTitle": "Journeys in {name}",
+    "toursListName": "Journeys in {name}",
+    "noTours": "No journeys here yet. Tell us how you would like to travel and a travel designer will plan a private itinerary.",
+    "call": "Call {phone}",
+    "email": "Email us",
+    "aboutTitle": "About {name}"
+  },
+  "TravelStyles": {
+    "eyebrow": "Travel style",
+    "breadcrumbLabel": "Breadcrumb",
+    "home": "Home",
+    "toursEyebrow": "Journeys",
+    "toursTitle": "{name} journeys",
+    "toursListName": "{name} journeys",
+    "noTours": "No journeys in this style yet. A travel designer can plan one for you.",
+    "call": "Call {phone}",
+    "email": "Email us",
+    "others": "Other travel styles"
+  },
+  "PageError": {
+    "title": "This page could not be loaded",
+    "text": "Something went wrong while loading it. Please try again in a few minutes.",
+    "retry": "Try again",
+    "back": "Back to the home page"
+  }
+}

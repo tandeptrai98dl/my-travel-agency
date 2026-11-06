@@ -38,11 +38,11 @@ test.describe("homepage", () => {
 
     const destinations = page.getByRole("region", { name: "Nơi chúng tôi đưa bạn đến" });
     await expect(destinations.getByRole("heading", { level: 3 })).toHaveText(["Việt Nam", "Nhật Bản", "Pháp"]);
-    await expect(destinations.getByRole("link").first()).toHaveAttribute("href", "/tours?dest=vietnam");
+    await expect(destinations.getByRole("link").first()).toHaveAttribute("href", "/diem-den/viet-nam");
 
     const styles = page.getByRole("region", { name: "Đi theo cách của bạn" });
     await expect(styles.getByRole("heading", { level: 3 })).toHaveCount(4);
-    await expect(styles.getByRole("link", { name: /Trăng mật/ })).toHaveAttribute("href", "/tours?style=honeymoon");
+    await expect(styles.getByRole("link", { name: /Trăng mật/ })).toHaveAttribute("href", "/phong-cach/trang-mat");
 
     // Sections without data are left out: no reviews, no journal routes yet.
     await expect(page.getByText("Khách hàng kể lại")).toHaveCount(0);

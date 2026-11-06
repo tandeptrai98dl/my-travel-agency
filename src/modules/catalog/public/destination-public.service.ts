@@ -78,6 +78,8 @@ export type DestinationPage = {
   image: ImageData | null;
   ancestors: { name: string; slug: string }[];
   children: DestinationSummary[];
+  /** All tours here and below (the grid shows at most 48). */
+  tourCount: number;
   tours: TourCardItem[];
   alternates: LocaleLinks;
 };
@@ -147,6 +149,7 @@ export async function getDestinationPage(locale: Locale, slug: string): Promise<
       image: toImage(destination.hero, locale),
       ancestors: found.ancestors.map((node) => ({ name: node.name, slug: node.slug })),
       children: found.node.children,
+      tourCount: found.node.tourCount,
       tours,
       alternates: localeLinks("/destinations/[slug]", slugs.data ?? [], "/destinations"),
     },
