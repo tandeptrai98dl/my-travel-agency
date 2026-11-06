@@ -140,6 +140,7 @@ One pull request per group, one commit per step. Every page: Server Component, m
 19. `sitemap.xml` split by type (tours, destinations, styles, journal, pages) with `lastmod` and per-language URLs (published translations only); `robots.txt` blocking `/admin`, account, checkout, search and filtered listings.
 20. CSP per page type with the option the PR H spike chose (decision 13, ADR-027), unit tests and the E2E violation check; redirects from Redis in the proxy (decision 14) with unit tests against a fake Redis.
 21. JS budget enforced in CI; `ARCHITECTURE.md` (image transforms; CSP again if option 3 is chosen), `DESIGN_SYSTEM.md` (new components) and `.env.example` (`NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS`, Upstash variables) updated.
+22. Status codes and not-found bodies (PR H and I reviews): a real 308 for the other language's slug (emit each locale's other-language published slugs from `generateStaticParams` so `permanentRedirect()` runs at prerender time); a real 404 after unpublishing (verify the tag-refresh re-render on a production build); unknown paths may stay a `noindex` 200 or move to a proxy 404 from a cached slug set (optional). Unknown public paths already answer 404 but with a bare `__next_error__` shell whose not-found UI renders only in the browser: check with `partialPrefetching` off and against Next 16's not-found streaming notes, then keep or change it and record the decision here. E2E asserts the status codes and that the 404 body contains the localized not-found heading.
 
 ## Acceptance criteria
 
