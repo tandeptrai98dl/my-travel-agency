@@ -16,6 +16,10 @@ type Props = {
   description: string;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
+  /** Hard limits (the stored column sizes); the counters show the softer search-result lengths. */
+  maxLength?: { title: number; description: number };
+  /** Translated error per field, if any. */
+  errors?: { title?: string; description?: string };
   labels: {
     title: string;
     description: string;
@@ -36,7 +40,15 @@ function Counter({ id, count, max, labels }: { id: string; count: number; max: n
 }
 
 /** SEO title and description with the lengths search results usually show (a hint, not a limit). */
-export function SeoFields({ title, description, onTitleChange, onDescriptionChange, labels }: Props) {
+export function SeoFields({
+  title,
+  description,
+  onTitleChange,
+  onDescriptionChange,
+  maxLength,
+  errors,
+  labels,
+}: Props) {
   const id = useId();
   return (
     <div className="flex flex-col gap-6">
@@ -45,10 +57,15 @@ export function SeoFields({ title, description, onTitleChange, onDescriptionChan
         <Input
           id={`${id}-title`}
           value={title}
+          maxLength={maxLength?.title}
           onChange={(event) => onTitleChange(event.target.value)}
-          aria-describedby={`${id}-title-count`}
+          aria-invalid={Boolean(errors?.title)}
+          aria-describedby={`${id}-title-count ${id}-title-error`}
         />
         <Counter id={`${id}-title-count`} count={title.length} max={SEO_TITLE_MAX} labels={labels} />
+        <p id={`${id}-title-error`} aria-live="polite" className="text-small font-medium text-destructive empty:-mt-2">
+          {errors?.title}
+        </p>
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-description`}>{labels.description}</Label>
@@ -56,8 +73,10 @@ export function SeoFields({ title, description, onTitleChange, onDescriptionChan
           id={`${id}-description`}
           rows={3}
           value={description}
+          maxLength={maxLength?.description}
           onChange={(event) => onDescriptionChange(event.target.value)}
-          aria-describedby={`${id}-description-count`}
+          aria-invalid={Boolean(errors?.description)}
+          aria-describedby={`${id}-description-count ${id}-description-error`}
         />
         <Counter
           id={`${id}-description-count`}
@@ -65,6 +84,13 @@ export function SeoFields({ title, description, onTitleChange, onDescriptionChan
           max={SEO_DESCRIPTION_MAX}
           labels={labels}
         />
+        <p
+          id={`${id}-description-error`}
+          aria-live="polite"
+          className="text-small font-medium text-destructive empty:-mt-2"
+        >
+          {errors?.description}
+        </p>
       </div>
     </div>
   );

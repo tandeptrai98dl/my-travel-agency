@@ -48,9 +48,9 @@ One pull request per group, one commit per step. Every Server Action: `requireRo
 
 ### PR C — Taxonomy and policies
 
-8. `/admin/destinations`: tree view (country → region → city), create/edit with `key`, parent, coordinates, hero image, VI/EN translations (name, slug, summary, rich content, best time to visit, SEO), publish switches, sort order.
+8. `/admin/destinations`: tree view (country → region → city), create/edit with `key`, parent, coordinates, hero image, VI/EN translations (name, slug, summary, best time to visit, SEO), publish switches, sort order. The rich `content` field gets its editor with the RichTextEditor in PR F (decision 7); until then it stays empty and public pages use the summary.
 9. `/admin/travel-styles`: same pattern, flat list.
-10. `/admin/settings/cancellation-policies` (admin): structured rules (`min_days_before`, `refund_percent`, validated as strictly decreasing days), VI/EN summary, one default; editing creates a new version (bookings keep snapshots, ADR-011).
+10. `/admin/cancellation-policies` (admin; linked from Settings in PR G): structured rules (`min_days_before`, `refund_percent`, validated as strictly decreasing days), VI/EN summary, one default; editing creates a new version (bookings keep snapshots, ADR-011).
 
 ### PR D — Tours
 

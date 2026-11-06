@@ -850,6 +850,15 @@ isOneToOne: false
                            },
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_valid_cancellation_rules":
+{ Args: { "rules": Json }; Returns: boolean
+                           },
+"is_valid_slug":
+{ Args: { "slug": string }; Returns: boolean
+                           },
+"set_default_cancellation_policy":
+{ Args: { "policy_id": string }; Returns: undefined
                            }
           }
           Enums: {

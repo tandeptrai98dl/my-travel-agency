@@ -133,6 +133,30 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   const rows = page.getByRole("table", { name: "Nhật ký thay đổi" }).getByRole("row");
   await expect(rows.nth(1)).toContainText("settings");
   await expect(rows.filter({ hasText: "tours" })).toHaveCount(0);
+
+  // Cancellation policies need this aal2 admin session (spec Phase 2 step 10): the rules are
+  // checked before saving, and a saved policy starts at version 1.
+  await menu.getByRole("link", { name: "Chính sách huỷ" }).click();
+  await expect(page.getByTestId("policy-card").first()).toBeVisible();
+  await expectNoSeriousViolations(page, "/admin/cancellation-policies");
+  await page.getByRole("link", { name: "Thêm chính sách" }).click();
+  const policyName = `E2E ${Date.now().toString(36)}`;
+  await page.getByLabel("Tên chính sách").fill(policyName);
+  await page.getByRole("button", { name: "Thêm quy tắc" }).click();
+  const rule = (index: number) => page.getByRole("group", { name: `Quy tắc ${index}` });
+  await rule(1).getByLabel("Từ số ngày trước khởi hành").fill("30");
+  await rule(1).getByLabel("Hoàn (%)").fill("80");
+  await rule(2).getByLabel("Từ số ngày trước khởi hành").fill("7");
+  await page.getByLabel("Tóm tắt hiển thị (tiếng Việt)").fill("Hoàn 80% nếu huỷ trước 30 ngày.");
+  await page.getByLabel("Tóm tắt hiển thị (tiếng Anh)").fill("80% refund up to 30 days before departure.");
+  await page.getByRole("button", { name: "Lưu" }).click();
+  await expect(rule(2)).toContainText("Quy tắc cuối phải là 0 ngày.");
+  await rule(2).getByLabel("Từ số ngày trước khởi hành").fill("0");
+  await page.getByRole("button", { name: "Lưu" }).click();
+  await expect(page).toHaveURL(/\/admin\/cancellation-policies\/[0-9a-f-]{36}$/);
+  // Exact: the list page navigated away from may still be in the DOM, hidden.
+  await expect(page.getByText("Phiên bản 1", { exact: true })).toBeVisible();
+  await expectNoSeriousViolations(page, "cancellation policy editor");
 });
 
 test("only admins see and open the audit log", async ({ page }) => {

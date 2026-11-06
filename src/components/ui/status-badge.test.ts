@@ -10,6 +10,8 @@ describe("statusVariant", () => {
     expect(statusVariant("payment", "paid")).toBe("success");
     expect(statusVariant("transaction", "failed")).toBe("destructive");
     expect(statusVariant("departure", "guaranteed")).toBe("gold");
+    expect(statusVariant("publish", "published")).toBe("success");
+    expect(statusVariant("publish", "draft")).toBe("outline");
   });
 
   it("falls back to outline for an unknown value (e.g. a new enum before the map is updated)", () => {

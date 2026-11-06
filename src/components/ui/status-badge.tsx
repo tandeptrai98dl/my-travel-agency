@@ -3,13 +3,14 @@ import type { Database } from "@/types/database.types";
 import { Badge, type BadgeProps } from "./badge";
 
 type Enums = Database["public"]["Enums"];
-export type StatusKind = "booking" | "payment" | "departure" | "inquiry" | "transaction";
+export type StatusKind = "booking" | "payment" | "departure" | "inquiry" | "transaction" | "publish";
 type StatusOf = {
   booking: Enums["booking_status"];
   payment: Enums["booking_payment_state"];
   departure: Enums["departure_status"];
   inquiry: Enums["inquiry_status"];
   transaction: Enums["transaction_status"];
+  publish: Enums["publish_status"];
 };
 type Variant = NonNullable<BadgeProps["variant"]>;
 
@@ -46,6 +47,11 @@ const VARIANTS: { [K in StatusKind]: Record<StatusOf[K], Variant> } = {
     failed: "destructive",
     expired: "outline",
     cancelled: "outline",
+  },
+  publish: {
+    draft: "outline",
+    published: "success",
+    archived: "secondary",
   },
 };
 
