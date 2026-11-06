@@ -20,17 +20,17 @@ import {
 // initial JS on public pages.
 const ConsentSettingsDialog = dynamic(() => import("./consent-settings-dialog"), { ssr: false });
 
+/** Continues from the main content without jumping to the top of the page. */
+function focusMain() {
+  document.getElementById("main")?.focus({ preventScroll: true });
+}
+
 /**
  * Cookie consent (spec step 9; Decree 13/2023 consent before collection). Nothing optional loads
  * before a choice; "Essential only" is as easy as "Accept all". The choice lives in a first-party
  * cookie so cached pages stay static, and a `consentchange` event tells GA4 Consent Mode
  * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
  */
-/** Continues from the main content without jumping to the top of the page. */
-function focusMain() {
-  document.getElementById("main")?.focus({ preventScroll: true });
-}
-
 export function CookieConsentBanner() {
   const t = useTranslations("Consent");
   const titleId = useId();
