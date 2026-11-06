@@ -9,7 +9,7 @@ if (dsn) {
   const start = () => {
     void Promise.all([import("@sentry/nextjs"), import("@/lib/monitoring/sentry-options")]).then(
       ([Sentry, { sentryOptions }]) => {
-        Sentry.init(sentryOptions(dsn, "browser"));
+        Sentry.init(sentryOptions(dsn));
       },
     );
   };

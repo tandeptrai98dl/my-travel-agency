@@ -123,8 +123,9 @@ jobs:
         run: npm run seed:users
       # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
       # Phase 0 never uses the service role in the app, and the leak check below needs them.
-      # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested;
-      # monitoring.spec.ts intercepts every request to it. No server DSN is set.
+      # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested
+      # (monitoring.spec.ts intercepts its requests; a stray browser error in another spec would be
+      # rejected by Sentry, since the key is fake). No server DSN is set.
       - name: Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}

@@ -36,4 +36,6 @@ test("browser errors reach Sentry, without personal data", async ({ page }) => {
   expect(sent).not.toContain("someone");
   expect(sent).not.toContain("utm_source");
   expect(sent).not.toMatch(/"ip_address"/);
+  // The SDK tells Sentry not to infer the visitor's IP address.
+  expect(sent).toContain('"infer_ip":"never"');
 });

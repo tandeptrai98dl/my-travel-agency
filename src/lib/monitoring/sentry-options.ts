@@ -9,8 +9,6 @@
  */
 import type { Breadcrumb, BrowserOptions, ErrorEvent, NodeOptions } from "@sentry/nextjs";
 
-type TransactionEvent = Parameters<NonNullable<NodeOptions["beforeSendTransaction"]>>[0];
-
 /** The only request headers Sentry may record. */
 const ALLOWED_HEADERS = ["user-agent", "accept-language", "content-type"];
 
@@ -70,6 +68,8 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
     delete event.request.env;
     if (event.request.url) event.request.url = redactUrl(event.request.url);
   }
+  const nextjs = event.contexts?.nextjs as Record<string, unknown> | undefined;
+  redactUrlsIn(nextjs);
   for (const breadcrumb of event.breadcrumbs ?? []) scrubBreadcrumb(breadcrumb);
   event.breadcrumbs = event.breadcrumbs?.filter((breadcrumb) => breadcrumb.category !== "console");
   return event;
@@ -82,36 +82,17 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   return breadcrumb;
 }
 
-/** Server performance traces: the same URL redaction on the transaction and its spans. */
-export function scrubTransaction(event: TransactionEvent): TransactionEvent {
-  if (event.transaction) event.transaction = redactUrl(event.transaction);
-  if (event.request?.url) event.request.url = redactUrl(event.request.url);
-  if (event.request) {
-    delete event.request.headers;
-    delete event.request.cookies;
-    delete event.request.data;
-    delete event.request.query_string;
-  }
-  delete event.user;
-  redactUrlsIn(event.contexts?.trace?.data as Record<string, unknown> | undefined);
-  for (const span of event.spans ?? []) {
-    if (span.description) span.description = redactUrl(span.description);
-    redactUrlsIn(span.data as Record<string, unknown> | undefined);
-  }
-  return event;
-}
-
-export function sentryOptions(dsn: string | undefined, runtime: "server" | "browser") {
+export function sentryOptions(dsn: string | undefined) {
   return {
     dsn,
     enabled: Boolean(dsn),
     environment: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
     dataCollection,
-    // Server: a small share of traces for performance. Browser: errors only, no tracing, until
-    // the consent banner (Phase 1) decides on optional third-party measurement.
-    tracesSampleRate: runtime === "server" ? (process.env.NODE_ENV === "production" ? 0.1 : 1) : 0,
+    // Errors only, on the server and in the browser. Sentry 11 streams server spans one by one
+    // (beforeSendTransaction is never called) and Next.js adds raw `http.target` URLs with query
+    // strings, so tracing stays off until span scrubbing (beforeSendSpan) is built and tested.
+    tracesSampleRate: 0,
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
-    beforeSendTransaction: scrubTransaction,
   } satisfies NodeOptions & BrowserOptions;
 }

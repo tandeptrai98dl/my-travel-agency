@@ -7,8 +7,8 @@ const DSN = "https://publickey@o0.ingest.sentry.io/0";
 
 describe("Sentry options", () => {
   it("is disabled without a DSN", () => {
-    expect(sentryOptions(undefined, "server").enabled).toBe(false);
-    expect(sentryOptions(DSN, "server").enabled).toBe(true);
+    expect(sentryOptions(undefined).enabled).toBe(false);
+    expect(sentryOptions(DSN).enabled).toBe(true);
   });
 
   it("redacts query strings and payment-link tokens from URLs", () => {
@@ -18,8 +18,8 @@ describe("Sentry options", () => {
     expect(redactUrl("/thanh-toan/PTA-2611-0042/ket-qua")).toBe("/thanh-toan/PTA-2611-0042/ket-qua");
   });
 
-  it("never traces in the browser", () => {
-    expect(sentryOptions(DSN, "browser").tracesSampleRate).toBe(0);
+  it("records errors only, no performance traces", () => {
+    expect(sentryOptions(DSN).tracesSampleRate).toBe(0);
   });
 });
 
@@ -27,7 +27,7 @@ describe("what a server error event actually contains", () => {
   const envelopes: string[] = [];
 
   Sentry.init({
-    ...sentryOptions(DSN, "server"),
+    ...sentryOptions(DSN),
     // Capture envelopes in memory instead of sending them.
     transport: () => ({
       send: async (envelope: unknown) => {
@@ -73,9 +73,20 @@ describe("what a server error event actually contains", () => {
       });
       Sentry.captureException(new Error("boom"));
     });
+    // A server span over a URL with a token: tracing is off, so nothing about it may be sent.
+    Sentry.startSpan(
+      {
+        name: "GET /auth/confirm",
+        attributes: { "http.target": "/auth/confirm?token_hash=secret-span-token", "url.path": "/pay/secret-span-path" },
+      },
+      () => undefined,
+    );
     await Sentry.flush(2000);
 
     const sent = envelopes.join("\n");
+    expect(sent).not.toContain('"type":"transaction"');
+    expect(sent).not.toContain('"type":"span"');
+    expect(sent).not.toContain("secret-span");
     expect(sent).toContain("boom");
     for (const secret of [
       "203.0.113.7",
