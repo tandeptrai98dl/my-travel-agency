@@ -8,8 +8,8 @@ export const RECOMMENDED_LONG_EDGE = 2400;
 /** Refuse absurd dimensions and pixel counts before decoding (decompression bombs, memory). */
 export const MAX_DIMENSION = 12_000;
 export const MAX_PIXELS = 50_000_000;
-/** AVIF decoding and encoding need far more memory per pixel. */
-export const MAX_AVIF_PIXELS = 40_000_000;
+/** AVIF decoding and encoding need far more memory per pixel (40 MP peaked at 1.7 GB). */
+export const MAX_AVIF_PIXELS = 24_000_000;
 export const MEDIA_PAGE_SIZE = 24;
 
 const kinds = Object.keys(IMAGE_MIME) as ImageKind[];

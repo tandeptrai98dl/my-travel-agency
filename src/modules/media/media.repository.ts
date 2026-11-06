@@ -37,7 +37,9 @@ export async function removeStaged(path: string) {
 export async function uploadPublic(path: string, body: Buffer, contentType: string) {
   return createAdminClient()
     .storage.from(MEDIA_BUCKET)
-    .upload(path, body, { contentType, cacheControl: CACHE_SECONDS, upsert: false });
+    // Upsert: only the server writes here, at a path derived from its own UUID, so a retry after
+    // a finalize that died between upload and insert simply replaces the same checked copy.
+    .upload(path, body, { contentType, cacheControl: CACHE_SECONDS, upsert: true });
 }
 
 export async function removePublicAsService(path: string) {
@@ -63,9 +65,15 @@ export async function insertMedia(row: MediaInsert) {
   return supabase.from("media").insert(row).select(COLUMNS).single();
 }
 
-export async function findMediaByPath(path: string) {
+/** The public copy of a staged upload, whatever month it was published in. */
+export async function findMediaByUploadId(uuid: string, ext: string) {
   const supabase = await createClient();
-  return supabase.from("media").select(COLUMNS).eq("bucket", MEDIA_BUCKET).eq("path", path).maybeSingle();
+  return supabase
+    .from("media")
+    .select(COLUMNS)
+    .eq("bucket", MEDIA_BUCKET)
+    .like("path", `%/${uuid}.${ext}`)
+    .maybeSingle();
 }
 
 export async function findMediaById(id: string) {

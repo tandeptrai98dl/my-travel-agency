@@ -132,7 +132,7 @@ docs/             # project documentation and task specs
 
 - Import with the `@/` alias (maps to `src/`), e.g. `import { Button } from "@/components/ui/button"`.
 - Use Server Components by default. Add `"use client"` only for interactivity.
-- Supabase: use `@/lib/supabase/server` in Server Components, route handlers and server actions, and `@/lib/supabase/client` in Client Components. `@/lib/supabase/admin` (service role, `server-only`) is used only inside server-side `src/modules/*` for webhooks, cron and validated guest writes. Never use the service-role key in client code.
+- Supabase: use `@/lib/supabase/server` in Server Components, route handlers and server actions, and `@/lib/supabase/client` in Client Components. `@/lib/supabase/admin` (service role, `server-only`) is used only inside server-side `src/modules/*` for webhooks, cron, validated guest writes and media Storage staging and publishing after `requirePermission()` (ADR-023). Never use the service-role key in client code.
 - Layers: `app` → `modules` → `lib`. Components receive props and never import repositories or Supabase clients.
 - Every Server Action and Route Handler validates input with Zod and calls `requireRole()` for staff actions.
 - Caching (ADR-015): cached reads use `"use cache"` + `cacheTag()` + `cacheLife()`; admin writes call `revalidateTag()`/`updateTag()`; live data and anything reading cookies or `searchParams` renders inside `<Suspense>`.

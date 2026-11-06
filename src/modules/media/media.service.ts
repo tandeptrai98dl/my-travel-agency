@@ -10,7 +10,7 @@ import {
   deleteMediaRow,
   downloadStaged,
   findMediaById,
-  findMediaByPath,
+  findMediaByUploadId,
   insertMedia,
   type MediaRow,
   publicUrlFor,
@@ -76,7 +76,7 @@ function encode(image: Sharp, kind: ImageKind): Sharp {
     case "jpeg":
       return image.jpeg({ quality: 90, mozjpeg: true });
     case "png":
-      return image.png({ compressionLevel: 9 });
+      return image.png({ compressionLevel: 9, adaptiveFiltering: true });
     case "webp":
       return image.webp({ quality: 90 });
     case "avif":
@@ -123,13 +123,17 @@ export async function finalizeUpload(input: {
   const [, , uuid, ext] = match;
   const publicPath = publicPathFor(uuid, ext);
 
-  const existing = await findMediaByPath(publicPath);
-  if (existing.data) return { ok: true, value: toItem(existing.data) };
-
   const dropStaged = async () => {
     const { error } = await removeStaged(input.path);
     if (error) logger.error("media.staged_cleanup_failed", { path: input.path, error: error.message });
   };
+  const recorded = async () => (await findMediaByUploadId(uuid, ext)).data;
+
+  const existing = await recorded();
+  if (existing) {
+    await dropStaged();
+    return { ok: true, value: toItem(existing) };
+  }
   const reject = async (error: UploadError): Promise<Result<MediaItem, UploadError>> => {
     await dropStaged();
     return { ok: false, error };
@@ -138,8 +142,8 @@ export async function finalizeUpload(input: {
   const { data: blob, error: downloadError } = await downloadStaged(input.path);
   if (downloadError || !blob) {
     // A concurrent finalize of the same upload may have finished and removed the original.
-    const again = await findMediaByPath(publicPath);
-    if (again.data) return { ok: true, value: toItem(again.data) };
+    const again = await recorded();
+    if (again) return { ok: true, value: toItem(again) };
     return { ok: false, error: "unreadable" };
   }
   if (blob.size > MAX_UPLOAD_BYTES) return reject("too_large");
@@ -172,9 +176,6 @@ export async function finalizeUpload(input: {
 
   const { error: uploadError } = await uploadPublic(publicPath, clean.data, IMAGE_MIME[kind]);
   if (uploadError) {
-    // Another finalize of the same upload wrote the copy first; let it finish the recording.
-    const again = await findMediaByPath(publicPath);
-    if (again.data) return { ok: true, value: toItem(again.data) };
     logger.error("media.public_upload_failed", { path: publicPath, error: uploadError.message });
     return { ok: false, error: "failed" };
   }
@@ -193,10 +194,11 @@ export async function finalizeUpload(input: {
     created_by: user.id,
   });
   if (error || !data) {
-    const again = await findMediaByPath(publicPath);
-    if (again.data) {
+    // A concurrent finalize of the same upload recorded it first.
+    const again = await recorded();
+    if (again) {
       await dropStaged();
-      return { ok: true, value: toItem(again.data) };
+      return { ok: true, value: toItem(again) };
     }
     logger.error("media.insert_failed", { path: publicPath, error: error?.message });
     const { error: removeError } = await removePublicAsService(publicPath);

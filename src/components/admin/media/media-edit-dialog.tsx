@@ -85,7 +85,8 @@ export function MediaEditDialog({ item, labels, trigger }: { item: MediaItem; la
         onCloseAutoFocus={(event) => {
           if (!deletedRef.current) return;
           event.preventDefault();
-          document.getElementById("admin-main")?.focus();
+          // After the nested confirm dialog has finished returning its own focus.
+          requestAnimationFrame(() => document.getElementById("admin-main")?.focus());
         }}
       >
         <DialogHeader>

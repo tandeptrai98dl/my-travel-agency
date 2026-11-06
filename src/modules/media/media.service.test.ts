@@ -11,7 +11,7 @@ const repo = vi.hoisted(() => ({
   removePublicAsService: vi.fn(),
   publicUrlFor: vi.fn((path: string) => `https://storage.test/media/${path}`),
   insertMedia: vi.fn(),
-  findMediaByPath: vi.fn(),
+  findMediaByUploadId: vi.fn(),
   findMediaById: vi.fn(),
   updateMediaRow: vi.fn(),
   deleteMediaRow: vi.fn(),
@@ -37,7 +37,7 @@ const solid = (width: number, height: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  repo.findMediaByPath.mockResolvedValue({ data: null });
+  repo.findMediaByUploadId.mockResolvedValue({ data: null });
   repo.removeStaged.mockResolvedValue({ error: null });
   repo.removePublic.mockResolvedValue({ error: null });
   repo.removePublicAsService.mockResolvedValue({ error: null });
@@ -154,12 +154,15 @@ describe("finalizeUpload", () => {
   });
 
   it("returns the existing record when the same upload is finalized twice", async () => {
-    repo.findMediaByPath.mockResolvedValue({
+    repo.findMediaByUploadId.mockResolvedValue({
       data: { id: "m1", path: "2026/11/x.png", original_name: null, mime_type: "image/png", width: 1, height: 1, size_bytes: 1, blur_data_url: null, alt: {}, credit: null, created_at: "x" },
     });
     const result = await finalize();
     expect(result.ok && result.value.id).toBe("m1");
+    expect(repo.findMediaByUploadId).toHaveBeenCalledWith(UUID, "png");
     expect(repo.downloadStaged).not.toHaveBeenCalled();
+    // A re-sent staged copy is not left for the cleanup job.
+    expect(repo.removeStaged).toHaveBeenCalledWith(STAGED);
   });
 
   it("removes the public copy again when recording fails", async () => {

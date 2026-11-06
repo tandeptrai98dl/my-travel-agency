@@ -73,6 +73,7 @@ test.describe("media library", () => {
     await expect(described).toBeVisible();
 
     // Delete (nothing uses it yet).
+    const publicUrl = await described.locator("img").getAttribute("src");
     await described.click();
     await page.getByRole("dialog", { name: "Thông tin ảnh" }).getByRole("button", { name: "Xoá ảnh" }).click();
     const confirm = page.getByRole("alertdialog", { name: "Xoá ảnh này?" });
@@ -81,6 +82,9 @@ test.describe("media library", () => {
     await expect(described).toHaveCount(0);
     // The card (and the dialog's trigger) is gone, so focus moves to the page, not the body.
     await expect(page.locator("#admin-main")).toBeFocused();
+    // The public file is gone too, not only the row.
+    const gone = await page.request.get(publicUrl!);
+    expect([400, 404]).toContain(gone.status());
   });
 
   test("the media picker selects images and can upload inline", async ({ page }) => {

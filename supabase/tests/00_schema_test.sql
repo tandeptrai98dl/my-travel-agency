@@ -1,7 +1,7 @@
 -- Schema shape: every approved table exists, RLS is enabled everywhere, and the security definer
 -- helpers are locked down (docs/DATABASE.md, ARCHITECTURE.md "Security").
 begin;
-select plan(14);
+select plan(15);
 
 select tables_are(
   'public',
@@ -135,6 +135,12 @@ select is(
     where schemaname = 'storage' and tablename = 'objects' and policyname like 'media bucket:%'),
   array['DELETE', 'SELECT'],
   'staff may only list and delete in the public media bucket'
+);
+
+select ok(
+  (select bool_and(qual like '%can_act_as(''{editor,admin}''%' and qual like '%''media''%')
+     from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname like 'media bucket:%'),
+  'the media bucket policies are limited to editors and admins'
 );
 
 select * from finish();
