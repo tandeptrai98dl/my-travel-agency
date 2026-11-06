@@ -5,10 +5,36 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR D (tours, with the price guards of ADR-024), then departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR E (departures), then journal, pages, reviews, redirects, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR 11: tours)
+
+Branch `feat/p2-tours` (`docs/specs/phase-2-catalog-admin.md` steps 11–13, ADR-024).
+
+- Done:
+  - Migration `20261107100000_tour_rules.sql` (ADR-024):
+    - price guards: only an MFA-verified admin sets tour prices, deposit, balance terms and cancellation policy, and departure prices; editors' new tours get the defaults, operators' new departures copy the prices of the tour's latest departure, and a tour's first departure needs an admin;
+    - publish rules: a published tour needs a published translation, a hero with VI/EN alt text and a price (a departure for group tours, a from price for private tours); a published translation needs a title, summary and SEO description; a published tour keeps its hero and its last published language;
+    - heroes of published destinations and travel styles keep both alt texts, and an image used as one cannot lose them;
+    - tour code format.
+    - pgTAP: 30 assertions for editor, operator, sales manager and admin with and without aal2; dropping the triggers makes 15 of them fail.
+  - Seed and access-test fixtures insert tours as drafts and publish them once complete (with sample hero image rows).
+  - `/admin/tours`: list for every staff role (edit links for editors and admins only), search by code or title, status/type/scope filters, per-language state and next departure.
+  - `/admin/tours/new`: a draft from a title and the key facts.
+  - Tour editor: general facts, prices and terms (admin only, read-only otherwise), destinations and travel styles, hero and an ordered gallery, VI/EN content with itinerary day cards, highlights, inclusions, exclusions, practical information, FAQs, SEO and sharing image, per-language publishing and the tour status.
+    - Saving publishes in an order the database accepts (content and links first, status last; the reverse when unpublishing), sends prices only for admins, adds 301s language by language, refreshes the `tours` cache tag and maps the database rules back to their fields.
+  - Duplicate: content, images and links as an unpublished draft with free slugs, no departures.
+- Verified locally:
+  - lint, typecheck, 251 unit tests (schemas, including parsing their own output again; save order, admin-only prices, publish checks, redirects, error mapping, duplication);
+  - pgTAP on the local Postgres shim: 152 assertions;
+  - production build.
+  - Signed-in E2E (CI only; results in the PR): editor filters, creates a draft, is refused publishing without a language and a hero, saves the itinerary; duplication; operators read without edit links; the aal2 admin edits a from price.
+- Deviations:
+  - Gallery reordering uses move buttons (keyboard and screen-reader friendly) instead of drag and drop.
+  - Day images in the itinerary and the signed preview link move to Phase 3 with the public tour page.
 
 ### 2026-11-07 (Phase 2 — PR 10: destinations, travel styles, cancellation policies)
 
