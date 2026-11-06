@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "db:types": "supabase gen types typescript --local > src/types/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts",
+    "seed:users": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/seed-users.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",

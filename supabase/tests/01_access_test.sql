@@ -88,16 +88,21 @@ select is((select count(*)::int from public.inquiries), 0, 'anon cannot read inq
 select is((select count(*)::int from public.profiles), 0, 'anon cannot read profiles');
 select is((select count(*)::int from public.travellers), 0, 'anon cannot read travellers');
 select is(
-  (select array_agg(code order by code) from public.tours),
+  (select array_agg(code order by code) from public.tours where code like 'T-%'),
   array['T-PUB'],
   'anon reads published tours only (no draft tours)'
 );
 select is(
-  (select array_agg(slug order by slug) from public.tour_translations),
+  (select array_agg(slug order by slug) from public.tour_translations
+   where tour_id in ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002')),
   array['tour-cong-khai'],
   'anon reads only published translations of published tours'
 );
-select is((select count(*)::int from public.departures), 1, 'anon reads departures of published tours');
+select is(
+  (select count(*)::int from public.departures where tour_id = '10000000-0000-4000-8000-000000000001'),
+  1,
+  'anon reads departures of published tours'
+);
 select is(
   (select array_agg(key order by key) from public.settings where key like 'test_%'),
   array['test_public'],
@@ -161,9 +166,9 @@ reset role;
 select pg_temp.claims('00000000-0000-4000-8000-000000000011');
 set local role authenticated;
 
-select is((select count(*)::int from public.bookings), 2, 'sales reads all bookings');
-select is((select count(*)::int from public.payments), 1, 'sales reads payments');
-select is((select count(*)::int from public.inquiries), 1, 'sales reads unassigned inquiries');
+select is((select count(*)::int from public.bookings where code like 'PTA-TEST-%'), 2, 'sales reads all bookings');
+select is((select count(*)::int from public.payments where reference = 'PAY-TEST-0001'), 1, 'sales reads payments');
+select is((select count(*)::int from public.inquiries where code = 'INQ-TEST-0001'), 1, 'sales reads unassigned inquiries');
 select is((select count(*)::int from public.payment_links), 0, 'sales cannot read payment links');
 
 -- editor -------------------------------------------------------------------------------------
@@ -172,7 +177,7 @@ select pg_temp.claims('00000000-0000-4000-8000-000000000014');
 set local role authenticated;
 
 select is((select count(*)::int from public.bookings), 0, 'an editor cannot read bookings');
-select is((select count(*)::int from public.tours), 2, 'an editor reads draft tours too');
+select is((select count(*)::int from public.tours where code like 'T-%'), 2, 'an editor reads draft tours too');
 with u as (update public.tours set is_featured = true where code = 'T-DRAFT' returning 1)
 select is(count(*)::int, 1, 'an editor can edit tour content') from u;
 
@@ -195,7 +200,7 @@ reset role;
 select pg_temp.claims('00000000-0000-4000-8000-000000000013', 'aal2');
 set local role authenticated;
 
-select is((select count(*)::int from public.payments), 1, 'an accountant with aal2 reads payments');
+select is((select count(*)::int from public.payments where reference = 'PAY-TEST-0001'), 1, 'an accountant with aal2 reads payments');
 
 -- admin --------------------------------------------------------------------------------------
 reset role;
