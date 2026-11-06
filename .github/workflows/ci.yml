@@ -147,14 +147,25 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}-chromium
+      # apt mirrors on hosted runners occasionally stall; retry each install with its own timeout.
       - name: Install Playwright browser
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-        timeout-minutes: 5
+        run: |
+          for attempt in 1 2 3; do
+            timeout 180 npx playwright install --with-deps chromium && exit 0
+            echo "Attempt $attempt failed or timed out; retrying." >&2
+          done
+          exit 1
+        timeout-minutes: 10
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-        timeout-minutes: 5
+        run: |
+          for attempt in 1 2 3; do
+            timeout 180 npx playwright install-deps chromium && exit 0
+            echo "Attempt $attempt failed or timed out; retrying." >&2
+          done
+          exit 1
+        timeout-minutes: 10
       - name: E2E tests
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
