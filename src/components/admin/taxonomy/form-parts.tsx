@@ -66,8 +66,11 @@ export function HeroField({
   initial,
   pickerLabels,
   error,
+  legend,
 }: {
   id: string;
+  /** Defaults to "Ảnh đại diện". */
+  legend?: string;
   value: string | null;
   onChange: (id: string | null) => void;
   initial: HeroSummary;
@@ -79,7 +82,7 @@ export function HeroField({
   const current = value && hero?.id === value ? hero : null;
   return (
     <fieldset className="flex flex-col gap-3" aria-describedby={`${id}-error`}>
-      <legend className="text-small font-medium">{t("hero")}</legend>
+      <legend className="text-small font-medium">{legend ?? t("hero")}</legend>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex h-24 w-36 items-center justify-center overflow-hidden bg-secondary">
           {current ? (
