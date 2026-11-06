@@ -8,9 +8,11 @@ import { CookieConsentBanner } from "@/components/layout/cookie-consent-banner";
 import { LabelsProvider, type LabelTree } from "@/components/layout/labels";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { getPathname } from "@/i18n/navigation";
 import { isLocale, routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
+import { getPolicyLinks } from "@/modules/content/public/content-public.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 import "../../globals.css";
@@ -61,11 +63,13 @@ export default async function LocaleLayout({ children, params }: Props) {
   };
 
   // Shell data from Supabase (cached; CLAUDE.md rule 8: no business data in code).
-  const [settings, destinations, t] = await Promise.all([
+  const [settings, destinations, t, policyLinks] = await Promise.all([
     getPublicSettings(),
     getDestinationTree(locale),
     getTranslations({ locale, namespace: "Navigation" }),
+    getPolicyLinks(locale),
   ]);
+  const privacyHref = policyLinks.find((link) => link.key === "privacy")?.href ?? getPathname({ locale, href: "/contact" });
   const tMeta = await getTranslations({ locale, namespace: "Metadata" });
   const brandName = settings.company?.name ?? tMeta("siteName");
 
@@ -83,9 +87,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
-          <SiteFooter settings={settings} brandName={brandName} locale={locale} />
+          <SiteFooter settings={settings} brandName={brandName} locale={locale} policyLinks={policyLinks} />
           <ContactFloatingButton contact={settings.contact} />
-          <CookieConsentBanner />
+          <CookieConsentBanner privacyHref={privacyHref} />
         </LabelsProvider>
       </body>
     </html>

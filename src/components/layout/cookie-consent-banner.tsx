@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import NextLink from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -14,7 +15,6 @@ import {
   readConsentCookie,
 } from "@/lib/consent";
 import { useLabels } from "./labels";
-import { LocaleLink as Link } from "./locale-link";
 
 // The settings dialog (Radix dialog + switch) loads only when opened, keeping it out of the
 // initial JS on public pages.
@@ -26,12 +26,13 @@ function focusMain() {
 }
 
 /**
- * Cookie consent (spec step 9; Decree 13/2023 consent before collection). Nothing optional loads
+ * Cookie consent (spec step 9; Decree 13/2023 consent before collection). `privacyHref` is the
+ * privacy policy's real path in this language, or the contact page until it is published. Nothing optional loads
  * before a choice; "Essential only" is as easy as "Accept all". The choice lives in a first-party
  * cookie so cached pages stay static, and a `consentchange` event tells GA4 Consent Mode
  * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
  */
-export function CookieConsentBanner() {
+export function CookieConsentBanner({ privacyHref }: { privacyHref: string }) {
   const t = useLabels("Consent");
   const titleId = useId();
   const [decided, setDecided] = useState<ConsentChoice | null | undefined>(undefined);
@@ -111,12 +112,12 @@ export function CookieConsentBanner() {
             </h2>
             <p className="text-small text-muted-foreground">
               {t("body")}{" "}
-              <Link
-                href={{ pathname: "/policies/[slug]", params: { slug: "privacy" } }}
+              <NextLink
+                href={privacyHref}
                 className="text-foreground underline decoration-gold underline-offset-4"
               >
                 {t("privacyLink")}
-              </Link>
+              </NextLink>
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <button type="button" className={buttonVariants()} onClick={() => save(ALL_ACCEPTED)}>

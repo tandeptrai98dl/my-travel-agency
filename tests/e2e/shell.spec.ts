@@ -52,11 +52,11 @@ test.describe("site shell (desktop)", () => {
     await dismissConsent(page);
     await page.goto("/en");
     const nav = page.getByRole("navigation", { name: "Main navigation" });
-    await expect(nav.getByRole("link", { name: "Tailor-made" })).toHaveAttribute("href", "/en/tailor-made");
+    await expect(nav.getByRole("link", { name: "About" })).toHaveAttribute("href", "/en/about");
     await page.goto("/");
     await expect(
-      page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Thiết kế riêng" }),
-    ).toHaveAttribute("href", "/thiet-ke-rieng");
+      page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Về chúng tôi" }),
+    ).toHaveAttribute("href", "/ve-chung-toi");
   });
 
   test("the cookie banner never covers the floating contact buttons", async ({ page }) => {
@@ -154,7 +154,7 @@ test.describe("site shell (tablet)", () => {
     await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeHidden();
     await header.getByRole("button", { name: "Open menu" }).click();
     const sheet = page.getByRole("dialog", { name: "Menu" });
-    await expect(sheet.getByRole("link", { name: "Tailor-made" })).toHaveAttribute("href", "/en/tailor-made");
+    await expect(sheet.getByRole("link", { name: "About" })).toHaveAttribute("href", "/en/about");
     await page.keyboard.press("Escape");
     await expect(header.getByRole("button", { name: "Open menu" })).toBeFocused();
   });

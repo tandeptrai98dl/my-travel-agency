@@ -42,5 +42,97 @@
     "text": "Something went wrong while loading it. Please try again in a few minutes.",
     "retry": "Try again",
     "back": "Back to the home page"
+  },
+  "Pages": {
+    "breadcrumbLabel": "Breadcrumb",
+    "home": "Home",
+    "updated": "Updated {date}",
+    "policies": "Policies"
+  },
+  "Faq": {
+    "metaTitle": "Frequently asked questions"
+  },
+  "Journal": {
+    "metaTitle": "Journal",
+    "metaDescription": "Ideas, guides and stories from our journeys.",
+    "title": "Journal",
+    "eyebrow": "Stories and guides",
+    "intro": "What we have learnt on the road: where to go when, what to eat, where to stay.",
+    "topics": "Topics",
+    "allTopics": "All",
+    "empty": "No articles yet.",
+    "published": "Published {date}",
+    "related": "More articles",
+    "topicEyebrow": "Topic",
+    "topicListName": "Articles about {name}",
+    "listName": "Journal",
+    "readMore": "Read the article"
+  },
+  "Reviews": {
+    "metaTitle": "Traveller reviews",
+    "metaDescription": "Our travellers on their journeys with us.",
+    "title": "Traveller reviews",
+    "eyebrow": "In our travellers' words",
+    "summary": "{average} out of 5 · {count, plural, one {# review} other {# reviews}}",
+    "rating": "{rating} out of 5 stars",
+    "verified": "Travelled with us",
+    "travelled": "Travelled {date}",
+    "tour": "Tour: {title}",
+    "empty": "No reviews yet."
+  },
+  "ContactPage": {
+    "metaTitle": "Contact",
+    "metaDescription": "Our hotline, email, Zalo and office; send us a message for advice.",
+    "title": "Contact",
+    "eyebrow": "Talk to us",
+    "intro": "Tell us where and when you would like to travel. A travel designer will reply during office hours.",
+    "detailsTitle": "Contact details",
+    "address": "Office",
+    "hotline": "Hotline",
+    "email": "Email",
+    "hours": "Office hours",
+    "map": "View on the map",
+    "zalo": "Message on Zalo",
+    "whatsapp": "Message on WhatsApp",
+    "newTab": "(opens in a new tab)",
+    "formTitle": "Send a message",
+    "company": "Company",
+    "licence": "Tour operator licence"
+  },
+  "ContactForm": {
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone (optional)",
+    "preferred": "How should we contact you?",
+    "channels": {
+      "email": "Email",
+      "phone": "Phone",
+      "zalo": "Zalo",
+      "whatsapp": "WhatsApp"
+    },
+    "message": "Message",
+    "messageTour": "I would like to ask about tour {code}.",
+    "messageTourDate": "I would like to book tour {code}, departing {date}.",
+    "consent": "I agree that the company may use these details to reply to me, as described in the",
+    "privacyLink": "privacy policy",
+    "submit": "Send message",
+    "sending": "Sending…",
+    "unavailable": "The form opens soon. Meanwhile, please call our hotline or email us.",
+    "success": "Thank you. We have your message (reference {code}) and will be in touch soon.",
+    "successNoCode": "Thank you. We have your message and will be in touch soon.",
+    "errors": {
+      "required": "Please fill in this field.",
+      "tooLong": "This is too long.",
+      "invalidEmail": "Please enter a valid email address.",
+      "invalidPhone": "Please enter a valid phone number.",
+      "tooShort": "Your message needs at least 10 characters.",
+      "consentRequired": "Please agree so that we can reply to you.",
+      "invalid": "Please correct the highlighted fields.",
+      "verification": "We could not verify the request. Please try again.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes.",
+      "unavailable": "The form is not open yet.",
+      "failed": "Something went wrong. Please try again later or call our hotline."
+    },
+    "newTab": "(opens in a new tab)"
   }
 }

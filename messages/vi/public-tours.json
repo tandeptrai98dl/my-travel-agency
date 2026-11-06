@@ -98,6 +98,8 @@
       "next": "Khởi hành gần nhất: {date}",
       "noDate": "Chưa có ngày khởi hành sắp tới",
       "seeDepartures": "Xem lịch khởi hành",
+      "contact": "Liên hệ đặt chỗ",
+      "contactPrivate": "Yêu cầu báo giá riêng",
       "call": "Gọi {phone} để đặt chỗ",
       "callPrivate": "Gọi {phone} để được tư vấn",
       "email": "Gửi email cho chúng tôi",

@@ -42,5 +42,97 @@
     "text": "Đã có lỗi khi tải nội dung. Bạn thử lại sau ít phút nhé.",
     "retry": "Thử lại",
     "back": "Về trang chủ"
+  },
+  "Pages": {
+    "breadcrumbLabel": "Đường dẫn",
+    "home": "Trang chủ",
+    "updated": "Cập nhật {date}",
+    "policies": "Chính sách"
+  },
+  "Faq": {
+    "metaTitle": "Câu hỏi thường gặp"
+  },
+  "Journal": {
+    "metaTitle": "Tạp chí",
+    "metaDescription": "Cảm hứng, cẩm nang và câu chuyện từ những hành trình của chúng tôi.",
+    "title": "Tạp chí",
+    "eyebrow": "Câu chuyện và cẩm nang",
+    "intro": "Những điều chúng tôi học được trên đường: mùa nào đi đâu, ăn gì, ở đâu.",
+    "topics": "Chủ đề",
+    "allTopics": "Tất cả",
+    "empty": "Chưa có bài viết nào.",
+    "published": "Đăng ngày {date}",
+    "related": "Bài viết khác",
+    "topicEyebrow": "Chủ đề",
+    "topicListName": "Bài viết về {name}",
+    "listName": "Tạp chí",
+    "readMore": "Đọc bài"
+  },
+  "Reviews": {
+    "metaTitle": "Đánh giá của khách",
+    "metaDescription": "Khách hàng kể lại những hành trình cùng chúng tôi.",
+    "title": "Đánh giá của khách",
+    "eyebrow": "Khách hàng kể lại",
+    "summary": "{average} trên 5 · {count, plural, other {# đánh giá}}",
+    "rating": "{rating} trên 5 sao",
+    "verified": "Khách đã đi tour",
+    "travelled": "Chuyến đi: {date}",
+    "tour": "Tour: {title}",
+    "empty": "Chưa có đánh giá nào."
+  },
+  "ContactPage": {
+    "metaTitle": "Liên hệ",
+    "metaDescription": "Hotline, email, Zalo và văn phòng của chúng tôi; gửi lời nhắn để được tư vấn.",
+    "title": "Liên hệ",
+    "eyebrow": "Nói chuyện với chúng tôi",
+    "intro": "Hãy cho chúng tôi biết bạn muốn đi đâu và khi nào. Chuyên viên tư vấn sẽ trả lời trong giờ làm việc.",
+    "detailsTitle": "Thông tin liên hệ",
+    "address": "Văn phòng",
+    "hotline": "Hotline",
+    "email": "Email",
+    "hours": "Giờ làm việc",
+    "map": "Xem trên bản đồ",
+    "zalo": "Nhắn Zalo",
+    "whatsapp": "Nhắn WhatsApp",
+    "newTab": "(mở trong thẻ mới)",
+    "formTitle": "Gửi lời nhắn",
+    "company": "Công ty",
+    "licence": "Giấy phép lữ hành"
+  },
+  "ContactForm": {
+    "name": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại (không bắt buộc)",
+    "preferred": "Bạn muốn được liên hệ qua",
+    "channels": {
+      "email": "Email",
+      "phone": "Điện thoại",
+      "zalo": "Zalo",
+      "whatsapp": "WhatsApp"
+    },
+    "message": "Lời nhắn",
+    "messageTour": "Tôi muốn hỏi về tour {code}.",
+    "messageTourDate": "Tôi muốn đặt tour {code}, khởi hành {date}.",
+    "consent": "Tôi đồng ý để công ty dùng thông tin này để trả lời tôi, theo",
+    "privacyLink": "chính sách bảo mật",
+    "submit": "Gửi lời nhắn",
+    "sending": "Đang gửi…",
+    "unavailable": "Biểu mẫu sẽ sớm mở. Trong lúc chờ, hãy gọi hotline hoặc gửi email cho chúng tôi.",
+    "success": "Cảm ơn bạn. Chúng tôi đã nhận lời nhắn (mã {code}) và sẽ liên hệ sớm.",
+    "successNoCode": "Cảm ơn bạn. Chúng tôi đã nhận lời nhắn và sẽ liên hệ sớm.",
+    "errors": {
+      "required": "Vui lòng nhập thông tin này.",
+      "tooLong": "Nội dung quá dài.",
+      "invalidEmail": "Email chưa đúng định dạng.",
+      "invalidPhone": "Số điện thoại chưa đúng định dạng.",
+      "tooShort": "Lời nhắn cần ít nhất 10 ký tự.",
+      "consentRequired": "Vui lòng đồng ý để chúng tôi có thể trả lời bạn.",
+      "invalid": "Vui lòng sửa các trường được đánh dấu.",
+      "verification": "Chưa xác minh được. Hãy thử lại.",
+      "rateLimited": "Bạn đã gửi nhiều lần. Hãy thử lại sau ít phút.",
+      "unavailable": "Biểu mẫu tạm thời chưa mở.",
+      "failed": "Chưa gửi được. Hãy thử lại sau hoặc gọi hotline."
+    },
+    "newTab": "(mở trong thẻ mới)"
   }
 }

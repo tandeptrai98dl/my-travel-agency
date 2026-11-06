@@ -1,7 +1,10 @@
 import { cacheLife } from "next/cache";
+import NextLink from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
+import { features } from "@/lib/features";
+import type { PolicyLink } from "@/modules/content/public/content-public.service";
 import type { PublicSettings } from "@/modules/settings/settings.schemas";
 
 import { Container } from "./container";
@@ -9,7 +12,7 @@ import { CookieSettingsButton } from "./cookie-settings-button";
 import { LanguageSwitcher } from "./language-switcher";
 import { PRIMARY_NAV } from "./nav-items";
 
-type Props = { settings: PublicSettings; brandName: string; locale: "vi" | "en" };
+type Props = { settings: PublicSettings; brandName: string; locale: "vi" | "en"; policyLinks: PolicyLink[] };
 
 /** Cached so prerendering does not read the clock on every request (Cache Components). */
 async function currentYear(): Promise<number> {
@@ -17,9 +20,6 @@ async function currentYear(): Promise<number> {
   cacheLife("days");
   return new Date().getFullYear();
 }
-
-// Policy pages are keyed in the `pages` table; Phase 3 resolves per-language slugs.
-const POLICIES = ["terms", "privacy", "cancellation", "payment"] as const;
 
 const headingClass = "text-eyebrow font-semibold uppercase text-gold";
 const linkClass = "text-small text-muted-foreground transition-colors hover:text-foreground";
@@ -29,7 +29,7 @@ const linkClass = "text-small text-muted-foreground transition-colors hover:text
  * (company, tax code, tour operator licence, Ministry notification). Business data comes from
  * `settings`; each item renders only when set (CLAUDE.md rule 8).
  */
-export async function SiteFooter({ settings, brandName, locale }: Props) {
+export async function SiteFooter({ settings, brandName, locale, policyLinks }: Props) {
   const t = await getTranslations("Footer");
   const tNav = await getTranslations("Navigation");
   const { company, contact, social } = settings;
@@ -98,16 +98,19 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
                 {t("faq")}
               </Link>
             </li>
-            <li>
-              <Link href="/booking-lookup" className={linkClass}>
-                {t("bookingLookup")}
-              </Link>
-            </li>
-            {POLICIES.map((key) => (
-              <li key={key}>
-                <Link href={{ pathname: "/policies/[slug]", params: { slug: key } }} className={linkClass}>
-                  {t(key)}
+            {features.booking && (
+              <li>
+                <Link href="/booking-lookup" className={linkClass}>
+                  {t("bookingLookup")}
                 </Link>
+              </li>
+            )}
+            {/* Policies published in this language, at their per-language slugs (decision 15). */}
+            {policyLinks.map((policy) => (
+              <li key={policy.key}>
+                <NextLink href={policy.href} className={linkClass}>
+                  {policy.title}
+                </NextLink>
               </li>
             ))}
             <li>
