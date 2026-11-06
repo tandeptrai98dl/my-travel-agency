@@ -891,13 +891,17 @@ isOneToOne: false
 { Args: { "doc": Json }; Returns: (string)[]
                            },
 "search_tours":
-{ Args: { "p_destination_ids"?: string[]; "p_durations"?: string[]; "p_exclude_ids"?: string[]; "p_featured_only"?: boolean; "p_limit"?: number; "p_locale": Database["public"]['Enums']["locale"]; "p_months"?: string[]; "p_offset"?: number; "p_price_max"?: number; "p_price_min"?: number; "p_q"?: string; "p_scopes"?: (Database["public"]['Enums']["tour_scope"])[]; "p_sort"?: string; "p_travel_style_ids"?: string[] }; Returns: { "display_price": number; "next_departure_date": string; "other_departure_count": number; "price_source": string; "seats_left_next": number; "total_count": number; "tour_id": string }[]
+{ Args: { "p_destination_ids"?: (string)[],"p_durations"?: (string)[],"p_exclude_ids"?: (string)[],"p_featured_only"?: boolean,"p_limit"?: number,"p_locale": Database["public"]['Enums']["locale"],"p_months"?: (string)[],"p_offset"?: number,"p_price_max"?: number,"p_price_min"?: number,"p_q"?: string,"p_scopes"?: (Database["public"]['Enums']["tour_scope"])[],"p_sort"?: string,"p_travel_style_ids"?: (string)[] }; Returns: {
+              "display_price": number,"next_departure_date": string,"other_departure_count": number,"price_source": string,"seats_left_next": number,"total_count": number,"tour_id": string
+            }[]
                            },
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined
                            },
 "tour_departures":
-{ Args: { "p_limit"?: number; "p_tour_id": string }; Returns: { "bookable": boolean; "end_date": string; "id": string; "note": string; "price_adult": number; "price_child": number; "price_infant": number; "seats_left": number; "single_supplement": number; "start_date": string; "status": Database["public"]['Enums']["departure_status"] }[]
+{ Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
+              "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
+            }[]
                            }
           }
           Enums: {
