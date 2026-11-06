@@ -79,7 +79,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── auth/                 # confirm (existing), callback (OAuth), error
     │   ├── admin/                # Vietnamese-only admin, role + MFA checked in layout
     │   ├── api/                  # payments/vnpay/ipn, webhooks/bank-transfer,
-    │   │                         # cron/balance-reminders, tours/[id]/departures, og, health
+    │   │                         # cron/balance-reminders, tours/[id]/departures, health
     │   ├── sitemap.ts · robots.ts · not-found.tsx
     ├── modules/                  # catalog, booking, payment, inquiry, content, media,
     │                             # notification, identity, settings, audit
@@ -205,7 +205,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 
 Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings`, `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
-Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
+Technical routes: `/sitemap.xml`, `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 
 ## Security
 
@@ -215,7 +215,7 @@ Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay
 
 **Supabase**: secret key only in server env vars (never `NEXT_PUBLIC_`); RLS on every table; `supabase db lint` in CI; Security Advisor clean before launch; `security definer` functions set `search_path = ''` and revoke execute from `public`, `anon`, `authenticated` unless intentionally public (e.g. `search_tours`).
 
-**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; nonce-free CSP on cached public pages and nonce-based CSP on checkout, account and admin; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms; redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
+**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; CSP per page type (ADR-027): a nonce-free policy on cached public pages, and on checkout, account and admin a hash-based policy (`experimental.sri`), or fully dynamic rendering with nonces, as the Phase 3 spike decides; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms; redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
 
 **Personal data and compliance** (verify with legal counsel): Vietnamese personal data rules (Decree 13/2023/ND-CP and the Personal Data Protection Law) — privacy policy, consent before collection, proof in `consent_records`, export and deletion on request; e-commerce website notification to the Ministry of Industry and Trade; company details and tour operator licence in the footer; no passport numbers on the website; audit log for bookings, payments and customer data; daily backups + PITR from launch; SPF, DKIM, DMARC on the sending domain.
 
@@ -223,7 +223,7 @@ Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay
 
 - Server-rendered public pages, per-language slugs, canonical URLs, `hreflang` for published translations only, `sitemap.xml` split by type with `lastmod`, `robots.txt` blocking `/admin`, account and checkout.
 - JSON-LD: `TravelAgency` + `Organization`, `Product` + `Offer` for tours, `TouristTrip`/`ItemList`, `Article`, `BreadcrumbList`, `FAQPage`. `AggregateRating` only from verified reviews (P1).
-- Automatic 301 on slug change; Metadata API on every public page; dynamic OG images.
+- Automatic 301 on slug change; Metadata API on every public page; Open Graph images from photos or generated per locale (ADR-028).
 - Search Console for both languages; GA4 events `view_item_list`, `view_item`, `begin_checkout`, `purchase`, `generate_lead`.
 
 ## Performance

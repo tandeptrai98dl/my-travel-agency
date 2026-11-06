@@ -1,12 +1,12 @@
 # Task Spec — Tour Listing
 
-Last updated: 2026-11-06 · Task: TASK-P3-01 · Phase: 3 (`DEVELOPMENT_PLAN.md`)
+Last updated: 2026-11-07 · Task: TASK-P3-01 · Phase: 3 (`DEVELOPMENT_PLAN.md`) · Delivered as PR L of `docs/specs/phase-3-public-site.md`; the database step (section 3) ships earlier, in PR H
 
 ## Summary
 
 `/tours` (EN: `/en/tours`) is a Server Component page that reads all search state from the URL, calls `catalog.service.searchTours()` and shows 12 tours per page. Filter components are client components whose only job is to update the URL. No API route.
 
-**Scope**: list tours; search by name; filter by domestic/international, destination, price range, departure month and duration; sort by recommendation, price, duration or upcoming departure; pagination; responsive layout; loading, empty and error states.
+**Scope**: list tours; search by name; filter by domestic/international, destination, travel style, price range, departure month and duration; sort by recommendation, price, duration or upcoming departure; pagination; responsive layout; loading, empty and error states.
 
 **Assumptions** (★ = chosen in place of an unconfirmed detail, see Open questions):
 
@@ -45,6 +45,7 @@ Listing prices are indicative; the booking flow recalculates the final price.
 | Search | Diacritic- and case-insensitive substring on `tour_translations.title` ("ha long" matches "Hạ Long"), or exact `tours.code`; 2–100 characters, shorter is ignored |
 | Scope | `domestic`, `international` (multi-select) on `tours.scope` |
 | Destination | Multi-select; a country or region includes its children; matches if any tour destination is in the set; only published destinations with a published translation and at least one visible tour are offered |
+| Travel style | Multi-select on travel style keys; matches tours linked to any selected style; only published styles with a published translation are offered (added by `docs/specs/phase-3-public-site.md` decision 18 for the homepage search) |
 | Price range | `[min, max]` on the display price, VND per adult; presets + custom inputs; swap if min > max |
 | Departure month | Multi-select within the next 12 months; group tours need a bookable departure in a selected month; private tours always match |
 | Duration | Buckets 1–4, 5–8, 9–14, 15+ days on `tours.duration_days` |
@@ -132,7 +133,7 @@ No new tables (`DATABASE.md` already has `destinations.key`, `tours.scope`, the 
 
 1. `public.immutable_unaccent(text)`: wraps `extensions.unaccent` with an explicit dictionary; `immutable`, `strict`, `set search_path = ''` (required to index it).
 2. GIN trigram index on `immutable_unaccent(lower(title))` of `tour_translations`.
-3. `public.search_tours(...)` (section 4.3): `language sql`, `stable`, `security invoker`, `set search_path = ''`, `set statement_timeout = '3s'`; `grant execute` to `anon`, `authenticated`.
+3. `public.search_tours(...)` (section 4.3): `language sql`, `stable`, `security invoker`, `set search_path = ''`; `grant execute` to `anon`, `authenticated`. The 3 s limit is Supabase's default `statement_timeout` for the API roles (a function-level setting would not apply to the running statement).
 4. Add any missing public read policies for the tables used (published rows only).
 5. pgTAP: `supabase/tests/search_tours.test.sql`.
 
@@ -151,6 +152,7 @@ No API route. The page calls services in `src/modules/catalog`; the URL is the s
 | `q` | `ha long` | trimmed, 2–100 chars | — |
 | `scope` | `domestic,international` | only these values | — |
 | `dest` | `vietnam,laos` (`destinations.key`) | max 10, unknown dropped | — |
+| `style` | `honeymoon,family` (`travel_styles.key`) | max 10, unknown dropped | — |
 | `price_min`, `price_max` | `30000000` | integer 0–10 billion, swapped if min > max | — |
 | `month` | `2027-03,2027-04` | next 12 months only, max 12 | — |
 | `duration` | `1-4,5-8,9-14,15-plus` | only these values | — |
@@ -163,12 +165,12 @@ Unknown params ignored; defaults never written; fixed param order and sorted lis
 
 1. `page.tsx` renders the static frame and a `<Suspense>` boundary; inside it, an async component reads `searchParams`, parses them, and calls `searchTours(locale, criteria)` and `getTourFilterOptions(locale)` in parallel.
 2. `searchTours` returns `{ items, total, page, pageSize, totalPages }`; out-of-range pages redirect to the last page.
-3. Results are **not cached** (seats change with bookings). `getTourFilterOptions` uses `"use cache"` with `cacheTag('catalog')` and `cacheLife('hours')`; the month list is computed per request.
+3. Results are **not cached** (seats change with bookings). `getTourFilterOptions` uses `"use cache"` with `cacheTag('tours', 'destinations', 'travel-styles')` (the tags the admin saves refresh) and `cacheLife('hours')`; the month list is computed per request.
 4. Filter changes: `serializeTourSearchParams()` → `router.replace(url, { scroll: false })` in `startTransition`; Next re-renders on the server while keeping the old UI.
 
 ### 4.3 `searchTours` — two steps
 
-**Step A — `supabase.rpc('search_tours', …)`** with the server session client (publishable key, RLS applies; never the service role). Parameters: `p_locale`, `p_q`, `p_scopes`, `p_destination_ids uuid[]` (children expanded in the service from the cached destination tree), `p_price_min`, `p_price_max`, `p_months date[]`, `p_durations text[]`, `p_sort`, `p_limit`, `p_offset`, `p_cutoff_days`. Inside: CTE of bookable departures (section 1.2, month-limited when filtering); aggregate per tour (min price, next date, departure count, seats left on the next departure); join published tours and published translations; apply filters (search term with `%`, `_`, `\` escaped); `order by` per section 1.5; `limit`/`offset`; `count(*) over ()`. Returns `tour_id`, `display_price`, `price_source`, `next_departure_date`, `other_departure_count`, `seats_left_next`, `total_count`.
+**Step A — `supabase.rpc('search_tours', …)`** with the server session client (publishable key, RLS applies; never the service role). Parameters: `p_locale`, `p_q`, `p_scopes`, `p_destination_ids uuid[]` (children expanded in the service from the cached destination tree), `p_travel_style_ids uuid[]`, `p_price_min`, `p_price_max`, `p_months date[]`, `p_durations text[]`, `p_sort`, `p_limit`, `p_offset`, plus `p_featured_only` and `p_exclude_ids` for the homepage and related tours. The booking cutoff is read inside the function from `public.booking_cutoff_days()`. Inside: CTE of bookable departures (section 1.2, month-limited when filtering); aggregate per tour (min price, next date, departure count, seats left on the next departure); join published tours and published translations; apply filters (search term with `%`, `_`, `\` escaped); `order by` per section 1.5; `limit`/`offset`; `count(*) over ()`. Returns `tour_id`, `display_price`, `price_source`, `next_departure_date`, `other_departure_count`, `seats_left_next`, `total_count`.
 
 **Step B — `supabase.from('tours').select(…)` by ids**: translation, hero image and destination names via nested selects; reorder to match Step A.
 
@@ -200,7 +202,7 @@ Formatting through `@/lib/money` and next-intl, time zone `Asia/Ho_Chi_Minh`.
 | TourSearchInput | Client | Debounced (400ms) search with clear button |
 | TourSortSelect | Client | Sort select |
 | TourFilterPanel | Client | Filter content in `instant` (desktop) or `staged` (mobile) mode |
-| ScopeFilter, DestinationFilter, PriceRangeFilter, DepartureMonthFilter, DurationFilter | Client | Individual filters (destination tree selects children; search box when > 10 items) |
+| ScopeFilter, DestinationFilter, TravelStyleFilter, PriceRangeFilter, DepartureMonthFilter, DurationFilter | Client | Individual filters (destination tree selects children; search box when > 10 items) |
 | MobileFilterSheet | Client | Sheet with "Reset" and "Apply" |
 | ActiveFilterChips | Client | Remove one or all filters |
 | TourResults | Client wrapper | Dimming, `aria-busy`, `aria-live` count; server-rendered children |
@@ -227,7 +229,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 - [ ] Phase 0 migrations applied; `npx supabase start` works
 - [ ] next-intl routing and pathnames work
 - [ ] Phase 1 primitives available
-- [ ] Phase 2 admin creates tours, departures and destinations and calls `revalidateTag('catalog')` on save
+- [ ] Phase 2 admin creates tours, departures and destinations and refreshes the `tours` and `destinations` tags on save
 
 ### 7.2 Steps (one commit each; lint, typecheck, tests green before moving on)
 
@@ -247,7 +249,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 - Session client only (RLS applies), never the service role.
 - URL is the single source of truth; no filter state in localStorage or global stores.
 - Prices only computed on the server.
-- Results not cached; only filter options cached (`"use cache"` + `cacheTag('catalog')`).
+- Results not cached; only filter options cached (`"use cache"` + `cacheTag('tours', 'destinations', 'travel-styles')`).
 - No new libraries; all UI text via next-intl; tokens only for colors and spacing.
 - Presentational components never import repositories or Supabase clients.
 - English for code, comments, commits and PR text (ADR-007).
@@ -300,7 +302,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 
 ### 7.6 Out of scope
 
-Facet counts; filters by travel style or total budget; USD prices; wishlist, comparison, maps; `/tim-kiem` and destination pages (separate tasks reusing `searchTours`); a public API.
+Facet counts; a filter by total budget; USD prices; wishlist, comparison, maps; `/tim-kiem` and destination pages (separate tasks reusing `searchTours`); a public API.
 
 ### 7.7 Handover prompt
 
