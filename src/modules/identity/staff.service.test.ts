@@ -14,6 +14,7 @@ const repo = {
   activeAdminIds: fn([{ id: "admin-1" }, { id: "admin-2" }]),
   updateProfile: fn({ id: "x" }),
   authUser: fn({ user: null }),
+  profileByEmail: fn(null),
   inviteUser: fn({ user: { id: "new-1" } }),
   setInvitedProfile: fn({ id: "new-1" }),
   deleteAuthUser: fn({}),
@@ -33,6 +34,8 @@ beforeEach(() => {
   repo.inviteUser.mockResolvedValue({ data: { user: { id: "new-1" } }, error: null });
   repo.setInvitedProfile.mockResolvedValue({ data: { id: "new-1" }, error: null });
   repo.insertAuditLog.mockResolvedValue({ data: null, error: null });
+  repo.profileByEmail.mockResolvedValue({ data: null, error: null });
+  repo.deleteAuthUser.mockResolvedValue({ data: {}, error: null });
 });
 
 describe("staffChangeBlock", () => {
@@ -76,6 +79,21 @@ describe("inviteStaff", () => {
     repo.insertAuditLog.mockResolvedValueOnce({ data: null, error: { code: "42501", message: "denied" } });
     expect(await service.inviteStaff(input)).toEqual({ ok: false, error: "failed" });
     expect(repo.deleteAuthUser).toHaveBeenCalledWith("new-1");
+  });
+
+  it("never removes an account that existed before the invitation", async () => {
+    repo.profileByEmail.mockResolvedValueOnce({ data: { id: "new-1" }, error: null });
+    repo.setInvitedProfile.mockResolvedValueOnce({ data: null, error: { code: "PGRST116", message: "no row" } });
+    expect(await service.inviteStaff(input)).toEqual({ ok: false, error: "failed" });
+    expect(repo.deleteAuthUser).not.toHaveBeenCalled();
+  });
+
+  it("logs a rollback that fails", async () => {
+    const { logger } = await import("@/lib/logger");
+    repo.insertAuditLog.mockResolvedValueOnce({ data: null, error: { code: "42501", message: "denied" } });
+    repo.deleteAuthUser.mockResolvedValueOnce({ data: null, error: { code: "unexpected_failure", status: 500, message: "x" } });
+    expect(await service.inviteStaff(input)).toEqual({ ok: false, error: "failed" });
+    expect(logger.error).toHaveBeenCalledWith("staff.invite_rollback_failed", { code: "unexpected_failure", status: 500 });
   });
 
   it("reports an email that already has an account", async () => {

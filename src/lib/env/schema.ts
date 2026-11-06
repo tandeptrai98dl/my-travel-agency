@@ -74,10 +74,17 @@ export const serverEnvSchema = z
     z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
   ),
   UPSTASH_REDIS_REST_TOKEN: optionalString,
-}).refine(
-  (env) => Boolean(env.UPSTASH_REDIS_REST_URL) === Boolean(env.UPSTASH_REDIS_REST_TOKEN),
-  { message: "set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or neither", path: ["UPSTASH_REDIS_REST_TOKEN"] },
-);
+}).superRefine((env, ctx) => {
+  // Both or neither: one without the other would make every redirect sync fail at run time.
+  const missing = env.UPSTASH_REDIS_REST_URL && !env.UPSTASH_REDIS_REST_TOKEN
+    ? "UPSTASH_REDIS_REST_TOKEN"
+    : env.UPSTASH_REDIS_REST_TOKEN && !env.UPSTASH_REDIS_REST_URL
+      ? "UPSTASH_REDIS_REST_URL"
+      : null;
+  if (missing) {
+    ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both Upstash variables or neither)` });
+  }
+});
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

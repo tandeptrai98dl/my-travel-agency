@@ -115,11 +115,12 @@ test("an aal2 admin edits settings, invites staff and changes their role and acc
   await expect(own.getByText("Bạn không thể tự đổi vai trò hoặc khoá tài khoản của mình.")).toBeVisible();
   await expectNoSeriousViolations(page, "/admin/staff");
 
-  // Invite an editor.
-  await page.getByLabel("Email", { exact: true }).fill(inviteeEmail);
-  await page.getByLabel("Họ và tên").fill("Nhân viên thử");
-  await page.getByLabel("Vai trò", { exact: true }).selectOption("editor");
-  await page.getByRole("button", { name: "Gửi lời mời" }).click();
+  // Invite an editor (scoped to the form: the settings page left behind has an Email field too).
+  const inviteForm = page.getByRole("form", { name: "Mời nhân viên" });
+  await inviteForm.getByLabel("Email", { exact: true }).fill(inviteeEmail);
+  await inviteForm.getByLabel("Họ và tên").fill("Nhân viên thử");
+  await inviteForm.getByLabel("Vai trò", { exact: true }).selectOption("editor");
+  await inviteForm.getByRole("button", { name: "Gửi lời mời" }).click();
   await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText(`Đã gửi lời mời tới ${inviteeEmail}`)).toBeVisible();
   const row = page.getByTestId("staff-row").filter({ hasText: inviteeEmail });
   await expect(row.getByText("Đã mời")).toBeVisible();
@@ -139,10 +140,10 @@ test("an aal2 admin edits settings, invites staff and changes their role and acc
   await page.reload();
   await expect(row.getByText("Đang hoạt động")).toBeVisible();
   // Inviting an address that already has an account is refused on the email field.
-  await page.getByLabel("Email", { exact: true }).fill(inviteeEmail);
-  await page.getByLabel("Họ và tên").fill("Nhân viên thử");
-  await page.getByRole("button", { name: "Gửi lời mời" }).click();
-  await expect(page.getByText("Email này đã có tài khoản.", { exact: false })).toBeVisible();
+  await inviteForm.getByLabel("Email", { exact: true }).fill(inviteeEmail);
+  await inviteForm.getByLabel("Họ và tên").fill("Nhân viên thử");
+  await inviteForm.getByRole("button", { name: "Gửi lời mời" }).click();
+  await expect(inviteForm.getByText("Email này đã có tài khoản.", { exact: false })).toBeVisible();
   await row.getByLabel("Vai trò của Nhân viên thử").selectOption("operator");
   await row.getByRole("button", { name: "Đổi vai trò" }).click();
   await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText("Đã đổi vai trò của Nhân viên thử")).toBeVisible();

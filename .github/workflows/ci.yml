@@ -75,6 +75,8 @@ jobs:
           if [ -n "$(git status --porcelain -- src/types/database.types.ts)" ]; then
             echo "src/types/database.types.ts is stale. Run npm run db:types and commit the result." >&2
             git diff --stat -- src/types/database.types.ts >&2 || true
+            # The full diff, so a hand-written entry can be copied exactly from the log.
+            git --no-pager diff -- src/types/database.types.ts || true
             # The generated file, base64-encoded, so it can be recovered from the log when the
             # artifact cannot be downloaded.
             echo "BEGIN database.types.ts base64"

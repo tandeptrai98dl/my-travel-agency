@@ -44,6 +44,11 @@ export async function authUser(id: string) {
   return createAdminClient().auth.admin.getUserById(id);
 }
 
+/** Whether an account already exists for the address (before inviting, so a rollback never removes it). */
+export async function profileByEmail(email: string) {
+  return createAdminClient().from("profiles").select("id").eq("email", email).maybeSingle();
+}
+
 export async function inviteUser(email: string, metadata: { full_name: string; locale: "vi" }, redirectTo: string) {
   return createAdminClient().auth.admin.inviteUserByEmail(email, { data: metadata, redirectTo });
 }

@@ -59,6 +59,13 @@ function isEmailTaken(error: { code?: string; status?: number; message: string }
 export async function inviteStaff(input: InviteStaffValues): Promise<StaffResult> {
   const user = await requirePermission("staff.manage");
   const redirectTo = new URL("/auth/update-password", validatedPublicEnv.NEXT_PUBLIC_SITE_URL).toString();
+  // An unconfirmed account (an earlier invitation, an unfinished sign-up) is invited again rather
+  // than created; a rollback must never remove it.
+  const prior = await repo.profileByEmail(input.email);
+  if (prior.error) {
+    logger.error("staff.invite_lookup_failed", { code: prior.error.code });
+    return { ok: false, error: "failed" };
+  }
   const invited = await repo.inviteUser(input.email, { full_name: input.fullName, locale: "vi" }, redirectTo);
   if (invited.error || !invited.data.user) {
     if (invited.error && isEmailTaken(invited.error)) return { ok: false, error: "emailTaken", field: "email" };
@@ -71,8 +78,12 @@ export async function inviteStaff(input: InviteStaffValues): Promise<StaffResult
     ? null
     : await repo.insertAuditLog({ actor_id: user.id, action: "staff.invite", entity_id: id, changes: { after: { role: input.role } } });
   if (profile.error || !audit || audit.error) {
-    logger.error("staff.invite_rolled_back", { code: profile.error?.code ?? audit?.error?.code });
-    await repo.deleteAuthUser(id);
+    logger.error("staff.invite_write_failed", { code: profile.error?.code ?? audit?.error?.code });
+    if (!prior.data) {
+      const removed = await repo.deleteAuthUser(id);
+      if (removed.error) logger.error("staff.invite_rollback_failed", { code: removed.error.code, status: removed.error.status });
+      else logger.info("staff.invite_rolled_back", {});
+    }
     return { ok: false, error: "failed" };
   }
   return { ok: true, id };

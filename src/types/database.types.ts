@@ -840,7 +840,7 @@ isOneToOne: false
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
                            },
 "create_redirect":
-{ Args: { "source": string; "status"?: number; "target": string }; Returns: string
+{ Args: { "source": string,"status"?: number,"target": string }; Returns: string
                            },
 "current_user_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
@@ -859,6 +859,9 @@ isOneToOne: false
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_homepage_hero":
+{ Args: { "target_id": string }; Returns: boolean
                            },
 "is_mfa_verified":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -888,7 +891,7 @@ isOneToOne: false
 { Args: { "target_id": string }; Returns: boolean
                            },
 "record_slug_redirect":
-{ Args: { "source": string; "target": string }; Returns: undefined
+{ Args: { "source": string,"target": string }; Returns: undefined
                            },
 "rich_text_alt_complete":
 { Args: { "doc": Json }; Returns: boolean

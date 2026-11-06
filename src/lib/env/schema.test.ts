@@ -146,7 +146,10 @@ describe("serverEnvSchema", () => {
   it("needs both Upstash variables or neither", () => {
     expect(() =>
       parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", UPSTASH_REDIS_REST_URL: "https://eu1.upstash.io" }),
-    ).toThrow(/UPSTASH_REDIS_REST_TOKEN/);
+    ).toThrow(/UPSTASH_REDIS_REST_TOKEN is missing/);
+    expect(() =>
+      parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", UPSTASH_REDIS_REST_TOKEN: "token" }),
+    ).toThrow(/UPSTASH_REDIS_REST_URL is missing/);
     const env = parseEnv("server", serverEnvSchema, {
       SUPABASE_SECRET_KEY: "sb_secret_example",
       UPSTASH_REDIS_REST_URL: "https://eu1.upstash.io",
