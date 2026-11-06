@@ -36,11 +36,11 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [x] Tours (itinerary builder, SEO, duplication), departures (bulk creation), destinations, travel styles, cancellation policies
 - [x] Journal, static pages, reviews, redirects (synced to Redis; untested against a real Upstash until the owner's account exists)
 - [x] Settings, staff, audit log; `revalidateTag()` on save; role-based RLS writes + pgTAP
-- [ ] Acceptance: an editor publishes a full VI/EN tour without a developer; under-privileged roles are blocked on the server and by RLS (role blocking verified by pgTAP and E2E in PRs 8–20; an end-to-end E2E of an editor publishing a complete tour comes with the Phase 2 polish PR; a group tour's first departure needs an admin by design, ADR-024)
+- [x] Acceptance: an editor publishes a full VI/EN tour without a developer; under-privileged roles are blocked on the server and by RLS (E2E `tour-publish.spec.ts` in #22; role blocking by pgTAP and E2E in PRs 8–22; a group tour's first departure is an admin step by design, ADR-024)
 
 ## Phase 3: Public website and SEO (2 weeks)
 
-- [ ] Homepage
+- [x] Homepage
 - [ ] Tour listing (`docs/specs/tour-listing.md`)
 - [ ] Tour detail with live departures in `<Suspense>`
 - [ ] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies, site search
