@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "siteName": "Premium Travel Agency",
+    "defaultDescription": "Hành trình riêng tư và nhóm nhỏ được thiết kế tỉ mỉ."
+  },
+  "HomePage": {
+    "metaTitle": "Sắp ra mắt",
+    "metaDescription": "Website mới của chúng tôi đang được hoàn thiện.",
+    "eyebrow": "Sắp ra mắt",
+    "title": "Website mới của chúng tôi sắp ra mắt"
+  },
+  "LanguageSwitcher": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "NotFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Trang bạn tìm không tồn tại hoặc đã được chuyển đi.",
+    "home": "Về trang chủ"
+  },
+  "Admin": {
+    "title": "Quản trị",
+    "signedInAs": "Đăng nhập với tư cách {email}",
+    "role": "Vai trò: {role}",
+    "mfaStatus": "Xác thực hai lớp: {status}",
+    "mfaOn": "đã xác minh",
+    "mfaOff": "chưa xác minh",
+    "manageMfa": "Thiết lập xác thực hai lớp",
+    "signOut": "Đăng xuất",
+    "placeholder": "Bảng điều khiển sẽ được xây dựng ở giai đoạn 4 và 5.",
+    "roles": {
+      "customer": "Khách hàng",
+      "sales": "Kinh doanh",
+      "sales_manager": "Quản lý kinh doanh",
+      "operator": "Điều hành",
+      "accountant": "Kế toán",
+      "editor": "Biên tập",
+      "admin": "Quản trị viên"
+    },
+    "Mfa": {
+      "title": "Xác thực hai lớp",
+      "requiredNotice": "Vai trò của bạn bắt buộc xác thực hai lớp trước khi vào trang quản trị.",
+      "optionalNotice": "Bạn có thể bật xác thực hai lớp để bảo vệ tài khoản.",
+      "enrolIntro": "Quét mã QR bằng ứng dụng xác thực (Google Authenticator, 1Password, Authy…), rồi nhập mã 6 chữ số.",
+      "secretLabel": "Hoặc nhập khóa thủ công",
+      "verifyIntro": "Nhập mã 6 chữ số từ ứng dụng xác thực của bạn.",
+      "codeLabel": "Mã xác thực",
+      "start": "Bắt đầu thiết lập",
+      "verify": "Xác minh",
+      "verifying": "Đang xác minh…",
+      "invalidCode": "Mã không đúng hoặc đã hết hạn. Vui lòng thử lại.",
+      "genericError": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+      "done": "Đã bật xác thực hai lớp.",
+      "continue": "Vào trang quản trị",
+      "qrAlt": "Mã QR để thêm tài khoản vào ứng dụng xác thực"
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "Metadata": {
+    "siteName": "Premium Travel Agency",
+    "defaultDescription": "Carefully crafted private and small-group journeys."
+  },
+  "HomePage": {
+    "metaTitle": "Coming soon",
+    "metaDescription": "Our new website is being prepared.",
+    "eyebrow": "Coming soon",
+    "title": "Our new website is on its way"
+  },
+  "LanguageSwitcher": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has moved.",
+    "home": "Back to the home page"
+  },
+  "Admin": {
+    "title": "Admin",
+    "signedInAs": "Signed in as {email}",
+    "role": "Role: {role}",
+    "mfaStatus": "Two-factor authentication: {status}",
+    "mfaOn": "verified",
+    "mfaOff": "not verified",
+    "manageMfa": "Set up two-factor authentication",
+    "signOut": "Sign out",
+    "placeholder": "The dashboard is built in Phases 4 and 5.",
+    "roles": {
+      "customer": "Customer",
+      "sales": "Sales",
+      "sales_manager": "Sales manager",
+      "operator": "Operator",
+      "accountant": "Accountant",
+      "editor": "Editor",
+      "admin": "Administrator"
+    },
+    "Mfa": {
+      "title": "Two-factor authentication",
+      "requiredNotice": "Your role requires two-factor authentication before you can use the admin.",
+      "optionalNotice": "You can turn on two-factor authentication to protect your account.",
+      "enrolIntro": "Scan the QR code with an authenticator app (Google Authenticator, 1Password, Authy…), then enter the 6-digit code.",
+      "secretLabel": "Or enter the key manually",
+      "verifyIntro": "Enter the 6-digit code from your authenticator app.",
+      "codeLabel": "Authentication code",
+      "start": "Start setup",
+      "verify": "Verify",
+      "verifying": "Verifying…",
+      "invalidCode": "The code is wrong or has expired. Please try again.",
+      "genericError": "Something went wrong. Please try again.",
+      "done": "Two-factor authentication is on.",
+      "continue": "Go to the admin",
+      "qrAlt": "QR code to add this account to an authenticator app"
+    }
+  }
+}

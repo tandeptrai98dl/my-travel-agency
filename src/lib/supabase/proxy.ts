@@ -1,14 +1,28 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import type { NextRequest } from "next/server";
+
 import { publicEnv } from "@/lib/env/public";
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+export type SessionRefresh = {
+  cookies: { name: string; value: string; options: CookieOptions }[];
+  /** Cache headers that must accompany the cookies so no CDN caches a session. */
+  headers: Record<string, string>;
+};
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
+/**
+ * Refreshes the Supabase session cookie for this request.
+ *
+ * Updated cookies are written onto the incoming request (so Server Components rendered for this
+ * request see the fresh session) and returned so the proxy can copy them, with the cache
+ * headers, onto whatever response it builds.
+ *
+ * This is session upkeep only. It never redirects and is never the authentication check:
+ * layouts, Server Actions and Route Handlers verify the user themselves (requireRole()).
+ */
+export async function refreshSession(request: NextRequest): Promise<SessionRefresh> {
+  const refresh: SessionRefresh = { cookies: [], headers: {} };
+
+  // With Fluid compute, never keep this client in a global; create one per request.
   const supabase = createServerClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -17,54 +31,18 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
+        setAll(cookiesToSet, headers) {
+          for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+          refresh.cookies.push(...cookiesToSet);
+          Object.assign(refresh.headers, headers);
         },
       },
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // Do not run code between createServerClient and getClaims(): getClaims() is what refreshes
+  // an expired access token.
+  await supabase.auth.getClaims();
 
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
-
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
-  }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
-  return supabaseResponse;
+  return refresh;
 }
