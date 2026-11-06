@@ -125,12 +125,15 @@ test.describe("cookie consent", () => {
     const sentryHost = process.env.NEXT_PUBLIC_SENTRY_DSN
       ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).host
       : null;
+    // The site's own Supabase Storage serves its photos (the homepage shows tour images from
+    // Phase 3): first-party content, not tracking.
+    const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host : null;
     await page.route("**/api/*/envelope/**", (route) => route.fulfill({ status: 200, body: "{}" }));
     const thirdParty: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
       if (["data:", "blob:"].includes(url.protocol)) return;
-      if (url.origin === origin || url.host === sentryHost) return;
+      if (url.origin === origin || url.host === sentryHost || url.host === supabaseHost) return;
       thirdParty.push(request.url());
     });
     await page.goto("/en");

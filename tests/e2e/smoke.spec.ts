@@ -4,16 +4,15 @@ test("Vietnamese home page is served without a prefix", async ({ page }) => {
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Website mới của chúng tôi sắp ra mắt",
-  );
+  // The hero title from the seeded `homepage` setting (supabase/seed.sql).
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Những chuyến đi được chăm chút từng chi tiết");
 });
 
 test("English home page is served under /en", async ({ page }) => {
   const response = await page.goto("/en");
   expect(response?.status()).toBe(200);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Our new website is on its way");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Journeys shaped down to the smallest detail");
 });
 
 test("switching language keeps the page", async ({ page }) => {

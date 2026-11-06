@@ -8,6 +8,12 @@ const handleLocale = createIntlMiddleware(routing);
 
 /** Paths outside the localized website: no locale prefix or rewrite. */
 const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
+/**
+ * Generated metadata images (`opengraph-image.tsx`, Phase 3 spec decision 11). Next.js links them
+ * with the internal locale segment (`/vi/opengraph-image-…`), which the locale handler would
+ * redirect; they are public, cookie-free files, so they skip the proxy entirely.
+ */
+const METADATA_IMAGE = /^\/(?:vi|en)(?:\/[^/]+)*\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/;
 
 /**
  * Next.js proxy: Supabase session refresh and locale routing. Security headers are set for every
@@ -16,6 +22,8 @@ const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
  * themselves. Redirects from Redis are added in Phase 2.
  */
 export async function proxy(request: NextRequest) {
+  if (METADATA_IMAGE.test(request.nextUrl.pathname)) return NextResponse.next();
+
   // 1. Refresh the session first, so the locale handler forwards the refreshed cookies.
   const session = await refreshSession(request);
 
