@@ -8,6 +8,8 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // ADR-021: Partial Prefetching alongside Cache Components, as Next.js recommends.
+  partialPrefetching: true,
   async headers() {
     return [{ source: "/:path*", headers: [...securityHeaders] }];
   },

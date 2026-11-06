@@ -3,7 +3,7 @@
 Derived from `PROJECT_BRIEF.md` and the full-scope decision (ADR-005).
 
 Priority: **P0** = required for launch, **P1** = 1–3 months after launch, **P2** = later.
-Business rule defaults are in ADR-016 (proposed, configurable in Settings where possible).
+Business rule defaults are in ADR-016 (accepted; configurable in Settings where possible).
 
 ## Customer Website
 

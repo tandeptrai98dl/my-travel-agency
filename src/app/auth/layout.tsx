@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { bodyFont } from "@/app/fonts";
+import { fontVariables } from "@/app/fonts";
 import { siteUrl } from "@/lib/site-url";
 
 import "../globals.css";
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${bodyFont.className} antialiased`}>{children}</body>
+    <html lang="en" className={fontVariables}>
+      <body>{children}</body>
     </html>
   );
 }

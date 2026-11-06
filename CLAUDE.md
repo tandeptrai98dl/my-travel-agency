@@ -116,7 +116,7 @@ src/
   app/auth/       # auth confirm/callback routes
   modules/        # business logic: <module>.service.ts, .repository.ts, .schemas.ts, .actions.ts
   components/     # feature components
-  components/ui/  # shadcn/ui primitives (add with `npx shadcn@latest add <name>`)
+  components/ui/  # shadcn/ui primitives (`npx shadcn@latest add <name>`, or copy the new-york source, ADR-021)
   lib/            # utilities, env, money, auth helpers, Supabase clients (lib/supabase/{client,server,proxy,admin}.ts)
   i18n/           # next-intl routing and pathnames
   types/          # generated database types (never edit by hand)

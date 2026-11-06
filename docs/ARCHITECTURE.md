@@ -32,7 +32,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 | Framework | Next.js 16 (App Router, `cacheComponents`), React 19 | ADR-001, ADR-015 |
 | Language | TypeScript strict | |
 | UI | Tailwind CSS 3, shadcn/ui (new-york), lucide-react, Motion (sparingly) | ADR-003 |
-| Theming | next-themes installed; public site uses a fixed light theme | ADR-017 (proposed) |
+| Theming | next-themes installed; public site uses a fixed light theme | ADR-017 |
 | i18n | next-intl, VI default (no prefix), EN under `/en` | ADR-006 |
 | Forms & validation | React Hook Form + Zod | ADR-014 |
 | Rich text | Tiptap, stored as JSON | ADR-014 |
@@ -48,7 +48,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 | Monitoring | Sentry, Vercel Speed Insights | ADR-014 |
 | Analytics | GA4 via GTM with Consent Mode v2 | |
 | Testing | Vitest (unit), Playwright (E2E), pgTAP (`supabase test db`) | ADR-014 |
-| Hosting | Vercel Pro + Supabase Pro, Singapore | ADR-018 (proposed) |
+| Hosting | Vercel Pro + Supabase Pro, Singapore | ADR-018 |
 | Package manager | npm | |
 
 ## Folder structure
@@ -178,7 +178,7 @@ RLS is the source of truth; `requireRole()` is the first check in every Server A
 | Redirects, newsletter | — | — | — | Edit | Full |
 | Settings, staff, audit log | — | — | — | — | Full |
 
-`sales_manager` = Sales + editing departure prices (pending, ADR-016; until decided only Admin edits prices). Admin and accountant need MFA (`aal2`).
+`sales_manager` has the Sales permissions; only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
 
 ## Routes
 

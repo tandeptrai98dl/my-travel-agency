@@ -1,19 +1,26 @@
 import { getTranslations } from "next-intl/server";
 
+import { Container } from "@/components/layout/container";
+import { Eyebrow } from "@/components/typography/eyebrow";
+import { Heading } from "@/components/typography/heading";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
-// Minimal localized 404; Phase 1 replaces it with the designed NotFound page.
+// Localized 404; the designed version with tour suggestions arrives with the layout shell.
 export default async function NotFound() {
   const t = await getTranslations("NotFound");
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="max-w-xl text-center">
-        <h1 className="text-3xl font-medium">{t("title")}</h1>
-        <p className="mt-4 text-muted-foreground">{t("description")}</p>
-        <Link href="/" className="mt-8 inline-block underline underline-offset-4">
-          {t("home")}
-        </Link>
-      </div>
+    <main className="flex min-h-screen items-center">
+      <Container className="flex flex-col items-center gap-6 text-center">
+        <Eyebrow>404</Eyebrow>
+        <Heading level={1} size="h1">
+          {t("title")}
+        </Heading>
+        <p className="max-w-prose text-body-lg text-muted-foreground">{t("description")}</p>
+        <Button asChild variant="outline" className="mt-4">
+          <Link href="/">{t("home")}</Link>
+        </Button>
+      </Container>
     </main>
   );
 }

@@ -16,17 +16,18 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 
 ## Color palette
 
-> Status: **proposed** values (from the brief's color direction). Confirm them, then apply them to `globals.css`.
+> Status: **approved** (ADR-021). Applied in `src/app/globals.css`; contrast pairs are unit-tested.
 
-| Name | Hex (proposed) | Role |
+| Name | Hex | Role |
 | --- | --- | --- |
 | Deep Navy | `#0F1B2D` | primary brand color, headings, dark sections, primary buttons |
 | Warm Ivory | `#F7F3EC` | main page background |
 | Champagne Gold | `#C9A96E` | accents: dividers, icons, highlights, focus |
 | White | `#FFFFFF` | cards, form fields, elevated surfaces |
-| Warm Gray | `#8A847B` | secondary text, borders, muted UI |
+| Warm Gray | `#8A847B` | borders, dividers, decorative muted UI |
+| Muted text | `#726D65` | secondary text (Warm Gray darkened for AA: 4.6:1 on ivory) |
 | Success | `#2F6B4F` | paid, seats available |
-| Warning | `#9A6A16` | almost full, awaiting payment |
+| Warning | `#865A11` | almost full, awaiting payment (darkened for AA text on ivory) |
 | Error | `#A23B3B` | errors, cancelled |
 
 ### Token mapping (light theme)
@@ -37,34 +38,37 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 | `foreground` | Deep Navy |
 | `card`, `popover` | White |
 | `primary` / `primary-foreground` | Deep Navy / Warm Ivory |
-| `secondary` | a lighter ivory tint |
+| `secondary`, `muted` | lighter ivory tint `#FBF8F3` |
 | `accent` | Champagne Gold (with Deep Navy text) |
-| `muted-foreground` | Warm Gray, darkened if needed for AA on ivory |
-| `border`, `input` | a light tint of Warm Gray |
-| `ring` | Champagne Gold |
+| `muted-foreground` | Muted text `#726D65` |
+| `border` | light warm-gray tint `#E2DBCF` (decorative dividers) |
+| `input` | Warm Gray `#8A847B` (form borders need 3:1) |
+| `ring` | deep gold `#A7823E` (3:1 focus indicator on ivory and white) |
 | `success`, `warning`, `destructive` | Success, Warning, Error |
+
+Navy sections (`.theme-navy`) re-map the tokens: background Deep Navy, text Warm Ivory, cards `#16253B`, muted text `#B9B4AA`, borders `#2A3A52`, ring Champagne Gold, and lighter status colours with navy text (destructive `#E89696`, success `#7DC1A0`, warning `#E3B567`), because the light-theme status colours fail AA on navy.
 
 ### Theme
 
-Proposed (ADR-017): the public website uses a fixed light theme, with Deep Navy sections (ivory text, gold accents) for contrast. Remove the theme switcher from the public layout. next-themes stays for a possible admin dark mode later.
+ADR-017: the public website uses a fixed light theme, with Deep Navy sections (ivory text, gold accents) for contrast. Remove the theme switcher from the public layout. next-themes stays for a possible admin dark mode later.
 
 **Contrast**: gold on ivory or white fails AA for body text. Use gold only for decoration, large text (≥ 24px) or on navy.
 
 ## Typography
 
-> Status: **proposed**. Load through `next/font` with the `latin` and `vietnamese` subsets.
+> Status: **approved** (ADR-021). Loaded through `next/font` with the `latin` and `vietnamese` subsets.
 
-| Use | Font (proposed) | Notes |
+| Use | Font | Notes |
 | --- | --- | --- |
 | Display / headings | Cormorant Garamond, weight 500–600 | serif, editorial feel |
-| Body / UI | Be Vietnam Pro or Inter, weight 400–600 | both support Vietnamese well; Be Vietnam Pro is designed for it |
+| Body / UI | Be Vietnam Pro, weight 400–600 | designed for Vietnamese |
 
-- Check stacked diacritics (ặ, ẫ, ỡ) at every size; heading line-height at least 1.15 so diacritics are never clipped.
+- Check stacked diacritics (ặ, ẫ, ỡ) at every size; heading line-height at least 1.15 so diacritics are never clipped (Display and H1 desktop line-heights were raised from 80 and 64 to meet this).
 
 | Style | Desktop (size/line, px) | Mobile | Font |
 | --- | --- | --- | --- |
-| Display | 72/80 | 44/52 | Serif 500 |
-| H1 | 56/64 | 38/46 | Serif 500 |
+| Display | 72/84 | 44/52 | Serif 500 |
+| H1 | 56/66 | 38/46 | Serif 500 |
 | H2 | 40/48 | 30/38 | Serif 500 |
 | H3 | 28/36 | 24/32 | Serif 600 |
 | H4 | 20/28 | 18/26 | Sans 600 |
@@ -78,7 +82,7 @@ Proposed (ADR-017): the public website uses a fixed light theme, with Deep Navy 
 - Container: `mx-auto max-w-7xl px-4 md:px-8`; long text blocks max 680px.
 - Spacing scale in multiples of 4px; section spacing `py-16 md:py-28` (up to 160px on large editorial sections).
 - Grids: `grid gap-8 sm:grid-cols-2 lg:grid-cols-3`; 12-column grid for editorial layouts.
-- Radius: small (`--radius` around `0.25rem`; 2px inputs/buttons, 4px cards, none on images). Sharp corners read as more premium.
+- Radius: `--radius: 0.25rem` (`rounded-md` = 2px for inputs and buttons, `rounded-lg` = 4px for cards, none on images). Sharp corners read as more premium.
 - Shadows almost never; depth comes from ivory/white surfaces and 1px borders.
 - Imagery: 16:9 or 21:9 heroes, 4:5 tour cards, 3:2 content images; `next/image` with proper `sizes`; originals at least 2400px on the long edge.
 
@@ -96,17 +100,19 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 
 ## Components
 
-### Available (`src/components/ui`)
+### Available
 
-badge, button, card, checkbox, dropdown-menu, input, label
+- `src/components/ui`: badge (default, secondary, outline, gold, success, warning, destructive), button (default, gold, secondary, outline, ghost, link, destructive; sizes sm 36 px, default 44 px, lg 48 px, icon), card, checkbox, dropdown-menu, input, label
+- `src/components/typography`: Heading, Eyebrow (gold inside navy sections), SectionHeading, Prose, Price
+- `src/components/layout`: Container, Section (ivory, white, navy tones)
 
 ### Planned
 
 | Group | Components |
 | --- | --- |
 | Primitives (shadcn) | IconButton, Textarea, Select, Combobox, Radio, Switch, DatePicker, DateRangePicker, quantity Stepper, PhoneInput, FormField, Tag, Tooltip, Popover, Dialog, Sheet, Tabs, Accordion, Skeleton, Spinner, Toast, Alert, Separator, Avatar, Pagination |
-| Typography | Heading, Eyebrow, SectionHeading, Prose (renders Tiptap JSON), Price (VND formatting), DateText |
-| Layout | Container, Section, SiteHeader (transparent over the hero, solid on scroll), MegaMenu (destinations), MobileNav, SiteFooter (licence, company details), Breadcrumbs, LanguageSwitcher, ContactFloatingButton (Zalo/WhatsApp/hotline), CookieConsentBanner |
+| Typography | Prose rendering of Tiptap JSON (Phase 2), DateText |
+| Layout | SiteHeader (transparent over the hero, solid on scroll), MegaMenu (destinations), MobileNav, SiteFooter (licence, company details), Breadcrumbs, LanguageSwitcher, ContactFloatingButton (Zalo/WhatsApp/hotline), CookieConsentBanner |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
 | Marketing | Hero + HeroSearch, FeaturedTours, DestinationGrid, DestinationCard, TravelStyleCards, EditorialSplit, Testimonials, TrustBar, PressLogos, NewsletterSignup, CTABanner (tailor-made), JournalTeaser |
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |
@@ -117,4 +123,4 @@ badge, button, card, checkbox, dropdown-menu, input, label
 | Admin | AdminShell (role-based sidebar), AdminTopbar, PageHeader, CommandMenu, ConfirmDialog, DataTable, FilterBar, StatCard, Timeline, NotesPanel, AuditTrail, AttentionQueue, LocaleTabs, RichTextEditor, ItineraryBuilder, ListEditor, MediaPicker, MediaUploader, SEOFields, SlugInput, MoneyInput, DepartureBulkCreator, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
 
-Add shadcn primitives with `npx shadcn@latest add <component>`. A dev-only `/admin/design-system` page shows every token and component for visual review.
+Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.

@@ -103,7 +103,7 @@ Decided on 2026-11-06. Details in `DECISIONS.md`.
 | Online payment | In scope for launch: VNPay and VietQR bank transfer. Payment is confirmed only by the payment system. | ADR-005, ADR-013 |
 | Languages and currency | Vietnamese (default) and English; prices in VND. | ADR-006 |
 | Private and corporate tours | Separate consultation inquiry; sales sends a quote and a payment link. Corporate clients can request a VAT invoice. | ADR-005, ADR-016 |
-| Dark mode | Proposed: fixed light theme on the public website, navy sections for contrast. | ADR-017 (proposed) |
+| Dark mode | Fixed light theme on the public website, navy sections for contrast. | ADR-017 |
 
 ## 9. Still Open
 
@@ -117,4 +117,3 @@ Information only the project owner can provide:
 - Tour operator licence and e-commerce website notification status.
 - Main consultation channel: Zalo OA, WhatsApp Business or both.
 - Monthly infrastructure budget (ADR-018).
-- Whether the sales manager may edit departure prices (ADR-016).

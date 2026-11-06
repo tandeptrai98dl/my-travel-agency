@@ -1,6 +1,6 @@
 # Development Plan
 
-Full-scope MVP (ADR-005) in seven phases (ADR-019, proposed): about 16 weeks for one developer, 12–13 weeks for two (Phase 2 in parallel with Phase 3, Phase 5 with the second half of Phase 4).
+Full-scope MVP (ADR-005) in seven phases (ADR-019): about 16 weeks for one developer, 12–13 weeks for two (Phase 2 in parallel with Phase 3, Phase 5 with the second half of Phase 4).
 Scope comes from `PROJECT_BRIEF.md` and `FEATURES.md`. Track status in `PROGRESS.md`. Each phase ends with a deployable app on staging, checked against the Definition of Done.
 
 Non-code tracks that can block launch start in Phase 0: VNPay merchant contract, e-commerce website notification to the Ministry of Industry and Trade, bilingual content and photography.
@@ -11,19 +11,20 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [x] Move source into `src/`, add `public/`
 - [x] Add `CLAUDE.md` and `docs/`
 - [x] Resolve the open questions in `PROJECT_BRIEF.md` §8 (ADR-005 to ADR-019)
-- [ ] Commit the `src/` restructure; fix the lint error in `tailwind.config.ts`; ignore `.next` in ESLint
-- [ ] Remove the starter tutorial components and pages
-- [ ] Test tooling: Vitest, Playwright, pgTAP (ADR-014)
-- [ ] Environment validation with Zod; `.env.example` complete
-- [ ] Supabase CLI, all base migrations from `DATABASE.md`, baseline RLS, seed data, generated types
-- [ ] Auth integration: profile trigger, role guard, role helpers, staff MFA, `requireRole()`, admin client
-- [ ] next-intl routing (VI default, `/en`) and pathnames
-- [ ] Minimal `/admin` (role + MFA), `/api/health`, Sentry, GitHub Actions CI, Vercel previews
+- [x] Commit the `src/` restructure; fix the lint error in `tailwind.config.ts`; ignore `.next` in ESLint
+- [x] Remove the starter tutorial components and pages
+- [x] Test tooling: Vitest, Playwright, pgTAP (ADR-014)
+- [x] Environment validation with Zod; `.env.example` complete
+- [x] Supabase CLI, all base migrations from `DATABASE.md`, baseline RLS, seed data, generated types
+- [x] Auth integration: profile trigger, role guard, role helpers, staff MFA, `requireRole()`, admin client
+- [x] next-intl routing (VI default, `/en`) and pathnames
+- [x] Minimal `/admin` (role + MFA), `/api/health`, Sentry, GitHub Actions CI
+- [ ] Vercel previews (waits for the owner's Vercel account)
 - [ ] Owner: create the Supabase staging project and accounts; start the non-code tracks
 
 ## Phase 1: Design system and UI shell (1.5 weeks)
 
-- [ ] Confirm palette and fonts; apply tokens to `globals.css` and `tailwind.config.ts` (`DESIGN_SYSTEM.md`)
+- [x] Confirm palette and fonts; apply tokens to `globals.css` and `tailwind.config.ts` (`DESIGN_SYSTEM.md`)
 - [ ] Restyle shadcn primitives; add the planned primitives
 - [ ] `SiteHeader`, `MegaMenu`, `MobileNav`, `SiteFooter`, `LanguageSwitcher`, `ContactFloatingButton`, `CookieConsentBanner`, 404 page; public layout with a fixed light theme (ADR-017)
 - [ ] Dev-only `/admin/design-system`

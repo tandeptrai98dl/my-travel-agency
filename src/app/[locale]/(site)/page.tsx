@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { Container } from "@/components/layout/container";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { Eyebrow } from "@/components/typography/eyebrow";
+import { Heading } from "@/components/typography/heading";
 import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -33,12 +36,15 @@ export default async function HomePage({ params }: Props) {
   const t = await getTranslations("HomePage");
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
-      <div className="max-w-xl text-center">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("eyebrow")}</p>
-        <h1 className="mt-4 text-4xl font-medium md:text-5xl">{t("title")}</h1>
-      </div>
-      <LanguageSwitcher className="mt-12" />
+    <main className="theme-navy flex min-h-screen flex-col justify-center bg-background">
+      <Container className="flex flex-col items-center gap-6 text-center">
+        <Eyebrow>{t("eyebrow")}</Eyebrow>
+        <Heading level={1} size="display" className="max-w-4xl">
+          {t("title")}
+        </Heading>
+        <div aria-hidden="true" className="h-px w-16 bg-gold" />
+        <LanguageSwitcher className="mt-6" />
+      </Container>
     </main>
   );
 }
