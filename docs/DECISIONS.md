@@ -259,3 +259,15 @@ Template:
   - **Lighter ceremony**: progress entries list what was done, what was verified, deviations and review outcome in about ten lines. PR bodies keep the acceptance pass/fail table and the blockers. Local screenshot and axe checks with a faked user are done for public pages only; admin pages rely on the CI axe and E2E tests.
   - Small related slices may share one PR (for example settings and staff).
 - **Consequences:** More usage per hour (each agent reads the docs on start) in exchange for shorter elapsed time. Shared files (`messages`, nav items, PROGRESS) are kept apart by the namespace split and by the coordinator owning PROGRESS. Minor findings may wait until the end of a phase.
+
+## ADR-026: Departure rules in the database
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Step 16 of the Phase 2 spec limits who may cancel a departure and when, and keeps capacity at or above the reserved seats. The tours review (PR 11) found that an operator could cancel or delete every departure of a published group tour, leaving a published tour with nothing to book, although `check_tour_publishable()` refuses to publish one in that state.
+- **Decision:**
+  - `check_departure_change()` (before insert, update or delete on `departures`): capacity is never below `seats_reserved`; through the API only an MFA-verified admin moves a departure to or from `cancelled`, and not while it has `pending_payment` or `confirmed` bookings (Phase 4 adds cancelling with refunds and emails); for every role, the last departure that is not cancelled of a published group tour cannot be cancelled or deleted (closing it is allowed). The service role and `postgres` stay trusted for the cancel rules (Phase 4 functions), not for the last-departure rule.
+  - `departure_has_open_bookings(target_id)` (security definer, staff only, false for everyone else) lets the trigger and the admin see bookings of every role.
+  - Departures belong to group tours; private and archived tours take no new ones (service rule). Bulk creation skips dates the tour already has (`on conflict do nothing`) and reports them. Departure dates are not edited after creation; a wrong date is deleted (when it has no bookings) and created again.
+  - Minimum travellers to operate stays a tour column (`tours.min_pax_to_operate`, edited with the tour's permission); the departure editor shows it.
+- **Consequences:** To retire a published group tour's last departure, publish another one or unpublish the tour first. Phase 4's `cancel_booking()` and a future departure-cancellation function run as the service role and must keep the last-departure rule in mind.

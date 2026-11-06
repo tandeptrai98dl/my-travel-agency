@@ -90,4 +90,44 @@ export async function insertDepartures(rows: Tables["departures"]["Insert"][]) {
     .select("start_date");
 }
 
+// Edit (step 16) -------------------------------------------------------------------------------------
+
+export async function findDeparture(id: string) {
+  const supabase = await db();
+  return supabase
+    .from("departures")
+    .select(
+      "id, tour_id, start_date, end_date, capacity, seats_reserved, status, price_adult, price_child, price_infant, single_supplement, note, tours(id, code, type, status, min_pax_to_operate, tour_translations(locale, title))",
+    )
+    .eq("id", id)
+    .maybeSingle();
+}
+
+/** Other departures of the tour that are not cancelled (the last-departure rule). */
+export async function countOtherActiveDepartures(tourId: string, excludeId: string) {
+  const supabase = await db();
+  const { count, error } = await supabase
+    .from("departures")
+    .select("id", { count: "exact", head: true })
+    .eq("tour_id", tourId)
+    .neq("status", "cancelled")
+    .neq("id", excludeId);
+  return { count: count ?? 0, error };
+}
+
+/** Bookings awaiting payment or confirmed (a security definer helper: staff see every booking). */
+export async function hasOpenBookings(id: string) {
+  return (await db()).rpc("departure_has_open_bookings", { target_id: id });
+}
+
+export async function updateDeparture(id: string, row: Tables["departures"]["Update"]) {
+  return (await db()).from("departures").update(row).eq("id", id).select("id").maybeSingle();
+}
+
+export async function deleteDepartureRow(id: string) {
+  return (await db()).from("departures").delete().eq("id", id).select("id");
+}
+
+export type DepartureRow = NonNullable<Awaited<ReturnType<typeof findDeparture>>["data"]>;
+
 export type DepartureListRow = NonNullable<Awaited<ReturnType<typeof listDepartureRows>>["data"]>[number];

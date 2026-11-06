@@ -11,6 +11,8 @@ import { expandPlan } from "./departure-dates";
 import * as repo from "./departures.repository";
 import {
   type DepartureFilters,
+  type DepartureEditInput,
+  type DepartureEditValues,
   type DeparturePlanValues,
   type DeparturePrices,
   DEPARTURES_PAGE_SIZE,
@@ -330,4 +332,116 @@ export async function createDepartures(plan: DeparturePlanValues): Promise<Creat
     created: [...created].sort(),
     skipped: preview.rows.map((row) => row.startDate).filter((date) => !created.has(date)),
   };
+}
+
+// Edit (step 16) -----------------------------------------------------------------------------------
+
+export type DepartureEditorData = {
+  values: DepartureEditInput;
+  tour: { id: string; code: string; title: string; status: "draft" | "published" | "archived"; minPaxToOperate: number | null };
+  startDate: string;
+  endDate: string;
+  seatsReserved: number;
+  /** Admin at aal2 (requirePermission checks it): prices, cancelling and reopening. */
+  isAdmin: boolean;
+  hasOpenBookings: boolean;
+  /** The only departure that is not cancelled of a published group tour. */
+  isLastActive: boolean;
+};
+
+async function isLastActive(row: repo.DepartureRow): Promise<boolean> {
+  if (row.status === "cancelled" || row.tours?.type !== "group" || row.tours.status !== "published") return false;
+  const { count, error } = await repo.countOtherActiveDepartures(row.tour_id, row.id);
+  if (error) throw new Error(`departure query failed: ${error.message}`);
+  return count === 0;
+}
+
+async function openBookings(id: string): Promise<boolean> {
+  const { data, error } = await repo.hasOpenBookings(id);
+  if (error) throw new Error(`booking check failed: ${error.message}`);
+  return data === true;
+}
+
+export async function getDepartureEditor(id: string): Promise<DepartureEditorData | null> {
+  const user = await requirePermission("departures.edit");
+  const { data, error } = await repo.findDeparture(id);
+  if (error) throw new Error(`departure query failed: ${error.message}`);
+  if (!data) return null;
+  const [last, open] = await Promise.all([isLastActive(data), openBookings(id)]);
+  return {
+    values: {
+      id: data.id,
+      status: data.status,
+      capacity: data.capacity,
+      note: data.note ?? "",
+      prices: readPrices(data),
+    },
+    tour: {
+      id: data.tour_id,
+      code: data.tours?.code ?? "",
+      title: tourTitle(data.tours),
+      status: data.tours?.status ?? "draft",
+      minPaxToOperate: data.tours?.min_pax_to_operate ?? null,
+    },
+    startDate: data.start_date,
+    endDate: data.end_date,
+    seatsReserved: data.seats_reserved,
+    isAdmin: user.role === "admin",
+    hasOpenBookings: open,
+    isLastActive: last,
+  };
+}
+
+export type SaveResult = { ok: true; id: string } | DepartureFailure;
+
+/** Status, capacity, note and (admins) prices; the database checks the same rules again. */
+export async function saveDeparture(values: DepartureEditValues): Promise<SaveResult> {
+  const user = await requirePermission("departures.edit");
+  const isAdmin = user.role === "admin";
+  const { data: existing, error } = await repo.findDeparture(values.id);
+  if (error) throw new Error(`departure query failed: ${error.message}`);
+  if (!existing) return { ok: false, error: "not_found" };
+
+  if (values.capacity < existing.seats_reserved) return { ok: false, error: "belowReserved", field: "capacity" };
+  const cancelling = values.status === "cancelled" && existing.status !== "cancelled";
+  const reopening = values.status !== "cancelled" && existing.status === "cancelled";
+  if ((cancelling || reopening) && !isAdmin) return { ok: false, error: "cancelAdminOnly", field: "status" };
+  if (cancelling && (await openBookings(existing.id))) return { ok: false, error: "hasOpenBookings", field: "status" };
+  if (cancelling && (await isLastActive(existing))) return { ok: false, error: "lastDeparture", field: "status" };
+
+  const prices = isAdmin && values.prices ? values.prices : null;
+  const saved = await repo.updateDeparture(existing.id, {
+    status: values.status,
+    capacity: values.capacity,
+    note: values.note,
+    // Only admins send prices; for everyone else the stored ones stay (the trigger would refuse).
+    ...(prices
+      ? {
+          price_adult: prices.priceAdult,
+          price_child: prices.priceChild,
+          price_infant: prices.priceInfant,
+          single_supplement: prices.singleSupplement,
+        }
+      : {}),
+  });
+  if (saved.error) return mapDepartureError(saved.error);
+  if (!saved.data) return { ok: false, error: "not_found" };
+  refresh(existing.tour_id);
+  return { ok: true, id: existing.id };
+}
+
+export type DeleteResult = { ok: true; tourId: string } | DepartureFailure;
+
+/** Only without bookings (foreign key) and never the last one of a published group tour. */
+export async function deleteDeparture(input: { id: string }): Promise<DeleteResult> {
+  await requirePermission("departures.edit");
+  const { data: existing, error } = await repo.findDeparture(input.id);
+  if (error) throw new Error(`departure query failed: ${error.message}`);
+  if (!existing) return { ok: false, error: "not_found" };
+  if (await isLastActive(existing)) return { ok: false, error: "lastDeparture" };
+  const deleted = await repo.deleteDepartureRow(existing.id);
+  if (deleted.error) return mapDepartureError(deleted.error);
+  if (!deleted.data?.length) return { ok: false, error: "not_found" };
+  refresh(existing.tour_id);
+  return { ok: true, tourId: existing.tour_id };
 }

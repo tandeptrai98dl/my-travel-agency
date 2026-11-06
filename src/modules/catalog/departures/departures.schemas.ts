@@ -100,3 +100,18 @@ export type DeparturePlanInput = z.input<typeof departurePlanSchema>;
 export type DeparturePlanValues = z.output<typeof departurePlanSchema>;
 
 export const departureTourSchema = z.object({ tourId: z.uuid() });
+
+// Edit (step 16) -----------------------------------------------------------------------------------
+
+/** Seats are not here (ADR-012); prices only from admins (ADR-016); dates stay as created. */
+export const departureEditSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(DEPARTURE_STATUSES),
+  capacity: count(1, MAX_CAPACITY),
+  note: optionalText(500),
+  prices: departurePricesSchema.nullable(),
+});
+export type DepartureEditInput = z.input<typeof departureEditSchema>;
+export type DepartureEditValues = z.output<typeof departureEditSchema>;
+
+export const departureIdSchema = z.object({ id: z.uuid() });

@@ -10,6 +10,11 @@ const repo = vi.hoisted(() => {
     latestDeparturePrices: ok(null),
     existingStartDates: ok([]),
     insertDepartures: ok([]),
+    findDeparture: ok(null),
+    countOtherActiveDepartures: vi.fn(async () => ({ count: 3, error: null })),
+    hasOpenBookings: ok(false),
+    updateDeparture: ok({ id: "d1" }),
+    deleteDepartureRow: ok([{ id: "d1" }]),
   };
 });
 const user = vi.hoisted(() => ({ current: { id: "u1", role: "operator" } }));
@@ -49,6 +54,23 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const stored = (overrides: Record<string, unknown> = {}) => ({
+  ...row({ seats_reserved: 6 }),
+  price_child: 9675000,
+  price_infant: null,
+  single_supplement: null,
+  tours: { id: TOUR, code: "VN-HLB-03", type: "group", status: "published", min_pax_to_operate: 6, tour_translations: [] },
+  ...overrides,
+});
+const edit = (overrides: Record<string, unknown> = {}) => ({
+  id: "d1",
+  status: "guaranteed" as const,
+  capacity: 18,
+  note: "Đủ khách",
+  prices: { priceAdult: 1, priceChild: null, priceInfant: null, singleSupplement: null },
+  ...overrides,
+});
+
 const tourRow = (overrides: Record<string, unknown> = {}) => ({
   id: TOUR,
   code: "VN-HLB-03",
@@ -80,6 +102,9 @@ beforeEach(() => {
   repo.findTourForDepartures.mockResolvedValue({ data: tourRow(), error: null });
   repo.latestDeparturePrices.mockResolvedValue({ data: LATEST, error: null });
   repo.existingStartDates.mockResolvedValue({ data: [], error: null });
+  repo.findDeparture.mockResolvedValue({ data: stored(), error: null });
+  repo.countOtherActiveDepartures.mockResolvedValue({ count: 3, error: null });
+  repo.hasOpenBookings.mockResolvedValue({ data: false, error: null });
 });
 
 describe("departure list", () => {
@@ -200,5 +225,83 @@ describe("bulk creation", () => {
       error: { code: "42501", message: "the first departure of a tour is created by an admin" },
     });
     expect(await service.createDepartures(plan())).toEqual({ ok: false, error: "firstNeedsAdmin", field: "tourId" });
+  });
+});
+
+describe("editing a departure", () => {
+  it("saves status, capacity and note, never an operator's prices, and refreshes the tour tags", async () => {
+    expect(await service.saveDeparture(edit())).toEqual({ ok: true, id: "d1" });
+    expect(requirePermission).toHaveBeenCalledWith("departures.edit");
+    expect(repo.updateDeparture).toHaveBeenCalledWith("d1", { status: "guaranteed", capacity: 18, note: "Đủ khách" });
+    expect(updateTag).toHaveBeenCalledWith(`tour:${TOUR}`);
+  });
+
+  it("sends prices for an admin", async () => {
+    user.current = { id: "a1", role: "admin" };
+    await service.saveDeparture(edit());
+    expect(repo.updateDeparture.mock.calls[0][1]).toMatchObject({ price_adult: 1, price_child: null });
+  });
+
+  it("never lowers capacity below the reserved seats", async () => {
+    expect(await service.saveDeparture(edit({ capacity: 5 }))).toEqual({ ok: false, error: "belowReserved", field: "capacity" });
+    expect(repo.updateDeparture).not.toHaveBeenCalled();
+  });
+
+  it("lets only an admin cancel or reopen", async () => {
+    expect(await service.saveDeparture(edit({ status: "cancelled" }))).toEqual({ ok: false, error: "cancelAdminOnly", field: "status" });
+    repo.findDeparture.mockResolvedValueOnce({ data: stored({ status: "cancelled" }), error: null });
+    expect(await service.saveDeparture(edit({ status: "open" }))).toEqual({ ok: false, error: "cancelAdminOnly", field: "status" });
+    // Editing a cancelled departure's note keeps it cancelled and is allowed.
+    repo.findDeparture.mockResolvedValueOnce({ data: stored({ status: "cancelled" }), error: null });
+    expect(await service.saveDeparture(edit({ status: "cancelled" }))).toEqual({ ok: true, id: "d1" });
+  });
+
+  it("refuses an admin's cancel with open bookings or of a published tour's last departure", async () => {
+    user.current = { id: "a1", role: "admin" };
+    repo.hasOpenBookings.mockResolvedValueOnce({ data: true, error: null });
+    expect(await service.saveDeparture(edit({ status: "cancelled" }))).toEqual({ ok: false, error: "hasOpenBookings", field: "status" });
+    repo.countOtherActiveDepartures.mockResolvedValueOnce({ count: 0, error: null });
+    expect(await service.saveDeparture(edit({ status: "cancelled" }))).toEqual({ ok: false, error: "lastDeparture", field: "status" });
+    expect(await service.saveDeparture(edit({ status: "cancelled" }))).toEqual({ ok: true, id: "d1" });
+  });
+
+  it("maps the database rules back to their fields", () => {
+    expect(service.mapDepartureError({ code: "23514", message: "capacity cannot be below the reserved seats" })).toMatchObject({
+      error: "belowReserved",
+      field: "capacity",
+    });
+    expect(
+      service.mapDepartureError({ code: "23514", message: "a published group tour keeps at least one departure that is not cancelled" }),
+    ).toMatchObject({ error: "lastDeparture", field: "status" });
+    expect(service.mapDepartureError({ code: "42501", message: "only an admin cancels or reopens a departure" })).toMatchObject({
+      error: "cancelAdminOnly",
+    });
+    expect(service.mapDepartureError({ code: "42501", message: "only an admin sets departure prices" })).toMatchObject({ error: "adminOnly" });
+    expect(service.mapDepartureError({ code: "23503", message: "violates foreign key constraint" })).toMatchObject({ error: "hasBookings" });
+    expect(service.mapDepartureError({ code: "XX000", message: "?" })).toEqual({ ok: false, error: "failed" });
+  });
+
+  it("deletes only what is not the last departure of a published group tour", async () => {
+    expect(await service.deleteDeparture({ id: "d1" })).toEqual({ ok: true, tourId: TOUR });
+    repo.countOtherActiveDepartures.mockResolvedValueOnce({ count: 0, error: null });
+    expect(await service.deleteDeparture({ id: "d1" })).toEqual({ ok: false, error: "lastDeparture" });
+    // A draft tour's last departure can go.
+    repo.findDeparture.mockResolvedValueOnce({ data: stored({ tours: { ...stored().tours, status: "draft" } }), error: null });
+    expect(await service.deleteDeparture({ id: "d1" })).toEqual({ ok: true, tourId: TOUR });
+    repo.deleteDepartureRow.mockResolvedValueOnce({ data: null, error: { code: "23503", message: "bookings_departure_id_fkey" } });
+    expect(await service.deleteDeparture({ id: "d1" })).toMatchObject({ ok: false, error: "hasBookings" });
+  });
+
+  it("shows the editor what is locked and why", async () => {
+    repo.hasOpenBookings.mockResolvedValueOnce({ data: true, error: null });
+    const editor = await service.getDepartureEditor("d1");
+    expect(editor).toMatchObject({
+      isAdmin: false,
+      hasOpenBookings: true,
+      isLastActive: false,
+      seatsReserved: 6,
+      tour: { code: "VN-HLB-03", minPaxToOperate: 6 },
+      values: { status: "open", capacity: 16, prices: { priceAdult: 12900000, priceChild: 9675000 } },
+    });
   });
 });

@@ -5,7 +5,7 @@ import type { z } from "zod";
 import type { Permission } from "@/lib/auth/permissions";
 import { AccessDeniedError, requirePermission } from "@/lib/auth/require-role";
 
-import { departurePlanSchema, departureTourSchema } from "./departures.schemas";
+import { departureEditSchema, departureIdSchema, departurePlanSchema, departureTourSchema } from "./departures.schemas";
 import * as service from "./departures.service";
 
 export type FieldErrors = Record<string, string>;
@@ -48,4 +48,12 @@ export async function previewDeparturesAction(input: unknown) {
 
 export async function createDeparturesAction(input: unknown) {
   return guarded("departures.edit", departurePlanSchema, input, service.createDepartures);
+}
+
+export async function saveDepartureAction(input: unknown) {
+  return guarded("departures.edit", departureEditSchema, input, service.saveDeparture);
+}
+
+export async function deleteDepartureAction(input: unknown) {
+  return guarded("departures.edit", departureIdSchema, input, service.deleteDeparture);
 }
