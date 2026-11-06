@@ -13,8 +13,11 @@ const config = {
   paymentUrl: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
   returnUrl: "https://example.test/api/payments/vnpay/return",
 };
-const configState = { vnpay: config as typeof config | null };
-vi.mock("./payment.config", () => ({ vnpayConfig: () => configState.vnpay }));
+const configState = {
+  vnpay: config as typeof config | null,
+  bank: { provider: "sepay", secret: "a-long-bank-webhook-secret" } as { provider: "sepay" | "casso"; secret: string } | null,
+};
+vi.mock("./payment.config", () => ({ vnpayConfig: () => configState.vnpay, bankWebhookConfig: () => configState.bank }));
 
 type Result = { data: unknown; error: null | { code?: string; message?: string } };
 const fn = (data: unknown) => vi.fn(async (...args: unknown[]): Promise<Result> => (void args, { data, error: null }));
@@ -23,10 +26,11 @@ const repo = {
   findPaymentByReference: fn(payment),
   recordPaymentEvent: fn({ result: "recorded", booking_id: "b-1", status: "confirmed", needs_attention: false }),
   bankAccountSetting: fn(null),
+  bookingTour: fn({ tour_id: "t-1" }),
 };
 vi.mock("./payment.repository", () => repo);
 
-const { handleVnpayIpn } = await import("./payment.service");
+const { availableMethods, handleBankWebhook, handleVnpayIpn } = await import("./payment.service");
 
 const ipn = (patch: Record<string, string> = {}) => {
   const params = {
@@ -44,6 +48,7 @@ const ipn = (patch: Record<string, string> = {}) => {
 beforeEach(() => {
   vi.clearAllMocks();
   configState.vnpay = config;
+  configState.bank = { provider: "sepay", secret: "a-long-bank-webhook-secret" };
   repo.findPaymentByReference.mockResolvedValue({ data: payment, error: null });
   repo.recordPaymentEvent.mockResolvedValue({ data: { result: "recorded", booking_id: "b-1", status: "confirmed", needs_attention: false }, error: null });
 });
@@ -99,5 +104,44 @@ describe("VNPay IPN", () => {
     // A success code with the other code failed is still a failure.
     await handleVnpayIpn(ipn({ vnp_TransactionStatus: "02" }));
     expect(repo.recordPaymentEvent).toHaveBeenLastCalledWith(expect.objectContaining({ succeeded: false }));
+  });
+});
+
+describe("bank webhook", () => {
+  const credit = { id: 7, transferType: "in", transferAmount: 3_000_000, content: "PTA2611004201" };
+  const auth = new Headers({ Authorization: "Apikey a-long-bank-webhook-secret" });
+
+  it("answers 503 without settings and 401 without the key, recording nothing", async () => {
+    configState.bank = null;
+    expect(await handleBankWebhook(auth, credit)).toEqual({ status: 503, body: { success: false } });
+    configState.bank = { provider: "sepay", secret: "a-long-bank-webhook-secret" };
+    expect(await handleBankWebhook(new Headers(), credit)).toEqual({ status: 401, body: { success: false } });
+    expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it("records an incoming credit as a bank-transfer event", async () => {
+    expect(await handleBankWebhook(auth, credit)).toEqual({ status: 200, body: { success: true } });
+    expect(repo.recordPaymentEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "bank_transfer", reference: "PTA2611004201", amount: 3_000_000, eventKey: "sepay:7", succeeded: true }),
+    );
+  });
+
+  it("acknowledges an outgoing transfer without recording it", async () => {
+    expect(await handleBankWebhook(auth, { ...credit, transferType: "out" })).toEqual({ status: 200, body: { success: true } });
+    expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it("asks the provider to retry when recording fails", async () => {
+    repo.recordPaymentEvent.mockResolvedValueOnce({ data: null, error: { code: "08006", message: "connection" } });
+    expect(await handleBankWebhook(auth, credit)).toEqual({ status: 500, body: { success: false } });
+  });
+});
+
+describe("available methods", () => {
+  it("offers VNPay with keys and transfers only with a complete account", async () => {
+    expect(await availableMethods()).toEqual(["vnpay"]);
+    repo.bankAccountSetting.mockResolvedValueOnce({ data: { value: { bank_bin: "970436", account_number: "0011", account_holder: "A" } }, error: null });
+    configState.vnpay = null;
+    expect(await availableMethods()).toEqual(["bank_transfer"]);
   });
 });

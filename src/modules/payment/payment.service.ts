@@ -6,9 +6,10 @@ import { logger } from "@/lib/logger";
 import { TOURS_TAG, tourTag } from "@/modules/catalog/cache-tags";
 import type { Json } from "@/types/database.types";
 
-import { vnpayConfig } from "./payment.config";
+import { bankWebhookConfig, vnpayConfig } from "./payment.config";
 import * as repo from "./payment.repository";
 import type { GatewayEvent, PaymentInstructions, PaymentToStart } from "./provider";
+import { authorized, parseBankWebhook } from "./providers/bank-webhook";
 import { type BankAccount, vietQrProvider } from "./providers/vietqr";
 import { checkIpn, vnpayProvider } from "./providers/vnpay";
 
@@ -125,4 +126,36 @@ export async function instructionsFor(provider: "vnpay" | "bank_transfer", payme
   }
   const account = await bankAccount();
   return account ? vietQrProvider(account).createPayment(payment) : null;
+}
+
+export type WebhookReply = { status: 200 | 400 | 401 | 500 | 503; body: { success: boolean } };
+
+/**
+ * SePay/Casso webhook (decision 6): the API key first, then incoming credits only, each recorded
+ * through record_payment_event() with the reference found in the memo (none → unmatched, kept for
+ * the accountant). Under- and overpayment, late and repeated transfers are handled there.
+ */
+export async function handleBankWebhook(headers: Headers, body: unknown): Promise<WebhookReply> {
+  const config = bankWebhookConfig();
+  if (!config) return { status: 503, body: { success: false } };
+  if (!authorized(config.provider, headers, config.secret)) {
+    logger.error("payment.bank_webhook_unauthorized", { provider: config.provider });
+    return { status: 401, body: { success: false } };
+  }
+  const parsed = parseBankWebhook(config.provider, body);
+  if (!parsed) return { status: 400, body: { success: false } };
+  if (parsed.ignored > 0) logger.info("payment.bank_webhook_ignored", { provider: config.provider, count: parsed.ignored });
+  for (const event of parsed.events) {
+    const result = await recordEvent("bank_transfer", event);
+    // The provider retries on a non-2xx answer; events already recorded come back as duplicates.
+    if (!result) return { status: 500, body: { success: false } };
+    if (result.result === "unmatched") logger.error("payment.bank_transfer_unmatched", { eventKey: event.eventKey });
+    if (result.result === "recorded" && result.booking_id) await refreshBooking(result.booking_id);
+  }
+  return { status: 200, body: { success: true } };
+}
+
+async function refreshBooking(bookingId: string) {
+  const { data } = await repo.bookingTour(bookingId);
+  refreshTour(data?.tour_id);
 }

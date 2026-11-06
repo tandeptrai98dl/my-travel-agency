@@ -44,3 +44,7 @@ export async function recordPaymentEvent(event: {
 export async function bankAccountSetting() {
   return db().from("settings").select("value").eq("key", "bank_account").maybeSingle();
 }
+
+export async function bookingTour(bookingId: string) {
+  return db().from("bookings").select("tour_id").eq("id", bookingId).maybeSingle();
+}
