@@ -40,7 +40,8 @@ test.describe("taxonomy admin", () => {
     await expect(panel(page, "Tiếng Việt").getByLabel("Đường dẫn (slug)")).toHaveValue(`quoc-gia-${run}`);
     await panel(page, "Tiếng Việt").getByLabel("Xuất bản bản tiếng Việt").click();
     await page.getByRole("button", { name: "Lưu" }).click();
-    await expect(page.getByRole("alert")).toContainText("Vui lòng sửa các trường được đánh dấu.");
+    // (The Next.js route announcer is also role=alert.)
+    await expect(page.getByRole("alert").filter({ hasText: "Vui lòng sửa các trường được đánh dấu." })).toBeVisible();
     await expect(panel(page, "Tiếng Việt")).toContainText("Cần có trước khi xuất bản.");
     await expect(page.getByRole("tab", { name: /^Tiếng Việt/ })).toContainText("Còn thiếu thông tin");
     await expectNoSeriousViolations(page, "destination form with errors");

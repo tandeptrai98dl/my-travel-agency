@@ -154,7 +154,8 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   await rule(2).getByLabel("Từ số ngày trước khởi hành").fill("0");
   await page.getByRole("button", { name: "Lưu" }).click();
   await expect(page).toHaveURL(/\/admin\/cancellation-policies\/[0-9a-f-]{36}$/);
-  await expect(page.getByText("Phiên bản 1")).toBeVisible();
+  // Exact: the list page navigated away from may still be in the DOM, hidden.
+  await expect(page.getByText("Phiên bản 1", { exact: true })).toBeVisible();
   await expectNoSeriousViolations(page, "cancellation policy editor");
 });
 
