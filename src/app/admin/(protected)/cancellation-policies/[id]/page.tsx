@@ -48,7 +48,7 @@ async function EditPolicy({ params }: Props) {
         <CancellationPolicyForm
           initial={policy.values}
           deleteAction={
-            policy.tourCount === 0 ? (
+            policy.tourCount === 0 && !policy.values.isDefault ? (
               <DeleteEntityButton kind="cancellationPolicy" id={id} listHref="/admin/cancellation-policies" />
             ) : undefined
           }

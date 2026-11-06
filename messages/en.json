@@ -386,8 +386,11 @@
         "failed": "Could not save. Please try again.",
         "forbidden": "You do not have permission to do this.",
         "invalid": "Some data is not valid.",
-        "in_use": "Used by tours or child items, so it cannot be deleted."
-      }
+        "in_use": "Used by tours or child items, so it cannot be deleted.",
+        "default_required": "There must always be a default policy. Make another policy the default first.",
+        "is_default": "The default policy cannot be deleted. Make another policy the default first."
+      },
+      "defaultHint": "The default policy cannot be unticked; make another policy the default instead."
     }
   },
   "Navigation": {

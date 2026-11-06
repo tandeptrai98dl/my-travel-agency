@@ -34,6 +34,27 @@ export function useActionErrors() {
   };
 }
 
+/** Dotted paths of every error in a React Hook Form errors object, in field order. */
+export function errorPaths(errors: object, prefix = ""): string[] {
+  const out: string[] = [];
+  for (const [key, value] of Object.entries(errors)) {
+    if (!value || typeof value !== "object") continue;
+    const path = prefix ? `${prefix}.${key}` : key;
+    if ("message" in value && typeof (value as { message?: unknown }).message === "string") out.push(path);
+    else out.push(...errorPaths(value, path));
+  }
+  return out;
+}
+
+/**
+ * The language tab to open so the first error can be seen and focused: only when every error is
+ * inside one language's fields (fields outside the tabs come first on the page).
+ */
+export function tabForErrors(paths: string[]): "vi" | "en" | null {
+  if (paths.length === 0 || !paths.every((path) => path.startsWith("translations."))) return null;
+  return paths[0].startsWith("translations.en") ? "en" : "vi";
+}
+
 export type HeroSummary = { id: string; url: string; alt: string; altComplete: boolean } | null;
 
 /** Hero image chosen from the media library; publishing needs both alt texts (decision 6). */

@@ -16,12 +16,19 @@ import { toast } from "@/components/ui/toaster";
 import { saveTravelStyleAction } from "@/modules/catalog/taxonomy/taxonomy.actions";
 import {
   type TravelStyleInput,
-  type TravelStyleValues,
   travelStyleSchema,
 } from "@/modules/catalog/taxonomy/taxonomy.schemas";
 
 import { NumberField, StatusField } from "./destination-form";
-import { HeroField, type HeroSummary, localeErrorState, useActionErrors, useErrorText } from "./form-parts";
+import {
+  errorPaths,
+  HeroField,
+  type HeroSummary,
+  localeErrorState,
+  tabForErrors,
+  useActionErrors,
+  useErrorText,
+} from "./form-parts";
 import { TranslationFields, type TranslationForm } from "./translation-fields";
 
 type Props = {
@@ -40,17 +47,27 @@ export function TravelStyleForm({ initial, hero, prefixes, pickerLabels, deleteA
   const errorText = useErrorText();
   const applyErrors = useActionErrors();
   const [alert, setAlert] = useState<string | null>(null);
-  const form = useForm<TravelStyleInput, unknown, TravelStyleValues>({
-    resolver: zodResolver(travelStyleSchema),
+  const [tab, setTab] = useState<"vi" | "en">("vi");
+  /** Opens the language tab that holds the errors, then focuses the first one. */
+  function revealErrors(paths: string[]) {
+    const locale = tabForErrors(paths);
+    if (!locale) return;
+    setTab(locale);
+    requestAnimationFrame(() => form.setFocus(paths[0] as Parameters<typeof form.setFocus>[0]));
+  }
+  const form = useForm<TravelStyleInput>({
+    // `raw`: submit what the editor typed; the Server Action parses (and transforms) it once.
+    resolver: zodResolver(travelStyleSchema, undefined, { raw: true }),
     defaultValues: initial,
   });
   const published = { vi: form.watch("translations.vi.isPublished"), en: form.watch("translations.en.isPublished") };
 
-  async function onSubmit(values: TravelStyleValues) {
+  async function onSubmit(values: TravelStyleInput) {
     setAlert(null);
     const result = await saveTravelStyleAction(values);
     if (!result.ok) {
       setAlert(applyErrors(form, result));
+      revealErrors([...(result.field ? [result.field] : []), ...Object.keys(result.fields ?? {})]);
       return;
     }
     toast({ title: t("saved"), variant: "success" });
@@ -62,7 +79,10 @@ export function TravelStyleForm({ initial, hero, prefixes, pickerLabels, deleteA
     <Form {...form}>
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit, () => setAlert(t("fixErrors")))}
+        onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          setAlert(t("fixErrors"));
+          revealErrors(errorPaths(errors));
+        })}
         className="flex max-w-3xl flex-col gap-8"
       >
         {alert && (
@@ -116,6 +136,8 @@ export function TravelStyleForm({ initial, hero, prefixes, pickerLabels, deleteA
           )}
         />
         <LocaleTabs
+          value={tab}
+          onValueChange={setTab}
           state={localeErrorState(form.formState.errors, published)}
           labels={{
             vi: tf("vi"),

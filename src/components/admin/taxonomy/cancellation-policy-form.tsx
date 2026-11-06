@@ -10,7 +10,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +18,6 @@ import { toast } from "@/components/ui/toaster";
 import { saveCancellationPolicyAction } from "@/modules/catalog/taxonomy/taxonomy.actions";
 import {
   type CancellationPolicyInput,
-  type CancellationPolicyValues,
   cancellationPolicySchema,
 } from "@/modules/catalog/taxonomy/taxonomy.schemas";
 
@@ -42,14 +41,15 @@ export function CancellationPolicyForm({
   const errorText = useErrorText();
   const applyErrors = useActionErrors();
   const [alert, setAlert] = useState<string | null>(null);
-  const form = useForm<CancellationPolicyInput, unknown, CancellationPolicyValues>({
-    resolver: zodResolver(cancellationPolicySchema),
+  const form = useForm<CancellationPolicyInput>({
+    // `raw`: submit what the editor typed; the Server Action parses (and transforms) it once.
+    resolver: zodResolver(cancellationPolicySchema, undefined, { raw: true }),
     defaultValues: initial,
   });
   const rules = useFieldArray({ control: form.control, name: "rules" });
   const rulesError = form.formState.errors.rules?.root?.message ?? form.formState.errors.rules?.message;
 
-  async function onSubmit(values: CancellationPolicyValues) {
+  async function onSubmit(values: CancellationPolicyInput) {
     setAlert(null);
     const result = await saveCancellationPolicyAction(values);
     if (!result.ok) {
@@ -196,11 +196,19 @@ export function CancellationPolicyForm({
           control={form.control}
           name="isDefault"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center gap-3">
+            <FormItem className="flex flex-row flex-wrap items-center gap-3">
               <FormControl>
-                <Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                <Checkbox
+                  ref={field.ref}
+                  checked={field.value}
+                  // The current default is replaced by making another policy the default.
+                  disabled={initial.isDefault}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
               </FormControl>
               <FormLabel>{t("isDefault")}</FormLabel>
+              {initial.isDefault && <FormDescription className="basis-full">{t("defaultHint")}</FormDescription>}
+              <FormMessage formatMessage={errorText} className="basis-full" />
             </FormItem>
           )}
         />

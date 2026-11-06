@@ -11,9 +11,10 @@ export const LOCALES = ["vi", "en"] as const;
 export type ContentLocale = (typeof LOCALES)[number];
 
 const text = (max: number) => z.string().trim().max(max, "tooLong");
+/** Empty text is stored as null; accepts null too, so parsed values parse again unchanged. */
 const optionalText = (max: number) =>
   text(max)
-    .optional()
+    .nullish()
     .transform((value) => (value ? value : null));
 const key = z
   .string()

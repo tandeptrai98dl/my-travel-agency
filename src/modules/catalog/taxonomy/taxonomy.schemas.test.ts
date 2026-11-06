@@ -96,3 +96,27 @@ describe("cancellationRulesSchema", () => {
     });
   });
 });
+
+describe("schemas parse their own output again", () => {
+  // The forms submit raw input, but a value parsed once (empty text → null) must stay valid, so
+  // a second parse on the server can never refuse what the client accepted.
+  it("destinations", () => {
+    const once = destinationSchema.parse(destination());
+    expect(destinationSchema.safeParse(once).success).toBe(true);
+  });
+
+  it("travel styles", () => {
+    const style = {
+      key: "trang-mat",
+      status: "draft",
+      heroMediaId: null,
+      sortOrder: 0,
+      translations: {
+        vi: { slug: "trang-mat", name: "Trăng mật", description: "", seoTitle: "", seoDescription: "", isPublished: false },
+        en: { slug: "", name: "", description: "", seoTitle: "", seoDescription: "", isPublished: false },
+      },
+    };
+    const once = travelStyleSchema.parse(style);
+    expect(travelStyleSchema.safeParse(once).success).toBe(true);
+  });
+});

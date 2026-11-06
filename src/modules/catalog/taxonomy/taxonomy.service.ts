@@ -33,11 +33,12 @@ export type SaveError =
   | "invalid_parent"
   | "slugInvalid"
   | "requiredToPublish"
+  | "default_required"
   | "hero_alt_missing"
   | "not_found"
   | "failed";
 export type SaveResult = { ok: true; id: string } | { ok: false; error: SaveError; field?: string };
-export type DeleteResult = { ok: true } | { ok: false; error: "in_use" | "not_found" | "failed" };
+export type DeleteResult = { ok: true } | { ok: false; error: "in_use" | "is_default" | "not_found" | "failed" };
 
 type LocaleState = { exists: boolean; published: boolean };
 export type HeroSummary = { id: string; url: string; alt: string; altComplete: boolean } | null;
@@ -65,19 +66,30 @@ async function checkHero(status: string, heroMediaId: string | null): Promise<Sa
 }
 
 /** Postgres error → form error (unique slug or key, tree rule). */
-function mapWriteError(error: { code?: string; message?: string; details?: string } | null, locale?: ContentLocale): SaveResult {
+function mapWriteError(
+  error: { code?: string; message?: string; details?: string } | null,
+  locale?: ContentLocale,
+  bodyField: "summary" | "description" = "summary",
+): SaveResult {
   const text = `${error?.message ?? ""} ${error?.details ?? ""}`;
   if (error?.code === "23505" && text.includes("slug")) {
     return { ok: false, error: "slug_taken", field: `translations.${locale ?? "vi"}.slug` };
   }
-  if (error?.code === "23505" && text.includes("key")) return { ok: false, error: "key_taken", field: "key" };
+  if (error?.code === "23505" && text.includes("one_default")) return { ok: false, error: "failed" };
+  if (error?.code === "23505" && text.includes("_key_key")) return { ok: false, error: "key_taken", field: "key" };
+  if (error?.code === "23514" && text.includes("key of a published")) {
+    return { ok: false, error: "key_locked", field: "key" };
+  }
+  if (error?.code === "23514" && text.includes("another default")) {
+    return { ok: false, error: "default_required", field: "isDefault" };
+  }
   // Database rules (supabase/migrations/*_taxonomy_rules.sql) that the form checks first; these
   // only fire when the page was out of date (e.g. a parent changed type meanwhile).
   if (error?.code === "23514" && text.includes("slug_format")) {
     return { ok: false, error: "slugInvalid", field: `translations.${locale ?? "vi"}.slug` };
   }
   if (error?.code === "23514" && text.includes("published translation")) {
-    return { ok: false, error: "requiredToPublish", field: `translations.${locale ?? "vi"}.name` };
+    return { ok: false, error: "requiredToPublish", field: `translations.${locale ?? "vi"}.${bodyField}` };
   }
   if (error?.code === "23514" && /parent|sit under|its children|change the type/.test(text)) {
     return { ok: false, error: "invalid_parent", field: "parentId" };
@@ -95,16 +107,14 @@ function publicPath(kind: PathKind, locale: ContentLocale, slug: string): string
 /** Decision 4: a published translation whose slug changes gets a 301 from its old path. */
 async function redirectIfSlugChanged(
   kind: PathKind,
+  locale: ContentLocale,
   before: { locale: string; slug: string; is_published: boolean }[],
-  after: Record<ContentLocale, { slug: string; name: string }>,
+  nextSlug: string,
 ) {
-  for (const old of before) {
-    const locale = old.locale as ContentLocale;
-    const next = after[locale];
-    if (!old.is_published || !next?.name || next.slug === old.slug) continue;
-    const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), publicPath(kind, locale, next.slug));
-    if (error) logger.error("taxonomy.redirect_failed", { kind, locale, message: error.message });
-  }
+  const old = before.find((row) => row.locale === locale);
+  if (!old?.is_published || old.slug === nextSlug) return;
+  const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), publicPath(kind, locale, nextSlug));
+  if (error) logger.error("taxonomy.redirect_failed", { kind, locale, message: error.message });
 }
 
 /** Free slug for this kind and language (the editor checks on blur; saving checks again). */
@@ -238,8 +248,10 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
   if (saved.error || !saved.data) return mapWriteError(saved.error);
   const id = saved.data.id;
   // A new destination whose translation fails is removed again, so a retry is not "key taken".
+  // An existing one keeps what was saved, so the public tree is refreshed either way.
   const fail = async (result: SaveResult) => {
-    if (!existing) await repo.deleteDestinationRow(id);
+    if (existing) updateTag(DESTINATIONS_TAG);
+    else await repo.deleteDestinationRow(id);
     return result;
   };
 
@@ -261,9 +273,10 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
       seo_description: t.seoDescription,
       is_published: t.isPublished,
     });
-    if (error) return fail(mapWriteError(error, locale));
+    if (error) return fail(mapWriteError(error, locale, "summary"));
+    // Right after this language is saved, so a later failure cannot lose the redirect.
+    if (existing) await redirectIfSlugChanged("destination", locale, existing.destination_translations, t.slug);
   }
-  if (existing) await redirectIfSlugChanged("destination", existing.destination_translations, values.translations);
   updateTag(DESTINATIONS_TAG);
   return { ok: true, id };
 }
@@ -375,7 +388,8 @@ export async function saveTravelStyle(values: TravelStyleValues): Promise<SaveRe
   if (saved.error || !saved.data) return mapWriteError(saved.error);
   const id = saved.data.id;
   const fail = async (result: SaveResult) => {
-    if (!existing) await repo.deleteTravelStyleRow(id);
+    if (existing) updateTag(TRAVEL_STYLES_TAG);
+    else await repo.deleteTravelStyleRow(id);
     return result;
   };
 
@@ -396,9 +410,9 @@ export async function saveTravelStyle(values: TravelStyleValues): Promise<SaveRe
       seo_description: t.seoDescription,
       is_published: t.isPublished,
     });
-    if (error) return fail(mapWriteError(error, locale));
+    if (error) return fail(mapWriteError(error, locale, "description"));
+    if (existing) await redirectIfSlugChanged("travelStyle", locale, existing.travel_style_translations, t.slug);
   }
-  if (existing) await redirectIfSlugChanged("travelStyle", existing.travel_style_translations, values.translations);
   updateTag(TRAVEL_STYLES_TAG);
   return { ok: true, id };
 }
@@ -462,12 +476,16 @@ export async function saveCancellationPolicy(values: CancellationPolicyValues): 
   await requirePermission("settings.manage");
   const existing = values.id ? (await repo.findCancellationPolicy(values.id)).data : null;
   if (values.id && !existing) return { ok: false, error: "not_found" };
+  // New tours take the default (decision 1): it can be replaced by another, never just removed.
+  if (existing?.is_default && !values.isDefault) {
+    return { ok: false, error: "default_required", field: "isDefault" };
+  }
   const row = {
     name: values.name,
     rules: values.rules.map((rule) => ({ min_days_before: rule.minDaysBefore, refund_percent: rule.refundPercent })),
     summary: values.summary,
-    // Saved without the flag first, so a failed save never leaves the catalogue without a default.
-    is_default: values.isDefault ? (existing?.is_default ?? false) : false,
+    // The flag moves separately, in one transaction (set_default_cancellation_policy).
+    is_default: existing?.is_default ?? false,
   };
   const saved = existing
     ? await repo.updateCancellationPolicy(existing.id, { ...row, version: existing.version + 1 })
@@ -475,11 +493,11 @@ export async function saveCancellationPolicy(values: CancellationPolicyValues): 
   if (saved.error || !saved.data) return mapWriteError(saved.error);
   const id = saved.data.id;
   if (values.isDefault && !existing?.is_default) {
-    // Only one default (unique index): clear the old one, then mark this one.
-    const cleared = await repo.clearDefaultCancellationPolicy(id);
-    if (cleared.error) return mapWriteError(cleared.error);
-    const marked = await repo.updateCancellationPolicy(id, { is_default: true });
-    if (marked.error) return mapWriteError(marked.error);
+    const moved = await repo.setDefaultCancellationPolicy(id);
+    if (moved.error) {
+      updateTag(CANCELLATION_POLICIES_TAG);
+      return mapWriteError(moved.error);
+    }
   }
   updateTag(CANCELLATION_POLICIES_TAG);
   return { ok: true, id };
@@ -508,6 +526,9 @@ export async function getCancellationPolicy(
 
 export async function deleteCancellationPolicy(id: string): Promise<DeleteResult> {
   await requirePermission("settings.manage");
+  const { data: policy } = await repo.findCancellationPolicy(id);
+  if (!policy) return { ok: false, error: "not_found" };
+  if (policy.is_default) return { ok: false, error: "is_default" };
   const { error } = await repo.deleteCancellationPolicyRow(id);
   if (error) return { ok: false, error: error.code === "23503" ? "in_use" : "failed" };
   updateTag(CANCELLATION_POLICIES_TAG);

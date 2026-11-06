@@ -17,11 +17,18 @@ import { toast } from "@/components/ui/toaster";
 import { saveDestinationAction } from "@/modules/catalog/taxonomy/taxonomy.actions";
 import {
   type DestinationInput,
-  type DestinationValues,
   destinationSchema,
 } from "@/modules/catalog/taxonomy/taxonomy.schemas";
 
-import { HeroField, type HeroSummary, localeErrorState, useActionErrors, useErrorText } from "./form-parts";
+import {
+  errorPaths,
+  HeroField,
+  type HeroSummary,
+  localeErrorState,
+  tabForErrors,
+  useActionErrors,
+  useErrorText,
+} from "./form-parts";
 import { TranslationFields, type TranslationForm } from "./translation-fields";
 
 export type ParentOption = { id: string; type: "country" | "region"; label: string };
@@ -47,8 +54,17 @@ export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels
   const errorText = useErrorText();
   const applyErrors = useActionErrors();
   const [alert, setAlert] = useState<string | null>(null);
-  const form = useForm<DestinationInput, unknown, DestinationValues>({
-    resolver: zodResolver(destinationSchema),
+  const [tab, setTab] = useState<"vi" | "en">("vi");
+  /** Opens the language tab that holds the errors, then focuses the first one. */
+  function revealErrors(paths: string[]) {
+    const locale = tabForErrors(paths);
+    if (!locale) return;
+    setTab(locale);
+    requestAnimationFrame(() => form.setFocus(paths[0] as Parameters<typeof form.setFocus>[0]));
+  }
+  const form = useForm<DestinationInput>({
+    // `raw`: submit what the editor typed; the Server Action parses (and transforms) it once.
+    resolver: zodResolver(destinationSchema, undefined, { raw: true }),
     defaultValues: initial,
   });
   const type = form.watch("type");
@@ -56,11 +72,12 @@ export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels
   const parentOptions = parents.filter((option) => option.type === parentType && option.id !== initial.id);
   const published = { vi: form.watch("translations.vi.isPublished"), en: form.watch("translations.en.isPublished") };
 
-  async function onSubmit(values: DestinationValues) {
+  async function onSubmit(values: DestinationInput) {
     setAlert(null);
     const result = await saveDestinationAction(values);
     if (!result.ok) {
       setAlert(applyErrors(form, result));
+      revealErrors([...(result.field ? [result.field] : []), ...Object.keys(result.fields ?? {})]);
       return;
     }
     toast({ title: t("saved"), variant: "success" });
@@ -72,7 +89,10 @@ export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels
     <Form {...form}>
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit, () => setAlert(t("fixErrors")))}
+        onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          setAlert(t("fixErrors"));
+          revealErrors(errorPaths(errors));
+        })}
         className="flex max-w-3xl flex-col gap-8"
       >
         {alert && (
@@ -187,6 +207,8 @@ export function DestinationForm({ initial, hero, parents, prefixes, pickerLabels
           )}
         />
         <LocaleTabs
+          value={tab}
+          onValueChange={setTab}
           state={localeErrorState(form.formState.errors, published)}
           labels={{
             vi: tf("vi"),
@@ -291,10 +313,13 @@ export function NumberField<T extends object>({
               ref={field.ref}
               name={field.name}
               onBlur={field.onBlur}
-              value={field.value ?? ""}
+              value={field.value == null || Number.isNaN(field.value) ? "" : field.value}
               onChange={(event) => {
-                const raw = event.target.value;
-                field.onChange(raw === "" ? (required ? Number.NaN : null) : Number(raw));
+                // A number input reports "" for text it cannot read (e.g. "10,5"): send NaN so
+                // Zod shows an error instead of silently saving nothing.
+                const { value: raw, validity } = event.target;
+                if (validity.badInput) field.onChange(Number.NaN);
+                else field.onChange(raw === "" ? (required ? Number.NaN : null) : Number(raw));
               }}
             />
           </FormControl>

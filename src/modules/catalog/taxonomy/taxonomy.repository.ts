@@ -166,10 +166,9 @@ export async function updateCancellationPolicy(id: string, row: Tables["cancella
   return (await db()).from("cancellation_policies").update(row).eq("id", id).select("id").single();
 }
 
-export async function clearDefaultCancellationPolicy(exceptId: string | null) {
-  let query = (await db()).from("cancellation_policies").update({ is_default: false }).eq("is_default", true);
-  if (exceptId) query = query.neq("id", exceptId);
-  return query;
+/** Moves the default flag in one transaction (RLS: admin at aal2). */
+export async function setDefaultCancellationPolicy(id: string) {
+  return (await db()).rpc("set_default_cancellation_policy", { policy_id: id });
 }
 
 export async function deleteCancellationPolicyRow(id: string) {

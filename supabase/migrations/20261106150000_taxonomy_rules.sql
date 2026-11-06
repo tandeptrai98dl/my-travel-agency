@@ -49,8 +49,8 @@ begin
   end if;
   select d.type into parent_type from public.destinations d where d.id = new.parent_id;
   if (new.type = 'country')
-     or (new.type = 'region' and parent_type <> 'country')
-     or (new.type = 'city' and parent_type <> 'region') then
+     or (new.type = 'region' and parent_type is distinct from 'country')
+     or (new.type = 'city' and parent_type is distinct from 'region') then
     raise exception 'a % cannot sit under a %', new.type, parent_type using errcode = '23514';
   end if;
   return new;
@@ -119,11 +119,14 @@ declare
   days int;
   percent int;
 begin
-  if jsonb_typeof(rules) <> 'array' or jsonb_array_length(rules) = 0 or jsonb_array_length(rules) > 10 then
+  if jsonb_typeof(rules) is distinct from 'array' or jsonb_array_length(rules) = 0 or jsonb_array_length(rules) > 10 then
     return false;
   end if;
   for rule in select value from jsonb_array_elements(rules) loop
-    if jsonb_typeof(rule -> 'min_days_before') <> 'number' or jsonb_typeof(rule -> 'refund_percent') <> 'number' then
+    -- `is distinct from`: a missing key gives NULL, which must fail rather than slip through.
+    if jsonb_typeof(rule) is distinct from 'object'
+       or jsonb_typeof(rule -> 'min_days_before') is distinct from 'number'
+       or jsonb_typeof(rule -> 'refund_percent') is distinct from 'number' then
       return false;
     end if;
     days := (rule ->> 'min_days_before')::numeric;
@@ -140,7 +143,7 @@ begin
     previous_percent := percent;
   end loop;
   -- The last rule covers cancellations up to the day of departure.
-  return previous_days = 0;
+  return coalesce(previous_days = 0, false);
 exception when others then
   return false;
 end;
@@ -150,3 +153,70 @@ alter table public.cancellation_policies
   add constraint cancellation_policies_rules_valid check (public.is_valid_cancellation_rules(rules));
 
 create unique index cancellation_policies_one_default on public.cancellation_policies (is_default) where is_default;
+
+-- A published destination or travel style keeps its key: filter URLs use it (ADR-016). Change it
+-- only after unpublishing (filter links to the old key then stop matching).
+create function public.lock_published_key()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.status = 'published' and new.key is distinct from old.key then
+    raise exception 'the key of a published item cannot change' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger lock_published_key
+  before update of key on public.destinations
+  for each row execute function public.lock_published_key();
+
+create trigger lock_published_key
+  before update of key on public.travel_styles
+  for each row execute function public.lock_published_key();
+
+-- Moves the default flag in one transaction, so there is never a moment with no default (or a
+-- failure halfway leaving none). `security invoker`: RLS still allows only an MFA-verified admin.
+create function public.set_default_cancellation_policy(policy_id uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.cancellation_policies where id = policy_id) then
+    raise exception 'policy not found' using errcode = 'P0002';
+  end if;
+  update public.cancellation_policies set is_default = false where is_default and id <> policy_id;
+  update public.cancellation_policies set is_default = true where id = policy_id and not is_default;
+end;
+$$;
+
+revoke execute on function public.set_default_cancellation_policy(uuid) from public, anon;
+grant execute on function public.set_default_cancellation_policy(uuid) to authenticated;
+
+-- The current default can be replaced, but not removed or deleted: new tours take it
+-- (docs/specs/phase-2-catalog-admin.md decision 1).
+create function public.keep_default_cancellation_policy()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if tg_op = 'DELETE' and old.is_default then
+    raise exception 'the default cancellation policy cannot be deleted' using errcode = '23514';
+  end if;
+  if tg_op = 'UPDATE' and old.is_default and not new.is_default
+     and not exists (select 1 from public.cancellation_policies p where p.is_default and p.id <> old.id) then
+    raise exception 'choose another default policy first' using errcode = '23514';
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+
+create constraint trigger keep_default_cancellation_policy
+  after update or delete on public.cancellation_policies
+  deferrable initially deferred
+  for each row execute function public.keep_default_cancellation_policy();

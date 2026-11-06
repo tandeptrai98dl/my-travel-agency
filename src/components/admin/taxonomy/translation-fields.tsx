@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useId } from "react";
+import { useId, useRef } from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import { SeoFields } from "@/components/admin/seo-fields";
@@ -43,17 +43,23 @@ export function TranslationFields({ form, locale, kind, prefix }: Props) {
   const tf = useTranslations("Admin.Form");
   const errorText = useErrorText();
   const switchId = useId();
+  /** Only the latest availability check may set or clear the error. */
+  const slugCheck = useRef(0);
   const base = `translations.${locale}` as const;
   const name = form.watch(`${base}.name`);
+  const seoErrors = form.formState.errors.translations?.[locale];
   const language = tf(locale);
 
   async function checkSlug() {
     const slug = form.getValues(`${base}.slug`);
+    const request = ++slugCheck.current;
     if (!slug) return;
     const result = await checkSlugAction({ kind, locale, slug, excludeId: form.getValues("id") });
-    if ("available" in result && !result.available) {
-      form.setError(`${base}.slug`, { type: "server", message: "slug_taken" });
-    }
+    // A newer check started, or the slug changed while this one ran.
+    if (request !== slugCheck.current || form.getValues(`${base}.slug`) !== slug) return;
+    if (!("available" in result)) return;
+    if (!result.available) form.setError(`${base}.slug`, { type: "server", message: "slug_taken" });
+    else if (form.getFieldState(`${base}.slug`).error?.message === "slug_taken") form.clearErrors(`${base}.slug`);
   }
 
   return (
@@ -78,8 +84,10 @@ export function TranslationFields({ form, locale, kind, prefix }: Props) {
         render={({ field, fieldState }) => (
           <div onBlur={() => void checkSlug()}>
             <SlugInput
+              inputRef={field.ref}
               value={field.value}
               onChange={(slug) => {
+                slugCheck.current += 1;
                 field.onChange(slug);
                 form.clearErrors(`${base}.slug`);
               }}
@@ -146,6 +154,11 @@ export function TranslationFields({ form, locale, kind, prefix }: Props) {
         description={form.watch(`${base}.seoDescription`) ?? ""}
         onTitleChange={(value) => form.setValue(`${base}.seoTitle`, value, { shouldDirty: true })}
         onDescriptionChange={(value) => form.setValue(`${base}.seoDescription`, value, { shouldDirty: true })}
+        maxLength={{ title: 120, description: 300 }}
+        errors={{
+          title: seoErrors?.seoTitle?.message ? errorText(seoErrors.seoTitle.message) : undefined,
+          description: seoErrors?.seoDescription?.message ? errorText(seoErrors.seoDescription.message) : undefined,
+        }}
         labels={{
           title: tf("seoTitle"),
           description: tf("seoDescription"),
@@ -160,6 +173,7 @@ export function TranslationFields({ form, locale, kind, prefix }: Props) {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <Switch
+                ref={field.ref}
                 id={switchId}
                 checked={field.value}
                 onCheckedChange={field.onChange}

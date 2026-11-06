@@ -19,19 +19,21 @@ Branch `feat/p2-taxonomy` (`docs/specs/phase-2-catalog-admin.md` steps 8–10).
     - `is_valid_slug()` checks on the six translation tables;
     - destination tree triggers (country → region → city, no type change while a parent has children);
     - destination and travel-style translations cannot be published without a name and summary/description;
-    - `is_valid_cancellation_rules()` (1–10 tiers, days falling to 0, refunds never growing);
-    - a single default policy.
-    - pgTAP: 17 assertions.
+    - `is_valid_cancellation_rules()` (1–10 tiers, days falling to 0, refunds never growing; missing keys, non-objects and nulls refused);
+    - keys of published destinations and travel styles locked by a trigger;
+    - a single default policy, moved in one transaction by `set_default_cancellation_policy()` (security invoker) and never switched off or deleted (deferred constraint trigger).
+    - pgTAP: 27 assertions.
   - `src/modules/catalog/taxonomy`: Zod schemas, repository, service and Server Actions.
     - Keys are fixed once published.
     - Publishing with a hero image needs its VI/EN alt text.
     - A changed slug on a published translation adds a 301.
     - Cache tags `destinations`, `travel-styles`, `cancellation-policies`.
-    - A new item whose translation fails to save is removed again, so a retry does not hit "key taken".
+    - A new item whose translation fails to save is removed again, so a retry does not hit "key taken"; an existing one keeps what was saved, gets its redirects language by language and has its cache tag refreshed.
     - Editing a policy raises its version; the default flag moves only after the policy has saved.
     - Database errors are mapped back to their fields.
+    - Server Actions check the permission before reading the input.
   - `/admin/destinations`: the tree with per-language publish state, plus links to add a region or city under a parent.
-  - Create and edit forms (React Hook Form + Zod, server errors put back on fields):
+  - Create and edit forms (React Hook Form + Zod on the raw input, server errors put back on fields; the tab holding the errors opens and the first one is focused):
     - VI/EN tabs that show missing fields;
     - slug generation and an availability check on blur;
     - SEO fields and a publish switch per language;
@@ -41,14 +43,23 @@ Branch `feat/p2-taxonomy` (`docs/specs/phase-2-catalog-admin.md` steps 8–10).
   - `/admin/cancellation-policies` (admin only): rules table, version and usage; editor for refund tiers, VI/EN summaries and the default flag.
   - Shared pieces: `AdminMessages` gives a page's client components only its admin strings; `FormField` accepts schemas that transform values; `StatusBadge` maps `publish_status`.
 - Verified locally:
-  - lint, typecheck, 225 unit tests (schemas and service rules);
-  - pgTAP on the local Postgres shim: 111 assertions, all four files;
+  - lint, typecheck, 234 unit tests (schemas, including parsing their own output again; service rules; action order);
+  - pgTAP on the local Postgres shim: 121 assertions, all four files;
   - production build.
   - The destination tree, the destination, travel style and policy forms (empty and with errors) were rendered against the REST stub with a temporarily faked admin (not committed): no axe violations at 1280 or 375 px. The narrow layout of the policy rules was fixed after the screenshots.
-  - Signed-in E2E runs in CI: the editor builds and deletes a country → region branch with the publish checks; a slug already in use is caught on blur; editor and operator are blocked from the pages they cannot use; the aal2 admin creates a policy, and rules out of order are refused.
+  - Signed-in E2E (CI only; results in the PR): the editor builds and deletes a country → region branch with the publish checks; a slug already in use is caught on blur; editor and operator are blocked from the pages they cannot use; the aal2 admin creates a policy, and rules out of order are refused.
 - Deviations:
   - The policies live at `/admin/cancellation-policies` (Settings links to them in PR G).
   - The destination rich `content` field gets its editor with the RichTextEditor in PR F; public pages use the summary until then.
+  - Decision 3 asks for an SEO description before a translation is published. For destinations and travel styles the summary or description is required instead, and public pages fall back to it for the meta description. Tours (PR D) keep the stricter rule.
+- Independent review: changes requested.
+  - Critical: the forms sent Zod's parsed output (empty text already `null`) and the server's second parse refused it, so new items could not be saved.
+  - Major:
+    - the rules check let missing keys through (NULL);
+    - a failed save could lose a slug redirect and leave the cache stale;
+    - two E2E locators were ambiguous (the Next.js route announcer, a hidden previous page).
+  - Minor: SEO errors and limits invisible, hidden-tab errors, unreadable numbers saved as nothing, the default policy could disappear, a key lock that only the service enforced, wrong error fields, the slug check racing.
+  - All addressed as above. The hero alt-text rule is still enforced by the service only, and clearing the alt text of an image in use is not blocked; both move into the publish trigger of PR D (known issues).
 
 ### 2026-11-06 (Phase 2 — PR 9: media library)
 
@@ -220,6 +231,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 ## Known issues
 
 - Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
+- PR D: hero alt text is checked by the services only. Fold it into the publish trigger for tours, destinations and travel styles, and stop clearing the alt text of an image that published content uses.
+- Phase 3: when tour pages embed cancellation-policy summaries, a policy save must also refresh the `tours` cache tag (spec decision 9's shared cache helper).
 - PRs D and F: image ids inside JSON (itinerary `media_ids`, Tiptap image nodes) are not foreign keys, so deleting an image does not see them yet; add a usage check that scans them before the editors that write them ship.
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
 - Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.

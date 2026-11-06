@@ -17,10 +17,12 @@ type Props = {
   prefix?: string;
   error?: string;
   labels: { label: string; hint: string; generate: string; invalid: string };
+  /** Lets a form library focus the field when it has an error. */
+  inputRef?: React.Ref<HTMLInputElement>;
 };
 
 /** URL slug with "generate from title" (diacritics removed, docs/specs/phase-2 decision 4). */
-export function SlugInput({ value, onChange, source, prefix, error, labels }: Props) {
+export function SlugInput({ value, onChange, source, prefix, error, labels, inputRef }: Props) {
   const id = useId();
   const invalid = value !== "" && !isValidSlug(value);
   const message = error ?? (invalid ? labels.invalid : undefined);
@@ -31,6 +33,7 @@ export function SlugInput({ value, onChange, source, prefix, error, labels }: Pr
         <div className="flex min-w-0 flex-1 items-center rounded-md border border-input bg-card focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
           {prefix && <span className="shrink-0 pl-3 text-small text-muted-foreground">{prefix}</span>}
           <Input
+            ref={inputRef}
             id={id}
             value={value}
             onChange={(event) => onChange(event.target.value.toLowerCase())}

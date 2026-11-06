@@ -856,6 +856,9 @@ isOneToOne: false
                            },
 "is_valid_slug":
 { Args: { "slug": string }; Returns: boolean
+                           },
+"set_default_cancellation_policy":
+{ Args: { "policy_id": string }; Returns: undefined
                            }
           }
           Enums: {
