@@ -472,6 +472,14 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
       is_published: t.isPublished,
     });
     if (error) return done(mapTourError(error, locale));
+    // A published language serves its path again: a redirect left from an earlier removal or
+    // slug change would shadow it (the proxy reads Redis before the page).
+    if (t.isPublished) {
+      const path = tourPath(locale, t.slug);
+      const cleared = await repo.deleteRedirectFrom(path);
+      if (cleared.error) logger.error("tours.redirect_clear_failed", { locale, message: cleared.error.message });
+      else if (cleared.data?.length) await syncSlugRedirect(path);
+    }
     // Decision 4: right after this language is saved, so a later failure cannot lose it.
     if (before?.is_published && before.slug !== t.slug) {
       const redirect = await repo.saveRedirect(tourPath(locale, before.slug), tourPath(locale, t.slug));

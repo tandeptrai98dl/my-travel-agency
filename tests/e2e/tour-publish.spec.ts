@@ -85,6 +85,10 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
   if (departure.error) throw departure.error;
   await page.reload();
 
+  // Where and what kind of trip.
+  await page.getByLabel("Việt Nam › Miền Bắc", { exact: true }).check();
+  await page.getByLabel("Nghỉ dưỡng", { exact: true }).check();
+
   // Hero and gallery.
   await pickPhoto(page, page.getByRole("group", { name: "Ảnh đại diện" }).getByRole("button", { name: "Chọn ảnh" }), "Chọn");
   await pickPhoto(page, page.getByRole("button", { name: "Thêm ảnh" }), "Chọn 1 ảnh");

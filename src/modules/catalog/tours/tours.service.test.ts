@@ -16,6 +16,7 @@ const repo = vi.hoisted(() => {
     findTourSlugOwner: vi.fn(async () => ({ ownerId: null, error: null })),
     saveRedirect: ok(),
     deleteTourTranslation: ok([{ id: "tr-en" }]),
+    deleteRedirectFrom: ok([]),
   };
 });
 const user = vi.hoisted(() => ({ current: { id: "u1", role: "editor" } }));
@@ -299,5 +300,15 @@ describe("removeTourLanguage", () => {
     repo.findTour.mockResolvedValueOnce({ data: stored({ tour_translations: [row("vi", true), row("en", false)] }), error: null });
     await service.removeTourLanguage({ id, locale: "en" });
     expect(repo.saveRedirect).not.toHaveBeenCalled();
+  });
+});
+
+describe("published paths are not shadowed by old redirects", () => {
+  it("drops a redirect away from the path a published language serves", async () => {
+    repo.findTour.mockResolvedValue({ data: stored(), error: null });
+    await service.saveTour(values());
+    expect(repo.deleteRedirectFrom).toHaveBeenCalledWith("/tours/du-thuyen");
+    // The unpublished English language serves nothing, so its path is left alone.
+    expect(repo.deleteRedirectFrom).toHaveBeenCalledTimes(1);
   });
 });

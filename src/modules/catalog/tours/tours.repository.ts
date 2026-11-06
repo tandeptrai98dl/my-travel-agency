@@ -160,6 +160,11 @@ export async function editorOptions() {
   return { destinations, styles, policies };
 }
 
+/** Drops a redirect away from a path that a published translation now serves again. */
+export async function deleteRedirectFrom(path: string) {
+  return (await db()).from("redirects").delete().eq("from_path", path).select("id");
+}
+
 export async function saveRedirect(fromPath: string, toPath: string) {
   // One transaction (record_slug_redirect, *_review_followups.sql): no half-moved redirects.
   return (await db()).rpc("record_slug_redirect", { source: fromPath, target: toPath });
