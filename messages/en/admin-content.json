@@ -1,1 +1,28 @@
-{}
+{
+  "Admin": {
+    "Content": {
+      "editor": {
+        "toolbar": "Text formatting",
+        "paragraph": "Paragraph",
+        "heading2": "Section heading",
+        "heading3": "Subheading",
+        "bold": "Bold",
+        "italic": "Italic",
+        "link": "Link",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "quote": "Quote",
+        "image": "Insert an image from the library",
+        "undo": "Undo",
+        "redo": "Redo",
+        "hint": "Text editor. Use the toolbar above to format.",
+        "linkTitle": "Link",
+        "linkDescription": "A path on this site (starting with /) or an https://, mailto: or tel: address.",
+        "linkUrl": "Link address",
+        "linkApply": "Apply",
+        "linkRemove": "Remove link",
+        "linkInvalid": "Not a valid or safe address."
+      }
+    }
+  }
+}

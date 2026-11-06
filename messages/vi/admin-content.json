@@ -1,1 +1,28 @@
-{}
+{
+  "Admin": {
+    "Content": {
+      "editor": {
+        "toolbar": "Định dạng văn bản",
+        "paragraph": "Đoạn văn",
+        "heading2": "Tiêu đề mục",
+        "heading3": "Tiêu đề phụ",
+        "bold": "In đậm",
+        "italic": "In nghiêng",
+        "link": "Liên kết",
+        "bulletList": "Danh sách dấu chấm",
+        "orderedList": "Danh sách đánh số",
+        "quote": "Trích dẫn",
+        "image": "Chèn ảnh từ thư viện",
+        "undo": "Hoàn tác",
+        "redo": "Làm lại",
+        "hint": "Trình soạn thảo văn bản. Dùng thanh công cụ phía trên để định dạng.",
+        "linkTitle": "Liên kết",
+        "linkDescription": "Đường dẫn trong trang (bắt đầu bằng /) hoặc địa chỉ https://, mailto:, tel:.",
+        "linkUrl": "Địa chỉ liên kết",
+        "linkApply": "Áp dụng",
+        "linkRemove": "Bỏ liên kết",
+        "linkInvalid": "Địa chỉ không hợp lệ hoặc không an toàn."
+      }
+    }
+  }
+}
