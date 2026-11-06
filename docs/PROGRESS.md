@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR G (settings, staff, dashboard), the last Phase 2 PR (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 PR H (tour detail), then PRs I–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Phase:** 2 code-complete (acceptance pending, see the plan); Phase 3 in progress; Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 2 polish PR (backlog and the Phase 2 acceptance E2E), then the Phase 4 spec and booking core (pricing, state machine, Postgres booking functions). Stream B: Phase 3 PR I (homepage), then PRs J–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -14,13 +14,40 @@ Phase 2 polish PR:
 - `updateTourLinks` writes destinations, styles and gallery one after another without a transaction; a failure partway leaves some link changes applied (move into a Postgres function if it matters).
 - No explicit "remove language" action on tours (clearing the title is refused); add one with a confirmation and a 301 when the language was published.
 - `tests/e2e/tours.spec.ts` finds the header status badge with `xpath=../..`; give `PageHeader` a labelled container.
-- Redirects and Redis (PR F2 review, fixed first in PR G): chain race (advisory lock); fetch timeout; `createRedirect` retargets before inserting; both Upstash variables or neither; atomic resync.
-- Destination content images can lose their alt text through the API (PR F2 review; fixed first in PR G).
-- Phase 3 (PR 15 review): ADR-027 and ARCHITECTURE "Security" still call option 1 recommended; name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
+- Phase 3 (PR 15 and PR 18 reviews): PR M must serve real 404s for unpublished tours and real 308s for other-language slugs (E2E on status codes); name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
 - Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
 - Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR G: settings, staff, dashboard)
+
+PR #20, branch `feat/p2-settings-staff` (spec steps 21–23, ADR-032; PR 17 and PR 18 backlog). The last Phase 2 PR.
+
+- Done:
+  - Backlog: redirect chain lock; `create_redirect()` and `record_slug_redirect()` in one transaction each; Redis 3 s timeout and atomic resync; both Upstash variables or neither; alt text kept for images in published destination descriptions, tour itineraries and the homepage hero (`is_homepage_hero()`).
+  - `/admin/settings` (admin, aal2): company, contact, social, bank account, booking rules (`booking_cutoff_days` 0–60), homepage picks; bank account and booking rules can never be public.
+  - `/admin/staff` (admin, aal2): invitations through the Auth Admin API (audited, rolled back on failure), role changes and deactivation with the admin's session; nobody demotes themself or the last active admin (database rule with a lock); audit log filter by actor.
+  - Role-aware dashboard with shortcuts to the sections each role can use.
+- Verified: lint, tsc, 404 unit tests, pgTAP in 13 files locally; CI green on 24fdcad (incl. an E2E admin who enrols TOTP, edits settings, invites a user who accepts from the Mailpit email, changes their role and deactivates them). The CI types check now prints the full diff.
+- Independent review: approved; first CI run failed (types separator, an ambiguous locator) and was fixed with the review minors.
+- Owner dependency: hosted Supabase needs SMTP (Resend) and the invitation template before staff can be invited outside local and CI.
+
+### 2026-11-07 (Phase 3 — PR H: tour detail)
+
+PR #18, branch `feat/p3-tour-detail` (`docs/specs/phase-3-public-site.md` steps 1–9).
+
+- Done:
+  - `search_tours()`, `tour_departures()` and `booking_cutoff_days()`, with 20 pgTAP assertions;
+  - shared image, JSON-LD, breadcrumb, alternates and tour card pieces;
+  - cached tour page read with live departures and booking box in Suspense, hreflang for published languages, Product/TouristTrip JSON-LD, tour reviews, other-language slug redirect;
+  - interim `/tours` list;
+  - staff tour preview and itinerary day photos;
+  - JS budget warning in CI;
+  - CSP spike (ADR-027: option 2).
+- Verified: lint, tsc, 379 unit tests, pgTAP 247 locally, webpack production build; stub screenshots and axe at 375 and 1280 (0 violations); live error state; E2E in CI.
+- Deviations: 404/308 are streamed (HTTP 200 + noindex); the booking box calls or emails until PR K and Phase 4; the mega-menu deferral moves to PR I.
+- Independent review: approved. The 404/308 status counts as **fail** for the Phase 3 criterion and is a tracked PR M item; the day-photo alt rule moved into the database in #20.
 
 ### 2026-11-07 (Phase 2 — PR F2: reviews, redirects, subscribers)
 
