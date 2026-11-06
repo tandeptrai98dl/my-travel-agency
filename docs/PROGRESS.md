@@ -4,21 +4,48 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 code-complete (acceptance pending, see the plan); Phase 3 in progress; Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 2 polish PR (backlog and the Phase 2 acceptance E2E), then the Phase 4 spec and booking core (pricing, state machine, Postgres booking functions). Stream B: Phase 3 PR I (homepage), then PRs J–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Phase:** 2 complete; Phase 3 in progress (Stream B); Phase 4 in progress (Stream A); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 4 PR 4A (#25, deadlock fix in progress), then 4C, 4F, 4E; 4B and 4D after the route-group move. Stream B: the route-group move (`src/app/(public)/[locale]`), then PRs J–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
-Phase 2 polish PR:
-- `updateTourLinks` writes destinations, styles and gallery one after another without a transaction; a failure partway leaves some link changes applied (move into a Postgres function if it matters).
-- No explicit "remove language" action on tours (clearing the title is refused); add one with a confirmation and a 301 when the language was published.
-- `tests/e2e/tours.spec.ts` finds the header status badge with `xpath=../..`; give `PageHeader` a labelled container.
+Open items:
+- Publishing a language in the journal, page and taxonomy editors does not yet remove a redirect from that path (tours do, #22).
+- Shared rate limiter fails closed; `failOpen` option comes in Stream B's PR J, bookings use it (ADR-033).
+- Email client (`email.service.ts`): `skipped` rows in `email_logs` and status-code-only error logs, in Phase 4 PR 4E.
+- Hero lead text contrast over light photos (PR J).
 - Phase 3 (PR 15 and PR 18 reviews): PR M must serve real 404s for unpublished tours and real 308s for other-language slugs (E2E on status codes); name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
 - Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
 - Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
 ## Log
+
+### 2026-11-07 (Phase 3 — PR I: homepage)
+
+PR #24, branch `feat/p3-homepage` (Phase 3 spec PR I, ADR-029; PR H backlog).
+
+- Done:
+  - Homepage from one cached anon read: hero (navy band unless the image exists and is described in the page's language), search form without JS, trust bar, featured tours, destinations, travel styles, testimonial, tailor-made call to action, newsletter; journal teaser built but hidden until PR K. Metadata, hreflang, `TravelAgency` JSON-LD and a generated Open Graph image per locale.
+  - Newsletter double opt-in: Zod, honeypot, rate limits, Turnstile, service-role functions; only token hashes stored; confirmation by button; marketing consent recorded. Disabled and refusing every request until the owner's Turnstile, Upstash and Resend keys exist.
+  - Initial JS: home 179 → 147 KB, tour page 194 → 147–149 KB gzip (mega menu without Radix, no next-intl client on public pages, no `next/image` client code).
+- Verified: lint, tsc, 519 unit tests, pgTAP; CI green (90 E2E).
+- Independent review: approved; backlog below.
+
+### 2026-11-07 (Phase 4 — spec)
+
+PR #23, branch `docs/p4-spec` (ADR-033).
+
+- `docs/specs/phase-4-booking-payments.md`: 16 decisions, PRs 4A–4F, an off mode for every missing account (never confirming money), a signed VNPay stub for CI, and the cross-stream route-group move.
+- Independent review: changes requested (two majors on recording money: success events for attempts that are no longer pending; bank webhooks counting outgoing transfers), fixed; re-review approved.
+
+### 2026-11-07 (Phase 2 — polish and acceptance)
+
+PR #22, branch `fix/p2-polish`.
+
+- `set_tour_links()` writes a tour's links in one transaction; tours can remove a language (301 to the other language or the list); publishing a tour language removes a redirect from that path; `PageHeader` is a named region.
+- Acceptance E2E `tour-publish.spec.ts`: an editor builds a full VI/EN tour (photos, hero, gallery, day photos, destination, style), publishes it, and both public pages show it. The first departure is created through the service role, standing in for the admin step ADR-024 requires.
+- Independent review: approved.
 
 ### 2026-11-07 (Phase 2 — PR G: settings, staff, dashboard)
 
@@ -365,16 +392,13 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Phase 3: when tour pages embed cancellation-policy summaries, a policy save must also refresh the `tours` cache tag (spec decision 9's shared cache helper).
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
 - Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.
-- Radix NavigationMenu adds an `aria-hidden` focusable sentinel after an open trigger (axe `aria-hidden-focus`). It only forwards focus into the menu, and the E2E test proves Tab lands on a destination link; it is excluded from axe by its exact selector. Revisit when Radix changes it.
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
-- Phase 3: cheap initial-JS wins to try before the 150 KB budget review: render the desktop nav without client JS until the mega menu is opened, and load the floating contact's client code after idle.
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
-- Phase 3/6: initial JS on public pages is ≈ 179 KB gzip with the shell (≈ 158 KB framework baseline; local webpack measurement) against the 150 KB budget. Next steps: measure the Turbopack production build in CI, then consider rendering the desktop nav statically and loading the mega-menu panel on first hover/focus.
 - Phase 3: footer and banner policy links use page keys (`/chinh-sach/privacy`); resolve the per-language slugs from `page_translations` when the policy pages are built.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
 - Phase 4: when the `/pay/[token]` routes land, extend the Sentry unit test to check the envelope header (`trace.transaction`) for tokens too.
