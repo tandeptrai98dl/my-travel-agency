@@ -123,8 +123,9 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
         run: npm run seed:users
-      # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
-      # Phase 0 never uses the service role in the app, and the leak check below needs them.
+      # The build keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env, so
+      # the leak check below can look for them. The E2E server gets the real service key at run
+      # time (media uploads use the service role for Storage, ADR-023).
       # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested
       # (monitoring.spec.ts intercepts its requests; a stray browser error in another spec would be
       # rejected by Sentry, since the key is fake). No server DSN is set.
@@ -183,7 +184,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
           NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
-          # Test setup only (generating email-link tokens); the app keeps the sentinel key.
+          # Server-only, read at run time by `next start`; never part of the build output.
+          SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
+          # Test setup only (generating email-link tokens).
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           # Serves /admin/design-system in the production build so axe can check it.
