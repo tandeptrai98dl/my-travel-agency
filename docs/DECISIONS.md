@@ -207,3 +207,15 @@ Template:
   - `partialPrefetching: true` alongside `cacheComponents`, as Next.js recommends for new projects.
   - `tailwind-merge` pinned to v2 (v3 targets Tailwind 4) and extended with the custom font sizes.
 - **Consequences:** `DESIGN_SYSTEM.md` values are final. Changing a colour means updating `globals.css`, this ADR and the contrast test.
+
+## ADR-022: Libraries for forms and accessibility checks
+
+- **Date:** 2026-11-06
+- **Status:** Accepted (owner allowed the recommended solutions, 2026-11-06)
+- **Context:** ADR-014 approved React Hook Form, Zod and Playwright. Phase 1 step 12 wires forms to Zod and step 14 asks for automated accessibility checks, which need two small additions. The shadcn primitives also need their Radix packages.
+- **Decision:**
+  - `@hookform/resolvers` connects React Hook Form to Zod schemas (the standard bridge; part of the React Hook Form project).
+  - `@axe-core/playwright` (dev dependency) runs axe inside the existing Playwright E2E tests in CI.
+  - Radix packages for the shadcn primitives (avatar, popover, radio-group, select, separator, tabs, toast, tooltip), as ADR-021 describes. Toasts use Radix Toast rather than another toast library.
+- **Consequences:** No new services. Every form follows one pattern (Zod schema → `zodResolver` → `FormField`, Zod messages as translation keys). axe runs in CI; a serious or critical violation fails the build.
+

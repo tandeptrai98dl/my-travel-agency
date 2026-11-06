@@ -106,12 +106,14 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/typography`: Heading, Eyebrow (gold inside navy sections), SectionHeading, Prose, Price
 - `src/components/layout`: Container, Section (ivory, white, navy tones), SiteHeader, MegaMenu, MobileNav, SiteFooter, LanguageSwitcher, ContactFloatingButton, CookieConsentBanner
 - `src/components/ui` (shell): dialog, sheet, accordion, switch
+- `src/components/ui` (Phase 1 PR 7): textarea, select, radio-group, tooltip, popover, tabs, separator, avatar, skeleton, spinner, alert, toast + `Toaster`/`toast()`, pagination (real links; `paginationRange()`), icon-button (required `label`), form (React Hook Form + Zod; `FormMessage formatMessage` maps Zod keys to text), tag, status-badge (one colour map for booking, payment, departure, inquiry and transaction statuses), empty-state
+- `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
 
 | Group | Components |
 | --- | --- |
-| Primitives (shadcn) | IconButton, Textarea, Select, Combobox, Radio, DatePicker, DateRangePicker, quantity Stepper, PhoneInput, FormField, Tag, Tooltip, Popover, Tabs, Skeleton, Spinner, Toast, Alert, Separator, Avatar, Pagination |
+| Primitives (shadcn) | Combobox, DatePicker, DateRangePicker, quantity Stepper, PhoneInput (with the forms that need them, Phases 2 and 4) |
 | Typography | Prose rendering of Tiptap JSON (Phase 2), DateText |
 | Layout | Breadcrumbs |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
@@ -120,7 +122,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Booking | BookingStepper, PaxSelector, DepartureCalendar, PriceBreakdown, ContactForm, TravellerForm, PaymentPlanSelector, PaymentMethodSelector, VietQRPanel, HoldCountdown, PaymentResult, BookingSummaryCard, InvoiceInfoForm, CancellationPolicySummary, TermsConsent |
 | Consultation | TailorMadeWizard (destination → timing → travellers → budget & style → contact), InquirySuccess |
 | Account | AuthForm, GoogleButton, AccountNav, BookingListItem, BookingDetail, PaymentHistory, ProfileForm, DeleteAccountDialog |
-| States | EmptyState, ErrorState, NotFound (designed 404 with tour suggestions), StatusBadge |
+| States | ErrorState, tour suggestions on the 404 page (Phase 3) |
 | Admin | AdminShell (role-based sidebar), AdminTopbar, PageHeader, CommandMenu, ConfirmDialog, DataTable, FilterBar, StatCard, Timeline, NotesPanel, AuditTrail, AttentionQueue, LocaleTabs, RichTextEditor, ItineraryBuilder, ListEditor, MediaPicker, MediaUploader, SEOFields, SlugInput, MoneyInput, DepartureBulkCreator, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
 

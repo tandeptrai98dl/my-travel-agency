@@ -31,7 +31,7 @@ One pull request per group, one commit per step.
 ### PR C — Remaining primitives and review page
 
 12. Add the planned primitives used by Phases 2–5 (Dialog, Sheet, Accordion and Switch already arrived with PR B): Textarea, Select, RadioGroup, Tooltip, Popover, Tabs, Skeleton, Spinner, Toast (sonner-free: Radix Toast), Alert, Separator, Avatar, Pagination, IconButton, FormField (React Hook Form + Zod wiring), Tag, StatusBadge, EmptyState. DatePicker, Combobox, PhoneInput and Stepper arrive with the forms that need them (Phases 2 and 4).
-13. `/admin/design-system` (dev only: 404 in production unless `NEXT_PUBLIC_SHOW_DESIGN_SYSTEM=true`; staff only): every token, type style with Vietnamese diacritics (ặ ẫ ỡ ự ở) at every size, and every component state.
+13. `/admin/design-system` (dev only: 404 in production unless the server-only `SHOW_DESIGN_SYSTEM=true`; staff only): every token, type style with Vietnamese diacritics (ặ ẫ ỡ ự ở) at every size, and every component state.
 14. Accessibility checks in CI: axe (via `@axe-core/playwright`) on `/`, `/en`, a 404 page and `/admin/design-system` with no serious or critical violations; keyboard navigation of header, mega menu, mobile nav and consent banner.
 
 ## Acceptance criteria

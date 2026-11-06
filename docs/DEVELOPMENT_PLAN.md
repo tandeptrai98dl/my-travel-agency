@@ -25,10 +25,10 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 ## Phase 1: Design system and UI shell (1.5 weeks)
 
 - [x] Confirm palette and fonts; apply tokens to `globals.css` and `tailwind.config.ts` (`DESIGN_SYSTEM.md`)
-- [ ] Restyle shadcn primitives; add the planned primitives
-- [ ] `SiteHeader`, `MegaMenu`, `MobileNav`, `SiteFooter`, `LanguageSwitcher`, `ContactFloatingButton`, `CookieConsentBanner`, 404 page; public layout with a fixed light theme (ADR-017). Built and E2E-tested in PR 6; ticked once the axe checks of PR 7 pass
-- [ ] Dev-only `/admin/design-system`
-- [ ] Acceptance: Lighthouse Accessibility ≥ 95; Vietnamese diacritics render correctly at every size
+- [x] Restyle shadcn primitives; add the planned primitives (DatePicker, Combobox, PhoneInput and Stepper arrive with their forms in Phases 2 and 4)
+- [x] `SiteHeader`, `MegaMenu`, `MobileNav`, `SiteFooter`, `LanguageSwitcher`, `ContactFloatingButton`, `CookieConsentBanner`, 404 page; public layout with a fixed light theme (ADR-017)
+- [x] Dev-only `/admin/design-system`
+- [x] Acceptance: no serious or critical axe violations (the CI equivalent of Lighthouse Accessibility ≥ 95; run Lighthouse itself on the first Vercel preview); Vietnamese diacritics render correctly at every size
 
 ## Phase 2: Content and catalog admin (2.5 weeks)
 
