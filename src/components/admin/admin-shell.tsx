@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/toaster";
 import type { CurrentUser } from "@/lib/auth/get-user";
 import { can } from "@/lib/auth/permissions";
 import { signOut } from "@/modules/identity/identity.actions";
@@ -69,6 +70,12 @@ export async function AdminShell({ user, showDevItems, children }: Props) {
           {children}
         </main>
       </div>
+      <Toaster
+        closeLabel={t("Shell.close")}
+        toastLabel={t("Shell.notification")}
+        // Radix fills in the hotkey; keep the placeholder literal.
+        regionLabel={t("Shell.notifications", { hotkey: "{hotkey}" })}
+      />
     </div>
   );
 }

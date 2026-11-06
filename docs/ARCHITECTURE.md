@@ -21,7 +21,7 @@ Next.js app (one deployment, modular monolith — ADR-008)
 Supabase (Singapore)
   ├── Postgres + RLS + Postgres functions (seat holds, payments) + pg_cron
   ├── Auth (email/password, Google, TOTP MFA for staff)
-  └── Storage (media bucket, private bucket)
+  └── Storage (public media bucket, private media-uploads staging and private buckets)
 Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirects), Sentry, Turnstile
 ```
 
@@ -45,6 +45,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 | Spam protection | Cloudflare Turnstile | ADR-014 |
 | Scheduled jobs | `pg_cron` for data jobs; Vercel Cron for jobs that need the app | ADR-012 |
 | Search | Postgres `unaccent` + `pg_trgm` inside `search_tours()` | |
+| Images | Uploads go straight to a private Storage staging bucket through signed URLs; `sharp` checks and re-encodes them and makes blur placeholders before the clean copy is published | ADR-023 |
 | Monitoring | Sentry, Vercel Speed Insights | ADR-014 |
 | Analytics | GA4 via GTM with Consent Mode v2 | |
 | Testing | Vitest (unit), Playwright (E2E), pgTAP (`supabase test db`) | ADR-014 |
@@ -128,7 +129,7 @@ The starter's `/auth/*` pages stay usable for staff until the localized customer
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -214,7 +215,7 @@ Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay
 
 **Supabase**: secret key only in server env vars (never `NEXT_PUBLIC_`); RLS on every table; `supabase db lint` in CI; Security Advisor clean before launch; `security definer` functions set `search_path = ''` and revoke execute from `public`, `anon`, `authenticated` unless intentionally public (e.g. `search_tours`).
 
-**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; nonce-free CSP on cached public pages and nonce-based CSP on checkout, account and admin; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms; redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real MIME type and size, no SVG uploads.
+**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; nonce-free CSP on cached public pages and nonce-based CSP on checkout, account and admin; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms; redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
 
 **Personal data and compliance** (verify with legal counsel): Vietnamese personal data rules (Decree 13/2023/ND-CP and the Personal Data Protection Law) — privacy policy, consent before collection, proof in `consent_records`, export and deletion on request; e-commerce website notification to the Ministry of Industry and Trade; company details and tour operator licence in the footer; no passport numbers on the website; audit log for bookings, payments and customer data; daily backups + PITR from launch; SPF, DKIM, DMARC on the sending domain.
 

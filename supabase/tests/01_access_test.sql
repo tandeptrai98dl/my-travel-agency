@@ -1,7 +1,7 @@
 -- Access rules for anon, customers and staff roles (docs/specs/phase-0-foundation.md step 5,
 -- docs/DATABASE.md "RLS policy summary", ARCHITECTURE.md permission matrix).
 begin;
-select plan(53);
+select plan(61);
 
 -- Helpers (called only as the test owner; role switches happen inline) ------------------------
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
@@ -284,21 +284,66 @@ select is((select count(*)::int from public.tours where code like 'T-%'), 2, 'an
 with u as (update public.tours set is_featured = true where code = 'T-DRAFT' returning 1)
 select is(count(*)::int, 1, 'an editor can edit tour content') from u;
 
-select lives_ok(
+select throws_ok(
   $$ insert into storage.objects (bucket_id, name, owner)
      values ('media', 'tests/editor-upload.jpg', '00000000-0000-4000-8000-000000000014') $$,
-  'an editor can upload to the media bucket'
+  '42501',
+  null,
+  'an editor cannot upload to the public media bucket (the server writes checked copies)'
+);
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner)
+     values ('media-uploads', 'pending/00000000-0000-4000-8000-000000000014/x.jpg',
+             '00000000-0000-4000-8000-000000000014') $$,
+  '42501',
+  null,
+  'an editor cannot write to the upload staging bucket through the API'
+);
+
+reset role;
+insert into storage.objects (bucket_id, name) values
+  ('media', 'tests/server-copy.jpg'),
+  ('media-uploads', 'pending/00000000-0000-4000-8000-000000000014/staged.jpg');
+select pg_temp.claims('00000000-0000-4000-8000-000000000014');
+set local role authenticated;
+
+select is(
+  (select count(*)::int from storage.objects where bucket_id = 'media' and name = 'tests/server-copy.jpg'),
+  1,
+  'an editor can see media objects (needed for delete and listing)'
 );
 select is(
-  (select count(*)::int from storage.objects where bucket_id = 'media' and name = 'tests/editor-upload.jpg'),
-  1,
-  'an editor can see media objects (needed for update, delete and listing)'
+  (select count(*)::int from storage.objects where bucket_id = 'media-uploads'),
+  0,
+  'an editor cannot see staged uploads'
 );
+with u as (update storage.objects set metadata = '{}' where bucket_id = 'media' returning 1)
+select is(count(*)::int, 0, 'an editor cannot overwrite media objects') from u;
+select throws_ok(
+  $$ update public.media set path = '2026/11/0f8fad5b-d9cb-469f-a165-70867728950e.png' $$,
+  '42501', null, 'an editor cannot repoint a media row to another file'
+);
+select throws_ok(
+  $$ insert into public.media (path, mime_type, size_bytes)
+     values ('tests/anything.svg', 'image/svg+xml', 1) $$,
+  '23514', null, 'a media row must use a server-generated path and an image type'
+);
+select throws_ok(
+  $$ insert into public.media (path, mime_type, size_bytes, blur_data_url)
+     values ('2026/11/0f8fad5b-d9cb-469f-a165-70867728950e.png', 'image/png', 1, 'javascript:alert(1)') $$,
+  '23514', null, 'a blur placeholder must be a WebP data URL'
+);
+select is(public.can_act_as('{editor,admin}'), true, 'the staff media policies admit an editor');
+
+-- Deleting goes through the Storage API (Supabase blocks direct DELETE on storage.objects); the
+-- staff delete policy is checked in 00_schema_test.sql and the delete itself in the media E2E.
 
 -- operator -----------------------------------------------------------------------------------
 reset role;
 select pg_temp.claims('00000000-0000-4000-8000-000000000012');
 set local role authenticated;
+
+select is(public.can_act_as('{editor,admin}'), false, 'the staff media policies refuse an operator');
 
 with u as (update public.tours set is_featured = true where code = 'T-PUB' returning 1)
 select is(count(*)::int, 0, 'an operator cannot edit tour content') from u;

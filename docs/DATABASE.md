@@ -85,6 +85,7 @@ create table media (
   id            uuid primary key default gen_random_uuid(),
   bucket        text not null default 'media',
   path          text not null,
+  original_name text check (char_length(original_name) <= 255),  -- as uploaded, for search
   mime_type     text not null,
   width         int,
   height        int,
@@ -622,7 +623,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 
 ## Storage
 
-- `media`: public read; editor and admin write. JPEG, PNG, WebP and AVIF only (no SVG), up to 20 MB. Replaces the draft `tour-images` bucket.
+- `media`: public read; editor and admin may list and delete, but only the service role writes: it holds the checked, re-encoded copies (ADR-023). JPEG, PNG, WebP and AVIF only (no SVG), up to 20 MB. Replaces the draft `tour-images` bucket.
+- `media-uploads`: private staging for originals uploaded through signed URLs (`pending/<user id>/<uuid>.<ext>`); no API-role policies; the service role signs, reads and deletes. Same type and size limits.
 - `private`: no public access and no API-role policies; signed URLs created by the service role only (vouchers and PDF quotes, P1). PDF only, up to 10 MB.
 
 ## Postgres functions

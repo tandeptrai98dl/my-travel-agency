@@ -1,6 +1,6 @@
 "use client";
 
-import { FileClock, LayoutDashboard, Menu, Palette } from "lucide-react";
+import { FileClock, Images, LayoutDashboard, Menu, Palette } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -13,7 +13,7 @@ import { type AdminNavIcon, isActive } from "./nav-items";
 
 export type VisibleNavGroup = { label: string; items: { href: string; label: string; icon: AdminNavIcon }[] };
 
-const ICONS = { dashboard: LayoutDashboard, audit: FileClock, design: Palette } as const;
+const ICONS = { dashboard: LayoutDashboard, audit: FileClock, design: Palette, media: Images } as const;
 
 type Props = {
   groups: VisibleNavGroup[];

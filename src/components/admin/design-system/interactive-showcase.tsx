@@ -48,7 +48,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { toast, Toaster } from "@/components/ui/toaster";
+import { toast } from "@/components/ui/toaster";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type ShowcaseLabels = Record<
@@ -302,7 +302,6 @@ export function InteractiveShowcase({ labels }: { labels: ShowcaseLabels }) {
           </AccordionItem>
         </Accordion>
       </section>
-      <Toaster closeLabel={labels.close} toastLabel={labels.notification} regionLabel={labels.notifications} />
     </TooltipProvider>
   );
 }

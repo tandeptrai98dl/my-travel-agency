@@ -1,12 +1,12 @@
 import type { Permission } from "@/lib/auth/permissions";
 
 /** Icons are named, not imported, so this list stays importable from server and client code. */
-export type AdminNavIcon = "dashboard" | "audit" | "design";
+export type AdminNavIcon = "dashboard" | "audit" | "design" | "media";
 
 export type AdminNavItem = {
   href: string;
   /** Key in the `Admin.Nav` messages. */
-  labelKey: "dashboard" | "auditLog" | "designSystem";
+  labelKey: "dashboard" | "auditLog" | "designSystem" | "media";
   icon: AdminNavIcon;
   /** Shown only to roles holding it; the page and its actions check it again on the server. */
   permission: Permission;
@@ -14,7 +14,7 @@ export type AdminNavItem = {
   devOnly?: boolean;
 };
 
-export type AdminNavGroup = { labelKey: "groupGeneral" | "groupSystem"; items: AdminNavItem[] };
+export type AdminNavGroup = { labelKey: "groupGeneral" | "groupContent" | "groupSystem"; items: AdminNavItem[] };
 
 // Sections are added here as their pages land (Phase 2 PRs B–G), so the menu never links to a
 // page that does not exist yet.
@@ -22,6 +22,10 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     labelKey: "groupGeneral",
     items: [{ href: "/admin", labelKey: "dashboard", icon: "dashboard", permission: "dashboard.view" }],
+  },
+  {
+    labelKey: "groupContent",
+    items: [{ href: "/admin/media", labelKey: "media", icon: "media", permission: "media.manage" }],
   },
   {
     labelKey: "groupSystem",

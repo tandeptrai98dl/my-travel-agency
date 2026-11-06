@@ -5,10 +5,23 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR B (media library), then taxonomy, tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR C (destinations, travel styles, cancellation policies), then tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-06 (Phase 2 — PR 9: media library)
+
+Branch `feat/p2-media` (`docs/specs/phase-2-catalog-admin.md` steps 5–7).
+
+- Done:
+  - Uploads in two steps (ADR-023): a Server Action signs an upload URL into the private `media-uploads` bucket (`pending/<user id>/<uuid>.<ext>`), and the browser sends the original there directly. A second Server Action checks that the file is the user's own, its real type from the first bytes (JPEG, PNG, WebP, AVIF with AV1 data; SVG, HEIC and disguised files are refused), its size (20 MB), dimensions (12 000 px) and pixel count (50 MP, 24 MP for AVIF), re-encodes it with `sharp` (orientation applied, EXIF/GPS and appended bytes dropped, colour profile kept), makes a 16 px WebP blur placeholder, writes only that clean copy to the public `media` bucket with the service role, records it and deletes the staged original. Every action calls `requirePermission("media.manage")`.
+  - Migration `20261106145000_media_uploads_bucket.sql`: the private staging bucket (no API-role policies), staff insert and update on the public `media` bucket removed (list and delete stay), `media.original_name` for search, staff updates limited to alt text and credit, and checks that every row has a server-generated path, an image type and a WebP data-URL placeholder. pgTAP: bucket exists and is private, no policy opens it, editors cannot write to either bucket, cannot see staged uploads or overwrite media, and keep only the list and delete policies.
+  - `/admin/media`: grid with search by alt text or the uploaded file name (PostgREST filter syntax stripped), paging, VI/EN alt text and credit, small-image and missing-alt badges, delete only when nothing uses the image (foreign keys; friendly error; the file is removed only when the row really was), focus returns to the page after a delete, toasts in the admin shell.
+  - MediaPicker dialog (search, load more that keeps focus, stale results ignored, inline upload with the new image selected, single or multiple, missing-alt badge read with the image name) and a demo on the design system page.
+  - `src/lib/logger.ts` (JSON log lines, no personal data).
+- Verified locally: lint, typecheck, unit tests (type sniffing, schemas, actions returning `forbidden`/`invalid`, and the service with real `sharp` images: rotated originals, EXIF/GPS and an appended script removed from the published copy, an SVG renamed .png, a JPEG under a .png name, a corrupt PNG, a 56 MP image, a real AVIF, another user's staged file, double finalize, failed recording cleaning up the public copy, delete in use and delete of zero rows); pgTAP on the local Postgres shim (94 assertions); production build. Storage itself is exercised only by the CI E2E (upload, refusal of a disguised SVG, public path of the clean copy, search by file name and alt text, delete, picker, operator blocked), since Supabase containers cannot run here.
+- Independent review: changes requested (major: files were uploaded straight into the public bucket and stayed public before, or without, the server's checks), addressed with the staging bucket and re-encoding above, together with the minor findings (pixel and AVIF memory limits, delete removing files when RLS kept the row, file-name search, uploader focus ring and live region, picker announcements, focus and race, action tests) and nits (`safeParse` in `browseMedia`, public URLs without a client per row, long cache on published copies, exact E2E locators). Deferred with a place in the spec: usage checks for image ids inside JSON (PRs D and F), `ResponsiveImage` (Phase 3).
 
 ### 2026-11-06 (Phase 2 — PR 8: spec, admin shell, building blocks, audit log)
 
@@ -24,8 +37,9 @@ Branch `feat/p2-admin-shell` (`docs/specs/phase-2-catalog-admin.md` steps 1–4)
 - Verified locally: lint, typecheck, unit tests; pgTAP on the local Postgres shim (82 assertions, and dropping the triggers makes the audit assertions fail); production build; the shell, the audit page and the admin form blocks rendered with a temporarily faked staff user (not committed) at 1280 and 375 px with no axe violations. Signed-in E2E runs in CI.
 - First CI run: two E2E failures (an ambiguous "Đối tượng" label in the test; a link directly inside a `<dl>` group on the overview, flagged by axe), both fixed.
 - Independent review: changes requested, all addressed:
-  - Major: the overview `<dl>`; list-editor buttons submitting forms (IconButton now defaults to `type="button"`); profile audits copying personal data (now names only, values only for role/status); spec decision 1 allowing delete-and-recreate at a new price (now insert guards, prices copied from the tour's latest departure, ADR-023 with PR D); `parseDongInput` silently accepting decimals, signs and exponents (strict grouping, unit-tested); a vacuous pgTAP null-actor check.
+  - Major: the overview `<dl>`; list-editor buttons submitting forms (IconButton now defaults to `type="button"`); profile audits copying personal data (now names only, values only for role/status); spec decision 1 allowing delete-and-recreate at a new price (now insert guards, prices copied from the tour's latest departure, ADR-024 with PR D); `parseDongInput` silently accepting decimals, signs and exponents (strict grouping, unit-tested); a vacuous pgTAP null-actor check.
   - Minor: `audit_logs.actor_id` now `on delete set null`; IP/user-agent capture dropped (it would record the server); seat-only departure changes not logged; a page past the end shows an empty page instead of an error; admin error page; non-UUID entity search explained; form blocks shown and tested on the design system page; list editor keeps focus on moved rows and announces moves and removals; confirm dialog shows failures; slug errors announced; spec gaps (redirect resync, identity audit rows, publish checks in both directions, sharp) written into the spec. Deferred with a place in the spec: actor filter (PR G), status badges and row actions (PRs C–E), slug uniqueness checks (with each editor).
+
 ### 2026-11-06 (Phase 1 — PR 7: primitives, design system page, axe)
 
 Branch `feat/p1-primitives` (`docs/specs/phase-1-design-system.md` steps 12–14).
@@ -165,6 +179,10 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 ## Known issues
 
+- Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
+- PRs D and F: image ids inside JSON (itinerary `media_ids`, Tiptap image nodes) are not foreign keys, so deleting an image does not see them yet; add a usage check that scans them before the editors that write them ship.
+- Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
+- Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.
 - Radix NavigationMenu adds an `aria-hidden` focusable sentinel after an open trigger (axe `aria-hidden-focus`). It only forwards focus into the menu, and the E2E test proves Tab lands on a destination link; it is excluded from axe by its exact selector. Revisit when Radix changes it.
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.

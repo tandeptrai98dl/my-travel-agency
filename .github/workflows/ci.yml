@@ -123,8 +123,9 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
         run: npm run seed:users
-      # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
-      # Phase 0 never uses the service role in the app, and the leak check below needs them.
+      # The build keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env, so
+      # the leak check below can look for them. The E2E server gets the real service key at run
+      # time (media uploads use the service role for Storage, ADR-023).
       # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested
       # (monitoring.spec.ts intercepts its requests; a stray browser error in another spec would be
       # rejected by Sentry, since the key is fake). No server DSN is set.
@@ -161,29 +162,47 @@ jobs:
           for attempt in 1 2 3; do
             timeout -k 15 240 npx playwright install --with-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # `timeout` stops npx but not the apt-get it started, which keeps the dpkg lock and
+            # makes every retry fail. Let it finish (up to 2 min), then stop it.
+            for wait in $(seq 1 60); do
+              sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break
+              sleep 2
+            done
+            sudo pkill -x apt-get || true
+            sudo pkill -x dpkg || true
             # A killed apt/dpkg run can leave the package database half-configured.
             sudo dpkg --configure -a || true
           done
           exit 1
-        timeout-minutes: 14
+        timeout-minutes: 20
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: |
           for attempt in 1 2 3; do
             timeout -k 15 180 npx playwright install-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # `timeout` stops npx but not the apt-get it started, which keeps the dpkg lock and
+            # makes every retry fail. Let it finish (up to 2 min), then stop it.
+            for wait in $(seq 1 60); do
+              sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break
+              sleep 2
+            done
+            sudo pkill -x apt-get || true
+            sudo pkill -x dpkg || true
             # A killed apt/dpkg run can leave the package database half-configured.
             sudo dpkg --configure -a || true
           done
           exit 1
-        timeout-minutes: 10
+        timeout-minutes: 16
       - name: E2E tests
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
           NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
-          # Test setup only (generating email-link tokens); the app keeps the sentinel key.
+          # Server-only, read at run time by `next start`; never part of the build output.
+          SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
+          # Test setup only (generating email-link tokens).
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           # Serves /admin/design-system in the production build so axe can check it.
