@@ -27,7 +27,7 @@ const buttonVariants = cva(
       },
     },
     // Compound variants come after sizes, so they win: link buttons sit inline with text.
-    compoundVariants: [{ variant: "link", class: "h-auto px-0" }],
+    compoundVariants: [{ variant: "link", class: "inline h-auto whitespace-normal px-0" }],
     defaultVariants: {
       variant: "default",
       size: "default",
