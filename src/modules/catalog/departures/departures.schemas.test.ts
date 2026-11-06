@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { departureFilters, departurePlanSchema, departureView } from "./departures.schemas";
+import { departureFilters, departurePlanSchema, departureView, monthSteps, monthWindow } from "./departures.schemas";
 
 describe("departure list params", () => {
   it("keeps only a known status, a tour id and a real month", () => {
@@ -54,5 +54,22 @@ describe("departure plan schema", () => {
     expect(
       issues({ prices: { priceAdult: Number.NaN, priceChild: null, priceInfant: null, singleSupplement: null } }),
     ).toEqual(["prices.priceAdult:required"]);
+  });
+});
+
+describe("calendar month window", () => {
+  it("offers a year back and a year and a half ahead", () => {
+    const window = monthWindow("2026-11");
+    expect(window[0]).toBe("2025-11");
+    expect(window.at(-1)).toBe("2028-05");
+    expect(window).toHaveLength(31);
+  });
+
+  it("stops the previous and next links at the ends of the window", () => {
+    expect(monthSteps("2026-11", "2026-11")).toEqual({ previous: "2026-10", next: "2026-12" });
+    expect(monthSteps("2025-11", "2026-11")).toEqual({ previous: null, next: "2025-12" });
+    expect(monthSteps("2028-05", "2026-11")).toEqual({ previous: "2028-04", next: null });
+    // A month typed into the URL far outside the window gets neither link.
+    expect(monthSteps("2030-01", "2026-11")).toEqual({ previous: null, next: null });
   });
 });

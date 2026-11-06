@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isIsoMonth } from "@/lib/dates";
+import { addMonths, isIsoMonth } from "@/lib/dates";
 
 import { expandPlan } from "./departure-dates";
 
@@ -34,6 +34,25 @@ export function departureFilters(raw: Record<string, string>): DepartureFilters 
   if (tour.success) out.tourId = tour.data;
   if (raw.month && isIsoMonth(raw.month)) out.month = raw.month;
   return out;
+}
+
+/** Months the filter offers and the calendar steps through: a year back, a year and a half ahead. */
+export const MONTHS_BACK = 12;
+export const MONTHS_AHEAD = 18;
+
+export function monthWindow(thisMonth: string): string[] {
+  return Array.from({ length: MONTHS_BACK + MONTHS_AHEAD + 1 }, (_, i) => addMonths(thisMonth, i - MONTHS_BACK));
+}
+
+/** The previous and next month from `month`, or null where the window ends. */
+export function monthSteps(month: string, thisMonth: string): { previous: string | null; next: string | null } {
+  const window = monthWindow(thisMonth);
+  const previous = addMonths(month, -1);
+  const next = addMonths(month, 1);
+  return {
+    previous: previous >= window[0] && previous <= window[window.length - 1] ? previous : null,
+    next: next >= window[0] && next <= window[window.length - 1] ? next : null,
+  };
 }
 
 export function departureView(raw: string | string[] | undefined): DepartureView {

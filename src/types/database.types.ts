@@ -863,6 +863,9 @@ isOneToOne: false
 "is_valid_slug":
 { Args: { "slug": string }; Returns: boolean
                            },
+"lock_tour_row":
+{ Args: { "target_id": string }; Returns: undefined
+                           },
 "media_alt_complete":
 { Args: { "media_id": string }; Returns: boolean
                            },
