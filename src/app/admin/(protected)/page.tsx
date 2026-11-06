@@ -33,9 +33,11 @@ export default async function AdminHomePage() {
           <dd data-testid="admin-aal" className="font-medium">
             {t("mfaStatus", { status: user.aal === "aal2" ? t("mfaOn") : t("mfaOff") })}
           </dd>
-          <Link href="/admin/mfa" className="mt-2 inline-block text-small underline underline-offset-4">
-            {t("manageMfa")}
-          </Link>
+          <dd>
+            <Link href="/admin/mfa" className="mt-2 inline-block text-small underline underline-offset-4">
+              {t("manageMfa")}
+            </Link>
+          </dd>
         </div>
       </dl>
     </div>

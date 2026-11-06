@@ -20,7 +20,7 @@ export async function findAuditLogs(query: AuditQuery) {
   const supabase = await createClient();
   let request = supabase
     .from("audit_logs")
-    .select("id, created_at, action, entity_type, entity_id, changes, ip, actor:profiles(id, email, full_name)", {
+    .select("id, created_at, action, entity_type, entity_id, changes, actor:profiles(id, email, full_name)", {
       count: "exact",
     })
     .order(query.sort, { ascending: query.dir === "asc" })

@@ -18,7 +18,9 @@ export type DataTableColumn<Row> = {
 type Labels = {
   caption: string;
   empty: string;
-  sortBy: (column: string) => string;
+  /** Screen-reader hint after a sortable header: what clicking does. */
+  sortAscending: string;
+  sortDescending: string;
   pagination: { nav: string; previous: string; next: string; page: (page: number) => string };
   total: string;
 };
@@ -81,7 +83,9 @@ export function DataTable<Row>({
                         className="inline-flex min-h-11 items-center gap-1 rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {column.header}
-                        <span className="sr-only">, {labels.sortBy(column.header)}</span>
+                        <span className="sr-only">
+                          , {nextDir === "asc" ? labels.sortAscending : labels.sortDescending}
+                        </span>
                         <Icon
                           className={cn("h-4 w-4", !active && "text-muted-foreground")}
                           strokeWidth={1.5}

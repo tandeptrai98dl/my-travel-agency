@@ -20,6 +20,8 @@ type Props = {
   confirmLabel: string;
   cancelLabel: string;
   closeLabel: string;
+  /** Shown in the dialog when the action throws. */
+  errorLabel: string;
   destructive?: boolean;
   /** Runs the action; the dialog stays open (button busy) until it settles. */
   onConfirm: () => Promise<void> | void;
@@ -33,19 +35,33 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   closeLabel,
+  errorLabel,
   destructive,
   onConfirm,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
-    <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (busy) return;
+        setOpen(next);
+        setFailed(false);
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent closeLabel={closeLabel} role="alertdialog">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {failed && (
+          <p role="alert" className="text-small font-medium text-destructive">
+            {errorLabel}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
             {cancelLabel}
@@ -56,9 +72,12 @@ export function ConfirmDialog({
             disabled={busy}
             onClick={async () => {
               setBusy(true);
+              setFailed(false);
               try {
                 await onConfirm();
                 setOpen(false);
+              } catch {
+                setFailed(true);
               } finally {
                 setBusy(false);
               }

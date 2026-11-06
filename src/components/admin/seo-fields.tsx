@@ -5,6 +5,7 @@ import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { fill } from "@/lib/fill";
 import { cn } from "@/lib/utils";
 
 export const SEO_TITLE_MAX = 60;
@@ -18,7 +19,8 @@ type Props = {
   labels: {
     title: string;
     description: string;
-    count: (count: number, max: number) => string;
+    /** Template with `{count}` and `{max}`. */
+    count: string;
     tooLong: string;
   };
 };
@@ -27,7 +29,7 @@ function Counter({ id, count, max, labels }: { id: string; count: number; max: n
   const over = count > max;
   return (
     <p id={id} className={cn("text-small", over ? "text-warning" : "text-muted-foreground")}>
-      {labels.count(count, max)}
+      {fill(labels.count, { count, max })}
       {over && <> · {labels.tooLong}</>}
     </p>
   );

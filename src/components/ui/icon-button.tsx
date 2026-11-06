@@ -14,9 +14,11 @@ export interface IconButtonProps extends Omit<ButtonProps, "size" | "children" |
 
 /** A square button with only an icon: 44 px by default, 36 px small (DESIGN_SYSTEM.md). */
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ label, icon, size = "default", variant = "ghost", className, ...props }, ref) => (
+  ({ label, icon, size = "default", variant = "ghost", className, type = "button", ...props }, ref) => (
     <Button
       ref={ref}
+      // Never submits a surrounding form by accident (toolbar and list buttons inside editors).
+      type={type}
       variant={variant}
       size="icon"
       aria-label={label}

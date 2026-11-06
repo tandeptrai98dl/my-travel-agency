@@ -55,15 +55,21 @@ export function formatVnd(amount: Dong, locale: "vi" | "en"): string {
   return formatters[locale].format(assertDong(amount));
 }
 
+// Plain digits, or digits correctly grouped in thousands with ".", "," or spaces.
+const DONG_INPUT = /^(?:\d+|\d{1,3}(?:([.,\s])\d{3})(?:\1\d{3})*)$/;
+
 /**
- * Reads an amount typed by staff ("12.900.000", "12,900,000 ₫", "12900000"): every non-digit is
- * ignored. Returns null for an empty or unsafe value. Dong have no decimals, so a separator is
- * never a decimal point.
+ * Reads an amount typed by staff: "12900000", "12.900.000", "12,900,000" or "12 900 000",
+ * optionally with "₫", "đ" or "VND". Anything else (decimals, signs, exponents, mixed or wrong
+ * grouping) returns null instead of a silently different number. Dong have no decimals.
  */
 export function parseDongInput(text: string): Dong | null {
-  const digits = text.replace(/\D/g, "");
-  if (digits === "") return null;
-  const value = Number(digits);
+  const trimmed = text
+    .replace(/₫|đ|vnd/gi, "")
+    .replace(/[\s\u00a0]+/g, " ")
+    .trim();
+  if (trimmed === "" || !DONG_INPUT.test(trimmed)) return null;
+  const value = Number(trimmed.replace(/\D/g, ""));
   return Number.isSafeInteger(value) ? value : null;
 }
 

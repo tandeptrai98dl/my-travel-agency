@@ -45,6 +45,14 @@ describe("parseDongInput / formatDongInput", () => {
     expect(parseDongInput("")).toBeNull();
     expect(parseDongInput("abc")).toBeNull();
     expect(parseDongInput("99999999999999999999")).toBeNull();
+    expect(parseDongInput("12 900 000 VND")).toBe(12_900_000);
+  });
+
+  it("refuses anything that could silently become a different amount", async () => {
+    const { parseDongInput } = await import("./money");
+    for (const text of ["12.900.000,50", "-500.000", "1e6", "12.90.000", "12.900,000", "1.2", "12,9", "+5", "5 000.000"]) {
+      expect(parseDongInput(text), text).toBeNull();
+    }
   });
 
   it("groups digits Vietnamese-style for inputs", async () => {

@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { Suspense } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -10,10 +12,15 @@ async function Gate({ children }: { children: React.ReactNode }) {
   // Every staff role may enter; admin and accountant only at aal2 (ADR-009). Each page and
   // action still checks its own permission.
   const user = await requireAdminAccess(STAFF_ROLES);
+  const messages = await getMessages({ locale: "vi" });
+  const admin = messages.Admin as Record<string, unknown>;
   return (
-    <AdminShell user={user} showDevItems={designSystemEnabled()}>
-      {children}
-    </AdminShell>
+    // Only what client components under /admin read through useTranslations (the error page).
+    <NextIntlClientProvider locale="vi" messages={{ Admin: { Errors: admin.Errors } }}>
+      <AdminShell user={user} showDevItems={designSystemEnabled()}>
+        {children}
+      </AdminShell>
+    </NextIntlClientProvider>
   );
 }
 

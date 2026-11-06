@@ -127,7 +127,15 @@
       "statusGuaranteed": "Chắc chắn khởi hành",
       "eyebrow": "Giai đoạn 1",
       "switchDemo": "Nhắc tôi khi có lịch khởi hành mới",
-      "notification": "Thông báo"
+      "notification": "Thông báo",
+      "adminBlocks": "Khối nhập liệu quản trị",
+      "tourTitle": "Tên tour",
+      "priceLabel": "Giá người lớn (VND)",
+      "highlights": "Điểm nổi bật",
+      "deleteDemo": "Xoá tour mẫu",
+      "deleteTitle": "Xoá tour này?",
+      "deleteBody": "Tour sẽ bị xoá vĩnh viễn. Không thể hoàn tác.",
+      "deleteConfirm": "Xoá"
     },
     "Nav": {
       "label": "Điều hướng quản trị",
@@ -145,7 +153,8 @@
       "account": "Tài khoản",
       "mfaVerified": "Đã xác thực hai lớp",
       "mfaNotVerified": "Chưa xác thực hai lớp",
-      "breadcrumb": "Đường dẫn"
+      "breadcrumb": "Đường dẫn",
+      "close": "Đóng"
     },
     "Table": {
       "empty": "Chưa có dữ liệu.",
@@ -153,14 +162,14 @@
       "clearFilters": "Xoá bộ lọc",
       "search": "Tìm kiếm",
       "apply": "Lọc",
-      "sortBy": "Sắp xếp theo {column}",
       "pagination": "Phân trang",
       "previous": "Trang trước",
       "next": "Trang sau",
       "page": "Trang {page}",
       "total": "{count, plural, other {# mục}}",
-      "error": "Không tải được dữ liệu. Vui lòng thử lại.",
-      "actions": "Thao tác"
+      "actions": "Thao tác",
+      "sortAscending": "bấm để sắp xếp tăng dần",
+      "sortDescending": "bấm để sắp xếp giảm dần"
     },
     "Form": {
       "vi": "Tiếng Việt",
@@ -183,7 +192,10 @@
       "moveDown": "Chuyển dòng {index} xuống",
       "item": "Dòng {index}",
       "cancel": "Huỷ",
-      "confirm": "Xác nhận"
+      "confirm": "Xác nhận",
+      "moved": "Đã chuyển dòng {from} đến vị trí {to}",
+      "removed": "Đã xoá dòng {index}",
+      "actionFailed": "Không thực hiện được. Vui lòng thử lại."
     },
     "Audit": {
       "title": "Nhật ký thay đổi",
@@ -201,10 +213,17 @@
         "update": "Sửa",
         "delete": "Xoá"
       },
-      "changes": "Thay đổi"
+      "changes": "Thay đổi",
+      "invalidEntityId": "Mã đối tượng phải là một UUID (ví dụ 10000000-0000-4000-8000-000000000001); bộ lọc này chưa được áp dụng."
     },
     "roleLabel": "Vai trò",
-    "mfaLabel": "Xác thực hai lớp"
+    "mfaLabel": "Xác thực hai lớp",
+    "Errors": {
+      "title": "Không tải được trang",
+      "body": "Đã có lỗi khi tải dữ liệu. Vui lòng thử lại; nếu lỗi lặp lại, hãy báo cho quản trị viên.",
+      "reference": "Mã lỗi: {digest}.",
+      "retry": "Thử lại"
+    }
   },
   "Navigation": {
     "primary": "Điều hướng chính",

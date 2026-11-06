@@ -127,7 +127,7 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   await expect(menu.getByRole("link", { name: "Nhật ký thay đổi" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("table", { name: "Nhật ký thay đổi" }).getByRole("row").nth(1)).toBeVisible();
   await expectNoSeriousViolations(page, "/admin/audit-log");
-  await page.getByLabel("Đối tượng").selectOption("settings");
+  await page.getByLabel("Đối tượng", { exact: true }).selectOption("settings");
   await page.getByRole("button", { name: "Lọc" }).click();
   await expect(page).toHaveURL(/entity=settings/);
   const rows = page.getByRole("table", { name: "Nhật ký thay đổi" }).getByRole("row");

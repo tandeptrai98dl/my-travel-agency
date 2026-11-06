@@ -10,10 +10,11 @@ type Props = {
   description?: string;
   /** Usually one primary button (DESIGN_SYSTEM.md "one primary action per screen"). */
   actions?: React.ReactNode;
-  breadcrumbs?: Crumb[];
-  breadcrumbLabel?: string;
   className?: string;
-};
+} & (
+  | { breadcrumbs: Crumb[]; /** Name of the breadcrumb navigation landmark. */ breadcrumbLabel: string }
+  | { breadcrumbs?: never; breadcrumbLabel?: never }
+);
 
 /** Title row of every admin page: breadcrumbs, the page's only h1, description and actions. */
 export function PageHeader({ title, description, actions, breadcrumbs, breadcrumbLabel, className }: Props) {

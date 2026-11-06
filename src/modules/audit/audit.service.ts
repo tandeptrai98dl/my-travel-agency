@@ -8,19 +8,31 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { findAuditLogs } from "./audit.repository";
 import { type AuditEntry, type AuditSort, operationOf } from "./audit.schemas";
 
-export type AuditPage = { entries: AuditEntry[]; total: number; pageCount: number };
+export type AuditPage = {
+  entries: AuditEntry[];
+  total: number;
+  pageCount: number;
+  /** The entity-ID search was not a UUID, so it was not applied. */
+  invalidEntityId: boolean;
+};
 
 /** One page of the audit log for an MFA-verified admin (permission `audit.read`). */
 export async function listAuditLogs(params: ListParams<AuditSort>): Promise<AuditPage> {
   await requirePermission("audit.read");
   const entityId = z.uuid().safeParse(params.q).success ? params.q : undefined;
-  const { data, error, count } = await findAuditLogs({
+  const invalidEntityId = params.q !== "" && entityId === undefined;
+  const query = {
     entityType: params.filters.entity,
     entityId,
     sort: params.sort,
     dir: params.dir,
-    range: pageRange(params),
-  });
+  };
+  let { data, error, count } = await findAuditLogs({ ...query, range: pageRange(params) });
+  if (error?.code === "PGRST103") {
+    // A page past the end (old link, fewer rows now): show an empty page with the real total.
+    ({ data, error, count } = await findAuditLogs({ ...query, range: [0, 0] }));
+    data = [];
+  }
   if (error) throw new Error(`audit log query failed: ${error.message}`);
 
   const entries: AuditEntry[] = (data ?? []).map((row) => {
@@ -34,9 +46,8 @@ export async function listAuditLogs(params: ListParams<AuditSort>): Promise<Audi
       entityId: row.entity_id,
       actor: actor ? { id: actor.id, email: actor.email, name: actor.full_name } : null,
       changes: row.changes,
-      ip: row.ip === null ? null : String(row.ip),
     };
   });
   const total = count ?? entries.length;
-  return { entries, total, pageCount: Math.max(1, Math.ceil(total / params.pageSize)) };
+  return { entries, total, pageCount: Math.max(1, Math.ceil(total / params.pageSize)), invalidEntityId };
 }

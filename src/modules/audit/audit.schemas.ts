@@ -39,7 +39,6 @@ export type AuditEntry = {
   entityId: string;
   actor: { id: string; email: string; name: string | null } | null;
   changes: unknown;
-  ip: string | null;
 };
 
 /** "tours.update" → "update" (null for actions written by other code paths later). */

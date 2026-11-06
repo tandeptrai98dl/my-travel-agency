@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PageHeader } from "@/components/admin/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { currentQuery, listHref, parseListParams } from "@/lib/admin/list-params";
@@ -58,7 +59,7 @@ async function AuditLogList({ searchParams }: Props) {
     filters: { entity: AUDITED_ENTITIES },
   });
   const query = currentQuery(params, DEFAULTS);
-  const { entries, total, pageCount } = await listAuditLogs(params);
+  const { entries, total, pageCount, invalidEntityId } = await listAuditLogs(params);
 
   const columns: DataTableColumn<AuditEntry>[] = [
     {
@@ -127,7 +128,7 @@ async function AuditLogList({ searchParams }: Props) {
     },
   ];
 
-  const filtered = Boolean(params.q || params.filters.entity);
+  const filtered = Boolean((params.q && !invalidEntityId) || params.filters.entity);
 
   return (
     <div className="flex flex-col gap-6">
@@ -145,8 +146,13 @@ async function AuditLogList({ searchParams }: Props) {
         ]}
         hidden={{ sort: query.sort, dir: query.dir }}
         labels={{ apply: t("Table.apply"), clear: t("Table.clearFilters") }}
-        active={filtered}
+        active={filtered || invalidEntityId}
       />
+      {invalidEntityId && (
+        <Alert variant="warning" live="polite">
+          <AlertDescription>{t("Audit.invalidEntityId")}</AlertDescription>
+        </Alert>
+      )}
       <DataTable
         rows={entries}
         columns={columns}
@@ -158,7 +164,8 @@ async function AuditLogList({ searchParams }: Props) {
         labels={{
           caption: t("Audit.title"),
           empty: filtered ? t("Table.emptyFiltered") : t("Table.empty"),
-          sortBy: (column) => t("Table.sortBy", { column }),
+          sortAscending: t("Table.sortAscending"),
+          sortDescending: t("Table.sortDescending"),
           pagination: {
             nav: t("Table.pagination"),
             previous: t("Table.previous"),

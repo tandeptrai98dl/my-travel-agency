@@ -8,6 +8,7 @@ import {
   InteractiveShowcase,
   type ShowcaseLabels,
 } from "@/components/admin/design-system/interactive-showcase";
+import { AdminBlocksDemo, type AdminBlocksLabels } from "@/components/admin/design-system/admin-blocks-demo";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { Eyebrow } from "@/components/typography/eyebrow";
@@ -185,6 +186,8 @@ export default async function DesignSystemPage() {
 
         <InteractiveShowcase labels={labels} />
 
+        <AdminBlocksDemo labels={await adminBlocksLabels()} />
+
         <section aria-labelledby="ds-feedback" className="flex flex-col gap-6">
           <h2 id="ds-feedback" className="font-serif text-h2 font-medium">
             {t("feedback")}
@@ -258,3 +261,41 @@ export default async function DesignSystemPage() {
   );
 }
 
+async function adminBlocksLabels(): Promise<AdminBlocksLabels> {
+  const t = await getTranslations({ locale: "vi", namespace: "Admin" });
+  const raw = (key: string) => t.raw(key) as string;
+  return {
+    heading: t("DesignSystem.adminBlocks"),
+    title: t("DesignSystem.tourTitle"),
+    price: t("DesignSystem.priceLabel"),
+    amountHint: t("Form.amountHint"),
+    locale: {
+      vi: t("Form.vi"),
+      en: t("Form.en"),
+      published: t("Form.published"),
+      unpublished: t("Form.unpublished"),
+      missing: t("Form.missing"),
+    },
+    slug: { label: t("Form.slug"), hint: t("Form.slugHint"), generate: t("Form.generateSlug"), invalid: t("Form.slugInvalid") },
+    seo: { title: t("Form.seoTitle"), description: t("Form.seoDescription"), count: raw("Form.charCount"), tooLong: t("Form.tooLong") },
+    list: {
+      label: t("DesignSystem.highlights"),
+      add: t("Form.addItem"),
+      item: raw("Form.item"),
+      remove: raw("Form.removeItem"),
+      moveUp: raw("Form.moveUp"),
+      moveDown: raw("Form.moveDown"),
+      moved: raw("Form.moved"),
+      removed: raw("Form.removed"),
+    },
+    confirm: {
+      trigger: t("DesignSystem.deleteDemo"),
+      title: t("DesignSystem.deleteTitle"),
+      description: t("DesignSystem.deleteBody"),
+      confirm: t("DesignSystem.deleteConfirm"),
+      cancel: t("Form.cancel"),
+      close: t("Shell.close"),
+      error: t("Form.actionFailed"),
+    },
+  };
+}

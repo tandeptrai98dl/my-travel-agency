@@ -37,7 +37,7 @@ export function SlugInput({ value, onChange, source, prefix, error, labels }: Pr
             spellCheck={false}
             autoCapitalize="off"
             aria-invalid={Boolean(message)}
-            aria-describedby={`${id}-hint${message ? ` ${id}-error` : ""}`}
+            aria-describedby={`${id}-hint ${id}-error`}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
@@ -49,11 +49,9 @@ export function SlugInput({ value, onChange, source, prefix, error, labels }: Pr
       <p id={`${id}-hint`} className="text-small text-muted-foreground">
         {labels.hint}
       </p>
-      {message && (
-        <p id={`${id}-error`} className="text-small font-medium text-destructive">
-          {message}
-        </p>
-      )}
+      <p id={`${id}-error`} aria-live="polite" className="text-small font-medium text-destructive empty:-mt-2">
+        {message}
+      </p>
     </div>
   );
 }

@@ -117,6 +117,40 @@ test.describe("design system page", () => {
     await expect(errorToast).toBeHidden();
   });
 
+  test("admin form blocks: slug, money, list editor, confirm", async ({ page }) => {
+    await signInAs(page, "editor");
+    await page.goto("/admin/design-system");
+    const blocks = page.getByRole("region", { name: "Khối nhập liệu quản trị" });
+
+    // Slug from the Vietnamese title, diacritics removed.
+    await blocks.getByRole("button", { name: "Tạo từ tiêu đề" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Đường dẫn (slug)" })).toHaveValue("vinh-ha-long-tren-du-thuyen-rieng");
+
+    // Money: grouped input is read exactly; a decimal amount is refused (empty value).
+    const price = blocks.getByRole("textbox", { name: "Giá người lớn (VND)" });
+    await price.fill("12.900.000");
+    await price.blur();
+    await expect(price).toHaveValue("12.900.000");
+
+    // List editor: moving a line keeps focus on it and announces the move.
+    await blocks.getByRole("button", { name: "Chuyển dòng 2 xuống" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Dòng 3" })).toHaveValue("Bữa tối hải sản riêng");
+    await expect(blocks.getByRole("button", { name: "Chuyển dòng 3 lên" })).toBeFocused();
+    await expect(blocks.getByText("Đã chuyển dòng 2 đến vị trí 3")).toBeAttached();
+    // Removing a line moves focus to its neighbour.
+    await blocks.getByRole("button", { name: "Xoá dòng 1" }).click();
+    await expect(blocks.getByRole("textbox", { name: "Dòng 1" })).toBeFocused();
+
+    // Confirm dialog for destructive actions.
+    await blocks.getByRole("button", { name: "Xoá tour mẫu" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "Xoá tour này?" });
+    await expect(dialog).toBeVisible();
+    await expectNoSeriousViolations(page, "confirm dialog", "[role=alertdialog]");
+    await dialog.getByRole("button", { name: "Huỷ" }).click();
+    await expect(dialog).toBeHidden();
+    await expectNoSeriousViolations(page, "admin form blocks");
+  });
+
   test("customers cannot open it", async ({ page }) => {
     await signInAs(page, "customer");
     await page.goto("/admin/design-system");
