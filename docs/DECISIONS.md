@@ -272,6 +272,29 @@ Template:
   - Minimum travellers to operate stays a tour column (`tours.min_pax_to_operate`, edited with the tour's permission); the departure editor shows it.
 - **Consequences:** To retire a published group tour's last departure, publish another one or unpublish the tour first. Phase 4's `cancel_booking()` and a future departure-cancellation function run as the service role and must keep the last-departure rule in mind.
 
+## ADR-027: Content Security Policy per page type without nonces on prerendered routes
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** `ARCHITECTURE.md` "Security" asked for a nonce-free CSP on cached public pages and a nonce-based CSP on checkout, account and admin. With `cacheComponents` (ADR-015) those routes are partially prerendered (the build marks `/admin/*` as ◐), and the Next.js 16 CSP guide states that Partial Prerendering is incompatible with nonces: the prerendered shell's scripts are produced at build time and cannot carry a per-request nonce.
+- **Decision:**
+  - Cached public pages: a static, nonce-free policy from `next.config.ts` headers (`script-src 'self' 'unsafe-inline'`, strict `object-src`, `base-uri`, `form-action`, `frame-ancestors 'none'`, host allow-lists from validated env; `upgrade-insecure-requests` only when the Supabase URL is `https:`), as in `docs/specs/phase-3-public-site.md` decision 13.
+  - Admin, account and checkout, in this order:
+    1. **Hash-based** (recommended): `experimental.sri` adds `integrity` hashes to scripts at build time, and the policy allows `'self'` plus the hashes of the shell's inline scripts instead of `'unsafe-inline'`.
+    2. **Fully dynamic rendering** if hashes cannot cover the shell: the root layouts of these routes await `connection()` before rendering markup, so nothing is prerendered and the proxy's nonce applies, provided Next.js 16 accepts that under `cacheComponents`.
+    3. **The public-page policy everywhere** if neither works, recorded as an edit to `ARCHITECTURE.md` "Security".
+  - A spike in Phase 3 PR H proves the choice on a production build (Turbopack and webpack) before PR M enforces it; E2E fails on any `securitypolicyviolation`.
+- **Spike result (PR H, local webpack production build, 2026-11-07):** option 1 fails: with `experimental.sri` and `script-src 'self'`, Next.js's inline bootstrap and streamed data scripts are blocked (7–17 violations per page) and only 4–5 of 11–32 scripts get an `integrity` attribute (lazily loaded chunks have none); the streamed scripts of dynamic holes carry request data, so they cannot be hashed at build time. Option 2 works: `export const instant = false` plus `await connection()` in `src/app/admin/layout.tsx` builds under `cacheComponents` (admin routes become dynamic), every script carries the proxy's nonce with `'strict-dynamic'`, and `/admin`, `/admin/mfa` and the tour preview load with no violation. PR M ships option 2 for admin (account and checkout follow in Phases 4–5) and re-checks it on the Turbopack build in CI, which cannot run locally (Google Fonts are blocked here).
+- **Consequences:** Admin pages lose their prerendered shells (option 2): every admin request renders fully on the server, which they mostly did already, being session-dependent. `experimental.sri` is an experimental Next.js feature and may change. Supersedes the "nonce-based CSP on checkout, account and admin" sentence of `ARCHITECTURE.md` "Security".
+
+## ADR-028: Open Graph images from photos and file-convention routes
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** `ARCHITECTURE.md` listed a dynamic `/api/og` route. A route that draws images from query parameters can be abused (free text in shared images, unbounded rendering) and is not cached with the page it belongs to.
+- **Decision:** Pages with a photo use it as their Open Graph image (the translation's `og_media_id`, else the hero), as a 1200×630 cover rendition when Supabase image transformations are on. Pages without one use `src/app/[locale]/opengraph-image.tsx` (`next/og`): the brand name from settings on navy with a gold rule, generated statically per locale. Its two fonts are committed as OFL subsets with their licence file. There is no `/api/og` route.
+- **Consequences:** No route renders images from user input. Changing the brand name refreshes the generated image with the `settings` tag. Tours without a photo fall back to the generated image.
+
 ## ADR-030: Journal and page rules; images inside JSON
 
 - **Date:** 2026-11-07
