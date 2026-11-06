@@ -23,10 +23,12 @@ env:
   SUPABASE_SECRET_KEY: sb_secret_ci_sentinel_value_never_in_client
   CRON_SECRET: ci_cron_sentinel_never_in_client
 
+# Runners are pinned to Ubuntu 24.04: `ubuntu-latest` moved to 26.04, where Playwright's
+# system-dependency list does not install yet. Revisit when Playwright supports 26.04.
 jobs:
   checks:
     name: Lint, typecheck, unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +43,7 @@ jobs:
 
   database:
     name: Database (migrations, pgTAP, lint, types)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +97,7 @@ jobs:
 
   build-e2e:
     name: Build and E2E
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
