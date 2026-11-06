@@ -37,6 +37,8 @@ export const itineraryDaySchema = z.object({
   description: text(2000),
   meals: z.array(z.enum(MEALS)).max(3),
   accommodation: optionalText(160),
+  /** One photo for the day on the public page (Phase 3 spec decision 17); stored in `media_ids`. */
+  mediaId: z.uuid().nullish().transform((value) => value ?? null),
 });
 
 export const faqSchema = z.object({

@@ -135,9 +135,13 @@
         "lastTranslation": "Không bỏ xuất bản được ngôn ngữ cuối cùng của một tour đang xuất bản. Hãy chuyển tour về nháp trước.",
         "adminOnly": "Chỉ quản trị viên sửa giá và điều khoản.",
         "fixFields": "Vui lòng sửa các trường được đánh dấu.",
-        "keepLanguage": "Không xoá được cả một ngôn ngữ bằng cách xoá tên tour. Hãy giữ tên, hoặc bỏ xuất bản ngôn ngữ này."
+        "keepLanguage": "Không xoá được cả một ngôn ngữ bằng cách xoá tên tour. Hãy giữ tên, hoặc bỏ xuất bản ngôn ngữ này.",
+        "dayImageAlt": "Ảnh của ngày cần mô tả tiếng Việt và tiếng Anh trước khi đăng ngôn ngữ này."
       },
-      "publishLanguage": "Xuất bản bản {language}"
+      "publishLanguage": "Xuất bản bản {language}",
+      "dayImage": "Ảnh của ngày",
+      "preview": "Xem trước VI",
+      "previewEn": "Xem trước EN"
     }
   }
 }

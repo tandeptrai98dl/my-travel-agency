@@ -88,3 +88,26 @@ export function monthWeeks(month: IsoMonth): (IsoDate | null)[][] {
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
   return weeks;
 }
+
+const dateFormatters = {
+  vi: new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }),
+  en: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }),
+};
+
+/** A calendar date for customers: "21/11/2026" (vi) or "21 Nov 2026" (en). */
+export function formatDate(date: IsoDate, locale: "vi" | "en"): string {
+  return dateFormatters[locale].format(new Date(toUtc(date)));
+}
+
+/** "21/11 – 23/11/2026" (vi) or "21 – 23 Nov 2026" (en); the year once when both share it. */
+export function formatDateRange(from: IsoDate, to: IsoDate, locale: "vi" | "en"): string {
+  if (from === to) return formatDate(from, locale);
+  const sameYear = from.slice(0, 4) === to.slice(0, 4);
+  if (!sameYear) return `${formatDate(from, locale)} – ${formatDate(to, locale)}`;
+  if (locale === "vi") {
+    return `${from.slice(8, 10)}/${from.slice(5, 7)} – ${formatDate(to, locale)}`;
+  }
+  const sameMonth = from.slice(0, 7) === to.slice(0, 7);
+  const short = new Intl.DateTimeFormat("en-GB", sameMonth ? { day: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+  return `${short.format(new Date(toUtc(from)))} – ${formatDate(to, locale)}`;
+}

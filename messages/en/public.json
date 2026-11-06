@@ -12,7 +12,8 @@
   "LanguageSwitcher": {
     "label": "Language",
     "vi": "Tiếng Việt",
-    "en": "English"
+    "en": "English",
+    "unavailable": "This page is not available in that language yet; the link opens the section page."
   },
   "NotFound": {
     "title": "Page not found",

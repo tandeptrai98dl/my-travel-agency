@@ -21,8 +21,8 @@ import {
 } from "./tours.schemas";
 
 /** Cache tags for public tour reads: every list (`tours`) and one tour's pages (`tour:<id>`). */
-export const TOURS_TAG = "tours";
-export const tourTag = (id: string) => `tour:${id}`;
+import { TOURS_TAG, tourTag } from "../cache-tags";
+export { TOURS_TAG, tourTag };
 
 function refresh(id: string) {
   updateTag(TOURS_TAG);
@@ -37,6 +37,7 @@ export type TourSaveError =
   | "codeInvalid"
   | "publishNeedsTranslation"
   | "publishNeedsHero"
+  | "dayImageAlt"
   | "publishNeedsPrice"
   | "publishNeedsDeparture"
   | "requiredToPublish"
@@ -195,6 +196,7 @@ function readItinerary(value: unknown): TourInput["translations"]["vi"]["itinera
         ["breakfast", "lunch", "dinner"].includes(meal),
       ),
       accommodation: typeof day.accommodation === "string" ? day.accommodation : "",
+      mediaId: stringList(day.media_ids)[0] ?? null,
     }));
 }
 
@@ -284,6 +286,7 @@ export async function getTourEditor(id: string): Promise<TourEditorData | null> 
       data.hero_media_id ?? "",
       vi.ogMediaId ?? "",
       en.ogMediaId ?? "",
+      ...[...vi.itinerary, ...en.itinerary].map((day) => day.mediaId ?? ""),
     ]),
     canEditPrices: user.role === "admin",
     activeDepartures: departures.count,
@@ -386,6 +389,22 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     const alt = readAlt(hero?.[0]?.alt);
     if (!alt.vi.trim() || !alt.en.trim()) return { ok: false, error: "publishNeedsHero", field: "heroMediaId" };
   }
+  // Day photos of a published language need both alt texts, like every published image.
+  for (const locale of TOUR_LOCALES) {
+    const translation = values.translations[locale];
+    if (!translation.isPublished) continue;
+    const dayIds = translation.itinerary.flatMap((day) => (day.mediaId ? [day.mediaId] : []));
+    if (dayIds.length === 0) continue;
+    const { data: rows } = await repo.findMediaRows(dayIds);
+    const complete = new Set(
+      (rows ?? []).filter((row) => {
+        const alt = readAlt(row.alt);
+        return alt.vi.trim() && alt.en.trim();
+      }).map((row) => row.id),
+    );
+    const index = translation.itinerary.findIndex((day) => day.mediaId && !complete.has(day.mediaId));
+    if (index >= 0) return { ok: false, error: "dayImageAlt", field: `translations.${locale}.itinerary.${index}.mediaId` };
+  }
   // Removing a whole language is not done by clearing its title (it would silently drop the
   // itinerary, FAQs and SEO of that language).
   for (const locale of TOUR_LOCALES) {
@@ -455,7 +474,7 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
         description: day.description,
         meals: day.meals,
         accommodation: day.accommodation,
-        media_ids: [],
+        media_ids: day.mediaId ? [day.mediaId] : [],
       })),
       inclusions: t.inclusions,
       exclusions: t.exclusions,

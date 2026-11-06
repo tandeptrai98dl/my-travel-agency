@@ -142,6 +142,9 @@ jobs:
             echo "A server-only environment value was found in client bundles." >&2
             exit 1
           fi
+      # Initial JS on public pages (Phase 3 spec decision 16): a warning until PR M enforces it.
+      - name: Check the initial JavaScript budget
+        run: node scripts/check-js-budget.mjs
       # Cache the downloaded browser per Playwright version and runner image,
       # so most runs skip the download and only install system libraries.
       - name: Get Playwright version and runner image

@@ -12,7 +12,8 @@
   "LanguageSwitcher": {
     "label": "Ngôn ngữ",
     "vi": "Tiếng Việt",
-    "en": "English"
+    "en": "English",
+    "unavailable": "Trang này chưa có ở ngôn ngữ đó; liên kết mở trang mục tương ứng."
   },
   "NotFound": {
     "title": "Không tìm thấy trang",

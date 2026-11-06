@@ -42,6 +42,9 @@ export const publicEnvSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.url().optional(),
   ),
+  // Serve public images through Supabase Storage image transformations (Pro plan; Phase 3 spec
+  // decision 1). Off locally and in CI, where the original object is served as is.
+  NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: booleanFlag,
 });
 
 export const serverEnvSchema = z.object({

@@ -1,1 +1,131 @@
-{}
+{
+  "TourCard": {
+    "privateTour": "Private tour",
+    "fewSeats": "Few seats left",
+    "duration": "{days, plural, one {# day} other {# days}}{nights, plural, =0 {} one {, # night} other {, # nights}}",
+    "departs": "Departs {date}",
+    "moreDates": "+{count, plural, one {# more date} other {# more dates}}",
+    "flexible": "Flexible departure",
+    "contactForDates": "Contact us for dates",
+    "from": "From",
+    "perGuest": "per guest",
+    "priceOnRequest": "Price on request"
+  },
+  "TourDetail": {
+    "breadcrumbLabel": "Breadcrumb",
+    "home": "Home",
+    "tours": "Tours",
+    "gallery": {
+      "viewAll": "View {count} photos",
+      "title": "Photos of the journey",
+      "close": "Close",
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "counter": "Photo {index} of {count}"
+    },
+    "facts": {
+      "label": "Key facts",
+      "duration": "Duration",
+      "groupSize": "Group size",
+      "groupMax": "Up to {count} guests",
+      "privateMin": "Private group from {count} guests",
+      "style": "Travel style",
+      "code": "Tour code",
+      "type": "Format",
+      "typeGroup": "Small group, fixed dates",
+      "typePrivate": "Private tour, your dates"
+    },
+    "highlights": "Highlights",
+    "itinerary": {
+      "title": "Itinerary",
+      "day": "Day",
+      "meals": "Meals: {meals}",
+      "overnight": "Overnight: {place}",
+      "breakfast": "breakfast",
+      "lunch": "lunch",
+      "dinner": "dinner"
+    },
+    "inclusions": "Included",
+    "exclusions": "Not included",
+    "practicalInfo": "Practical information",
+    "departures": {
+      "title": "Departures",
+      "live": "Prices and seats update live",
+      "dates": "Dates",
+      "status": "Status",
+      "seats": "Seats",
+      "price": "Price per adult",
+      "seatsLeft": "{count, plural, one {# seat left} other {# seats left}}",
+      "none": "—",
+      "open": "Available",
+      "few": "Few seats left",
+      "guaranteed": "Guaranteed",
+      "closed": "Closed",
+      "soldOut": "Sold out",
+      "cutoff": "Booking closed",
+      "empty": "No upcoming departures yet. Call or email us and we will suggest dates.",
+      "error": "The departures could not be loaded.",
+      "retry": "Try again",
+      "loading": "Loading departures",
+      "child": "Children up to {age}: {price}",
+      "infant": "Infants under {age}: {price}, no seat",
+      "single": "Single room supplement: {price}",
+      "minPax": "Departs with {count} or more guests.",
+      "fromNext": "Based on the next departure."
+    },
+    "tiers": {
+      "title": "Indicative prices by group size",
+      "range": "{min}–{max} guests",
+      "perAdult": "per adult",
+      "note": "The final price is confirmed in a quote for your dates and services."
+    },
+    "policy": {
+      "title": "Deposit and cancellation",
+      "payment": "Payment",
+      "paymentText": "A {deposit}% deposit when you book. The balance is due {days} days before departure, by VNPay or bank transfer.",
+      "cancellation": "Cancellation",
+      "rule": "{days} or more days before departure: {percent}% refund.",
+      "ruleLast": "Under {days} days: {percent}% refund."
+    },
+    "faq": "Frequently asked questions",
+    "booking": {
+      "label": "Book this tour",
+      "from": "From",
+      "perGuest": "per guest",
+      "priceNote": "Lowest adult price among open departures.",
+      "privateNote": "Indicative price per adult, by group size.",
+      "priceOnRequest": "Price on request",
+      "next": "Next departure: {date}",
+      "noDate": "No upcoming departure yet",
+      "seeDepartures": "See departures",
+      "call": "Call {phone} to book",
+      "callPrivate": "Call {phone} to plan it",
+      "email": "Email us",
+      "emailSubject": "Booking tour {code}",
+      "note": "{deposit}% deposit. Online payment arrives on this page soon.",
+      "unavailable": "The departures could not be loaded."
+    },
+    "related": {
+      "eyebrow": "You may also like",
+      "title": "Journeys close to this one"
+    },
+    "error": {
+      "title": "This page could not be loaded",
+      "text": "Something went wrong while reading this journey. Please try again in a few minutes.",
+      "retry": "Try again",
+      "back": "See all journeys"
+    },
+    "reviews": {
+      "title": "What guests say",
+      "summary": "{average} / 5 · {count, plural, one {# review} other {# reviews}}",
+      "rating": "{rating} out of 5 stars",
+      "verified": "Verified trip"
+    }
+  },
+  "TourList": {
+    "eyebrow": "Tours",
+    "title": "All journeys",
+    "intro": "Small-group journeys on fixed dates and private journeys on the dates you choose.",
+    "empty": "No journeys are published yet. Please check back soon."
+  }
+}

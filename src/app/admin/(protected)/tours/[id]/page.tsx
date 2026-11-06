@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
@@ -8,6 +9,7 @@ import { AdminMessages } from "@/components/admin/admin-messages";
 import { PageHeader } from "@/components/admin/page-header";
 import { DuplicateTourButton } from "@/components/admin/tours/duplicate-tour-button";
 import { TourEditor } from "@/components/admin/tours/tour-editor";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getPathname } from "@/i18n/navigation";
@@ -57,7 +59,18 @@ async function Editor({ params }: Props) {
         description={values.code}
         breadcrumbs={[{ label: t("Tours.title"), href: "/admin/tours" }, { label: title }]}
         breadcrumbLabel={t("Shell.breadcrumb")}
-        actions={<StatusBadge kind="publish" status={values.status} label={t(`Tours.statuses.${values.status}`)} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge kind="publish" status={values.status} label={t(`Tours.statuses.${values.status}`)} />
+            {/* Staff preview of the public page, drafts included (Phase 3 spec decision 17). */}
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/tours/${id}/preview?locale=vi`}>{t("Tours.preview")}</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/tours/${id}/preview?locale=en`}>{t("Tours.previewEn")}</Link>
+            </Button>
+          </div>
+        }
       />
       <AdminMessages namespaces={["Tours", "Taxonomy", "Form", "Shell"]}>
         <TourEditor
