@@ -86,25 +86,44 @@ describe("publicEnvSchema", () => {
 describe("serverEnvSchema", () => {
   it("treats empty strings as unset and defaults flags to false", () => {
     const env = parseEnv("server", serverEnvSchema, {
-      SUPABASE_SECRET_KEY: "",
+      SUPABASE_SECRET_KEY: "sb_secret_example",
       GOOGLE_OAUTH_ENABLED: "",
       RESEND_API_KEY: undefined,
       EMAIL_FROM: undefined,
       SENTRY_DSN: "",
       CRON_SECRET: undefined,
     });
-    expect(env.SUPABASE_SECRET_KEY).toBeUndefined();
+    expect(env.RESEND_API_KEY).toBeUndefined();
+    expect(env.SENTRY_DSN).toBeUndefined();
     expect(env.GOOGLE_OAUTH_ENABLED).toBe(false);
   });
 
+  it("requires the secret key", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "" })).toThrow(
+      /SUPABASE_SECRET_KEY/,
+    );
+  });
+
+  it("rejects a publishable key used as the secret key", () => {
+    expect(() =>
+      parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_publishable_example" }),
+    ).toThrow(/SUPABASE_SECRET_KEY/);
+  });
+
   it("parses the Google flag", () => {
-    const env = parseEnv("server", serverEnvSchema, { GOOGLE_OAUTH_ENABLED: "true" });
+    const env = parseEnv("server", serverEnvSchema, {
+      SUPABASE_SECRET_KEY: "sb_secret_example",
+      GOOGLE_OAUTH_ENABLED: "true",
+    });
     expect(env.GOOGLE_OAUTH_ENABLED).toBe(true);
   });
 
   it("rejects a short cron secret", () => {
     expect(() =>
-      parseEnv("server", serverEnvSchema, { CRON_SECRET: "short" }),
+      parseEnv("server", serverEnvSchema, {
+        SUPABASE_SECRET_KEY: "sb_secret_example",
+        CRON_SECRET: "short",
+      }),
     ).toThrow(/CRON_SECRET/);
   });
 });
