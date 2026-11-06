@@ -833,11 +833,11 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "booking_cutoff_days":
-{ Args: Record<PropertyKey, never>; Returns: number
-                           },
-"assign_unmatched_transfer":
+            "assign_unmatched_transfer":
 { Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
+                           },
+"booking_cutoff_days":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "booking_prices_current":
 { Args: { "target_id": string }; Returns: boolean
