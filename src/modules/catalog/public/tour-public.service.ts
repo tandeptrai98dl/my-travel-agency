@@ -11,6 +11,7 @@ import type { DestinationNode } from "@/modules/catalog/destinations";
 import {
   CANCELLATION_POLICIES_TAG,
   DESTINATIONS_TAG,
+  REVIEWS_TAG,
   TOURS_TAG,
   TRAVEL_STYLES_TAG,
   tourTag,
@@ -334,3 +335,67 @@ export async function getPublishedTourSlugs(locale: Locale): Promise<string[]> {
     return [];
   }
 }
+
+export type TourReview = {
+  id: string;
+  authorName: string;
+  authorCountry: string | null;
+  rating: number;
+  title: string | null;
+  content: string;
+  locale: Locale;
+  travelDate: IsoDate | null;
+  verified: boolean;
+};
+
+export type TourReviews = { count: number; average: number | null; latest: TourReview[] };
+
+/** Approved reviews of a tour: count, average and the three newest (decision 21; cached). */
+export async function getTourReviews(tourId: string): Promise<TourReviews> {
+  "use cache";
+  cacheTag(REVIEWS_TAG, tourTag(tourId));
+  cacheLife("hours");
+  try {
+    const { data, error } = await repo.findTourReviews(tourId);
+    if (error) fail("reviews", error);
+    const rows = data ?? [];
+    const average = rows.length ? Math.round((rows.reduce((sum, row) => sum + row.rating, 0) / rows.length) * 10) / 10 : null;
+    return {
+      count: rows.length,
+      average,
+      latest: rows.slice(0, 3).map((row) => ({
+        id: row.id,
+        authorName: row.author_name,
+        authorCountry: row.author_country,
+        rating: row.rating,
+        title: row.title,
+        content: row.content,
+        locale: row.locale,
+        travelDate: row.travel_date,
+        verified: row.is_verified,
+      })),
+    };
+  } catch (error) {
+    // Reviews are optional on the page: an outage hides them instead of failing the tour.
+    console.error("getTourReviews failed", error instanceof Error ? error.message : error);
+    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
+    return { count: 0, average: null, latest: [] };
+  }
+}
+
+/** Every published tour as cards, recommended order (interim listing until PR L; cached, no seats). */
+export async function getAllTourCards(locale: Locale): Promise<TourCardItem[]> {
+  "use cache";
+  cacheTag(TOURS_TAG, DESTINATIONS_TAG);
+  cacheLife("hours");
+  try {
+    const { data, error } = await repo.searchTours({ locale, limit: 48 });
+    if (error) fail("tour list", error);
+    return await cardsFor(locale, data ?? []);
+  } catch (error) {
+    console.error("getAllTourCards failed", error instanceof Error ? error.message : error);
+    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
+    return [];
+  }
+}
+

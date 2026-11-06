@@ -114,6 +114,18 @@
       "text": "Có lỗi khi đọc thông tin hành trình. Hãy thử lại sau ít phút.",
       "retry": "Thử lại",
       "back": "Xem tất cả hành trình"
+    },
+    "reviews": {
+      "title": "Khách hàng kể lại",
+      "summary": "{average} / 5 · {count} đánh giá",
+      "rating": "{rating} trên 5 sao",
+      "verified": "Đã đi tour"
     }
+  },
+  "TourList": {
+    "eyebrow": "Tour",
+    "title": "Tất cả hành trình",
+    "intro": "Hành trình theo đoàn với lịch khởi hành cố định và hành trình riêng theo ngày bạn chọn.",
+    "empty": "Chưa có hành trình nào được đăng. Hãy quay lại sau."
   }
 }

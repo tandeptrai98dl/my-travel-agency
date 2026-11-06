@@ -10,3 +10,4 @@ export const TRAVEL_STYLES_TAG = "travel-styles";
 /** Tours embed cancellation-policy summaries. */
 export const CANCELLATION_POLICIES_TAG = "cancellation-policies";
 export const SETTINGS_TAG = "settings";
+export const REVIEWS_TAG = "reviews";

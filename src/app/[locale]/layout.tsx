@@ -53,7 +53,9 @@ export default async function LocaleLayout({ children, params }: Props) {
     LanguageSwitcher: messages.LanguageSwitcher,
     Navigation: messages.Navigation,
     Consent: messages.Consent,
-  };
+    // The tour page's error boundary is a client component (Phase 3 spec decision 12).
+    TourDetail: { error: (messages.TourDetail as Record<string, unknown> | undefined)?.error },
+  } as typeof messages;
 
   // Shell data from Supabase (cached; CLAUDE.md rule 8: no business data in code).
   const [settings, destinations, t] = await Promise.all([

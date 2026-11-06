@@ -114,6 +114,18 @@
       "text": "Something went wrong while reading this journey. Please try again in a few minutes.",
       "retry": "Try again",
       "back": "See all journeys"
+    },
+    "reviews": {
+      "title": "What guests say",
+      "summary": "{average} / 5 · {count, plural, one {# review} other {# reviews}}",
+      "rating": "{rating} out of 5 stars",
+      "verified": "Verified trip"
     }
+  },
+  "TourList": {
+    "eyebrow": "Tours",
+    "title": "All journeys",
+    "intro": "Small-group journeys on fixed dates and private journeys on the dates you choose.",
+    "empty": "No journeys are published yet. Please check back soon."
   }
 }

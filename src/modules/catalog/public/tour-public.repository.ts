@@ -100,6 +100,16 @@ export async function searchTours(args: SearchToursArgs) {
   });
 }
 
+/** Approved reviews of a tour (RLS: anon reads approved rows only); never `booking_id`. */
+export async function findTourReviews(tourId: string) {
+  return createPublicClient()
+    .from("reviews")
+    .select("id, author_name, author_country, rating, title, content, locale, travel_date, is_verified, created_at")
+    .eq("tour_id", tourId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+}
+
 export async function findDepartures(tourId: string) {
   return createPublicClient().rpc("tour_departures", { p_tour_id: tourId });
 }
