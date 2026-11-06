@@ -24,10 +24,9 @@ import {
   type TravelStyleValues,
 } from "./taxonomy.schemas";
 
-/** Cache tag for public travel-style reads (Phase 3 pages read it). */
-export const TRAVEL_STYLES_TAG = "travel-styles";
-/** Tours embed cancellation-policy summaries. */
-export const CANCELLATION_POLICIES_TAG = "cancellation-policies";
+/** Cache tags for public travel-style and policy reads (Phase 3 pages read them). */
+import { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG } from "../cache-tags";
+export { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG };
 
 export type SaveError =
   | "key_locked"

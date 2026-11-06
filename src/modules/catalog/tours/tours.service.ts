@@ -21,8 +21,8 @@ import {
 } from "./tours.schemas";
 
 /** Cache tags for public tour reads: every list (`tours`) and one tour's pages (`tour:<id>`). */
-export const TOURS_TAG = "tours";
-export const tourTag = (id: string) => `tour:${id}`;
+import { TOURS_TAG, tourTag } from "../cache-tags";
+export { TOURS_TAG, tourTag };
 
 function refresh(id: string) {
   updateTag(TOURS_TAG);
