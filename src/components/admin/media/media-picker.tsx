@@ -52,7 +52,6 @@ type Props = {
  */
 export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Props) {
   const searchId = useId();
-  const baseId = useId();
   /** Only the latest request may change the grid (a slow first page must not replace a search). */
   const requestRef = useRef(0);
   const [open, setOpen] = useState(false);
@@ -145,14 +144,11 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
               {items.map((item) => {
                 const isSelected = selected.has(item.id);
                 const name = item.alt.vi || item.alt.en || item.originalName || item.path;
-                const altNoteId = `${baseId}-alt-${item.id}`;
                 return (
                   <li key={item.id}>
                     <button
                       type="button"
                       aria-pressed={isSelected}
-                      aria-label={name}
-                      aria-describedby={item.altComplete ? undefined : altNoteId}
                       onClick={() => toggle(item)}
                       className={cn(
                         "relative block aspect-square w-full overflow-hidden bg-secondary bg-cover outline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -162,6 +158,8 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element -- admin thumbnail */}
                       <img src={item.url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      {/* Named by its content (WCAG 2.5.3): the image name, then any badge. */}
+                      <span className="sr-only">{name}</span>
                       {isSelected && (
                         <span className="absolute right-1 top-1 rounded-sm bg-primary p-1 text-primary-foreground">
                           <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -169,7 +167,6 @@ export function MediaPicker({ trigger, labels, multiple = false, onSelect }: Pro
                       )}
                       {!item.altComplete && (
                         <span
-                          id={altNoteId}
                           className="absolute inset-x-0 bottom-0 bg-warning px-1 text-[0.6875rem] font-semibold text-warning-foreground"
                         >
                           {labels.altMissing}

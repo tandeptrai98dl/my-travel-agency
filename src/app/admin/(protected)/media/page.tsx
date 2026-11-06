@@ -138,7 +138,7 @@ function MediaCard({ item, t }: { item: MediaItem; t: T }) {
       trigger={
         <button
           type="button"
-          aria-label={`${t("Media.edit")}: ${name}`}
+          // Named by its content (WCAG 2.5.3): "Sửa ảnh: <name>" plus the visible badges.
           className="group flex w-full flex-col gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <span
@@ -154,7 +154,10 @@ function MediaCard({ item, t }: { item: MediaItem; t: T }) {
               className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none"
             />
           </span>
-          <span className="line-clamp-2 text-small">{item.alt.vi || <span className="text-muted-foreground">{item.originalName ?? item.path}</span>}</span>
+          <span className="line-clamp-2 text-small">
+            <span className="sr-only">{t("Media.edit")}: </span>
+            {item.alt.vi ? name : <span className="text-muted-foreground">{name}</span>}
+          </span>
           <span className="flex flex-wrap gap-1">
             {!item.altComplete && <Badge variant="warning">{t("Media.altMissing")}</Badge>}
             {item.small && <Badge variant="outline">{t("Media.small")}</Badge>}
