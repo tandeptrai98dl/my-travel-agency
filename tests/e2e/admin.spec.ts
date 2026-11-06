@@ -57,6 +57,15 @@ for (const [role, label] of [
   });
 }
 
+test("the Sentry test route is closed to everyone but MFA-verified admins", async ({ page }) => {
+  const signedOut = await page.request.get("/api/monitoring/test-error");
+  expect(signedOut.status()).toBe(401);
+
+  await signInAs(page, "editor");
+  const editor = await page.request.get("/api/monitoring/test-error");
+  expect(editor.status()).toBe(403);
+});
+
 test("accountant is sent to MFA enrolment", async ({ page }) => {
   await signInAs(page, "accountant");
   await expect(page).toHaveURL(/\/admin\/mfa$/);
