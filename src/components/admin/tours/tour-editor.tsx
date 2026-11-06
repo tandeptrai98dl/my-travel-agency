@@ -21,10 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/toaster";
 import { formatVnd } from "@/lib/money";
 import { saveTourAction } from "@/modules/catalog/tours/tours.actions";
-import { type TourInput, tourSchema } from "@/modules/catalog/tours/tours.schemas";
+import { emptyTourTranslation, type TourInput, tourSchema } from "@/modules/catalog/tours/tours.schemas";
 import type { MediaSummary } from "@/modules/catalog/tours/tours.service";
 
 import { GalleryField } from "./gallery-field";
+import { RemoveLanguageButton } from "./remove-language-button";
 import { TourTranslationFields } from "./tour-translation-fields";
 import { useTourErrorText } from "./use-tour-error-text";
 
@@ -57,6 +58,8 @@ export function TourEditor({ initial, media, canEditPrices, activeDepartures, op
     defaultValues: { ...initial, prices: canEditPrices ? initial.prices : null },
   });
   const published = { vi: form.watch("translations.vi.isPublished"), en: form.watch("translations.en.isPublished") };
+  // Languages stored for this tour (a saved language always has a title).
+  const savedLocales = (["vi", "en"] as const).filter((locale) => initial.translations[locale].title !== "");
 
   function revealErrors(paths: string[]) {
     const locale = tabForErrors(paths);
@@ -330,13 +333,30 @@ export function TourEditor({ initial, media, canEditPrices, activeDepartures, op
             }}
           >
             {(locale) => (
-              <TourTranslationFields
-                form={form}
-                locale={locale}
-                prefix={prefixes[locale]}
-                media={media}
-                pickerLabels={pickerLabels}
-              />
+              <div className="flex flex-col gap-6">
+                <TourTranslationFields
+                  form={form}
+                  locale={locale}
+                  prefix={prefixes[locale]}
+                  media={media}
+                  pickerLabels={pickerLabels}
+                />
+                {/* Saved languages only, and never the last one (the server checks again). */}
+                {initial.id && savedLocales.includes(locale) && savedLocales.length > 1 && (
+                  <div className="border-t border-border pt-4">
+                    <RemoveLanguageButton
+                      id={initial.id}
+                      locale={locale}
+                      languageName={tf(locale)}
+                      published={initial.translations[locale].isPublished}
+                      onRemoved={() => {
+                        form.setValue(`translations.${locale}`, emptyTourTranslation(), { shouldDirty: false });
+                        setTab(locale === "vi" ? "en" : "vi");
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </LocaleTabs>,
         )}
