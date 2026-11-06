@@ -8,6 +8,8 @@ export const validatedPublicEnv = parseEnv("public", publicEnvSchema, {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: process.env.NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS,
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 });
 
 export const serverEnv = parseEnv("server", serverEnvSchema, {
@@ -20,4 +22,5 @@ export const serverEnv = parseEnv("server", serverEnvSchema, {
   CRON_SECRET: process.env.CRON_SECRET,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
 });

@@ -839,6 +839,9 @@ isOneToOne: false
 "can_act_as":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
                            },
+"confirm_newsletter_subscription":
+{ Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
+                           },
 "create_redirect":
 { Args: { "source": string,"status"?: number,"target": string }; Returns: string
                            },
@@ -892,6 +895,9 @@ isOneToOne: false
                            },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
+                           },
+"request_newsletter_subscription":
+{ Args: { "p_email": string,"p_locale": Database["public"]['Enums']["locale"],"p_source": string,"p_token_hash": string }; Returns: boolean
                            },
 "rich_text_alt_complete":
 { Args: { "doc": Json }; Returns: boolean
