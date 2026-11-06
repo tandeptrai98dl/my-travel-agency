@@ -836,11 +836,29 @@ isOneToOne: false
             "booking_cutoff_days":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"booking_prices_current":
+{ Args: { "target_id": string }; Returns: boolean
+                           },
 "can_act_as":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
                            },
+"cancel_booking":
+{ Args: { "actor": string,"reason": string,"target_id": string }; Returns: Json
+                           },
+"check_draft_payload":
+{ Args: { "payload": Json }; Returns: string
+                           },
+"check_seat_invariant":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"complete_bookings":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "confirm_newsletter_subscription":
 { Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
+                           },
+"create_draft_booking":
+{ Args: { "payload": Json }; Returns: string
                            },
 "create_redirect":
 { Args: { "source": string,"status"?: number,"target": string }; Returns: string
@@ -854,8 +872,17 @@ isOneToOne: false
 "departure_has_open_bookings":
 { Args: { "target_id": string }; Returns: boolean
                            },
+"expire_booking_if_due":
+{ Args: { "target_id": string }; Returns: boolean
+                           },
+"expire_holds":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "has_role":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
+                           },
+"hold_minutes":
+{ Args: { "provider": Database["public"]['Enums']["payment_provider"] }; Returns: number
                            },
 "immutable_unaccent":
 { Args: { "value": string }; Returns: string
@@ -887,17 +914,35 @@ isOneToOne: false
 "lock_tour_row":
 { Args: { "target_id": string }; Returns: undefined
                            },
+"log_booking_event":
+{ Args: { "actor"?: string,"event_type": string,"from_status": Database["public"]['Enums']["booking_status"],"message"?: string,"target_id": string,"to_status": Database["public"]['Enums']["booking_status"] }; Returns: undefined
+                           },
 "media_alt_complete":
 { Args: { "media_id": string }; Returns: boolean
                            },
 "media_used_in_content":
 { Args: { "target_id": string }; Returns: boolean
                            },
+"next_booking_code":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"record_payment_event":
+{ Args: { "amount": number,"event_key": string,"payload": Json,"provider": Database["public"]['Enums']["payment_provider"],"provider_txn_id": string,"reference": string,"succeeded": boolean }; Returns: Json
+                           },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
                            },
+"refresh_payment_state":
+{ Args: { "target_id": string }; Returns: undefined
+                           },
+"release_seats":
+{ Args: { "seats": number,"target_departure": string }; Returns: undefined
+                           },
 "request_newsletter_subscription":
 { Args: { "p_email": string,"p_locale": Database["public"]['Enums']["locale"],"p_source": string,"p_token_hash": string }; Returns: boolean
+                           },
+"reserve_and_create_payment":
+{ Args: { "kind": Database["public"]['Enums']["payment_kind"],"provider": Database["public"]['Enums']["payment_provider"],"target_id": string }; Returns: Json
                            },
 "rich_text_alt_complete":
 { Args: { "doc": Json }; Returns: boolean
@@ -919,10 +964,19 @@ isOneToOne: false
 "set_tour_links":
 { Args: { "destination_ids": (string)[],"media_ids": (string)[],"target_id": string,"travel_style_ids": (string)[] }; Returns: undefined
                            },
+"take_seats":
+{ Args: { "seats": number,"target_departure": string }; Returns: boolean
+                           },
 "tour_departures":
 { Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
               "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
             }[]
+                           },
+"update_draft_booking":
+{ Args: { "payload": Json,"target_id": string }; Returns: undefined
+                           },
+"vietnam_today":
+{ Args: Record<PropertyKey, never>; Returns: string
                            }
           }
           Enums: {
