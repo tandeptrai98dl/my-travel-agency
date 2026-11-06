@@ -12,6 +12,15 @@ test.skip(!process.env.E2E_SUPABASE_SECRET_KEY, "needs the local Supabase stack 
 
 type Db = ReturnType<typeof adminApi>;
 
+// The seeded tour's own adult price: these departures must not change what other tests see on
+// the tour page (its lowest price). Each test closes its departure when done.
+const PRICE = 12_900_000;
+const created: string[] = [];
+
+test.afterAll(async () => {
+  if (created.length) await adminApi().from("departures").update({ status: "closed" }).in("id", created);
+});
+
 async function departureWithOneSeat(db: Db, capacity = 1) {
   const { data: tour, error } = await db.from("tours").select("id").eq("code", "VN-HLB-03").single();
   if (error) throw error;
@@ -22,10 +31,13 @@ async function departureWithOneSeat(db: Db, capacity = 1) {
     const end = new Date(Date.now() + (offset + 2) * 86_400_000).toISOString().slice(0, 10);
     const inserted = await db
       .from("departures")
-      .insert({ tour_id: tour.id, start_date: start, end_date: end, capacity, price_adult: 9_000_000 })
+      .insert({ tour_id: tour.id, start_date: start, end_date: end, capacity, price_adult: PRICE })
       .select("id")
       .single();
-    if (!inserted.error) return { tourId: tour.id, departureId: inserted.data.id };
+    if (!inserted.error) {
+      created.push(inserted.data.id);
+      return { tourId: tour.id, departureId: inserted.data.id };
+    }
   }
   throw new Error("could not create a test departure");
 }
@@ -44,10 +56,10 @@ function draft(key: string, tourId: string, departureId: string) {
     contact_email: `${key}@example.test`,
     contact_phone: "+84 900 000 000",
     payment_plan: "full",
-    subtotal: 9_000_000,
-    total: 9_000_000,
-    deposit_amount: 9_000_000,
-    items: [{ type: "adult", unit_price: 9_000_000, quantity: 1, amount: 9_000_000 }],
+    subtotal: PRICE,
+    total: PRICE,
+    deposit_amount: PRICE,
+    items: [{ type: "adult", unit_price: PRICE, quantity: 1, amount: PRICE }],
   };
 }
 
@@ -83,7 +95,7 @@ test("two customers on the last seat: exactly one hold; ten copies of one IPN: o
         event_key: `ipn-${reference}`,
         payload: { vnp_TxnRef: reference },
         reference,
-        amount: 9_000_000,
+        amount: PRICE,
         provider_txn_id: `txn-${reference}`,
         succeeded: true,
       }),
@@ -98,7 +110,7 @@ test("two customers on the last seat: exactly one hold; ten copies of one IPN: o
 
   const winner = ids[holds.findIndex((hold) => !hold.error)];
   const { data: booking } = await db.from("bookings").select("status, payment_state, amount_paid").eq("id", winner).single();
-  expect(booking).toEqual({ status: "confirmed", payment_state: "paid", amount_paid: 9_000_000 });
+  expect(booking).toEqual({ status: "confirmed", payment_state: "paid", amount_paid: PRICE });
   const { count } = await db
     .from("payments")
     .select("id", { count: "exact", head: true })
@@ -144,9 +156,9 @@ test("the hold-expiry job never waits on a booking a customer holds (no deadlock
     contact_email: `deadlock-${run}-${n}@example.test`,
     contact_phone: "+84 900 000 000",
     locale: "vi" as const,
-    subtotal: 9_000_000,
-    total: 9_000_000,
-    deposit_amount: 9_000_000,
+    subtotal: PRICE,
+    total: PRICE,
+    deposit_amount: PRICE,
     payment_plan: "full" as const,
     tour_snapshot: {},
     hold_expires_at: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
