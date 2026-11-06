@@ -1,30 +1,30 @@
-import { createClient } from "@/lib/supabase/server";
-import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
+import { z } from "zod";
 
+import { safeRedirectPath } from "@/lib/safe-redirect";
+import { createClient } from "@/lib/supabase/server";
+
+const querySchema = z.object({
+  token_hash: z.string().min(1),
+  type: z.enum(["signup", "invite", "magiclink", "recovery", "email_change", "email"]),
+  next: z.string().optional(),
+});
+
+/** Email link handler (sign-up confirmation, invitations, password recovery). */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const token_hash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/";
-
-  if (token_hash && type) {
-    const supabase = await createClient();
-
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (!error) {
-      // redirect user to specified redirect URL or root of app
-      redirect(next);
-    } else {
-      // redirect the user to an error page with some instructions
-      redirect(`/auth/error?error=${error?.message}`);
-    }
+  const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!parsed.success) {
+    redirect(`/auth/error?error=${encodeURIComponent("Invalid or incomplete link")}`);
   }
 
-  // redirect the user to an error page with some instructions
-  redirect(`/auth/error?error=No token hash or type`);
+  const { token_hash, type, next } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+  if (error) {
+    redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Only same-site paths: `next` comes from the URL and must not become an open redirect.
+  redirect(safeRedirectPath(next, "/admin"));
 }
