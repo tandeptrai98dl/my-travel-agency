@@ -39,6 +39,54 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  database:
+    name: Database (migrations, pgTAP, lint, types)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Only the services the database checks need: Postgres, Auth, REST, Storage and the gateway.
+      - name: Start local Supabase
+        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,mailpit
+        timeout-minutes: 10
+      - name: Re-apply migrations and seed from scratch
+        run: npx supabase db reset
+      - name: pgTAP tests
+        run: npx supabase test db
+      - name: Schema lint
+        run: npx supabase db lint --level warning --fail-on error
+      - name: Generate database types
+        run: npm run db:types
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: database-types
+          path: src/types/database.types.ts
+          retention-days: 7
+      - name: Fail when the committed types are stale
+        run: |
+          if [ -n "$(git status --porcelain -- src/types/database.types.ts)" ]; then
+            echo "src/types/database.types.ts is stale. Run npm run db:types and commit the result." >&2
+            git diff --stat -- src/types/database.types.ts >&2 || true
+            exit 1
+          fi
+      - name: Seed sample users through the Auth Admin API
+        run: |
+          eval "$(npx supabase status -o env)"
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
+          export SUPABASE_SECRET_KEY="${SERVICE_ROLE_KEY:-$SECRET_KEY}"
+          export SEED_USER_PASSWORD="ci-only-seed-password-$GITHUB_RUN_ID"
+          npm run seed:users
+          npm run seed:users
+          roles=$(psql "$DB_URL" -tAc "select string_agg(role::text, ',' order by role) from public.profiles where email like '%@example.test'")
+          echo "Seeded roles: $roles"
+          test "$roles" = "customer,sales,sales_manager,operator,accountant,editor,admin"
+
   build-e2e:
     name: Build and E2E smoke
     runs-on: ubuntu-latest
