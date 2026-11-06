@@ -129,6 +129,7 @@ One pull request per group, one commit per step. Every page: Server Component, m
 
 15. Pages from `pages` keys (decision 15), journal list with categories and article page (`Article` JSON-LD, editorial layout), reviews page (approved reviews, verified badge), contact page (company details, hotline, Zalo, WhatsApp, office hours, map link; the form arrives in Phase 5), FAQ (`FAQPage`). Starts after PR F; reads empty data gracefully before content exists.
 16. Footer and cookie-banner policy links from `getPolicyLinks` (decision 15); `public-pages.json`; E2E.
+    As shipped (PR K): the contact form is saved as an inquiry (`source = 'contact'`) through `create_contact_inquiry()` with the privacy consent, after Zod, a fail-closed rate limit (ADR-029) and Turnstile, and emails the team; disabled without Turnstile, Upstash and Resend. The tour booking box, the tailor-made call to action and the tailor-made menu item open the contact page until Phases 4–5 (the box passes the tour code and next date). The journal lists the newest 24 articles (paging later); a topic without articles in a language is a 404 there; reviews show the newest 60 approved with the count and average of all. The seed gains a delimited block of sample articles, pages and reviews (no terms page: the content admin E2E creates it).
 
 ### PR L — Tour listing and site search
 
