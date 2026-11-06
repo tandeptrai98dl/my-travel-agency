@@ -57,8 +57,26 @@ jobs:
             echo "A server-only environment value was found in client bundles." >&2
             exit 1
           fi
+      # Cache the downloaded browser per Playwright version and runner image,
+      # so most runs skip the download and only install system libraries.
+      - name: Get Playwright version and runner image
+        id: playwright
+        run: |
+          echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}-chromium
       - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
         timeout-minutes: 5
       - run: npm run test:e2e
         timeout-minutes: 5
