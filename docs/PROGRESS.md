@@ -5,18 +5,62 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR F (journal, pages, reviews, redirects), then PR G (settings and staff) (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 — design system and mockups in Claude Design, then homepage, tour detail, destinations, static pages and tour listing. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR G (settings, staff, dashboard), the last Phase 2 PR (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 PR H (tour detail), then PRs I–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
 Phase 2 polish PR:
 - `updateTourLinks` writes destinations, styles and gallery one after another without a transaction; a failure partway leaves some link changes applied (move into a Postgres function if it matters).
-- Departure rules (PR E review): lock the tour row in the last-departure trigger (two concurrent removals can both pass; same race in `check_tour_publishable`); narrow `departure_has_open_bookings()` to roles with booking access; pgTAP for moving a departure to another tour; calendar links past year 9999. Stream A fixes these first in PR F.
 - No explicit "remove language" action on tours (clearing the title is refused); add one with a confirmation and a 301 when the language was published.
 - `tests/e2e/tours.spec.ts` finds the header status badge with `xpath=../..`; give `PageHeader` a labelled container.
+- Redirects and Redis (PR F2 review, fixed first in PR G): chain race (advisory lock); fetch timeout; `createRedirect` retargets before inserting; both Upstash variables or neither; atomic resync.
+- Destination content images can lose their alt text through the API (PR F2 review; fixed first in PR G).
+- Phase 3 (PR 15 review): ADR-027 and ARCHITECTURE "Security" still call option 1 recommended; name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
+- Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
+- Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR F2: reviews, redirects, subscribers)
+
+PR #17, branch `feat/p2-reviews-redirects` (spec steps 19–20, ADR-031; PR 16 backlog; step 8 follow-up).
+
+- Done:
+  - Definer helpers are gated to staff and trusted roles, media usage is case-insensitive, and published articles cannot be deleted (`20261108125000`).
+  - Reviews: staff change only status and featured; featured means approved; staff-written reviews are never verified.
+  - Redirects:
+    - site paths, no loops or chains;
+    - Redis hash `redirects` synced on every save and slug change, with resync, as a logged no-op without Upstash.
+  - Subscribers: read-only list; CSV export of active subscribers only, written to the audit log first.
+  - Destination rich-text description.
+- Verified locally:
+  - lint, typecheck, 358 unit tests, production build;
+  - pgTAP 227 assertions (06: 33, 07: 9, 08: 9).
+  - CI green, E2E included.
+- Deviations: Redis via a `fetch` client rather than an SDK; the admin offers 301/302 only; the export covers active subscribers only.
+- Independent review: approved; backlog below (fixed first in PR G).
+
+### 2026-11-07 (Phase 2 — PR F1: rich text, journal, pages)
+
+PR #16, branch `feat/p2-content` (spec steps 17–18, ADR-030; PR 13 backlog).
+
+- Done:
+  - Departure rules: the tour row is locked before the last-departure and publish checks (concurrent removals were checked by hand); the booking helper is limited to booking roles; the calendar's month links are clamped; pgTAP covers moving a departure to another tour.
+  - Tiptap editor with decision 7's fixed set; a shared sanitizer (`src/lib/rich-text.ts`) and a server-only `RichText` renderer for public pages.
+  - Journal (articles, topics) and the six static pages with VI/EN publishing; content rules in `20261108120000_content_rules.sql`; images used inside JSON cannot be deleted.
+- Verified locally: lint, typecheck, 332 unit tests, pgTAP 200 assertions (06: 24; dropping the triggers fails 14), production build; CI green with 68 E2E (4 new).
+- Deviations: published articles need a cover and must be unpublished before deletion; the destination rich content field moves to F2.
+- Independent review: approved; backlog fixed in PR #17.
+
+### 2026-11-07 (Phase 3 — spec and Claude Design)
+
+PR #15, branch `feat/p3-spec-design`.
+
+- Done: design system "Premium Travel Agency" and the Phase 3 mockups in Claude Design (home, listing, tour detail at 1440 and 390 px); `docs/specs/phase-3-public-site.md` with 20 recommended decisions and PRs H–M.
+- Verified: docs only; CI.
+- Deviations: `search_tours()` moves from the listing PR into PR H; the listing gains a travel-style filter for the hero search.
+- Independent review: changes requested (nonce CSP cannot work on prerendered routes), fixed with ADR-027 (fully dynamic admin with a proxy nonce, spike: 0 violations) and ADR-028; re-review approved.
 
 ### 2026-11-07 (Phase 2 — PR E: departures)
 
@@ -292,7 +336,6 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 - Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
 - Phase 3: when tour pages embed cancellation-policy summaries, a policy save must also refresh the `tours` cache tag (spec decision 9's shared cache helper).
-- PRs D and F: image ids inside JSON (itinerary `media_ids`, Tiptap image nodes) are not foreign keys, so deleting an image does not see them yet; add a usage check that scans them before the editors that write them ship.
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
 - Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.
 - Radix NavigationMenu adds an `aria-hidden` focusable sentinel after an open trigger (axe `aria-hidden-focus`). It only forwards focus into the menu, and the E2E test proves Tab lands on a destination link; it is excluded from axe by its exact selector. Revisit when Radix changes it.
