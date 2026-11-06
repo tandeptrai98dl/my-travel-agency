@@ -29,10 +29,27 @@ export function authorized(provider: BankProvider, headers: Headers, secret: str
   return sameSecret(headers.get("secure-token") ?? "", secret);
 }
 
-/** The first token that looks like a payment reference (PTA + digits), in any letter case. */
+/** References are PTA plus at least 10 digits (booking code without dashes and a 2-digit attempt). */
+const REFERENCE_DIGITS = 10;
+
+/**
+ * The first payment reference in a memo, in any letter case, ignoring spaces and punctuation
+ * inside it (spec decision 5): "PTA 2611 0042 01" and "pta-2611-004201" both read as
+ * PTA2611004201. Digit groups after a "PTA" token are joined only until the reference is long
+ * enough, so a later number in the memo (an account, a bank's own code) is never glued on.
+ */
 export function extractReference(memo: string): string | null {
-  const tokens = memo.toUpperCase().split(/[^A-Z0-9]+/);
-  return tokens.find((token) => /^PTA\d{10,}$/.test(token)) ?? null;
+  const tokens = memo.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  for (let i = 0; i < tokens.length; i++) {
+    const start = /^PTA(\d*)$/.exec(tokens[i]);
+    if (!start) continue;
+    let digits = start[1];
+    for (let j = i + 1; digits.length < REFERENCE_DIGITS && j < tokens.length && /^\d+$/.test(tokens[j]); j++) {
+      digits += tokens[j];
+    }
+    if (digits.length >= REFERENCE_DIGITS) return `PTA${digits}`;
+  }
+  return null;
 }
 
 const sepaySchema = z.object({

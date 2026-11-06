@@ -11,6 +11,11 @@ const MAX_BODY_BYTES = 64 * 1024;
  */
 export async function POST(request: Request) {
   await connection();
+  // Refuse a declared oversized body before reading it; the length is checked again after.
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {
+    return NextResponse.json({ success: false }, { status: 413 });
+  }
   const text = await request.text();
   if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) {
     return NextResponse.json({ success: false }, { status: 413 });

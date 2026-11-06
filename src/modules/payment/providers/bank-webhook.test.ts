@@ -18,6 +18,17 @@ describe("bank webhook", () => {
     expect(extractReference("tien tour thang 11")).toBeNull();
   });
 
+  it("reads a reference typed with spaces or dashes, without gluing on later numbers", () => {
+    expect(extractReference("PTA 2611004201")).toBe("PTA2611004201");
+    expect(extractReference("chuyen khoan pta 2611 0042 01 cam on")).toBe("PTA2611004201");
+    expect(extractReference("PTA-2611-0042-01")).toBe("PTA2611004201");
+    expect(extractReference("PTA2611 004201 0011223344")).toBe("PTA2611004201");
+    expect(extractReference("PTA2611004201 0011")).toBe("PTA2611004201");
+    expect(extractReference("PTA 2611 0042")).toBeNull();
+    expect(extractReference("PTA tour 2611004201")).toBeNull();
+    expect(extractReference("CAPTAIN 2611004201")).toBeNull();
+  });
+
   it("maps SePay incoming credits and ignores outgoing transfers", () => {
     const credit = { id: 92704, transferType: "in", transferAmount: 3_870_000, content: "PTA2611004201 thanh toan", referenceCode: "FT26310" };
     expect(parseBankWebhook("sepay", credit)).toMatchObject({
