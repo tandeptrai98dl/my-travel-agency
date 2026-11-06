@@ -121,6 +121,7 @@ jobs:
           echo "publishable_key=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_OUTPUT"
           echo "service_key=${SERVICE_ROLE_KEY:-$SECRET_KEY}" >> "$GITHUB_OUTPUT"
           echo "mail_url=${MAILPIT_URL:-${INBUCKET_URL:-http://127.0.0.1:54324}}" >> "$GITHUB_OUTPUT"
+          echo "db_url=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}" >> "$GITHUB_OUTPUT"
       - name: Seed sample users
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
@@ -214,6 +215,8 @@ jobs:
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           # Mailpit's API, for the staff invitation email (staff.spec.ts).
           E2E_MAIL_URL: ${{ steps.supabase.outputs.mail_url }}
+          # A second database session for the deadlock regression test (booking-core.spec.ts).
+          E2E_DB_URL: ${{ steps.supabase.outputs.db_url }}
           # Serves /admin/design-system in the production build so axe can check it.
           SHOW_DESIGN_SYSTEM: "true"
         run: npm run test:e2e

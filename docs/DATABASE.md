@@ -658,14 +658,17 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `is_staff_or_trusted()` | authenticated (`security definer`) | Staff, the service role or a session without `SET ROLE` (postgres); gates the definer helpers |
 | `set_tour_links(target_id, media_ids, destination_ids, travel_style_ids)` | authenticated (`security invoker`; RLS lets editors and admins write the link tables) | A tour's gallery (in order), destinations and travel styles in one transaction, writing only what changed |
 | `set_default_cancellation_policy(policy_id)` | authenticated (`security invoker`; RLS lets only an MFA-verified admin write) | Move the default cancellation policy in one transaction |
-| `next_booking_code()` | service_role | Booking codes from the sequence |
-| `reserve_and_create_payment(...)` | service_role | Hold seats, booking → `pending_payment`, create payment |
-| `confirm_payment(...)` | service_role | Idempotent payment recording, late-payment handling |
-| `expire_holds()` | `pg_cron`, every 5 min | Expire overdue holds, release seats |
-| `cancel_booking(...)` | service_role | Cancel, release seats, record event |
+| `next_booking_code()` | service_role | Booking codes from the sequence (`PTA-YYMM-NNNN`, Vietnam month) |
+| `create_draft_booking(payload)`, `update_draft_booking(target_id, payload)` | service_role | Draft with price lines and snapshots, idempotent per key; party rules, exactly one adult/child/infant/single-supplement line per count, prices and totals checked against the departure (`price_changed`); no seats |
+| `reserve_and_create_payment(target_id, provider, kind)` | service_role | Expire first; hold seats by a conditional update (`sold_out`), booking → `pending_payment`, `pending` payment with `expires_at` = hold; method switch keeps seats with a new window; at most 5 attempts; `balance` payments for confirmed bookings |
+| `record_payment_event(provider, event_key, payload, reference, amount, provider_txn_id, succeeded)` | service_role | The `confirm_payment` of the design: `webhook_events` dedupe, unmatched references, failed results, under/overpaid, money for attempts that are no longer pending as new rows of the same kind (`overpaid`, `paid_after_switch`, `paid_after_failure`, `paid_after_expiry`, `paid_after_cancel`), a repeated gateway transaction id treated as a duplicate, late payments, confirmation at the deposit |
+| `expire_booking_if_due(target_id)`, `expire_holds()` | service_role; `pg_cron` every 5 min | Expire lapsed holds and quotes (seats released, open payments expired); drafts older than 7 days. The job takes bookings `for update skip locked`, so it never waits for a booking while holding a departure lock (no deadlock with a customer's function); skipped bookings expire at their next read or the next run |
+| `cancel_booking(target_id, actor, reason)` | service_role | Cancel, release seats, record event, return the policy's suggested refund |
+| `complete_bookings()` | `pg_cron`, nightly | Confirmed bookings whose departure has ended → `completed` |
 | `request_newsletter_subscription(email, locale, source, token_hash)` | service_role | Newsletter double opt-in step 1: stores the token hash; true when a confirmation email should be sent (ADR-029) |
 | `confirm_newsletter_subscription(token_hash, document_version, ip, user_agent)` | service_role | Step 2: confirms once and records the marketing consent in `consent_records` |
-| `check_seat_invariant()` | `pg_cron`, nightly | `seats_reserved` must equal adults + children of `pending_payment`, `confirmed` and `completed` bookings; logs mismatches |
+| `check_seat_invariant()`, `raise_on_seat_mismatch()` | `pg_cron`, nightly | `seats_reserved` must equal adults + children of `pending_payment`, `confirmed` and `completed` bookings; mismatches go to `audit_logs` (`departures.seat_mismatch`) and a warning; a later job raises while a mismatch from the last day is on record, so its failed run alerts |
+| `hold_minutes()`, `booking_prices_current()`, `take_seats()`, `release_seats()`, `refresh_payment_state()`, `log_booking_event()`, `check_draft_payload()` | service_role | Helpers of the booking functions (`*_booking_functions.sql`) |
 
 Data-changing functions use `security definer` + `set search_path = ''` and grant execute to `service_role` only.
 
