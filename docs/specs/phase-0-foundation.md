@@ -85,7 +85,7 @@ One commit per step. After each step: `npm run lint`, `npx tsc --noEmit`, and (f
 ### Step 6 — Seed data
 
 - `supabase/seed.sql`: settings (`company`, `contact`, `booking_rules` defaults from ADR-016, `homepage`), one default cancellation policy, 3 countries with regions/cities (each with `key`), 6 tours (group and private, domestic and international, VI + EN; one draft; one with an unpublished EN translation), departures for the next 6 months.
-- `scripts/seed-users.ts` (`npm run seed:users`): one user per role via the Auth Admin API; refuses non-local URLs unless `--allow-remote`.
+- `scripts/seed-users.ts` (`npm run seed:users`): one user per role via the Auth Admin API; refuses non-local URLs unless `--allow-remote=<host>` names the exact host.
 
 ### Step 7 — Supabase clients and auth helpers
 

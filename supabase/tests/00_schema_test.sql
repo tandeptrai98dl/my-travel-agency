@@ -1,7 +1,7 @@
 -- Schema shape: every approved table exists, RLS is enabled everywhere, and the security definer
 -- helpers are locked down (docs/DATABASE.md, ARCHITECTURE.md "Security").
 begin;
-select plan(10);
+select plan(11);
 
 select tables_are(
   'public',
@@ -63,14 +63,45 @@ select ok(
   'policy helpers stay executable for anon (policies call them)'
 );
 
-select ok(
-  not has_table_privilege('anon', 'public.bookings', 'insert'),
-  'anon has no INSERT privilege on bookings'
+select is(
+  (
+    select array_agg(c.relname::text order by c.relname)
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+      and (
+        has_table_privilege('anon', c.oid, 'insert')
+        or has_table_privilege('anon', c.oid, 'update')
+        or has_table_privilege('anon', c.oid, 'delete')
+        or has_any_column_privilege('anon', c.oid, 'insert')
+        or has_any_column_privilege('anon', c.oid, 'update')
+      )
+  ),
+  null,
+  'anon has no INSERT, UPDATE or DELETE privilege on any table'
 );
 
+select is(
+  (
+    select array_agg(c.relname::text order by c.relname)
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+      and (
+        has_table_privilege('anon', c.oid, 'truncate')
+        or has_table_privilege('authenticated', c.oid, 'truncate')
+      )
+  ),
+  null,
+  'no API role can TRUNCATE any table (TRUNCATE bypasses RLS)'
+);
+
+-- A table created by a later migration must not get anon write or TRUNCATE privileges either.
+create table public.zz_default_privileges_probe (id int);
 select ok(
-  not has_table_privilege('authenticated', 'public.payments', 'truncate'),
-  'authenticated cannot TRUNCATE (which would bypass RLS)'
+  not has_table_privilege('anon', 'public.zz_default_privileges_probe', 'insert')
+    and not has_table_privilege('authenticated', 'public.zz_default_privileges_probe', 'truncate'),
+  'default privileges keep anon writes and TRUNCATE closed on new tables'
 );
 
 select is(

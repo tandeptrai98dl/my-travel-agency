@@ -279,7 +279,7 @@ from (values
 ) as v(code, min_pax, max_pax, price)
 join public.tours t on t.code = v.code;
 
--- Departures every two weeks for the next six months (group tours only). Child price 75% of the
+-- Departures every two weeks for the next six months (day 14 to day 182) (group tours only). Child price 75% of the
 -- adult price, infants 10%; a few departures are guaranteed or closed to exercise the UI states.
 insert into public.departures (
   tour_id, start_date, end_date, capacity, status, price_adult, price_child, price_infant, single_supplement
@@ -300,6 +300,6 @@ select t.id,
 from public.tours t
 cross join lateral (
   select (current_date + 14 + (g * 14))::date as start_date, g as n
-  from generate_series(0, 11) as g
+  from generate_series(0, 12) as g
 ) d
 where t.type = 'group';

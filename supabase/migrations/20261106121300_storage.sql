@@ -9,6 +9,13 @@ values
   ('private', 'private', false, 10485760, array['application/pdf'])
 on conflict (id) do nothing;
 
+-- Editors and admins also need SELECT: Postgres applies SELECT policies to UPDATE and DELETE
+-- (and to upserts and listing through the Storage API). Public file reads go through the public
+-- bucket URL, not through these policies.
+create policy "media bucket: staff read" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'media' and (select public.can_act_as('{editor,admin}')));
+
 create policy "media bucket: staff insert" on storage.objects
   for insert to authenticated
   with check (bucket_id = 'media' and (select public.can_act_as('{editor,admin}')));

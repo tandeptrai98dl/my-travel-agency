@@ -228,8 +228,9 @@ select pg_temp.staff_write_policies(
   array['tours', 'tour_translations', 'tour_media', 'tour_destinations', 'tour_travel_styles'],
   '{editor,admin}');
 
--- Departures and seats: operator and admin. Departure price edits by operator are restricted in
--- Phase 2; whether sales_manager may edit prices is pending (ADR-016).
+-- Departures: operator and admin. seats_reserved is excluded by the column grants at the end of
+-- this file (only Postgres functions move seats, ADR-012). Departure price edits by operator are
+-- restricted in Phase 2; whether sales_manager may edit prices is pending (ADR-016).
 select pg_temp.staff_write_policies(array['departures'], '{operator,admin}');
 
 -- Prices and cancellation rules: admin only (ADR-016 pending decision keeps sales_manager out).
@@ -292,9 +293,22 @@ create policy "inquiries: admin delete" on public.inquiries
   for delete to authenticated
   using ((select public.can_act_as('{admin}')));
 
-create policy "internal_notes: staff read" on public.internal_notes
+-- Operator and admin read every note. Sales roles read notes on bookings and customers, and
+-- notes on inquiries only when they can see the inquiry itself (assigned to them or unassigned):
+-- the subquery runs under the caller's inquiries policies.
+create policy "internal_notes: operator and admin read" on public.internal_notes
   for select to authenticated
-  using ((select public.can_act_as('{sales,sales_manager,operator,admin}')));
+  using ((select public.can_act_as('{operator,admin}')));
+
+create policy "internal_notes: sales read" on public.internal_notes
+  for select to authenticated
+  using (
+    (select public.can_act_as('{sales,sales_manager}'))
+    and (
+      inquiry_id is null
+      or exists (select 1 from public.inquiries i where i.id = inquiry_id)
+    )
+  );
 
 create policy "internal_notes: staff insert own" on public.internal_notes
   for insert to authenticated
@@ -308,8 +322,10 @@ create policy "internal_notes: admin delete" on public.internal_notes
   using ((select public.can_act_as('{admin}')));
 
 -- Bookings ------------------------------------------------------------------------------------
--- Customers read their own bookings. Seat and money changes run in service-role Postgres
--- functions (ADR-012); the staff policies below cover reads and non-financial edits.
+-- Customers read their own bookings. Creating bookings and every change to status, money, seats,
+-- price lines or ownership runs in service-role Postgres functions (ADR-012, Phase 4), so there is
+-- no INSERT policy for API roles and the column grants at the end of this file limit staff
+-- updates to contact, request, assignment and invoice fields.
 create policy "bookings: customer read own" on public.bookings
   for select to authenticated
   using (customer_id = (select auth.uid()));
@@ -317,10 +333,6 @@ create policy "bookings: customer read own" on public.bookings
 create policy "bookings: staff read" on public.bookings
   for select to authenticated
   using ((select public.can_act_as('{sales,sales_manager,operator,accountant,admin}')));
-
-create policy "bookings: staff insert" on public.bookings
-  for insert to authenticated
-  with check ((select public.can_act_as('{sales,sales_manager,admin}')));
 
 create policy "bookings: staff update" on public.bookings
   for update to authenticated
@@ -340,7 +352,7 @@ create policy "booking_items: staff read" on public.booking_items
   for select to authenticated
   using ((select public.can_act_as('{sales,sales_manager,operator,accountant,admin}')));
 
-select pg_temp.staff_write_policies(array['booking_items'], '{sales,sales_manager,admin}');
+-- Price lines are money: written only by service-role functions (no write policies).
 
 create policy "travellers: customer read own" on public.travellers
   for select to authenticated
@@ -440,7 +452,31 @@ create policy "audit_logs: admin read" on public.audit_logs
   for select to authenticated
   using ((select public.can_act_as('{admin}')));
 
+-- Column grants: money, status and seats --------------------------------------------------------
+-- RLS decides which rows; these grants decide which columns API roles may write. Status, money,
+-- seats, ownership and snapshots change only through service-role Postgres functions (ADR-012).
+revoke insert, update on public.bookings from authenticated;
+grant update (
+  contact_name, contact_email, contact_phone, contact_country, special_requests, assigned_to,
+  invoice_requested, invoice_info
+) on public.bookings to authenticated;
+
+revoke insert, update on public.departures from authenticated;
+grant insert (
+  tour_id, start_date, end_date, capacity, status, price_adult, price_child, price_infant,
+  single_supplement, note
+) on public.departures to authenticated;
+grant update (
+  start_date, end_date, capacity, status, price_adult, price_child, price_infant,
+  single_supplement, note
+) on public.departures to authenticated;
+
 -- Defence in depth: anon never writes directly (guest writes use the service role), and
--- TRUNCATE, which ignores RLS, is closed to both API roles.
+-- TRUNCATE, which ignores RLS, is closed to both API roles. The default privileges make the same
+-- true for tables added by later migrations (Supabase grants everything by default).
 revoke insert, update, delete, truncate on all tables in schema public from anon;
 revoke truncate on all tables in schema public from authenticated;
+alter default privileges for role postgres in schema public
+  revoke insert, update, delete, truncate on tables from anon;
+alter default privileges for role postgres in schema public
+  revoke truncate on tables from authenticated;

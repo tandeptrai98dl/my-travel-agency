@@ -1,8 +1,12 @@
 /**
  * Creates one sample account per role through the Supabase Auth Admin API (local development).
  *
- *   SEED_USER_PASSWORD=... npm run seed:users                 # local Supabase only
- *   SEED_USER_PASSWORD=... npm run seed:users -- --allow-remote  # e.g. the staging project
+ *   SEED_USER_PASSWORD=... npm run seed:users                                   # local Supabase
+ *   SEED_USER_PASSWORD=... npm run seed:users -- --allow-remote=<project-host>     # e.g. staging
+ *
+ * A remote run must name the exact host it targets (for example
+ * `--allow-remote=abcd1234.supabase.co`), so a URL copied from the wrong environment fails.
+ * Never run it against production: it creates an admin account with a shared password.
  *
  * Reads NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY from the environment (`.env.local` is
  * loaded when present). Accounts are `<role>@example.test`, email already confirmed. Re-running
@@ -38,7 +42,9 @@ function readConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const secretKey = process.env.SUPABASE_SECRET_KEY;
   const password = process.env.SEED_USER_PASSWORD;
-  const allowRemote = process.argv.includes("--allow-remote");
+  const allowedRemoteHost = process.argv
+    .find((arg) => arg.startsWith("--allow-remote="))
+    ?.slice("--allow-remote=".length);
 
   if (!url) fail("NEXT_PUBLIC_SUPABASE_URL is not set.");
   if (!secretKey) fail("SUPABASE_SECRET_KEY is not set.");
@@ -52,8 +58,11 @@ function readConfig() {
   } catch {
     fail("NEXT_PUBLIC_SUPABASE_URL is not a valid URL.");
   }
-  if (!LOCAL_HOSTS.has(host) && !allowRemote) {
-    fail(`refusing to seed users on non-local host "${host}". Pass --allow-remote to confirm.`);
+  if (!LOCAL_HOSTS.has(host) && allowedRemoteHost !== host) {
+    fail(
+      `refusing to seed users on non-local host "${host}". ` +
+        `Pass --allow-remote=${host} if this really is a development or staging project.`,
+    );
   }
 
   return { url, secretKey, password };
