@@ -77,6 +77,10 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
   }
+  /* Navy sections set their own text colour so descendants do not inherit the body's navy. */
+  .theme-navy {
+    color: hsl(var(--foreground));
+  }
   /* Visible focus for keyboard users everywhere; components may refine it. */
   :focus-visible {
     outline: 2px solid hsl(var(--ring));

@@ -33,12 +33,13 @@ export default {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
       },
-      // Type scale (DESIGN_SYSTEM.md "Typography"); mobile sizes first, `md:` for desktop.
+      // Type scale (DESIGN_SYSTEM.md "Typography"); mobile sizes first, `md:` for desktop. Heading
+      // line-heights stay >= 1.15 so stacked Vietnamese diacritics are never clipped.
       fontSize: {
         display: ["2.75rem", { lineHeight: "3.25rem" }],
-        "display-lg": ["4.5rem", { lineHeight: "5rem" }],
+        "display-lg": ["4.5rem", { lineHeight: "5.25rem" }],
         h1: ["2.375rem", { lineHeight: "2.875rem" }],
-        "h1-lg": ["3.5rem", { lineHeight: "4rem" }],
+        "h1-lg": ["3.5rem", { lineHeight: "4.125rem" }],
         h2: ["1.875rem", { lineHeight: "2.375rem" }],
         "h2-lg": ["2.5rem", { lineHeight: "3rem" }],
         h3: ["1.5rem", { lineHeight: "2rem" }],

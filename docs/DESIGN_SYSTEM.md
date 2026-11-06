@@ -63,12 +63,12 @@ ADR-017: the public website uses a fixed light theme, with Deep Navy sections (i
 | Display / headings | Cormorant Garamond, weight 500–600 | serif, editorial feel |
 | Body / UI | Be Vietnam Pro, weight 400–600 | designed for Vietnamese |
 
-- Check stacked diacritics (ặ, ẫ, ỡ) at every size; heading line-height at least 1.15 so diacritics are never clipped.
+- Check stacked diacritics (ặ, ẫ, ỡ) at every size; heading line-height at least 1.15 so diacritics are never clipped (Display and H1 desktop line-heights were raised from 80 and 64 to meet this).
 
 | Style | Desktop (size/line, px) | Mobile | Font |
 | --- | --- | --- | --- |
-| Display | 72/80 | 44/52 | Serif 500 |
-| H1 | 56/64 | 38/46 | Serif 500 |
+| Display | 72/84 | 44/52 | Serif 500 |
+| H1 | 56/66 | 38/46 | Serif 500 |
 | H2 | 40/48 | 30/38 | Serif 500 |
 | H3 | 28/36 | 24/32 | Serif 600 |
 | H4 | 20/28 | 18/26 | Sans 600 |
