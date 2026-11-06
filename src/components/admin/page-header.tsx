@@ -16,10 +16,16 @@ type Props = {
   | { breadcrumbs?: never; breadcrumbLabel?: never }
 );
 
-/** Title row of every admin page: breadcrumbs, the page's only h1, description and actions. */
+/** The page's only h1, so one fixed id is enough. */
+const TITLE_ID = "page-title";
+
+/**
+ * Title row of every admin page: breadcrumbs, the page's only h1, description and actions. It is a
+ * region named by the title, so the actions (status badges, preview links) are easy to find.
+ */
 export function PageHeader({ title, description, actions, breadcrumbs, breadcrumbLabel, className }: Props) {
   return (
-    <div className={cn("flex flex-col gap-4 border-b border-border pb-6", className)}>
+    <section aria-labelledby={TITLE_ID} className={cn("flex flex-col gap-4 border-b border-border pb-6", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label={breadcrumbLabel}>
           <ol className="flex flex-wrap items-center gap-1 text-small text-muted-foreground">
@@ -43,11 +49,13 @@ export function PageHeader({ title, description, actions, breadcrumbs, breadcrum
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="font-serif text-h2 font-medium">{title}</h1>
+          <h1 id={TITLE_ID} className="font-serif text-h2 font-medium">
+            {title}
+          </h1>
           {description && <p className="max-w-2xl text-small text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
-    </div>
+    </section>
   );
 }

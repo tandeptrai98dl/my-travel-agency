@@ -80,8 +80,10 @@ test.describe("tours admin", () => {
     await dialog.getByRole("button", { name: "Nhân bản" }).click();
     await expect(page).toHaveURL(/\/admin\/tours\/[0-9a-f-]{36}$/);
     await expect(page.getByText(`HLB-${run}`, { exact: true })).toBeVisible();
-    // The status badge next to the page title (the editor's status select also says "Nháp").
-    const header = page.getByRole("heading", { level: 1 }).locator("xpath=../..");
+    // The status badge next to the page title (the editor's status select also says "Nháp"): the
+    // page header is a region named by the copy's title.
+    const title = (await page.getByRole("heading", { level: 1 }).textContent())?.trim() ?? "";
+    const header = page.getByRole("region", { name: title, exact: true });
     await expect(header.getByText("Nháp", { exact: true })).toBeVisible();
   });
 
