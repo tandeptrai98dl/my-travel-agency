@@ -63,9 +63,17 @@ Before each task:
 3. Analyze the scope of changes.
 4. Outline the implementation plan.
 5. Wait for confirmation if the task involves changes to architecture, database, or critical data beyond what the docs already approve.
-6. Execute in parts (one spec step per commit).
+6. Execute in parts on a feature branch (one spec step per commit) and open a pull request (ADR-020).
 7. Run lint, typecheck, and appropriate tests.
 8. Report actual results.
+
+## BRANCHES AND PULL REQUESTS (ADR-020)
+
+- Never commit directly to `main`. Branch names: `feat/…`, `fix/…`, `chore/…`, `docs/…`.
+- The pull request description reports every acceptance criterion as pass/fail with evidence, and lists anything blocked by missing accounts or secrets.
+- An independent reviewer (a separate agent) checks each pull request against the spec, RLS rules and security rules.
+- Squash-merge only when CI is green and the review has no unresolved critical or major findings.
+- Only one branch at a time may add files to `supabase/migrations/`.
 
 ## PROGRESS MANAGEMENT
 
@@ -96,7 +104,7 @@ npx supabase db lint   # schema lint
 npm run db:types       # regenerate src/types/database.types.ts
 ```
 
-Environment: copy `.env.example` to `.env.local`. Required variables are validated in `src/lib/env.ts` (added in Phase 0).
+Environment: copy `.env.example` to `.env.local`. Variables are validated at server start by `src/lib/env/server.ts` (via `src/instrumentation.ts`); client code imports `src/lib/env/public.ts`.
 
 ## PROJECT STRUCTURE
 

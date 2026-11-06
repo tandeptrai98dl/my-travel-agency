@@ -10,6 +10,23 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Log
 
+### 2026-11-06 (Phase 0 — PR 1 of 4: housekeeping, test tooling, env validation, CI)
+
+Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
+
+- Done:
+  - Removed starter tutorial content, the `/protected` example and starter branding; placeholder home page (`noindex`).
+  - Fixed the `tailwind.config.ts` lint error; ESLint ignores build output and generated files.
+  - Vitest and Playwright configured; Playwright smoke test for the home page (the spec's `/api/health` smoke test moves to PR 3, where the route is added).
+  - Environment validation with Zod in `src/lib/env/`: `public.ts` exports client-safe literals (no Zod in the browser), `server.ts` (`server-only`) validates public and server values at startup via `src/instrumentation.ts`; rejects secret keys (new `sb_secret_` and legacy `service_role` JWT) used as the publishable key; `.env.example` complete.
+  - GitHub Actions CI: lint, typecheck, unit tests, production build, sentinel-based check that server-only values never reach client bundles, Playwright smoke.
+  - CI hardening after a runner stalled for over 6 minutes on `playwright install --with-deps`: 5-minute timeouts on the browser install and E2E steps, and the Chromium download cached per Playwright version and runner image (on a cache hit only the system libraries are installed).
+  - ADR-020 (delivery workflow) and the matching `CLAUDE.md` section.
+- Verified: `npm run lint`, `npm run typecheck`, `npm test` (10 tests) locally and in CI; production build, client-bundle leak check and E2E smoke in CI (the cloud workspace blocks Google Fonts, so `next build` cannot run there).
+- Independent review: changes requested, then addressed (leak check, Zod removed from the client, legacy JWT check, doc paths, test assertion count, CI concurrency).
+- Deviations from the spec: env code lives in `src/lib/env/{schema,public,server}.ts` instead of one `env.ts`; `SUPABASE_SECRET_KEY` stays optional until the admin client lands in step 7; no Prettier (not in ADR-014); the `server-only` package is added (required by `ARCHITECTURE.md` for the admin client; not listed in ADR-014); `@types/node` raised to 22 to match the runtime.
+- Remaining Phase 0: Supabase schema, RLS, pgTAP, seed (PR 2); clients, auth helpers, i18n, admin shell, health check (PR 3); Sentry, Vercel, README (PR 4).
+
 ### 2026-11-06 (documentation update — full scope)
 
 - Owner chose the full-scope MVP. Recorded ADR-005 to ADR-019 in `DECISIONS.md` (ADR-005 to ADR-015 accepted; ADR-016 to ADR-019 proposed).
@@ -38,6 +55,5 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Known issues
 
-- Starter tutorial content (`src/components/tutorial/`, `src/app/protected/`) is still present. Remove it in Phase 0.
-- `tailwind.config.ts` uses `require()` (ESLint error); `npm run lint` scans `.next/`. Fix in Phase 0 step 1.
-- The `src/` restructure is staged but not committed.
+- `src/lib/supabase/proxy.ts` (from the starter) redirects every signed-out visitor to `/auth/login` on any path except `/`. Must be replaced in PR 3 so public pages stay public.
+- The root layout still uses the starter Geist font and a user-selectable theme; replaced in Phase 1 (design tokens, ADR-017).
