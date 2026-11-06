@@ -205,4 +205,5 @@ Template:
   - Radius `0.25rem`; no shadows on cards; fixed light theme on the public site (ADR-017).
   - shadcn/ui primitives are added by copying the new-york component source onto the Radix packages from npm (what the CLI does), because the registry is not reachable from the workspace.
   - `partialPrefetching: true` alongside `cacheComponents`, as Next.js recommends for new projects.
+  - `tailwind-merge` pinned to v2 (v3 targets Tailwind 4) and extended with the custom font sizes.
 - **Consequences:** `DESIGN_SYSTEM.md` values are final. Changing a colour means updating `globals.css`, this ADR and the contrast test.

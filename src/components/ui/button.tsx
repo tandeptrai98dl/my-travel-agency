@@ -16,7 +16,7 @@ const buttonVariants = cva(
         outline:
           "border border-primary bg-transparent text-foreground hover:bg-primary hover:text-primary-foreground",
         ghost: "text-foreground hover:bg-secondary",
-        link: "h-auto px-0 text-foreground underline decoration-gold decoration-1 underline-offset-[6px] hover:decoration-2",
+        link: "text-foreground underline decoration-gold decoration-1 underline-offset-[6px] hover:decoration-2",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
       },
       size: {
@@ -26,6 +26,8 @@ const buttonVariants = cva(
         icon: "h-11 w-11",
       },
     },
+    // Compound variants come after sizes, so they win: link buttons sit inline with text.
+    compoundVariants: [{ variant: "link", class: "h-auto px-0" }],
     defaultVariants: {
       variant: "default",
       size: "default",

@@ -28,15 +28,16 @@ export function times(unitPrice: Dong, quantity: number): Dong {
 }
 
 /**
- * `percent` % of an amount, rounded half up to the nearest dong (deposits, refunds).
- * Integer arithmetic only: amount × percent stays far below 2^53 for any realistic price.
+ * `percent` % of an amount, rounded to the nearest dong with halves away from zero (deposits,
+ * refunds), which matches Postgres `round(numeric)`. Integer arithmetic only; amount × percent
+ * must stay a safe integer.
  */
 export function percentOf(amount: Dong, percent: number): Dong {
   assertDong(amount);
   if (!Number.isSafeInteger(percent) || percent < 0 || percent > 100) {
     throw new InvalidAmountError(percent);
   }
-  const scaled = amount * percent;
+  const scaled = assertDong(amount * percent);
   const quotient = Math.trunc(scaled / 100);
   const remainder = scaled - quotient * 100;
   if (remainder >= 50) return quotient + 1;

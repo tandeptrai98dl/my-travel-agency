@@ -5,6 +5,9 @@ const token = (name: string) => `hsl(var(--${name}) / <alpha-value>)`;
 
 /** Design tokens: DESIGN_SYSTEM.md, values in src/app/globals.css (ADR-021). */
 export default {
+  // `dark:` only applies under an explicit `.dark` class, never from the OS setting: the public
+  // site has a fixed light theme (ADR-017); an admin dark mode could opt in later.
+  darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
@@ -56,7 +59,7 @@ export default {
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 3px)",
       },
       transitionTimingFunction: { luxe: "var(--ease-luxe)" },
       transitionDuration: { 400: "400ms", 600: "600ms", 800: "800ms" },

@@ -60,9 +60,16 @@
     --border: 216 32.3% 24.3%; /* #2A3A52 */
     --input: 36 6% 51.2%; /* #8A847B */
     --ring: 38.9 45.7% 61%; /* #C9A96E */
-    /* Error red is unreadable on navy; a lighter red with navy text instead. */
+    /* Status colours are unreadable on navy; lighter versions with navy text instead. */
     --destructive: 0 64.1% 74.9%; /* #E89696 */
     --destructive-foreground: 216 50% 11.8%; /* #0F1B2D */
+    --success: 150.9 35.4% 62.4%; /* #7DC1A0 */
+    --success-foreground: 216 50% 11.8%; /* #0F1B2D */
+    --warning: 37.7 68.9% 64.7%; /* #E3B567 */
+    --warning-foreground: 216 50% 11.8%; /* #0F1B2D */
+
+    /* Descendants must not inherit the body's navy text colour. */
+    color: hsl(var(--foreground));
   }
 }
 
@@ -76,10 +83,6 @@
   }
   body {
     @apply bg-background font-sans text-foreground antialiased;
-  }
-  /* Navy sections set their own text colour so descendants do not inherit the body's navy. */
-  .theme-navy {
-    color: hsl(var(--foreground));
   }
   /* Visible focus for keyboard users everywhere; components may refine it. */
   :focus-visible {

@@ -15,13 +15,14 @@ Update this log at the start and end of each work session. Newest first.
 Branch `feat/p1-design-tokens` (`docs/specs/phase-1-design-system.md` steps 1–4). The owner allowed the recommended solutions: ADR-016 to ADR-019 accepted (only admin edits departure prices), ADR-021 records the design values.
 
 - Done:
-  - Tokens in `globals.css` (light theme only) and `.theme-navy` for navy sections; Tailwind maps semantic, status and brand colours, fonts, the type scale, radius and easing. Contrast unit test over every token pair in both themes (it found the error red unreadable on navy, now fixed with its own token); focus ring uses a deeper gold `#A7823E` (3:1 on light surfaces).
+  - Tokens in `globals.css` (light theme only) and `.theme-navy` for navy sections (with its own lighter status colours); Tailwind maps semantic, status and brand colours, fonts, the type scale, radius and easing; `dark:` only applies under an explicit `.dark` class. Contrast unit test over the text, status, border and focus token pairs in both themes (it found the error red unreadable on navy, now fixed with its own token), plus guards that the navy block is really read and that focus colours are solid; focus ring uses a deeper gold `#A7823E` (3:1 on light surfaces).
   - Cormorant Garamond and Be Vietnam Pro via `next/font` with the Vietnamese subset in every root layout.
-  - Restyled primitives (button incl. gold variant, badge incl. status variants, input, label, card, checkbox, dropdown menu): 2/4 px corners, no shadows, 44 px touch targets.
+  - Restyled primitives (button incl. gold variant, badge incl. status variants, input, label, card, checkbox, dropdown menu): 2/4 px corners, no shadows, solid 2 px focus rings, 44 px default buttons (small buttons 36 px, checkbox 20 px; both above the WCAG 2.2 AA 24 px target size).
   - Heading, Eyebrow, SectionHeading, Prose, Price, Container, Section; integer-only `src/lib/money.ts` (unit-tested); heading line-heights ≥ 1.15.
-  - `cn()` knows the custom font sizes (tailwind-merge was dropping text colours).
+  - `cn()` knows the custom font sizes (tailwind-merge was dropping text colours); tailwind-merge pinned to v2, the line built for Tailwind 3.
   - `partialPrefetching: true` (ADR-021) silences the Next.js warning.
 - Verified locally: lint, typecheck, unit tests; production build (webpack with mocked fonts) and smoke E2E; screenshots at 375 and 1280 px of the navy home placeholder and the 404 (fallback fonts locally; real fonts load in CI and on Vercel).
+- Independent review: changes requested (major: input focus ring was 1.6:1; minor: link-button padding, `dark:` following the OS, navy contrast test could pass vacuously, status colours on navy, dropdown focus at 2.2:1, overclaims, docs), all addressed.
 
 ### 2026-11-06 (Phase 0 — PR 4 of 4: monitoring, deployment docs)
 

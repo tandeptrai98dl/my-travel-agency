@@ -46,7 +46,7 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 | `ring` | deep gold `#A7823E` (3:1 focus indicator on ivory and white) |
 | `success`, `warning`, `destructive` | Success, Warning, Error |
 
-Navy sections (`.theme-navy`) re-map the tokens: background Deep Navy, text Warm Ivory, cards `#16253B`, muted text `#B9B4AA`, borders `#2A3A52`, ring Champagne Gold, destructive `#E89696` with navy text (the error red fails AA on navy).
+Navy sections (`.theme-navy`) re-map the tokens: background Deep Navy, text Warm Ivory, cards `#16253B`, muted text `#B9B4AA`, borders `#2A3A52`, ring Champagne Gold, and lighter status colours with navy text (destructive `#E89696`, success `#7DC1A0`, warning `#E3B567`), because the light-theme status colours fail AA on navy.
 
 ### Theme
 
@@ -100,17 +100,19 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 
 ## Components
 
-### Available (`src/components/ui`)
+### Available
 
-badge, button, card, checkbox, dropdown-menu, input, label
+- `src/components/ui`: badge (default, secondary, outline, gold, success, warning, destructive), button (default, gold, secondary, outline, ghost, link, destructive; sizes sm 36 px, default 44 px, lg 48 px, icon), card, checkbox, dropdown-menu, input, label
+- `src/components/typography`: Heading, Eyebrow (gold inside navy sections), SectionHeading, Prose, Price
+- `src/components/layout`: Container, Section (ivory, white, navy tones)
 
 ### Planned
 
 | Group | Components |
 | --- | --- |
 | Primitives (shadcn) | IconButton, Textarea, Select, Combobox, Radio, Switch, DatePicker, DateRangePicker, quantity Stepper, PhoneInput, FormField, Tag, Tooltip, Popover, Dialog, Sheet, Tabs, Accordion, Skeleton, Spinner, Toast, Alert, Separator, Avatar, Pagination |
-| Typography | Heading, Eyebrow, SectionHeading, Prose (renders Tiptap JSON), Price (VND formatting), DateText |
-| Layout | Container, Section, SiteHeader (transparent over the hero, solid on scroll), MegaMenu (destinations), MobileNav, SiteFooter (licence, company details), Breadcrumbs, LanguageSwitcher, ContactFloatingButton (Zalo/WhatsApp/hotline), CookieConsentBanner |
+| Typography | Prose rendering of Tiptap JSON (Phase 2), DateText |
+| Layout | SiteHeader (transparent over the hero, solid on scroll), MegaMenu (destinations), MobileNav, SiteFooter (licence, company details), Breadcrumbs, LanguageSwitcher, ContactFloatingButton (Zalo/WhatsApp/hotline), CookieConsentBanner |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
 | Marketing | Hero + HeroSearch, FeaturedTours, DestinationGrid, DestinationCard, TravelStyleCards, EditorialSplit, Testimonials, TrustBar, PressLogos, NewsletterSignup, CTABanner (tailor-made), JournalTeaser |
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |
@@ -121,4 +123,4 @@ badge, button, card, checkbox, dropdown-menu, input, label
 | Admin | AdminShell (role-based sidebar), AdminTopbar, PageHeader, CommandMenu, ConfirmDialog, DataTable, FilterBar, StatCard, Timeline, NotesPanel, AuditTrail, AttentionQueue, LocaleTabs, RichTextEditor, ItineraryBuilder, ListEditor, MediaPicker, MediaUploader, SEOFields, SlugInput, MoneyInput, DepartureBulkCreator, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
 
-Add shadcn primitives with `npx shadcn@latest add <component>`. A dev-only `/admin/design-system` page shows every token and component for visual review.
+Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.

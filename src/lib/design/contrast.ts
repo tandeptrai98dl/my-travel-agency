@@ -34,8 +34,11 @@ export function contrastRatio(a: Rgb, b: Rgb): number {
 
 /** Reads `--name: <channels>;` declarations from one CSS rule block (e.g. ":root"). */
 export function readTokens(css: string, selector: string): Record<string, string> {
+  const occurrences = css.split(`${selector} {`).length - 1;
+  if (occurrences !== 1) {
+    throw new Error(`expected exactly one "${selector} {" rule, found ${occurrences}`);
+  }
   const start = css.indexOf(`${selector} {`);
-  if (start < 0) throw new Error(`selector not found: ${selector}`);
   const body = css.slice(start, css.indexOf("}", start));
   const tokens: Record<string, string> = {};
   for (const [, name, value] of body.matchAll(/--([a-z-]+):\s*([^;]+);/g)) {

@@ -7,7 +7,8 @@ import { contrastRatio, hslChannelsToRgb, readTokens } from "./contrast";
 
 const css = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
 const root = readTokens(css, ":root");
-const navy = { ...root, ...readTokens(css, ".theme-navy") };
+const navyOverrides = readTokens(css, ".theme-navy");
+const navy = { ...root, ...navyOverrides };
 
 const TEXT = 4.5; // WCAG AA, normal text
 const UI = 3; // WCAG AA, UI components, focus indicators and large text
@@ -32,6 +33,7 @@ const PAIRS: [string, string, number][] = [
   ["input", "background", UI],
 ];
 
+/** Status colours as text and as badge backgrounds, in both themes. */
 const STATUS_PAIRS: [string, string, number][] = [
   ["success-foreground", "success", TEXT],
   ["warning-foreground", "warning", TEXT],
@@ -53,8 +55,23 @@ describe("design tokens meet WCAG AA (ADR-021)", () => {
     expect(ratio(root, fg, bg)).toBeGreaterThanOrEqual(min);
   });
 
-  it.each(PAIRS)("navy section: %s on %s >= %s", (fg, bg, min) => {
+  it.each([...PAIRS, ...STATUS_PAIRS])("navy section: %s on %s >= %s", (fg, bg, min) => {
     expect(ratio(navy, fg, bg)).toBeGreaterThanOrEqual(min);
+  });
+
+  it("really re-maps the navy section (the test cannot pass on :root values alone)", () => {
+    expect(Object.keys(navyOverrides).length).toBeGreaterThanOrEqual(15);
+    expect(navyOverrides.background).not.toBe(root.background);
+    expect(navyOverrides.foreground).not.toBe(root.foreground);
+  });
+
+  it("uses solid focus colours (no translucent rings whose real contrast is untested)", () => {
+    const sources = ["input", "button", "checkbox", "dropdown-menu"].map((name) =>
+      readFileSync(fileURLToPath(new URL(`../../components/ui/${name}.tsx`, import.meta.url)), "utf8"),
+    );
+    for (const source of sources) {
+      expect(source).not.toMatch(/ring-ring\/\d|ring-destructive\/\d|focus:bg-accent/);
+    }
   });
 
   it("keeps gold decorative on light surfaces (it fails AA as text there)", () => {
