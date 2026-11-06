@@ -1,1 +1,14 @@
-{}
+{
+  "TourCard": {
+    "privateTour": "Tour riêng",
+    "fewSeats": "Sắp hết chỗ",
+    "duration": "{days} ngày{nights, plural, =0 {} other { # đêm}}",
+    "departs": "Khởi hành {date}",
+    "moreDates": "+{count} ngày khác",
+    "flexible": "Khởi hành linh hoạt",
+    "contactForDates": "Liên hệ để biết lịch",
+    "from": "Từ",
+    "perGuest": "/ khách",
+    "priceOnRequest": "Giá theo yêu cầu"
+  }
+}

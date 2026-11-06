@@ -1,1 +1,14 @@
-{}
+{
+  "TourCard": {
+    "privateTour": "Private tour",
+    "fewSeats": "Few seats left",
+    "duration": "{days, plural, one {# day} other {# days}}{nights, plural, =0 {} one {, # night} other {, # nights}}",
+    "departs": "Departs {date}",
+    "moreDates": "+{count, plural, one {# more date} other {# more dates}}",
+    "flexible": "Flexible departure",
+    "contactForDates": "Contact us for dates",
+    "from": "From",
+    "perGuest": "per guest",
+    "priceOnRequest": "Price on request"
+  }
+}
