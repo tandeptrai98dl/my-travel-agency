@@ -120,7 +120,11 @@ export async function findDepartures(tourId: string, client: ReadClient = create
   return client.rpc("tour_departures", { p_tour_id: tourId });
 }
 
-/** Every published slug per language, for generateStaticParams (decision 4). */
+/**
+ * Every published slug per language, for generateStaticParams (decision 4).
+ * PostgREST returns at most 1,000 rows here; pages beyond that render on first request instead
+ * of at build time (still correct). Paginate with `.range()` when the catalog grows past it.
+ */
 export async function listPublishedSlugs() {
   return createPublicClient().from("tour_translations").select("locale, slug").limit(1000);
 }

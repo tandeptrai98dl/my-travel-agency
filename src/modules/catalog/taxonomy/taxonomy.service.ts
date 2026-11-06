@@ -10,6 +10,7 @@ import { readAlt } from "@/modules/media/media.schemas";
 import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
 
+import { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG } from "../cache-tags";
 import { DESTINATIONS_TAG } from "../destinations.service";
 
 import * as repo from "./taxonomy.repository";
@@ -25,7 +26,6 @@ import {
 } from "./taxonomy.schemas";
 
 /** Cache tags for public travel-style and policy reads (Phase 3 pages read them). */
-import { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG } from "../cache-tags";
 export { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG };
 
 export type SaveError =
