@@ -51,8 +51,13 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
 
   // The photo, uploaded and described in both languages.
   await page.goto("/admin/media");
+  await expect(page.getByRole("heading", { level: 1, name: "Thư viện ảnh" })).toBeVisible();
+  // The uploader's change handler exists only once the page has hydrated.
+  await page.waitForLoadState("networkidle");
   await page.locator('input[type="file"]').setInputFiles({ name: `mu-cang-chai-${run}.png`, mimeType: "image/png", buffer: PNG });
-  await expect(page.getByRole("region", { name: "Tiến trình tải lên" }).getByText(`Đã tải mu-cang-chai-${run}.png`)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Tiến trình tải lên" }).getByText(`Đã tải mu-cang-chai-${run}.png`)).toBeVisible({
+    timeout: 20_000,
+  });
   const search = page.getByRole("searchbox", { name: "Tìm theo mô tả hoặc tên tệp" });
   await search.fill(`mu-cang-chai-${run}`);
   await page.getByRole("button", { name: "Lọc" }).click();
