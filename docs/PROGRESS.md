@@ -4,11 +4,24 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 0 (Foundation) of the full-scope plan (ADR-005, ADR-019)
-- **Next up:** Phase 1 (design system and UI shell). Phase 0 is code-complete; its last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's Vercel and Sentry accounts
-- **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; confirm the proposed ADRs (016–019) and the palette/fonts
+- **Phase:** 1 (Design system and UI shell); Phase 0 code-complete
+- **Next up:** Phase 1 PR 6 (public layout shell: header, mega menu, mobile nav, footer, floating contact, cookie banner, 404), then PR 7 (remaining primitives, `/admin/design-system`, axe checks). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's accounts
+- **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-06 (Phase 1 — PR 5: decisions, tokens, fonts, primitives)
+
+Branch `feat/p1-design-tokens` (`docs/specs/phase-1-design-system.md` steps 1–4). The owner allowed the recommended solutions: ADR-016 to ADR-019 accepted (only admin edits departure prices), ADR-021 records the design values.
+
+- Done:
+  - Tokens in `globals.css` (light theme only) and `.theme-navy` for navy sections; Tailwind maps semantic, status and brand colours, fonts, the type scale, radius and easing. Contrast unit test over every token pair in both themes (it found the error red unreadable on navy, now fixed with its own token); focus ring uses a deeper gold `#A7823E` (3:1 on light surfaces).
+  - Cormorant Garamond and Be Vietnam Pro via `next/font` with the Vietnamese subset in every root layout.
+  - Restyled primitives (button incl. gold variant, badge incl. status variants, input, label, card, checkbox, dropdown menu): 2/4 px corners, no shadows, 44 px touch targets.
+  - Heading, Eyebrow, SectionHeading, Prose, Price, Container, Section; integer-only `src/lib/money.ts` (unit-tested); heading line-heights ≥ 1.15.
+  - `cn()` knows the custom font sizes (tailwind-merge was dropping text colours).
+  - `partialPrefetching: true` (ADR-021) silences the Next.js warning.
+- Verified locally: lint, typecheck, unit tests; production build (webpack with mocked fonts) and smoke E2E; screenshots at 375 and 1280 px of the navy home placeholder and the 404 (fallback fonts locally; real fonts load in CI and on Vercel).
 
 ### 2026-11-06 (Phase 0 — PR 4 of 4: monitoring, deployment docs)
 
@@ -105,8 +118,7 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 - Phase 2: tour and departure price columns are not yet guarded per role (`DATABASE.md` "Known Phase 0 limits").
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
-- The root layouts still use the starter Geist font (`src/app/fonts.ts`); replaced in Phase 1 (design tokens). The theme switcher is no longer rendered; next-themes stays installed (ADR-017).
-- Next.js warns that `partialPrefetching` is not set alongside `cacheComponents`; decide in Phase 1 together with the navigation work.
+- The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
