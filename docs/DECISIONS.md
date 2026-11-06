@@ -183,7 +183,7 @@ Template:
 ## ADR-020: Delivery workflow — branches, pull requests, review and merge
 
 - **Date:** 2026-11-06
-- **Status:** Accepted
+- **Status:** Accepted; amended by ADR-025
 - **Context:** Work is implemented by Claude (Claude Code) against the GitHub repository `tandeptrai98dl/my-travel-agency`, with the project owner approving scope and decisions.
 - **Decision:**
   - `main` is always deployable. All work happens on short-lived branches (`feat/…`, `fix/…`, `chore/…`, `docs/…`), one task or spec slice per branch, one commit per spec step, Conventional Commits.
@@ -254,7 +254,7 @@ Template:
     - Stream A: the rest of Phase 2 (departures; journal, pages, reviews, redirects; settings and staff).
     - Stream B: Phase 3 public pages (Claude Design mockups first, then homepage, tour detail, destinations, static pages, tour listing).
   - **Migrations in parallel**: both streams may add migrations when they touch different tables. The coordinator assigns each stream a timestamp range, so the order is fixed. `database.types.ts` is regenerated on the branch that merges second, and CI's staleness check still applies. A migration that changes a function or table owned by the other stream waits for that stream's merge.
-  - **Messages per namespace**: UI strings live in `messages/<locale>/<file>.json`, listed once in `src/i18n/message-files.ts`, so the two streams edit different files.
+  - **Messages per namespace**: UI strings live in `messages/<locale>/<file>.json`, listed once in `src/i18n/messages.ts` (`MESSAGE_FILES`), so the two streams edit different files.
   - **Focused reviews**: an independent reviewer still checks every PR. Critical and major findings block the merge. Minor findings are fixed only when cheap; the rest are added to the phase backlog in `PROGRESS.md` and handled in a polish PR at the end of the phase. A re-review checks only the fix commit.
   - **Lighter ceremony**: progress entries list what was done, what was verified, deviations and review outcome in about ten lines. PR bodies keep the acceptance pass/fail table and the blockers. Local screenshot and axe checks with a faked user are done for public pages only; admin pages rely on the CI axe and E2E tests.
   - Small related slices may share one PR (for example settings and staff).

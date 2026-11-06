@@ -73,12 +73,12 @@ Before each task:
 - The pull request description reports every acceptance criterion as pass/fail with evidence, and lists anything blocked by missing accounts or secrets.
 - An independent reviewer (a separate agent) checks each pull request against the spec, RLS rules and security rules.
 - Squash-merge only when CI is green and the review has no unresolved critical or major findings.
-- At most two parallel streams (ADR-025). Both may add migrations when they touch different tables, using the timestamp range the coordinator assigned; the branch that merges second regenerates `database.types.ts`.
+- At most two parallel streams (ADR-025). Both may add migrations when they touch different tables, using the timestamp range the coordinator assigned; the branch that merges second regenerates `database.types.ts`. A migration that changes a table or function owned by the other stream waits for that stream's merge.
 - Reviews: critical and major findings block the merge; other findings are fixed when cheap or go to the phase backlog in `docs/PROGRESS.md`. A re-review checks only the fix commit.
 
 ## PROGRESS MANAGEMENT
 
-After each task:
+After each task (in parallel streams, stream agents report this in the pull request and the coordinator updates `docs/PROGRESS.md` when merging, ADR-025):
 
 - Update `docs/PROGRESS.md`.
 - Record completed features.
