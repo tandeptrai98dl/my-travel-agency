@@ -78,10 +78,10 @@ insert into public.destinations (id, key, type, status) values
   ('50000000-0000-4000-8000-000000000001', 'test-published', 'country', 'published'),
   ('50000000-0000-4000-8000-000000000002', 'test-draft', 'country', 'draft');
 
-insert into public.destination_translations (destination_id, locale, slug, name, is_published) values
-  ('50000000-0000-4000-8000-000000000001', 'vi', 'test-cong-khai', 'Công khai', true),
-  ('50000000-0000-4000-8000-000000000001', 'en', 'test-unpublished', 'Unpublished', false),
-  ('50000000-0000-4000-8000-000000000002', 'vi', 'test-nhap', 'Nháp', true);
+insert into public.destination_translations (destination_id, locale, slug, name, summary, is_published) values
+  ('50000000-0000-4000-8000-000000000001', 'vi', 'test-cong-khai', 'Công khai', 'Tóm tắt', true),
+  ('50000000-0000-4000-8000-000000000001', 'en', 'test-unpublished', 'Unpublished', null, false),
+  ('50000000-0000-4000-8000-000000000002', 'vi', 'test-nhap', 'Nháp', 'Tóm tắt', true);
 
 insert into public.settings (key, value, is_public) values
   ('test_public', '{}', true),

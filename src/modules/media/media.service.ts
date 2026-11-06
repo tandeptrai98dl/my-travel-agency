@@ -251,3 +251,8 @@ export async function listMedia(params: { q: string; page: number }): Promise<{
   const total = count ?? items.length;
   return { items, total, pageCount: Math.max(1, Math.ceil(total / MEDIA_PAGE_SIZE)) };
 }
+
+/** Public URL of a stored image, for other modules (catalog, content) showing a chosen image. */
+export function getMediaUrl(path: string): string {
+  return publicUrlFor(path);
+}
