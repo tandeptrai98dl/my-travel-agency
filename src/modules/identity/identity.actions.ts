@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/auth/get-user";
+import { type CurrentUser, getCurrentUser } from "@/lib/auth/get-user";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,15 +13,16 @@ export type StartEnrolmentResult = ({ ok: true } & TotpEnrolment) | { ok: false;
 export type VerifyResult = { ok: true } | { ok: false; error: "invalid_code" | "failed" };
 
 /** MFA is managed by staff at any assurance level (that is how they reach aal2). */
-async function requireStaffSession(): Promise<boolean> {
+async function requireStaffSession(): Promise<CurrentUser | null> {
   const user = await getCurrentUser();
-  return user != null && isStaffRole(user.role);
+  return user != null && isStaffRole(user.role) ? user : null;
 }
 
 export async function startTotpEnrolment(): Promise<StartEnrolmentResult> {
-  if (!(await requireStaffSession())) return { ok: false, error: "failed" };
+  const user = await requireStaffSession();
+  if (!user) return { ok: false, error: "failed" };
   try {
-    return { ok: true, ...(await enrolTotp(await createClient())) };
+    return { ok: true, ...(await enrolTotp(await createClient(), user.aal)) };
   } catch {
     return { ok: false, error: "failed" };
   }

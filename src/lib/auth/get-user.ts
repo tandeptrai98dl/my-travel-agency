@@ -45,9 +45,9 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
     .select("id, email, full_name, role, locale, is_active, deleted_at")
     .eq("id", claims.sub)
     .maybeSingle();
-  if (profileError || !profile || !profile.is_active || profile.deleted_at) {
-    return { status: "inactive" };
-  }
+  // A database failure is an error, not a deactivated account.
+  if (profileError) throw profileError;
+  if (!profile || !profile.is_active || profile.deleted_at) return { status: "inactive" };
 
   const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 

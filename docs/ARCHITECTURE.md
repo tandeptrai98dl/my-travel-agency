@@ -127,6 +127,7 @@ The starter's `/auth/*` pages stay usable for staff until the localized customer
 | --- | --- | --- | --- | --- |
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
+| Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
 | Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
