@@ -10,5 +10,110 @@
     "from": "Từ",
     "perGuest": "/ khách",
     "priceOnRequest": "Giá theo yêu cầu"
+  },
+  "TourDetail": {
+    "breadcrumbLabel": "Đường dẫn",
+    "home": "Trang chủ",
+    "tours": "Tour",
+    "gallery": {
+      "viewAll": "Xem {count} ảnh",
+      "title": "Ảnh của hành trình",
+      "close": "Đóng",
+      "previous": "Ảnh trước",
+      "next": "Ảnh sau",
+      "counter": "Ảnh {index} / {count}"
+    },
+    "facts": {
+      "label": "Thông tin chính",
+      "duration": "Thời lượng",
+      "groupSize": "Quy mô",
+      "groupMax": "Tối đa {count} khách",
+      "privateMin": "Nhóm riêng từ {count} khách",
+      "style": "Phong cách",
+      "code": "Mã tour",
+      "type": "Hình thức",
+      "typeGroup": "Theo đoàn, lịch cố định",
+      "typePrivate": "Tour riêng, ngày tùy chọn"
+    },
+    "highlights": "Điểm nhấn",
+    "itinerary": {
+      "title": "Lịch trình",
+      "day": "Ngày",
+      "meals": "Bữa ăn: {meals}",
+      "overnight": "Nghỉ đêm: {place}",
+      "breakfast": "sáng",
+      "lunch": "trưa",
+      "dinner": "tối"
+    },
+    "inclusions": "Giá đã bao gồm",
+    "exclusions": "Chưa bao gồm",
+    "practicalInfo": "Thông tin hữu ích",
+    "departures": {
+      "title": "Lịch khởi hành",
+      "live": "Giá và chỗ trống cập nhật trực tiếp",
+      "dates": "Ngày",
+      "status": "Trạng thái",
+      "seats": "Chỗ trống",
+      "price": "Giá / người lớn",
+      "seatsLeft": "Còn {count} chỗ",
+      "none": "—",
+      "open": "Còn chỗ",
+      "few": "Sắp hết chỗ",
+      "guaranteed": "Chắc chắn khởi hành",
+      "closed": "Đã đóng",
+      "soldOut": "Hết chỗ",
+      "cutoff": "Ngừng nhận đặt",
+      "empty": "Chưa có ngày khởi hành sắp tới. Gọi hoặc gửi email để chúng tôi báo ngày phù hợp.",
+      "error": "Chưa tải được lịch khởi hành.",
+      "retry": "Thử lại",
+      "loading": "Đang tải lịch khởi hành",
+      "child": "Trẻ em đến {age} tuổi: {price}",
+      "infant": "Em bé dưới {age} tuổi: {price}, không chiếm chỗ",
+      "single": "Phụ thu phòng đơn: {price}",
+      "minPax": "Đoàn khởi hành khi có từ {count} khách.",
+      "fromNext": "Theo ngày khởi hành gần nhất."
+    },
+    "tiers": {
+      "title": "Giá tham khảo theo số khách",
+      "range": "{min}–{max} khách",
+      "perAdult": "/ người lớn",
+      "note": "Giá cuối cùng được xác nhận trong báo giá theo ngày và dịch vụ bạn chọn."
+    },
+    "policy": {
+      "title": "Đặt cọc và hủy",
+      "payment": "Thanh toán",
+      "paymentText": "Đặt cọc {deposit}% khi đặt chỗ. Phần còn lại thanh toán trước ngày khởi hành {days} ngày, qua VNPay hoặc chuyển khoản.",
+      "cancellation": "Hủy tour",
+      "rule": "Hủy trước {days} ngày trở lên: hoàn {percent}%.",
+      "ruleLast": "Dưới {days} ngày: hoàn {percent}%."
+    },
+    "faq": "Câu hỏi thường gặp",
+    "booking": {
+      "label": "Đặt tour",
+      "from": "Từ",
+      "perGuest": "/ khách",
+      "priceNote": "Giá người lớn thấp nhất trong các ngày còn nhận đặt.",
+      "privateNote": "Giá tham khảo mỗi người lớn, theo số khách.",
+      "priceOnRequest": "Giá theo yêu cầu",
+      "next": "Khởi hành gần nhất: {date}",
+      "noDate": "Chưa có ngày khởi hành sắp tới",
+      "seeDepartures": "Xem lịch khởi hành",
+      "call": "Gọi {phone} để đặt chỗ",
+      "callPrivate": "Gọi {phone} để được tư vấn",
+      "email": "Gửi email cho chúng tôi",
+      "emailSubject": "Đặt chỗ tour {code}",
+      "note": "Đặt cọc {deposit}%. Thanh toán trực tuyến sẽ có trên trang này trong thời gian tới.",
+      "unavailable": "Chưa tải được ngày khởi hành."
+    },
+    "related": {
+      "eyebrow": "Có thể bạn quan tâm",
+      "title": "Hành trình gần với chuyến này"
+    },
+    "error": {
+      "title": "Chưa tải được trang này",
+      "text": "Có lỗi khi đọc thông tin hành trình. Hãy thử lại sau ít phút.",
+      "retry": "Thử lại",
+      "back": "Xem tất cả hành trình"
+    }
   }
 }
