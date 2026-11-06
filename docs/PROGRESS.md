@@ -5,10 +5,50 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR C (destinations, travel styles, cancellation policies), then tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR D (tours, with the price guards of ADR-024), then departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR 10: destinations, travel styles, cancellation policies)
+
+Branch `feat/p2-taxonomy` (`docs/specs/phase-2-catalog-admin.md` steps 8–10).
+
+- Done:
+  - Migration `20261106150000_taxonomy_rules.sql`:
+    - `is_valid_slug()` checks on the six translation tables;
+    - destination tree triggers (country → region → city, no type change while a parent has children);
+    - destination and travel-style translations cannot be published without a name and summary/description;
+    - `is_valid_cancellation_rules()` (1–10 tiers, days falling to 0, refunds never growing);
+    - a single default policy.
+    - pgTAP: 17 assertions.
+  - `src/modules/catalog/taxonomy`: Zod schemas, repository, service and Server Actions.
+    - Keys are fixed once published.
+    - Publishing with a hero image needs its VI/EN alt text.
+    - A changed slug on a published translation adds a 301.
+    - Cache tags `destinations`, `travel-styles`, `cancellation-policies`.
+    - A new item whose translation fails to save is removed again, so a retry does not hit "key taken".
+    - Editing a policy raises its version; the default flag moves only after the policy has saved.
+    - Database errors are mapped back to their fields.
+  - `/admin/destinations`: the tree with per-language publish state, plus links to add a region or city under a parent.
+  - Create and edit forms (React Hook Form + Zod, server errors put back on fields):
+    - VI/EN tabs that show missing fields;
+    - slug generation and an availability check on blur;
+    - SEO fields and a publish switch per language;
+    - hero image from the MediaPicker;
+    - delete refused while tours or children use the item.
+  - `/admin/travel-styles`: the same pattern as a flat list.
+  - `/admin/cancellation-policies` (admin only): rules table, version and usage; editor for refund tiers, VI/EN summaries and the default flag.
+  - Shared pieces: `AdminMessages` gives a page's client components only its admin strings; `FormField` accepts schemas that transform values; `StatusBadge` maps `publish_status`.
+- Verified locally:
+  - lint, typecheck, 225 unit tests (schemas and service rules);
+  - pgTAP on the local Postgres shim: 111 assertions, all four files;
+  - production build.
+  - The destination tree, the destination, travel style and policy forms (empty and with errors) were rendered against the REST stub with a temporarily faked admin (not committed): no axe violations at 1280 or 375 px. The narrow layout of the policy rules was fixed after the screenshots.
+  - Signed-in E2E runs in CI: the editor builds and deletes a country → region branch with the publish checks; a slug already in use is caught on blur; editor and operator are blocked from the pages they cannot use; the aal2 admin creates a policy, and rules out of order are refused.
+- Deviations:
+  - The policies live at `/admin/cancellation-policies` (Settings links to them in PR G).
+  - The destination rich `content` field gets its editor with the RichTextEditor in PR F; public pages use the summary until then.
 
 ### 2026-11-06 (Phase 2 — PR 9: media library)
 
