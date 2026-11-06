@@ -218,7 +218,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 | Lib | `src/lib/money.ts` (`formatPrice`), `src/lib/dates.ts` (today in Vietnam time, next 12 months) |
 | Route | `src/app/[locale]/(site)/tours/{page,error}.tsx` with `generateMetadata` and JSON-LD |
 | Components | 16+ files in `src/components/tour/`, `src/components/ui/pagination.tsx` |
-| i18n, tests | `messages/{vi,en}.json` (`tourListing` namespace), `src/i18n/pathnames.ts` (check), `tests/e2e/tour-listing.spec.ts` |
+| i18n, tests | `messages/{vi,en}/public-tours.json` (`tourListing` namespace), `src/i18n/pathnames.ts` (check), `tests/e2e/tour-listing.spec.ts` |
 
 ## 7. Task specification — TASK-P3-01
 
@@ -237,7 +237,7 @@ Reuse shadcn primitives; add missing ones with `npx shadcn@latest add`, never pr
 4. Server components: TourCard, TourGrid, TourGridSkeleton, TourListEmpty, Pagination.
 5. Client components: provider, toolbar, search, sort, filter panel and filters, mobile sheet, chips, results wrapper.
 6. Route: `page.tsx` (Suspense, metadata, JSON-LD, out-of-range redirect), `error.tsx`.
-7. `messages/vi.json`, `messages/en.json`.
+7. `messages/vi/public-tours.json`, `messages/en/public-tours.json`.
 8. E2E tests (`tests/e2e/tour-listing.spec.ts`).
 9. Update `docs/PROGRESS.md`; record any deviation in the PR.
 

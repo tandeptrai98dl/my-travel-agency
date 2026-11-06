@@ -64,7 +64,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
 │   ├── seed.sql                  # development data only
 │   └── tests/                    # pgTAP tests
 ├── scripts/seed-users.ts         # sample staff accounts via the Auth Admin API (local only)
-├── messages/{vi,en}.json         # UI strings
+├── messages/{vi,en}/*.json       # UI strings, one file per area (ADR-025)
 ├── emails/                       # React Email templates
 └── src/
     ├── app/
