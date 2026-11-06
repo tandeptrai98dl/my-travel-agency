@@ -169,7 +169,9 @@
       "total": "{count, plural, one {# item} other {# items}}",
       "actions": "Actions",
       "sortAscending": "click to sort ascending",
-      "sortDescending": "click to sort descending"
+      "sortDescending": "click to sort descending",
+      "outOfRange": "There is nothing on this page any more.",
+      "lastPage": "Go to the last page ({page})"
     },
     "Form": {
       "vi": "Vietnamese",

@@ -126,11 +126,15 @@ test.describe("design system page", () => {
     await blocks.getByRole("button", { name: "Tạo từ tiêu đề" }).click();
     await expect(blocks.getByRole("textbox", { name: "Đường dẫn (slug)" })).toHaveValue("vinh-ha-long-tren-du-thuyen-rieng");
 
-    // Money: grouped input is read exactly; a decimal amount is refused (empty value).
+    // Money: grouped input is read exactly; a decimal amount is refused (the field clears on blur
+    // instead of turning into a different number).
     const price = blocks.getByRole("textbox", { name: "Giá người lớn (VND)" });
-    await price.fill("12.900.000");
+    await price.fill("12900000");
     await price.blur();
     await expect(price).toHaveValue("12.900.000");
+    await price.fill("12.900.000,50");
+    await price.blur();
+    await expect(price).toHaveValue("");
 
     // List editor: moving a line keeps focus on it and announces the move.
     await blocks.getByRole("button", { name: "Chuyển dòng 2 xuống" }).click();

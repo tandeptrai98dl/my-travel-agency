@@ -161,6 +161,11 @@ async function AuditLogList({ searchParams }: Props) {
         page={params.page}
         pageCount={pageCount}
         hrefFor={(overrides) => listHref(BASE, query, overrides)}
+        outOfRange={
+          entries.length === 0 && total > 0
+            ? { message: t("Table.outOfRange"), lastPageLabel: t("Table.lastPage", { page: pageCount }) }
+            : undefined
+        }
         labels={{
           caption: t("Audit.title"),
           empty: filtered ? t("Table.emptyFiltered") : t("Table.empty"),

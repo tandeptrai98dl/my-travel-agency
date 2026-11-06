@@ -29,16 +29,18 @@ type Props = {
   max?: number;
 };
 
-let nextKey = 0;
-const newKey = () => `item-${nextKey++}`;
-
 /**
  * Ordered list of short texts (highlights, inclusions). Rows keep stable keys, so focus follows
  * a moved row; moves and removals are announced; buttons never submit the surrounding form.
+ * Controlled: the parent must apply every `onChange` (keys are reordered with the values).
  */
 export function ListEditor({ label, value, onChange, labels, max = 30 }: Props) {
   const id = useId();
-  const [keys, setKeys] = useState<string[]>(() => value.map(newKey));
+  // Keys are per component (the same on server and browser for the first render); DOM ids use
+  // them only through React's useId prefix.
+  const counter = useRef(value.length);
+  const newKey = () => `item-${counter.current++}`;
+  const [keys, setKeys] = useState<string[]>(() => value.map((_, i) => `item-${i}`));
   const [announcement, setAnnouncement] = useState("");
   const focusTarget = useRef<{ key: string; control: "input" | "up" | "down" } | "add" | null>(null);
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
@@ -47,7 +49,7 @@ export function ListEditor({ label, value, onChange, labels, max = 30 }: Props) 
   // Keep keys in step when the parent replaces the list (form reset).
   useEffect(() => {
     setKeys((current) =>
-      current.length === value.length ? current : value.map((_, i) => current[i] ?? newKey()),
+      current.length === value.length ? current : value.map((_, i) => current[i] ?? `item-${counter.current++}`),
     );
   }, [value]);
 

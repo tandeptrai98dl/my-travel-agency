@@ -169,7 +169,9 @@
       "total": "{count, plural, other {# mục}}",
       "actions": "Thao tác",
       "sortAscending": "bấm để sắp xếp tăng dần",
-      "sortDescending": "bấm để sắp xếp giảm dần"
+      "sortDescending": "bấm để sắp xếp giảm dần",
+      "outOfRange": "Trang này không còn dữ liệu.",
+      "lastPage": "Về trang cuối ({page})"
     },
     "Form": {
       "vi": "Tiếng Việt",

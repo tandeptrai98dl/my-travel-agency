@@ -38,6 +38,8 @@ type Props<Row> = {
   labels: Labels;
   /** Shown instead of the table when there are no rows (e.g. with a "clear filters" action). */
   emptyAction?: React.ReactNode;
+  /** Rows exist, but not on this page (an old link past the end): offer the last page. */
+  outOfRange?: { message: string; lastPageLabel: string };
 };
 
 /**
@@ -54,7 +56,23 @@ export function DataTable<Row>({
   hrefFor,
   labels,
   emptyAction,
+  outOfRange,
 }: Props<Row>) {
+  if (rows.length === 0 && outOfRange) {
+    return (
+      <EmptyState
+        headingLevel={2}
+        title={outOfRange.message}
+        description={labels.total}
+        action={
+          <Link href={hrefFor({ page: pageCount })} className="text-small underline underline-offset-4">
+            {outOfRange.lastPageLabel}
+          </Link>
+        }
+        className="py-12"
+      />
+    );
+  }
   if (rows.length === 0) {
     return <EmptyState headingLevel={2} title={labels.empty} action={emptyAction} className="py-12" />;
   }

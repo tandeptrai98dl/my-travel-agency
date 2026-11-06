@@ -13,7 +13,8 @@
 --               columns that changed. Updates that change nothing are skipped.
 -- Arguments: (id column, kept columns, ignored columns)
 --   kept columns    '*' keeps every value; otherwise a comma list. Other changed columns are
---                   listed by name only in `changed`, never with their values (personal data,
+--                   listed by name only (`changed` on update, `omitted` on insert and delete),
+--                   never with their values (personal data,
 --                   Decree 13/2023: anonymising a profile must not leave the old values here).
 --   ignored columns changes to these alone are not logged (updated_at always; seats_reserved on
 --                   departures, which Phase 4 functions move on every hold).
@@ -71,7 +72,10 @@ begin
     changes := jsonb_build_object(case when tg_op = 'INSERT' then 'after' else 'before' end, diff_after);
   end if;
   if hidden_keys is not null then
-    changes := changes || jsonb_build_object('changed', to_jsonb(hidden_keys));
+    -- Updates: changed columns whose values are not kept. Inserts and deletes: columns left out.
+    changes := changes || jsonb_build_object(
+      case when tg_op = 'UPDATE' then 'changed' else 'omitted' end, to_jsonb(hidden_keys)
+    );
   end if;
 
   if id_column = 'key' then
