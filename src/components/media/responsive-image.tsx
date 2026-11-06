@@ -15,6 +15,8 @@ type Props = {
   fit?: "cover" | "contain";
   /** Extra classes; they must not conflict with the image's own (no merging, see `cx`). */
   className?: string;
+  /** What stands in for a missing or broken image: a neutral frame (default) or nothing (heroes). */
+  fallback?: "frame" | "none";
   /** Zooms the image 1.03 on hover of the nearest `.group` (DESIGN_SYSTEM.md "Motion"). */
   zoomOnHover?: boolean;
 };
@@ -28,8 +30,16 @@ type Props = {
  * renders), so public pages ship no `next/image` client code (about 6 KB gzip; spec decision 16);
  * only the small `FallbackImage` hydrates, to swap in the frame when the file fails to load.
  */
-export function ResponsiveImage({ image, sizes, priority = false, fit = "cover", className, zoomOnHover = false }: Props) {
-  if (!image) return <ImageFrame />;
+export function ResponsiveImage({
+  image,
+  sizes,
+  priority = false,
+  fit = "cover",
+  fallback = "frame",
+  className,
+  zoomOnHover = false,
+}: Props) {
+  if (!image) return fallback === "frame" ? <ImageFrame /> : null;
 
   const attributes = fillImageAttributes(image, sizes, priority);
   // No preload() for priority images: from a server component it becomes a hint in the RSC
@@ -39,6 +49,7 @@ export function ResponsiveImage({ image, sizes, priority = false, fit = "cover",
     <FallbackImage
       {...attributes}
       alt={image.alt}
+      hideOnError={fallback === "none"}
       className={cx(
         fit === "contain" ? "object-contain" : "object-cover",
         zoomOnHover &&

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
+import { type IsoMonth, upcomingMonths } from "@/lib/dates";
 import { features } from "@/lib/features";
 import { DESTINATIONS_TAG, REVIEWS_TAG, SETTINGS_TAG, TOURS_TAG, TRAVEL_STYLES_TAG } from "@/modules/catalog/cache-tags";
 import { getFeaturedTourCards } from "@/modules/catalog/public/tour-public.service";
@@ -35,6 +36,8 @@ export type Homepage = {
   travelStyles: HomeTravelStyle[];
   testimonial: HomeTestimonial | null;
   posts: HomePost[];
+  /** Departure months offered by the hero search (this month and the next 11, Vietnam time). */
+  searchMonths: IsoMonth[];
 };
 
 function log(section: string, error: unknown) {
@@ -112,5 +115,7 @@ export async function getHomepage(locale: Locale): Promise<Homepage> {
     travelStyles: travelStyles.value,
     testimonial: testimonial.value,
     posts: posts.value,
+    // Computed inside the cache (a prerendered page cannot read the clock); refreshed hourly.
+    searchMonths: upcomingMonths(12),
   };
 }

@@ -42,8 +42,7 @@ export async function findTravelStyles(locale: Locale) {
     .eq("status", "published")
     .eq("travel_style_translations.locale", locale)
     .eq("travel_style_translations.is_published", true)
-    .order("sort_order")
-    .limit(4);
+    .order("sort_order");
 }
 
 /** Approved, featured reviews, newest first (never `booking_id`). */

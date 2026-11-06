@@ -111,3 +111,17 @@ export function formatDateRange(from: IsoDate, to: IsoDate, locale: "vi" | "en")
   const short = new Intl.DateTimeFormat("en-GB", sameMonth ? { day: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
   return `${short.format(new Date(toUtc(from)))} – ${formatDate(to, locale)}`;
 }
+
+/** "Tháng 12/2026" (vi) or "December 2026" (en), built by hand so it never depends on ICU data. */
+export function formatMonth(month: IsoMonth, locale: "vi" | "en"): string {
+  const { first } = monthBounds(month);
+  const [year, index] = [first.slice(0, 4), Number(first.slice(5, 7))];
+  if (locale === "vi") return `Tháng ${index}/${year}`;
+  return `${new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(new Date(toUtc(first)))} ${year}`;
+}
+
+/** The current month in Vietnam and the following ones, `count` in all. */
+export function upcomingMonths(count: number, now: Date = new Date()): IsoMonth[] {
+  const start = monthOf(todayInVietnam(now));
+  return Array.from({ length: count }, (_, index) => addMonths(start, index));
+}

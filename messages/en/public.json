@@ -3,12 +3,6 @@
     "siteName": "Premium Travel Agency",
     "defaultDescription": "Carefully crafted private and small-group journeys."
   },
-  "HomePage": {
-    "metaTitle": "Coming soon",
-    "metaDescription": "Our new website is being prepared.",
-    "eyebrow": "Coming soon",
-    "title": "Our new website is on its way"
-  },
   "LanguageSwitcher": {
     "label": "Language",
     "vi": "Tiếng Việt",

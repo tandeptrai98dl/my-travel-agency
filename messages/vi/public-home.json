@@ -1,1 +1,97 @@
-{}
+{
+  "Home": {
+    "metaTitle": "Hành trình riêng tư và nhóm nhỏ trong nước, quốc tế",
+    "metaDescription": "Hành trình riêng tư và tour nhóm nhỏ được thiết kế tỉ mỉ: Việt Nam, Nhật Bản, châu Âu. Giá rõ ràng, lịch khởi hành cập nhật, tư vấn tận tâm.",
+    "hero": {
+      "defaultEyebrow": "Hành trình riêng tư",
+      "defaultTitle": "Những chuyến đi được chăm chút từng chi tiết",
+      "lead": "Lịch trình riêng, nhóm nhỏ và những người dẫn đường hiểu từng vùng đất.",
+      "searchLabel": "Tìm hành trình",
+      "destination": "Điểm đến",
+      "anyDestination": "Mọi điểm đến",
+      "month": "Tháng khởi hành",
+      "anyMonth": "Bất kỳ tháng nào",
+      "style": "Phong cách",
+      "anyStyle": "Mọi phong cách",
+      "submit": "Tìm hành trình"
+    },
+    "trust": {
+      "label": "Vì sao chọn chúng tôi",
+      "licence": "Giấy phép lữ hành quốc tế {number}",
+      "company": "{name}",
+      "hours": "Tư vấn {hours}",
+      "hotline": "Hotline {phone}",
+      "payments": "Thanh toán qua VNPay hoặc chuyển khoản VietQR"
+    },
+    "featured": {
+      "eyebrow": "Hành trình nổi bật",
+      "title": "Những chuyến đi được yêu thích",
+      "viewAll": "Xem tất cả hành trình"
+    },
+    "destinations": {
+      "eyebrow": "Điểm đến",
+      "title": "Nơi chúng tôi đưa bạn đến",
+      "bestTime": "Thời điểm đẹp: {value}"
+    },
+    "styles": {
+      "eyebrow": "Phong cách",
+      "title": "Đi theo cách của bạn"
+    },
+    "testimonial": {
+      "eyebrow": "Khách hàng kể lại",
+      "rating": "{rating} trên 5 sao",
+      "verified": "Khách đã đi tour"
+    },
+    "journal": {
+      "eyebrow": "Tạp chí",
+      "title": "Cảm hứng cho chuyến đi tới",
+      "viewAll": "Đọc tạp chí"
+    },
+    "tailorMade": {
+      "eyebrow": "Thiết kế riêng",
+      "title": "Một hành trình chỉ dành cho bạn",
+      "text": "Kể cho chúng tôi nơi bạn muốn đến, thời gian và người đi cùng. Chuyên viên tư vấn sẽ gửi lại một lịch trình riêng.",
+      "call": "Gọi {phone}",
+      "email": "Gửi email cho chúng tôi"
+    },
+    "newsletter": {
+      "eyebrow": "Bản tin",
+      "title": "Những hành trình mới, mỗi tháng một lần",
+      "text": "Gợi ý theo mùa và lịch khởi hành mới. Không quảng cáo dồn dập; huỷ đăng ký bất cứ lúc nào.",
+      "email": "Email của bạn",
+      "placeholder": "ten@email.com",
+      "submit": "Đăng ký",
+      "sending": "Đang gửi…",
+      "privacy": "Chúng tôi chỉ dùng email này để gửi bản tin, theo chính sách bảo mật.",
+      "unavailable": "Đăng ký nhận bản tin sẽ sớm mở.",
+      "success": "Gần xong rồi: hãy mở email chúng tôi vừa gửi và bấm liên kết xác nhận.",
+      "errors": {
+        "invalidEmail": "Email chưa đúng định dạng.",
+        "verification": "Chưa xác minh được. Hãy thử lại.",
+        "rateLimited": "Bạn đã gửi nhiều lần. Hãy thử lại sau ít phút.",
+        "unavailable": "Đăng ký nhận bản tin tạm thời chưa mở.",
+        "failed": "Chưa gửi được. Hãy thử lại sau."
+      }
+    }
+  },
+  "NewsletterConfirm": {
+    "metaTitle": "Xác nhận đăng ký bản tin",
+    "title": "Xác nhận đăng ký bản tin",
+    "text": "Bấm nút bên dưới để bắt đầu nhận bản tin của chúng tôi.",
+    "button": "Xác nhận đăng ký",
+    "confirmedTitle": "Cảm ơn bạn đã đăng ký",
+    "confirmedText": "Bản tin đầu tiên sẽ đến hộp thư của bạn trong lần gửi tới.",
+    "invalidTitle": "Liên kết không còn hiệu lực",
+    "invalidText": "Liên kết xác nhận đã được dùng hoặc đã hết hạn. Bạn có thể đăng ký lại ở trang chủ.",
+    "unavailable": "Chưa xác nhận được lúc này. Hãy thử lại sau ít phút.",
+    "backHome": "Về trang chủ"
+  },
+  "NewsletterEmail": {
+    "subject": "Xác nhận đăng ký bản tin {brand}",
+    "greeting": "Xin chào,",
+    "body": "Bạn (hoặc ai đó dùng email này) vừa đăng ký nhận bản tin của {brand}. Hãy bấm liên kết bên dưới để xác nhận.",
+    "button": "Xác nhận đăng ký",
+    "expiry": "Liên kết có hiệu lực trong 7 ngày.",
+    "ignore": "Nếu bạn không đăng ký, hãy bỏ qua email này; bạn sẽ không nhận thêm email nào."
+  }
+}
