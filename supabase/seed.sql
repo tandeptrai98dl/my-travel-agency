@@ -307,10 +307,21 @@ cross join lateral (
 where t.type = 'group';
 
 -- Hero images for the sample tours. Rows only: the files are not in Storage, so admin previews show
--- the blur-less placeholder until real photos are uploaded through /admin/media.
+-- an empty frame until real photos are uploaded through /admin/media. Ids are deterministic
+-- version-4 UUIDs (the admin validates ids as RFC 9562 UUIDs).
+create function pg_temp.seed_uuid(seed text)
+returns uuid
+language sql
+immutable
+as $$
+  select (substr(h, 1, 8) || '-' || substr(h, 9, 4) || '-4' || substr(h, 14, 3) || '-8'
+          || substr(h, 18, 3) || '-' || substr(h, 21, 12))::uuid
+  from (select md5(seed) as h) as m
+$$;
+
 insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit)
-select md5('seed-media-' || t.code)::uuid,
-       '2026/01/' || md5('seed-media-' || t.code)::uuid || '.jpg',
+select pg_temp.seed_uuid('seed-media-' || t.code),
+       '2026/01/' || pg_temp.seed_uuid('seed-media-' || t.code) || '.jpg',
        'image/jpeg', 2400, 1600, 850000,
        jsonb_build_object('vi', vi.title, 'en', coalesce(en.title, vi.title)),
        'Sample image'
@@ -319,7 +330,7 @@ join public.tour_translations vi on vi.tour_id = t.id and vi.locale = 'vi'
 left join public.tour_translations en on en.tour_id = t.id and en.locale = 'en';
 
 update public.tours t
-set hero_media_id = md5('seed-media-' || t.code)::uuid;
+set hero_media_id = pg_temp.seed_uuid('seed-media-' || t.code);
 
 update public.tours
 set status = 'published', published_at = now()
