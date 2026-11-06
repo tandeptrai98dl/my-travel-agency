@@ -88,10 +88,10 @@ export function sentryOptions(dsn: string | undefined) {
     enabled: Boolean(dsn),
     environment: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
     dataCollection,
-    // Errors only, on the server and in the browser. Sentry 11 streams server spans one by one
-    // (beforeSendTransaction is never called) and Next.js adds raw `http.target` URLs with query
-    // strings, so tracing stays off until span scrubbing (beforeSendSpan) is built and tested.
-    tracesSampleRate: 0,
+    // Errors only, on the server and in the browser: `tracesSampleRate` is left unset, which is
+    // what disables tracing in Sentry (0 still creates spans and trace headers). Sentry 11 streams
+    // server spans past beforeSendTransaction and Next.js adds raw `http.target` URLs, so tracing
+    // stays off until span scrubbing (beforeSendSpan) is built and tested.
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
   } satisfies NodeOptions & BrowserOptions;

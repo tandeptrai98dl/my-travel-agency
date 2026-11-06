@@ -19,7 +19,8 @@ describe("Sentry options", () => {
   });
 
   it("records errors only, no performance traces", () => {
-    expect(sentryOptions(DSN).tracesSampleRate).toBe(0);
+    expect("tracesSampleRate" in sentryOptions(DSN)).toBe(false);
+    expect("tracesSampler" in sentryOptions(DSN)).toBe(false);
   });
 });
 

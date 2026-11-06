@@ -9,7 +9,8 @@ if (dsn) {
   const start = () => {
     void Promise.all([import("@sentry/nextjs"), import("@/lib/monitoring/sentry-options")]).then(
       ([Sentry, { sentryOptions }]) => {
-        Sentry.init(sentryOptions(dsn));
+        // global-error.tsx may already have started it after an early error.
+        if (!Sentry.isInitialized()) Sentry.init(sentryOptions(dsn));
       },
     );
   };
