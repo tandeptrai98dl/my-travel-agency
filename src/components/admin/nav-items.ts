@@ -1,12 +1,12 @@
 import type { Permission } from "@/lib/auth/permissions";
 
 /** Icons are named, not imported, so this list stays importable from server and client code. */
-export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours";
+export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures";
 
 export type AdminNavItem = {
   href: string;
   /** Key in the `Admin.Nav` messages. */
-  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours";
+  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures";
   icon: AdminNavIcon;
   /** Shown only to roles holding it; the page and its actions check it again on the server. */
   permission: Permission;
@@ -30,6 +30,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     labelKey: "groupCatalog",
     items: [
       { href: "/admin/tours", labelKey: "tours", icon: "tours", permission: "tours.read" },
+      { href: "/admin/departures", labelKey: "departures", icon: "departures", permission: "tours.read" },
       { href: "/admin/destinations", labelKey: "destinations", icon: "destinations", permission: "content.manage" },
       { href: "/admin/travel-styles", labelKey: "travelStyles", icon: "styles", permission: "content.manage" },
       { href: "/admin/cancellation-policies", labelKey: "policies", icon: "policies", permission: "settings.manage" },

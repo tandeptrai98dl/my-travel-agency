@@ -842,6 +842,9 @@ isOneToOne: false
 "default_cancellation_policy_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"departure_has_open_bookings":
+{ Args: { "target_id": string }; Returns: boolean
+                           },
 "has_role":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
                            },
