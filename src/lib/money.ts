@@ -54,3 +54,21 @@ const formatters: Record<"vi" | "en", Intl.NumberFormat> = {
 export function formatVnd(amount: Dong, locale: "vi" | "en"): string {
   return formatters[locale].format(assertDong(amount));
 }
+
+/**
+ * Reads an amount typed by staff ("12.900.000", "12,900,000 ₫", "12900000"): every non-digit is
+ * ignored. Returns null for an empty or unsafe value. Dong have no decimals, so a separator is
+ * never a decimal point.
+ */
+export function parseDongInput(text: string): Dong | null {
+  const digits = text.replace(/\D/g, "");
+  if (digits === "") return null;
+  const value = Number(digits);
+  return Number.isSafeInteger(value) ? value : null;
+}
+
+/** Groups digits for an input field ("12.900.000"), without the currency symbol. */
+export function formatDongInput(amount: Dong | null): string {
+  if (amount === null) return "";
+  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(assertDong(amount));
+}
