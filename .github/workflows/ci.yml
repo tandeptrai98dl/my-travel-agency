@@ -57,8 +57,11 @@ jobs:
             echo "A server-only environment value was found in client bundles." >&2
             exit 1
           fi
-      - run: npx playwright install --with-deps chromium
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
       - run: npm run test:e2e
+        timeout-minutes: 5
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
