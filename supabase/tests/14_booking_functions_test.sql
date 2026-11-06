@@ -3,7 +3,7 @@
 -- the end). Concurrency (two customers on the last seat, ten copies of one IPN) is tested against
 -- the real stack in tests/e2e/booking-core.spec.ts.
 begin;
-select plan(60);
+select plan(69);
 
 -- Fixtures: a 4-seat departure 60 days out on a published group tour --------------------------------
 insert into public.departures (id, tour_id, start_date, end_date, capacity, price_adult, price_child, single_supplement)
@@ -155,6 +155,10 @@ select is(
   3, 'each amount received is its own payment row'
 );
 select is(
+  (select array_agg(distinct kind::text) from public.payments where booking_id = (pg_temp.booking('a')).id and reference like '%-%'),
+  array['deposit'], 'the extra rows keep the kind of the attempt they follow'
+);
+select is(
   public.record_payment_event('bank_transfer', 'evt-5', '{}', 'NOPE99', 100000, null, true) ->> 'result',
   'unmatched', 'an unknown memo is unmatched'
 );
@@ -204,6 +208,30 @@ select is(
   'paid_after_cancel', 'money for a cancelled booking is flagged'
 );
 select is((pg_temp.booking('a')).status, 'cancelled', 'and never confirms it');
+
+-- A late payment when the seats are gone: the money is kept, the booking stays expired and flagged.
+select isnt(public.create_draft_booking(pg_temp.payload('f', 1)), null, 'a draft for one more traveller');
+select is(
+  public.reserve_and_create_payment((pg_temp.booking('f')).id, 'vnpay', 'deposit') ->> 'booking_status',
+  'pending_payment', 'it holds a seat'
+);
+update public.bookings set hold_expires_at = now() - interval '1 minute' where idempotency_key = 'f';
+select ok(public.expire_booking_if_due((pg_temp.booking('f')).id), 'its hold lapses');
+select isnt(public.create_draft_booking(pg_temp.payload('g', 3)), null, 'another customer for the last three seats');
+select is(
+  public.reserve_and_create_payment((pg_temp.booking('g')).id, 'vnpay', 'full') ->> 'booking_status',
+  'pending_payment', 'takes them'
+);
+select is(
+  pg_temp.pay((select reference from public.payments where booking_id = (pg_temp.booking('f')).id), 3000000, 'evt-10') ->> 'attention_reason',
+  'late_payment_no_seats', 'the late payment finds no seat and is flagged'
+);
+select is(
+  (pg_temp.booking('f')).status::text || ' ' || (pg_temp.booking('f')).amount_paid,
+  'expired 3000000', 'the booking stays expired with the money recorded'
+);
+select is(pg_temp.seats(), 4, 'and no seat was oversold');
+select public.cancel_booking((pg_temp.booking('g')).id, null, 'test cleanup');
 
 -- Attempt limit, quotes without a departure, completion -----------------------------------------
 select isnt(public.create_draft_booking(pg_temp.payload('e', 1)), null, 'a draft to retry with');

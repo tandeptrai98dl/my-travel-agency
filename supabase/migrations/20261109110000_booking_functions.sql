@@ -427,7 +427,9 @@ end;
 $$;
 
 -- The only way a gateway result reaches the database (decision 4, ADR-012). The caller has
--- verified the signature (and, for bank webhooks, that the event is an incoming credit).
+-- verified the signature (and, for bank webhooks, that the event is an incoming credit) and
+-- decides `succeeded` (VNPay: vnp_ResponseCode and vnp_TransactionStatus both '00'). Extra rows
+-- for money on an attempt that is no longer pending keep that attempt's kind.
 -- Idempotent per provider and event key. Returns
 -- {result: duplicate | unmatched | failed | recorded, booking_id, status, needs_attention, attention_reason}.
 create function public.record_payment_event(
