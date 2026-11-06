@@ -108,6 +108,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/ui` (shell): dialog, sheet, accordion, switch
 - `src/components/ui` (Phase 1 PR 7): textarea, select, radio-group, tooltip, popover, tabs, separator, avatar, skeleton, spinner, alert, toast + `Toaster`/`toast()`, pagination (real links; `paginationRange()`), icon-button (required `label`), form (React Hook Form + Zod; `FormMessage formatMessage` maps Zod keys to text), tag, status-badge (one colour map for booking, payment, departure, inquiry and transaction statuses), empty-state
 - `src/components/admin` (Phase 2 PR A): AdminShell (role-based sidebar from the permission matrix, top bar, sheet below lg), PageHeader, DataTable (URL-driven sort and paging), FilterBar (GET form), LocaleTabs, SlugInput, SeoFields, MoneyInput, ConfirmDialog, ListEditor
+- `src/components/admin/media` (Phase 2 PR B): MediaUploader (signed direct upload, live status per file, drag and drop), MediaEditDialog (VI/EN alt text, credit, delete when unused), MediaPicker (search, inline upload, single or multiple)
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -124,7 +125,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Consultation | TailorMadeWizard (destination → timing → travellers → budget & style → contact), InquirySuccess |
 | Account | AuthForm, GoogleButton, AccountNav, BookingListItem, BookingDetail, PaymentHistory, ProfileForm, DeleteAccountDialog |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
-| Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, RichTextEditor, ItineraryBuilder, MediaPicker, MediaUploader, DepartureBulkCreator, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
+| Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, RichTextEditor, ItineraryBuilder, DepartureBulkCreator, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
 
 Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.

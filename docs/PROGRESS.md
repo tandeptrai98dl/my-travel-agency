@@ -5,10 +5,21 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR B (media library), then taxonomy, tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR C (destinations, travel styles, cancellation policies), then tours, departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-06 (Phase 2 — PR 9: media library)
+
+Branch `feat/p2-media` (`docs/specs/phase-2-catalog-admin.md` steps 5–7).
+
+- Done:
+  - Uploads in two steps (ADR-023): a Server Action issues a signed Storage URL for a server-generated `yyyy/mm/<uuid>.<ext>` path, the browser sends the file straight to the `media` bucket, and a second Server Action checks the real type from the first bytes (JPEG, PNG, WebP, AVIF; SVG and anything disguised are refused and deleted), the size (20 MB) and dimensions (EXIF orientation respected, decoding capped at 12 000 px), makes a 16 px WebP blur placeholder with `sharp`, and records the image. Every action calls `requirePermission("media.manage")`; Storage and table RLS stay the second layer.
+  - `/admin/media`: grid with search by alt text or file name (PostgREST filter syntax stripped), paging, VI/EN alt text and credit, small-image and missing-alt badges, delete only when nothing uses the image (foreign keys; friendly error), toasts in the admin shell.
+  - MediaPicker dialog (search, load more, inline upload with the new image selected, single or multiple) and a demo on the design system page.
+  - `src/lib/logger.ts` (JSON log lines, no personal data).
+- Verified locally: lint, typecheck, unit tests (type sniffing, schemas, and the service with real `sharp` images: rotated originals, an SVG renamed .png, a JPEG under a .png name, a corrupt PNG, double finalize, delete in use); production build. Storage itself is exercised only by the CI E2E (upload, refusal of a disguised SVG, alt text, search, delete, picker, operator blocked), since Supabase containers cannot run here.
 
 ### 2026-11-06 (Phase 2 — PR 8: spec, admin shell, building blocks, audit log)
 
@@ -164,6 +175,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Vercel previews and the Sentry test event (Phase 0 acceptance) need the owner's Vercel and Sentry accounts; see `README.md` "Deployment".
 
 ## Known issues
+
+- Media uploads abandoned between the signed upload and the check leave an unrecorded object in Storage; add a daily cleanup of objects without a `media` row (Phase 6, ADR-023).
 
 - Radix NavigationMenu adds an `aria-hidden` focusable sentinel after an open trigger (axe `aria-hidden-focus`). It only forwards focus into the menu, and the E2E test proves Tab lands on a destination link; it is excluded from axe by its exact selector. Revisit when Radix changes it.
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
