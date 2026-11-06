@@ -19,6 +19,9 @@ env:
   NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
   NEXT_TELEMETRY_DISABLED: "1"
+  # Sentinel values: the build must never copy server-only values into client bundles.
+  SUPABASE_SECRET_KEY: sb_secret_ci_sentinel_value_never_in_client
+  CRON_SECRET: ci_cron_sentinel_never_in_client
 
 jobs:
   checks:
@@ -48,10 +51,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Check that no secret key leaked into client bundles
+      - name: Check that server-only values did not leak into client bundles
         run: |
-          if grep -rlE "sb_secret_|service_role" .next/static; then
-            echo "A secret key pattern was found in client bundles." >&2
+          if grep -rlE "sb_secret_ci_sentinel_value_never_in_client|ci_cron_sentinel_never_in_client" .next/static; then
+            echo "A server-only environment value was found in client bundles." >&2
             exit 1
           fi
       - run: npx playwright install --with-deps chromium
