@@ -17,6 +17,7 @@ export const MESSAGE_FILES = [
   "admin-departures",
   "admin-content",
   "admin-settings",
+  "admin-bookings",
 ] as const;
 
 export type MessageTree = { [key: string]: string | MessageTree };

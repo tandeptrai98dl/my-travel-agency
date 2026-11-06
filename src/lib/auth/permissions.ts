@@ -36,6 +36,8 @@ export const PERMISSIONS = {
   "bookings.edit_travellers": [...SALES, "operator", "admin"],
   "bookings.change_status": ["operator", "admin"],
   "bookings.request_cancellation": [...SALES, "operator", "admin"],
+  // Clearing a booking from the "needs attention" queue with a note (spec Phase 4 step 18).
+  "bookings.resolve_attention": [...SALES, "operator", "accountant", "admin"],
 
   "payments.read": [...SALES, "operator", "accountant", "admin"],
   "payments.record": ["accountant", "admin"],
