@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { bodyFont } from "@/app/fonts";
+import { fontVariables } from "@/app/fonts";
 import { routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 
@@ -41,8 +41,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const clientMessages = { LanguageSwitcher: messages.LanguageSwitcher };
 
   return (
-    <html lang={locale}>
-      <body className={`${bodyFont.className} antialiased`}>
+    <html lang={locale} className={fontVariables}>
+      <body>
         <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
       </body>
     </html>
