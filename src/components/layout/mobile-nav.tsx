@@ -4,7 +4,8 @@ import { Menu } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cx } from "@/lib/cx";
 import type { DestinationNode } from "@/modules/catalog/destinations";
 import { useLabels } from "./labels";
 
@@ -23,11 +24,10 @@ export function MobileNav({ destinations, className }: Props) {
 
   return (
     <>
-      <Button
+      <button
         ref={buttonRef}
-        variant="ghost"
-        size="icon"
-        className={className}
+        type="button"
+        className={cx(buttonVariants({ variant: "ghost", size: "icon" }), className)}
         aria-label={t("openMenu")}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -37,7 +37,7 @@ export function MobileNav({ destinations, className }: Props) {
         }}
       >
         <Menu strokeWidth={1.5} aria-hidden="true" />
-      </Button>
+      </button>
       {loaded && (
         <MobileNavSheet
           destinations={destinations}

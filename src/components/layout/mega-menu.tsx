@@ -3,11 +3,11 @@
 import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { Link } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 import type { DestinationNode } from "@/modules/catalog/destinations";
 
 import { useLabels } from "./labels";
+import { LocaleLink as Link } from "./locale-link";
 import { PRIMARY_NAV } from "./nav-items";
 
 type Props = { destinations: DestinationNode[]; className?: string };
@@ -60,7 +60,7 @@ export function MegaMenu({ destinations, className }: Props) {
     <nav
       ref={navRef}
       aria-label={t("primary")}
-      className={cn("static", className)}
+      className={cx("static", className)}
       onKeyDown={(event) => {
         if (event.key === "Escape" && open) {
           event.stopPropagation();
@@ -83,12 +83,12 @@ export function MegaMenu({ destinations, className }: Props) {
             type="button"
             aria-expanded={open}
             aria-controls={panelId}
-            className={cn(linkClass, "group", open && "underline")}
+            className={cx(linkClass, "group", open && "underline")}
             onClick={() => setOpen((value) => !value)}
           >
             {t("destinations")}
             <ChevronDown
-              className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")}
+              className={cx("h-4 w-4 transition-transform duration-200", open && "rotate-180")}
               strokeWidth={1.5}
               aria-hidden="true"
             />

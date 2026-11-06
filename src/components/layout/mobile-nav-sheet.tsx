@@ -3,12 +3,12 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Link } from "@/i18n/navigation";
 import type { DestinationNode } from "@/modules/catalog/destinations";
 
 import { LanguageSwitcher } from "./language-switcher";
 import { PRIMARY_NAV } from "./nav-items";
 import { useLabels } from "./labels";
+import { LocaleLink as Link } from "./locale-link";
 
 type Props = {
   destinations: DestinationNode[];

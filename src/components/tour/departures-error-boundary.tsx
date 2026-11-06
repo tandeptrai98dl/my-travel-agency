@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Component, type ReactNode, useTransition } from "react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 
 type Props = { children: ReactNode; message: string; retryLabel: string };
 
@@ -13,9 +13,9 @@ function Fallback({ message, retryLabel, onRetry }: { message: string; retryLabe
   return (
     <div role="status" className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-6">
       <p className="text-body">{message}</p>
-      <Button
-        variant="secondary"
-        size="sm"
+      <button
+        type="button"
+        className={buttonVariants({ variant: "secondary", size: "sm" })}
         disabled={pending}
         onClick={() =>
           startTransition(() => {
@@ -25,7 +25,7 @@ function Fallback({ message, retryLabel, onRetry }: { message: string; retryLabe
         }
       >
         {retryLabel}
-      </Button>
+      </button>
     </div>
   );
 }

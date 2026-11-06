@@ -20,3 +20,11 @@ export const routing = defineRouting({
 });
 
 export type Locale = (typeof routing.locales)[number];
+
+/**
+ * Whether a route segment is one of our locales. Same as next-intl's `hasLocale`, without
+ * importing the `next-intl` entry, which re-exports its client provider (Phase 3 spec decision 16).
+ */
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === "string" && (routing.locales as readonly string[]).includes(value);
+}

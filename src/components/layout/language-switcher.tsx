@@ -1,15 +1,14 @@
 "use client";
 
 import NextLink from "next/link";
-import { useParams } from "next/navigation";
-import { useLocale } from "next-intl";
+import { usePathname } from "next/navigation";
 
-import { Link, usePathname } from "@/i18n/navigation";
+import { switchLocalePath } from "@/i18n/paths";
 import { routing } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 
 import { useLocaleAlternates } from "./locale-alternates";
-import { useLabels } from "./labels";
+import { useLabels, useShellLocale } from "./labels";
 
 type Props = {
   className?: string;
@@ -28,9 +27,8 @@ type Props = {
  */
 export function LanguageSwitcher({ className, landmark = true }: Props) {
   const t = useLabels("LanguageSwitcher");
-  const currentLocale = useLocale();
+  const currentLocale = useShellLocale();
   const pathname = usePathname();
-  const params = useParams();
   const alternates = useLocaleAlternates();
 
   const Wrapper = landmark ? "nav" : "div";
@@ -39,10 +37,10 @@ export function LanguageSwitcher({ className, landmark = true }: Props) {
     <Wrapper
       role={landmark ? undefined : "group"}
       aria-label={t("label")}
-      className={cn("flex items-center gap-1 text-small", className)}
+      className={cx("flex items-center gap-1 text-small", className)}
     >
       {routing.locales.map((locale) => {
-        const className = cn(
+        const className = cx(
           "inline-flex min-h-11 items-center rounded-md px-2 underline-offset-[6px] decoration-gold transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           locale === currentLocale ? "font-semibold underline" : "opacity-80 hover:opacity-100",
         );
@@ -64,18 +62,15 @@ export function LanguageSwitcher({ className, landmark = true }: Props) {
           );
         }
         return (
-          <Link
+          <NextLink
             key={locale}
-            // The current route's params always match its pathname.
-            // @ts-expect-error -- next-intl cannot type an arbitrary current pathname with its params.
-            href={{ pathname, params }}
-            locale={locale}
+            href={switchLocalePath(pathname, locale)}
             hrefLang={locale}
             aria-current={locale === currentLocale ? "true" : undefined}
             className={className}
           >
             {name}
-          </Link>
+          </NextLink>
         );
       })}
     </Wrapper>

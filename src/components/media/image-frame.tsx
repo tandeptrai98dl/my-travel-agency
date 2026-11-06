@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 
 type Props = {
   className?: string;
@@ -16,7 +16,7 @@ export function ImageFrame({ className, label }: Props) {
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      className={cn(
+      className={cx(
         "absolute inset-0 bg-[linear-gradient(180deg,hsl(var(--border))_0_60%,hsl(var(--muted))_60%_100%)]",
         className,
       )}

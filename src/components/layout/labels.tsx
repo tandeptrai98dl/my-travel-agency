@@ -2,23 +2,32 @@
 
 import { createContext, useCallback, useContext } from "react";
 
+import type { Locale } from "@/i18n/paths";
+
 /**
  * Plain UI strings for the client components of the public shell (header, menus, language
  * switcher, consent). They hold no ICU placeholders, so a lookup is enough: this keeps next-intl's
  * message formatter (about 12 KB gzip) out of the initial JavaScript of public pages (Phase 3
- * spec decision 16). Components that format messages keep using next-intl.
+ * spec decision 16). The provider also carries the page's locale for `LocaleLink`, so public
+ * client components need no `NextIntlClientProvider`.
  */
 export type LabelTree = Record<string, Record<string, string>>;
 
-const LabelsContext = createContext<LabelTree>({});
+type Shell = { locale: Locale; labels: LabelTree };
 
-export function LabelsProvider({ labels, children }: { labels: LabelTree; children: React.ReactNode }) {
-  return <LabelsContext.Provider value={labels}>{children}</LabelsContext.Provider>;
+const ShellContext = createContext<Shell>({ locale: "vi", labels: {} });
+
+export function LabelsProvider({ locale, labels, children }: Shell & { children: React.ReactNode }) {
+  return <ShellContext.Provider value={{ locale, labels }}>{children}</ShellContext.Provider>;
+}
+
+/** The language of the current page. */
+export function useShellLocale(): Locale {
+  return useContext(ShellContext).locale;
 }
 
 /** `t(key)` for one namespace; an unknown key returns the key, like next-intl in production. */
 export function useLabels(namespace: string): (key: string) => string {
-  const tree = useContext(LabelsContext);
-  const strings = tree[namespace];
+  const strings = useContext(ShellContext).labels[namespace];
   return useCallback((key: string) => strings?.[key] ?? `${namespace}.${key}`, [strings, namespace]);
 }

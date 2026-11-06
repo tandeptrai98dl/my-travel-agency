@@ -9,7 +9,7 @@ vi.mock("@/lib/env/public", () => ({
 
 import { publicEnv } from "@/lib/env/public";
 
-import { mediaUrl, openGraphImageUrl, supabaseImageLoader } from "./images";
+import { fillImageAttributes, mediaUrl, openGraphImageUrl, supabaseImageLoader } from "./images";
 
 describe("mediaUrl", () => {
   it("builds the public object URL with encoded segments", () => {
@@ -55,5 +55,38 @@ describe("openGraphImageUrl", () => {
   it("uses the original without transforms", () => {
     flags.NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS = false;
     expect(openGraphImageUrl(mediaUrl("x.jpg"))).toEqual({ url: mediaUrl("x.jpg") });
+  });
+});
+
+describe("fillImageAttributes", () => {
+  afterEach(() => {
+    vi.mocked(publicEnv).NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS = true;
+  });
+  const image = { src: "https://proj.supabase.co/storage/v1/object/public/media/a.jpg", blurDataUrl: "data:image/webp;base64,AAA" };
+
+  it("offers a srcset through the render endpoint and fills the parent", () => {
+    const attributes = fillImageAttributes(image, "100vw", false);
+    expect(attributes.srcSet?.split(", ")).toHaveLength(8);
+    expect(attributes.srcSet).toContain("/render/image/public/media/a.jpg?width=640&quality=75&resize=contain 640w");
+    expect(attributes.sizes).toBe("100vw");
+    expect(attributes.loading).toBe("lazy");
+    expect(attributes.fetchPriority).toBeUndefined();
+    expect(attributes.style).toMatchObject({ position: "absolute", width: "100%", height: "100%" });
+    expect(attributes.style.backgroundImage).toBe('url("data:image/webp;base64,AAA")');
+  });
+
+  it("loads a priority image eagerly with high priority", () => {
+    const attributes = fillImageAttributes({ ...image, blurDataUrl: null }, "100vw", true);
+    expect(attributes.loading).toBe("eager");
+    expect(attributes.fetchPriority).toBe("high");
+    expect(attributes.style).not.toHaveProperty("backgroundImage");
+  });
+
+  it("uses the original without transforms", () => {
+    vi.mocked(publicEnv).NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS = false;
+    const attributes = fillImageAttributes(image, "100vw", false);
+    expect(attributes.src).toBe(image.src);
+    expect(attributes.srcSet).toBeUndefined();
+    expect(attributes.sizes).toBeUndefined();
   });
 });

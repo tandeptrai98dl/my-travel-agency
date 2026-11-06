@@ -39,7 +39,7 @@ export default function GalleryLightbox({ open, onOpenChange, images, title, lab
         <DialogTitle className="font-serif text-h3 font-semibold">{labels.dialogTitle}</DialogTitle>
         <DialogDescription className="sr-only">{title}</DialogDescription>
         <div className="relative aspect-[3/2] w-full overflow-hidden bg-muted">
-          <ResponsiveImage key={image?.src} image={image ?? null} sizes="(min-width: 1024px) 1024px, 100vw" className="object-contain" />
+          <ResponsiveImage key={image?.src} image={image ?? null} sizes="(min-width: 1024px) 1024px, 100vw" fit="contain" />
         </div>
         <div className="flex items-center justify-between gap-4">
           <p aria-live="polite" className="text-small text-muted-foreground">
