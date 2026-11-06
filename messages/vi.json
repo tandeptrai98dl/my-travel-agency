@@ -17,7 +17,10 @@
   "NotFound": {
     "title": "Không tìm thấy trang",
     "description": "Trang bạn tìm không tồn tại hoặc đã được chuyển đi.",
-    "home": "Về trang chủ"
+    "home": "Về trang chủ",
+    "eyebrow": "Lỗi 404",
+    "tours": "Xem các tour",
+    "contact": "Liên hệ tư vấn"
   },
   "Admin": {
     "title": "Quản trị",
@@ -55,5 +58,67 @@
       "continue": "Vào trang quản trị",
       "qrAlt": "Mã QR để thêm tài khoản vào ứng dụng xác thực"
     }
+  },
+  "Navigation": {
+    "primary": "Điều hướng chính",
+    "skipToContent": "Bỏ qua để đến nội dung",
+    "home": "Trang chủ",
+    "tours": "Tour",
+    "destinations": "Điểm đến",
+    "allDestinations": "Tất cả điểm đến",
+    "tailorMade": "Thiết kế riêng",
+    "journal": "Tạp chí",
+    "about": "Về chúng tôi",
+    "contact": "Liên hệ",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "menuTitle": "Menu",
+    "close": "Đóng"
+  },
+  "Footer": {
+    "explore": "Khám phá",
+    "help": "Hỗ trợ",
+    "contactTitle": "Liên hệ",
+    "faq": "Câu hỏi thường gặp",
+    "terms": "Điều khoản",
+    "privacy": "Chính sách bảo mật",
+    "cancellation": "Chính sách hủy",
+    "payment": "Thanh toán",
+    "bookingLookup": "Tra cứu booking",
+    "legalName": "Tên doanh nghiệp: {value}",
+    "taxCode": "Mã số thuế: {value}",
+    "licence": "Giấy phép lữ hành: {value}",
+    "ecommerceNotification": "Đã thông báo Bộ Công Thương",
+    "officeHours": "Giờ làm việc",
+    "rights": "© {year} {name}. Bảo lưu mọi quyền.",
+    "social": "Mạng xã hội",
+    "cookieSettings": "Cài đặt cookie",
+    "newTab": "mở trong thẻ mới"
+  },
+  "Contact": {
+    "label": "Liên hệ nhanh",
+    "hotline": "Gọi hotline {phone}",
+    "zalo": "Nhắn Zalo",
+    "whatsapp": "Nhắn WhatsApp",
+    "email": "Gửi email",
+    "newTab": "mở trong thẻ mới"
+  },
+  "Consent": {
+    "title": "Cookie trên website",
+    "body": "Chúng tôi dùng cookie cần thiết để website hoạt động. Với sự đồng ý của bạn, chúng tôi dùng thêm cookie phân tích và tiếp thị để cải thiện trải nghiệm.",
+    "privacyLink": "Chính sách bảo mật",
+    "acceptAll": "Chấp nhận tất cả",
+    "rejectAll": "Chỉ cookie cần thiết",
+    "settings": "Tùy chỉnh",
+    "settingsTitle": "Cài đặt cookie",
+    "settingsBody": "Chọn loại cookie bạn cho phép. Bạn có thể thay đổi bất cứ lúc nào ở chân trang.",
+    "save": "Lưu lựa chọn",
+    "essential": "Cần thiết",
+    "essentialDesc": "Đăng nhập, bảo mật và ghi nhớ lựa chọn này. Luôn bật.",
+    "analytics": "Phân tích",
+    "analyticsDesc": "Giúp chúng tôi hiểu cách website được sử dụng (Google Analytics).",
+    "marketing": "Tiếp thị",
+    "marketingDesc": "Đo lường hiệu quả quảng cáo.",
+    "alwaysOn": "Luôn bật"
   }
 }

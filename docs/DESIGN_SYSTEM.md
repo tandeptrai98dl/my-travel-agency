@@ -104,15 +104,16 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 
 - `src/components/ui`: badge (default, secondary, outline, gold, success, warning, destructive), button (default, gold, secondary, outline, ghost, link, destructive; sizes sm 36 px, default 44 px, lg 48 px, icon), card, checkbox, dropdown-menu, input, label
 - `src/components/typography`: Heading, Eyebrow (gold inside navy sections), SectionHeading, Prose, Price
-- `src/components/layout`: Container, Section (ivory, white, navy tones)
+- `src/components/layout`: Container, Section (ivory, white, navy tones), SiteHeader, MegaMenu, MobileNav, SiteFooter, LanguageSwitcher, ContactFloatingButton, CookieConsentBanner
+- `src/components/ui` (shell): dialog, sheet, accordion, switch
 
 ### Planned
 
 | Group | Components |
 | --- | --- |
-| Primitives (shadcn) | IconButton, Textarea, Select, Combobox, Radio, Switch, DatePicker, DateRangePicker, quantity Stepper, PhoneInput, FormField, Tag, Tooltip, Popover, Dialog, Sheet, Tabs, Accordion, Skeleton, Spinner, Toast, Alert, Separator, Avatar, Pagination |
+| Primitives (shadcn) | IconButton, Textarea, Select, Combobox, Radio, DatePicker, DateRangePicker, quantity Stepper, PhoneInput, FormField, Tag, Tooltip, Popover, Tabs, Skeleton, Spinner, Toast, Alert, Separator, Avatar, Pagination |
 | Typography | Prose rendering of Tiptap JSON (Phase 2), DateText |
-| Layout | SiteHeader (transparent over the hero, solid on scroll), MegaMenu (destinations), MobileNav, SiteFooter (licence, company details), Breadcrumbs, LanguageSwitcher, ContactFloatingButton (Zalo/WhatsApp/hotline), CookieConsentBanner |
+| Layout | Breadcrumbs |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
 | Marketing | Hero + HeroSearch, FeaturedTours, DestinationGrid, DestinationCard, TravelStyleCards, EditorialSplit, Testimonials, TrustBar, PressLogos, NewsletterSignup, CTABanner (tailor-made), JournalTeaser |
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |

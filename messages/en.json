@@ -17,7 +17,10 @@
   "NotFound": {
     "title": "Page not found",
     "description": "The page you are looking for does not exist or has moved.",
-    "home": "Back to the home page"
+    "home": "Back to the home page",
+    "eyebrow": "Error 404",
+    "tours": "Browse tours",
+    "contact": "Talk to us"
   },
   "Admin": {
     "title": "Admin",
@@ -55,5 +58,67 @@
       "continue": "Go to the admin",
       "qrAlt": "QR code to add this account to an authenticator app"
     }
+  },
+  "Navigation": {
+    "primary": "Main navigation",
+    "skipToContent": "Skip to content",
+    "home": "Home",
+    "tours": "Tours",
+    "destinations": "Destinations",
+    "allDestinations": "All destinations",
+    "tailorMade": "Tailor-made",
+    "journal": "Journal",
+    "about": "About",
+    "contact": "Contact",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menuTitle": "Menu",
+    "close": "Close"
+  },
+  "Footer": {
+    "explore": "Explore",
+    "help": "Help",
+    "contactTitle": "Contact",
+    "faq": "FAQ",
+    "terms": "Terms",
+    "privacy": "Privacy policy",
+    "cancellation": "Cancellation policy",
+    "payment": "Payment",
+    "bookingLookup": "Find my booking",
+    "legalName": "Company: {value}",
+    "taxCode": "Tax code: {value}",
+    "licence": "Tour operator licence: {value}",
+    "ecommerceNotification": "Registered with the Ministry of Industry and Trade",
+    "officeHours": "Office hours",
+    "rights": "© {year} {name}. All rights reserved.",
+    "social": "Social media",
+    "cookieSettings": "Cookie settings",
+    "newTab": "opens in a new tab"
+  },
+  "Contact": {
+    "label": "Quick contact",
+    "hotline": "Call our hotline {phone}",
+    "zalo": "Message us on Zalo",
+    "whatsapp": "Message us on WhatsApp",
+    "email": "Send an email",
+    "newTab": "opens in a new tab"
+  },
+  "Consent": {
+    "title": "Cookies on this website",
+    "body": "We use essential cookies to make the website work. With your consent we also use analytics and marketing cookies to improve your experience.",
+    "privacyLink": "Privacy policy",
+    "acceptAll": "Accept all",
+    "rejectAll": "Essential only",
+    "settings": "Customise",
+    "settingsTitle": "Cookie settings",
+    "settingsBody": "Choose which cookies you allow. You can change this at any time from the footer.",
+    "save": "Save my choices",
+    "essential": "Essential",
+    "essentialDesc": "Sign-in, security and remembering this choice. Always on.",
+    "analytics": "Analytics",
+    "analyticsDesc": "Helps us understand how the website is used (Google Analytics).",
+    "marketing": "Marketing",
+    "marketingDesc": "Measures how well our advertising works.",
+    "alwaysOn": "Always on"
   }
 }

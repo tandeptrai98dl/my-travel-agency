@@ -94,6 +94,22 @@
   }
 }
 
+/* The floating contact buttons step aside while the cookie banner is open (they share the
+   bottom-right corner, so they would be covered and still receive focus). */
+html[data-consent-open] .floating-contact {
+  display: none;
+}
+
+/* Keep focused elements clear of the sticky header and, while it is open, the cookie banner
+   (WCAG 2.2 AA 2.4.11). */
+html {
+  scroll-padding-top: 5.5rem;
+}
+html[data-consent-open] {
+  /* Measured by the banner; the fallback covers the first frame. */
+  scroll-padding-bottom: calc(var(--consent-banner-h, 26rem) + 1rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

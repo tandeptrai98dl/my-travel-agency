@@ -18,10 +18,10 @@ test("English home page is served under /en", async ({ page }) => {
 
 test("switching language keeps the page", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "English" }).click();
+  await page.getByRole("banner").getByRole("link", { name: "English" }).click();
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await page.getByRole("link", { name: "Tiếng Việt" }).click();
+  await page.getByRole("banner").getByRole("link", { name: "Tiếng Việt" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
 });
