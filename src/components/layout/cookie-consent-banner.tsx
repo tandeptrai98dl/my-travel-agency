@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -33,12 +33,16 @@ export function CookieConsentBanner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [draft, setDraft] = useState<ConsentChoice>(ESSENTIAL_ONLY);
+  const bannerRef = useRef<HTMLElement>(null);
+  // Element that opened the settings dialog, to return focus to it (WCAG 2.4.3).
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const stored = readConsentCookie(document.cookie);
     setDecided(stored);
     setDraft(stored ?? ESSENTIAL_ONLY);
     const open = () => {
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setDraft(readConsentCookie(document.cookie) ?? ESSENTIAL_ONLY);
       setSettingsLoaded(true);
       setSettingsOpen(true);
@@ -47,7 +51,8 @@ export function CookieConsentBanner() {
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, open);
   }, []);
 
-  const bannerVisible = decided === null && !settingsOpen;
+  // Stays mounted while the settings dialog is open, so focus can return to "Customise".
+  const bannerVisible = decided === null;
 
   // Lets the floating contact buttons step aside on small screens while the banner is up.
   useEffect(() => {
@@ -55,16 +60,26 @@ export function CookieConsentBanner() {
   }, [bannerVisible]);
 
   const save = useCallback((choice: ConsentChoice) => {
+    const focusWasInBanner = bannerRef.current?.contains(document.activeElement) ?? false;
     document.cookie = consentCookieString(choice, window.location.protocol === "https:");
     setDecided(choice);
     setSettingsOpen(false);
     window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: choice }));
+    // The banner disappears with the focused button; continue from the main content.
+    if (focusWasInBanner) requestAnimationFrame(() => document.getElementById("main")?.focus());
+  }, []);
+
+  const restoreFocus = useCallback(() => {
+    const opener = openerRef.current;
+    if (opener?.isConnected) opener.focus();
+    else document.getElementById("main")?.focus();
   }, []);
 
   return (
     <>
       {bannerVisible && (
         <section
+          ref={bannerRef}
           role="region"
           aria-labelledby={titleId}
           className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card text-card-foreground md:inset-x-auto md:bottom-6 md:right-6 md:max-w-md md:rounded-lg md:border"
@@ -84,12 +99,12 @@ export function CookieConsentBanner() {
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button onClick={() => save(ALL_ACCEPTED)}>{t("acceptAll")}</Button>
-              <Button variant="outline" onClick={() => save(ESSENTIAL_ONLY)}>
-                {t("rejectAll")}
-              </Button>
+              {/* Same weight as "Accept all": refusing is as easy as accepting. */}
+              <Button onClick={() => save(ESSENTIAL_ONLY)}>{t("rejectAll")}</Button>
               <Button
                 variant="ghost"
-                onClick={() => {
+                onClick={(event) => {
+                  openerRef.current = event.currentTarget;
                   setSettingsLoaded(true);
                   setSettingsOpen(true);
                 }}
@@ -108,6 +123,7 @@ export function CookieConsentBanner() {
           draft={draft}
           onDraftChange={setDraft}
           onSave={save}
+          onCloseAutoFocus={restoreFocus}
         />
       )}
     </>

@@ -92,7 +92,8 @@
     "officeHours": "Office hours",
     "rights": "© {year} {name}. All rights reserved.",
     "social": "Social media",
-    "cookieSettings": "Cookie settings"
+    "cookieSettings": "Cookie settings",
+    "newTab": "opens in a new tab"
   },
   "Contact": {
     "label": "Quick contact",

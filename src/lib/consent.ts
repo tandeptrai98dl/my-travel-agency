@@ -29,7 +29,12 @@ export function parseConsent(value: string | undefined | null): ConsentChoice | 
 export function readConsentCookie(cookieHeader: string): ConsentChoice | null {
   for (const part of cookieHeader.split(";")) {
     const [name, ...rest] = part.trim().split("=");
-    if (name === CONSENT_COOKIE) return parseConsent(decodeURIComponent(rest.join("=")));
+    if (name !== CONSENT_COOKIE) continue;
+    try {
+      return parseConsent(decodeURIComponent(rest.join("=")));
+    } catch {
+      return null; // malformed encoding: treat as undecided
+    }
   }
   return null;
 }

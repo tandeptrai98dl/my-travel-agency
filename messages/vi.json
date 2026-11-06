@@ -92,7 +92,8 @@
     "officeHours": "Giờ làm việc",
     "rights": "© {year} {name}. Bảo lưu mọi quyền.",
     "social": "Mạng xã hội",
-    "cookieSettings": "Cài đặt cookie"
+    "cookieSettings": "Cài đặt cookie",
+    "newTab": "mở trong thẻ mới"
   },
   "Contact": {
     "label": "Liên hệ nhanh",

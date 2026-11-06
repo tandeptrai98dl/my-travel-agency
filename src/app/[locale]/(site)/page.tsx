@@ -3,7 +3,6 @@ import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Container } from "@/components/layout/container";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Eyebrow } from "@/components/typography/eyebrow";
 import { Heading } from "@/components/typography/heading";
 import { getPathname } from "@/i18n/navigation";
@@ -43,7 +42,6 @@ export default async function HomePage({ params }: Props) {
           {t("title")}
         </Heading>
         <div aria-hidden="true" className="h-px w-16 bg-gold" />
-        <LanguageSwitcher className="mt-6" />
       </Container>
     </div>
   );

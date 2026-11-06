@@ -3,7 +3,7 @@
 import { Menu } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { DestinationNode } from "@/modules/catalog/destinations";
@@ -19,10 +19,12 @@ export function MobileNav({ destinations, className }: Props) {
   const t = useTranslations("Navigation");
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
       <Button
+        ref={buttonRef}
         variant="ghost"
         size="icon"
         className={className}
@@ -36,7 +38,15 @@ export function MobileNav({ destinations, className }: Props) {
       >
         <Menu strokeWidth={1.5} aria-hidden="true" />
       </Button>
-      {loaded && <MobileNavSheet destinations={destinations} open={open} onOpenChange={setOpen} />}
+      {loaded && (
+        <MobileNavSheet
+          destinations={destinations}
+          open={open}
+          onOpenChange={setOpen}
+          // The sheet has no Radix trigger, so return focus to the menu button explicitly.
+          returnFocusTo={buttonRef}
+        />
+      )}
     </>
   );
 }

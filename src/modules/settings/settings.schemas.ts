@@ -2,7 +2,11 @@ import { z } from "zod";
 
 const localized = z.object({ vi: z.string().optional(), en: z.string().optional() }).partial();
 const optionalText = z.string().trim().min(1).nullish().transform((value) => value ?? null);
-const optionalUrl = z.url().nullish().transform((value) => value ?? null);
+// Only https links from settings are rendered (no javascript:, data: or http: hrefs).
+const optionalUrl = z
+  .url({ protocol: /^https$/ })
+  .nullish()
+  .transform((value) => value ?? null);
 
 /** `settings.company` (public): legal details shown in the footer (ARCHITECTURE.md "Compliance"). */
 export const companySettingsSchema = z.object({

@@ -14,17 +14,25 @@ type Props = {
   destinations: DestinationNode[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  returnFocusTo: React.RefObject<HTMLElement | null>;
 };
 
 /** The mobile menu sheet: focus trap, closed by Escape or any link. Loaded on first open. */
-export default function MobileNavSheet({ destinations, open, onOpenChange }: Props) {
+export default function MobileNavSheet({ destinations, open, onOpenChange, returnFocusTo }: Props) {
   const t = useTranslations("Navigation");
   const [tours, ...rest] = PRIMARY_NAV;
   const itemClass = "flex min-h-11 items-center border-b border-border py-3 text-body-lg font-medium";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent closeLabel={t("closeMenu")} aria-describedby={undefined}>
+      <SheetContent
+        closeLabel={t("closeMenu")}
+        aria-describedby={undefined}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocusTo.current?.focus();
+        }}
+      >
         <SheetTitle className="sr-only">{t("menuTitle")}</SheetTitle>
         <nav aria-label={t("primary")} className="mt-10 flex flex-col">
           <SheetClose asChild>
@@ -71,7 +79,7 @@ export default function MobileNavSheet({ destinations, open, onOpenChange }: Pro
             </SheetClose>
           ))}
         </nav>
-        <LanguageSwitcher className="mt-auto pt-6" />
+        <LanguageSwitcher className="mt-auto pt-6" landmark={false} />
       </SheetContent>
     </Sheet>
   );

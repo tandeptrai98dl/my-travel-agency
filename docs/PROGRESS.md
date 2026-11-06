@@ -20,8 +20,14 @@ Branch `feat/p1-layout-shell` (`docs/specs/phase-1-design-system.md` steps 5–1
   - SiteHeader (transparent over the navy home hero, solid elsewhere and on scroll; brand from `settings`), destinations MegaMenu (Radix navigation menu, keyboard operable), MobileNav (sheet loaded on first open), SiteFooter (legal details, contact, social and policy links from `settings`, each only when set), ContactFloatingButton (hotline, Zalo, WhatsApp from `settings.contact`), CookieConsentBanner (essential only in one click, per-category settings dialog loaded on demand and reopenable from the footer, first-party `consent` cookie, `consentchange` event), designed 404, skip link and a single `<main id="main">`.
   - VI/EN strings for all of it.
   - E2E (`tests/e2e/shell.spec.ts`): database-driven header and footer, skip link, keyboard mega menu, localized navigation, hotline, consent flows, mobile sheet, floating contact stepping aside for the banner.
-- Verified locally against a stub of the two REST reads (no Supabase containers here): lint, typecheck, unit tests, production build, 17 shell and smoke E2E tests, screenshots at 375 and 1280 px (mega menu, mobile sheet, banner, 404 with footer). CI runs the same tests against real Supabase with the seed.
+- Verified locally against a stub of the two REST reads (no Supabase containers here): lint, typecheck, 151 unit tests, production build, 24 shell and smoke E2E tests, screenshots at 375 and 1280 px (mega menu, mobile sheet, banner, 404 with footer). CI runs the same tests against real Supabase with the seed.
 - Measured: home initial JS ≈ 179 KB gzip (local webpack; ≈ 158 KB before the shell). Over the 150 KB budget; see known issues.
+- Independent review: changes requested (major: the desktop cookie banner covered the floating contact buttons; focus was lost after closing the mobile menu and the cookie settings, which have no Radix trigger. Minor: vacuous brand test, errors cached for the full `minutes` profile, `javascript:`/`data:` URLs accepted in settings, no scroll padding under the sticky header and the banner, `<dl>` without terms, duplicate "Language" landmarks, missing 768 px, focus-return and third-party-request tests, docs overclaims), all addressed:
+  - The floating contact hides whenever the banner is open; banner choices move focus to `#main`; the menu sheet and the settings dialog return focus to their opener (or `#main`).
+  - Settings URLs must be `https:`; failed reads are cached for `seconds` only; `scroll-padding-top`/`-bottom` keep focused elements clear of the header and banner.
+  - The footer and menu switchers are plain groups (one "Language" landmark, in the header), language names carry `lang`, new-tab links say so to screen readers, "Essential only" has the same weight as "Accept all", consent switches are described by their text, a malformed `consent` cookie counts as undecided, and the page title uses the brand from `settings` like the header.
+  - New E2E: exact seeded brand in header, footer and title; tablet (768 px) layout; focus return after Escape and after saving; no third-party requests before a consent choice; one Language landmark; no empty footer lists.
+  - The plan's shell checkbox stays open until the PR 7 axe checks pass.
 
 ### 2026-11-06 (Phase 1 — PR 5: decisions, tokens, fonts, primitives)
 
@@ -129,6 +135,9 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Vercel previews and the Sentry test event (Phase 0 acceptance) need the owner's Vercel and Sentry accounts; see `README.md` "Deployment".
 
 ## Known issues
+
+- Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
+- Phase 3: cheap initial-JS wins to try before the 150 KB budget review: render the desktop nav without client JS until the mega menu is opened, and load the floating contact's client code after idle.
 
 - Phase 2: tour and departure price columns are not yet guarded per role (`DATABASE.md` "Known Phase 0 limits").
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").

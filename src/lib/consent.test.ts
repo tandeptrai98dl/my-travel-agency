@@ -40,3 +40,9 @@ describe("consent cookie", () => {
     expect(consentCookieString(ESSENTIAL_ONLY, false)).not.toContain("Secure");
   });
 });
+
+describe("readConsentCookie robustness", () => {
+  it("treats a malformed encoding as undecided instead of throwing", () => {
+    expect(readConsentCookie("consent=%E0%A4%A")).toBeNull();
+  });
+});

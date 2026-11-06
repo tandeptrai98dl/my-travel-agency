@@ -39,6 +39,12 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
     (entry): entry is [string, string] => typeof entry[1] === "string",
   );
   const year = await currentYear();
+  const legalLines = [
+    company?.legal_name && t("legalName", { value: company.legal_name }),
+    company?.tax_code && t("taxCode", { value: company.tax_code }),
+    company?.tour_operator_licence && t("licence", { value: company.tour_operator_licence }),
+  ].filter((line): line is string => Boolean(line));
+  const newTab = <span className="sr-only"> ({t("newTab")})</span>;
 
   return (
     <footer className="theme-navy bg-background">
@@ -46,13 +52,13 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
         <div className="flex flex-col gap-4">
           <p className="font-serif text-h3 font-semibold">{brandName}</p>
           {address && <p className="text-small text-muted-foreground">{address}</p>}
-          <dl className="flex flex-col gap-1 text-small text-muted-foreground">
-            {company?.legal_name && <dd>{t("legalName", { value: company.legal_name })}</dd>}
-            {company?.tax_code && <dd>{t("taxCode", { value: company.tax_code })}</dd>}
-            {company?.tour_operator_licence && (
-              <dd>{t("licence", { value: company.tour_operator_licence })}</dd>
-            )}
-          </dl>
+          {legalLines.length > 0 && (
+            <ul className="flex flex-col gap-1 text-small text-muted-foreground">
+              {legalLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
           {company?.ecommerce_notification_url && (
             <a
               href={company.ecommerce_notification_url}
@@ -61,6 +67,7 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
               className="text-small underline decoration-gold underline-offset-4"
             >
               {t("ecommerceNotification")}
+              {newTab}
             </a>
           )}
         </div>
@@ -138,6 +145,7 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
                 <li key={name}>
                   <a href={url} target="_blank" rel="noopener noreferrer" className="capitalize hover:underline">
                     {name}
+                    {newTab}
                   </a>
                 </li>
               ))}
@@ -148,7 +156,7 @@ export async function SiteFooter({ settings, brandName, locale }: Props) {
       <div className="border-t border-border">
         <Container className="flex flex-col gap-4 py-6 text-small text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>{t("rights", { year, name: company?.legal_name ?? brandName })}</p>
-          <LanguageSwitcher />
+          <LanguageSwitcher landmark={false} />
         </Container>
       </div>
     </footer>

@@ -48,6 +48,8 @@ export async function getDestinationTree(locale: "vi" | "en"): Promise<Destinati
     return buildDestinationTree(rows);
   } catch (error) {
     console.error("getDestinationTree failed", error instanceof Error ? error.message : error);
+    // Do not keep a failure for the whole "minutes" profile: retry soon.
+    cacheLife("seconds");
     return [];
   }
 }

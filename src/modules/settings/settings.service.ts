@@ -49,6 +49,8 @@ export async function getPublicSettings(): Promise<PublicSettings> {
     return parsePublicSettings(data ?? []);
   } catch (error) {
     console.error("getPublicSettings failed", error instanceof Error ? error.message : error);
+    // Do not keep a failure for the whole "minutes" profile: retry soon.
+    cacheLife("seconds");
     return EMPTY;
   }
 }

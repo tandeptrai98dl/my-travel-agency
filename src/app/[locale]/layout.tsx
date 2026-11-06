@@ -28,10 +28,15 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Omit<Props, "children">): Promise<Metadata> {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
-  const t = await getTranslations({ locale, namespace: "Metadata" });
+  const [t, settings] = await Promise.all([
+    getTranslations({ locale, namespace: "Metadata" }),
+    getPublicSettings(),
+  ]);
+  // Same brand as the header and footer: the company name from settings, else the default.
+  const siteName = settings.company?.name ?? t("siteName");
   return {
     metadataBase: siteUrl,
-    title: { default: t("siteName"), template: `%s | ${t("siteName")}` },
+    title: { default: siteName, template: `%s | ${siteName}` },
     description: t("defaultDescription"),
   };
 }

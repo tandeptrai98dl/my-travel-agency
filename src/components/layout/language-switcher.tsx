@@ -7,20 +7,33 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
-type Props = { className?: string };
+type Props = {
+  className?: string;
+  /**
+   * Render as a `nav` landmark (default). The footer and the mobile menu pass `false` so screen
+   * readers do not list several identical "Language" landmarks.
+   */
+  landmark?: boolean;
+};
 
 /**
  * Links to the current page in each language, keeping the path (localized slugs included). Used
  * in the header, the mobile menu and the footer; colours follow the surrounding theme.
  */
-export function LanguageSwitcher({ className }: Props) {
+export function LanguageSwitcher({ className, landmark = true }: Props) {
   const t = useTranslations("LanguageSwitcher");
   const currentLocale = useLocale();
   const pathname = usePathname();
   const params = useParams();
 
+  const Wrapper = landmark ? "nav" : "div";
+
   return (
-    <nav aria-label={t("label")} className={cn("flex items-center gap-1 text-small", className)}>
+    <Wrapper
+      role={landmark ? undefined : "group"}
+      aria-label={t("label")}
+      className={cn("flex items-center gap-1 text-small", className)}
+    >
       {routing.locales.map((locale) => (
         <Link
           key={locale}
@@ -35,9 +48,10 @@ export function LanguageSwitcher({ className }: Props) {
             locale === currentLocale ? "font-semibold underline" : "opacity-80 hover:opacity-100",
           )}
         >
-          {t(locale)}
+          {/* Each language name is written in its own language (WCAG 3.1.2). */}
+          <span lang={locale}>{t(locale)}</span>
         </Link>
       ))}
-    </nav>
+    </Wrapper>
   );
 }

@@ -14,7 +14,7 @@ test("browser errors reach Sentry, without personal data", async ({ page }) => {
   });
 
   await page.goto("/en?utm_source=newsletter&email=someone%40example.test");
-  await page.getByRole("main").getByRole("link", { name: "Tiếng Việt" }).click();
+  await page.getByRole("banner").getByRole("link", { name: "Tiếng Việt" }).click();
   await expect(page).toHaveURL(/\/$/);
 
   // The SDK loads lazily after the page is idle: keep raising probe errors until one arrives.
