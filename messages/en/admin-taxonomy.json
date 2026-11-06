@@ -100,9 +100,12 @@
         "in_use": "Used by tours or child items, so it cannot be deleted.",
         "default_required": "There must always be a default policy. Make another policy the default first.",
         "is_default": "The default policy cannot be deleted. Make another policy the default first.",
-        "default_not_moved": "The policy was saved but could not be made the default. Please try again."
+        "default_not_moved": "The policy was saved but could not be made the default. Please try again.",
+        "contentImageAlt": "Images in the content need Vietnamese and English alt text before publishing."
       },
-      "defaultHint": "The default policy cannot be unticked; make another policy the default instead."
+      "defaultHint": "The default policy cannot be unticked; make another policy the default instead.",
+      "content": "Full description",
+      "contentHint": "Optional. When empty, the destination page uses the summary."
     }
   }
 }

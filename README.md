@@ -70,6 +70,7 @@ Never commit real values. `.env.example` lists every variable; `.env.local` is g
 | `SENTRY_DSN` | server | Sentry → project settings → Client Keys (DSN) | Vercel |
 | `NEXT_PUBLIC_SENTRY_DSN` | public | Same DSN (it is designed to be public) | Vercel |
 | `CRON_SECRET` | server | Generate (at least 16 random characters); used by Vercel Cron routes (Phase 4) | Vercel |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | server | Upstash console > Redis database > REST API (https URL and token). Optional until the account exists: redirect sync is skipped and logged without them; required in production from Phase 3 | Vercel |
 | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | build only | Sentry → organization auth token (scope: project releases) | Vercel (build); leave empty locally |
 | `SEED_USER_PASSWORD` | local tool | Choose one (at least 12 characters) for `npm run seed:users` | `.env.local` only |
 

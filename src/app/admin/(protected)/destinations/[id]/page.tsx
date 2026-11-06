@@ -50,13 +50,14 @@ async function EditDestination({ params, listLabel, backLabel }: Props & { listL
         breadcrumbs={[{ label: listLabel, href: "/admin/destinations" }, { label: name }]}
         breadcrumbLabel={backLabel}
       />
-      <AdminMessages namespaces={["Taxonomy", "Form", "Shell"]}>
+      <AdminMessages namespaces={["Taxonomy", "Content", "Form", "Shell"]}>
         <DestinationForm
           initial={detail.values}
           hero={detail.hero}
           parents={parents}
           prefixes={slugPrefixes("destination")}
           pickerLabels={pickerLabels}
+          contentMedia={detail.contentMedia}
           deleteAction={<DeleteEntityButton kind="destination" id={id} listHref="/admin/destinations" />}
         />
       </AdminMessages>

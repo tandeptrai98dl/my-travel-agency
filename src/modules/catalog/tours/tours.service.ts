@@ -7,6 +7,7 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { slugify } from "@/lib/slug";
 import { readAlt } from "@/modules/media/media.schemas";
+import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
 
 import * as repo from "./tours.repository";
@@ -470,6 +471,7 @@ export async function saveTour(values: TourValues): Promise<TourSaveResult> {
     if (before?.is_published && before.slug !== t.slug) {
       const redirect = await repo.saveRedirect(tourPath(locale, before.slug), tourPath(locale, t.slug));
       if (redirect.error) logger.error("tours.redirect_failed", { locale, message: redirect.error.message });
+      else await syncSlugRedirect(tourPath(locale, t.slug));
     }
   }
 

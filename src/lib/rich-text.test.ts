@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   emptyRichText,
   isExternalHref,
+  richTextBytes,
   richTextIsEmpty,
   richTextMediaIds,
   richTextPlainText,
@@ -48,6 +49,9 @@ describe("safeHref", () => {
     expect(isExternalHref("https://example.com")).toBe(true);
     expect(isExternalHref("/tours")).toBe(false);
     expect(isExternalHref("mailto:a@b.c")).toBe(false);
+    // Browsers open `http:host` as http://host/.
+    expect(isExternalHref("http:example.com")).toBe(true);
+    expect(isExternalHref("HTTPS://example.com")).toBe(true);
   });
 });
 
@@ -130,6 +134,13 @@ describe("sanitizeRichText", () => {
     expect(() => sanitizeRichText(doc(nested))).not.toThrow();
     const many = doc(...Array.from({ length: 20_000 }, () => ({ type: "paragraph", content: [text("x")] })));
     expect(sanitizeRichText(many).content.length).toBeLessThan(10_000);
+  });
+});
+
+describe("richTextBytes", () => {
+  it("counts UTF-8 bytes, not characters", () => {
+    expect(richTextBytes("ặ")).toBe(5); // two quotes + three bytes
+    expect(richTextBytes(null)).toBe(4);
   });
 });
 

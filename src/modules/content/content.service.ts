@@ -11,6 +11,7 @@ import { readAlt } from "@/modules/media/media.schemas";
 import { getMediaUrl } from "@/modules/media/media.service";
 
 import * as repo from "./content.repository";
+import { syncSlugRedirect } from "./redirects.service";
 import {
   type CategoryInput,
   type CategoryValues,
@@ -83,6 +84,7 @@ async function redirectIfSlugChanged(
   if (!from || !to) return;
   const { error } = await repo.saveRedirect(from, to);
   if (error) logger.error("content.redirect_failed", { kind, locale, message: error.message });
+  else await syncSlugRedirect(to);
 }
 
 export async function isSlugAvailable(input: { kind: ContentKind; locale: ContentLocale; slug: string; excludeId?: string }) {
@@ -347,7 +349,8 @@ export async function deletePost(id: string): Promise<DeleteResult> {
   if (!existing) return { ok: false, error: "not_found" };
   if (existing.status === "published") return { ok: false, error: "published" };
   const { data, error } = await repo.deletePostRow(id);
-  if (error) return { ok: false, error: error.code === "23503" ? "in_use" : "failed" };
+  // 23514: published meanwhile (guard_post_delete).
+  if (error) return { ok: false, error: error.code === "23503" ? "in_use" : error.code === "23514" ? "published" : "failed" };
   if (!data?.length) return { ok: false, error: "not_found" };
   refreshPost(id);
   return { ok: true };

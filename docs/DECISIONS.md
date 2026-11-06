@@ -306,3 +306,15 @@ Template:
   - A published article cannot be deleted (unpublish first); a topic only when no article uses it. The six page keys are fixed in code (`PAGE_KEYS`) and their rows are created on first save. A slug change on a published article, a topic or a policy page adds a 301 (decision 4); about and FAQ have fixed routes.
   - `guard_media_delete()` refuses deleting an image whose id appears in rich text (posts, pages, destinations) or in a tour itinerary, with the foreign-key error code, so the media library shows its usual "in use" message. It matches the id as text in those JSON columns, which also covers JSON shapes added later.
 - **Consequences:** Public journal and page queries (stream B) read through `RichText` with a media map. A post without a cover stays a draft. The text match makes a delete scan a few JSON columns; fine at the expected content size.
+
+## ADR-031: Reviews, redirects in Redis, subscriber exports
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Steps 19 and 20 of the Phase 2 spec add review moderation, redirects synced to Upstash Redis (decision 5) and a read-only subscriber list with an audited CSV export. The proxy that reads Redis comes with Phase 3 (stream B), so the stored format must be fixed now.
+- **Decision:**
+  - Reviews: API roles update only `status` and `is_featured`; a featured review must be approved; reviews written in by staff are never verified or linked to a booking (`*_review_rules.sql`). The customer's text is never edited.
+  - Redirects: source and target are site paths (`/…`, no `//`, no spaces; sources without `?` or `#`), 301 or 302 from the admin (307/308 allowed in the table), never to themselves and never chained (a trigger refuses a target that is itself redirected and a source others point to; the admin and the slug helpers flatten first).
+  - Redis holds one hash, `redirects`, with the source path as field and `{"to": "/target", "status": 301}` as value. Every create, delete and slug change updates it after the database write; "resync" rebuilds it in `redirects:resync` and swaps it in with `RENAME`. The client is a small `fetch` wrapper over the Upstash REST pipeline (`src/lib/redis.ts`), so no SDK is added. Without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (optional in the env schema until Phase 3) every sync is a logged no-op.
+  - Subscribers: the admin list is read-only; the CSV export holds only confirmed subscribers who have not unsubscribed, neutralises spreadsheet formulas, and is refused unless its `audit_logs` row (`subscribers.export`, actor, count) is written first, through the service role after the permission check.
+- **Consequences:** Stream B's proxy reads `HGET redirects <path>` and must treat a miss as "no redirect". Redirects created before Upstash exists need one resync. Phase 3 makes the Upstash variables required in production.

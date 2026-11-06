@@ -24,7 +24,7 @@ export async function findDestination(id: string) {
   return (await db())
     .from("destinations")
     .select(
-      "id, key, type, parent_id, status, hero_media_id, latitude, longitude, sort_order, destination_translations(id, locale, slug, name, summary, best_time_to_visit, seo_title, seo_description, is_published)",
+      "id, key, type, parent_id, status, hero_media_id, latitude, longitude, sort_order, destination_translations(id, locale, slug, name, summary, best_time_to_visit, content, seo_title, seo_description, is_published)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -176,6 +176,11 @@ export async function deleteCancellationPolicyRow(id: string) {
 }
 
 // Media --------------------------------------------------------------------------------------------------
+export async function findMediaRows(ids: string[]) {
+  if (ids.length === 0) return { data: [], error: null };
+  return (await db()).from("media").select("id, path, alt").in("id", ids);
+}
+
 export async function findMediaSummary(id: string) {
   return (await db()).from("media").select("id, path, alt, blur_data_url").eq("id", id).maybeSingle();
 }

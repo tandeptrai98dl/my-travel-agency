@@ -14,6 +14,7 @@ const repo = vi.hoisted(() => {
     countDestinationUses: vi.fn(async () => ({ children: 0, tours: 0, error: null })),
     findTravelStyle: ok(),
     findMediaSummary: ok(),
+    findMediaRows: ok([]),
     saveRedirect: ok(),
     findCancellationPolicy: ok(),
     insertCancellationPolicy: ok({ id: "p-new" }),
@@ -67,6 +68,27 @@ describe("saveDestination", () => {
     expect(repo.upsertDestinationTranslation).toHaveBeenCalledWith(expect.objectContaining({ locale: "vi", slug: "vinh-ha-long" }));
     expect(repo.deleteDestinationTranslation).toHaveBeenCalledWith("d-new", "en");
     expect(updateTag).toHaveBeenCalledWith("destinations");
+  });
+
+  it("stores the rich description, or nothing when the editor is empty", async () => {
+    const content = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hang Sửng Sốt." }] }] };
+    await service.saveDestination(destination({ translations: { vi: translation({ content }), en: translation({ name: "", slug: "", isPublished: false }) } }));
+    expect(repo.upsertDestinationTranslation).toHaveBeenCalledWith(expect.objectContaining({ locale: "vi", content }));
+    vi.clearAllMocks();
+    await service.saveDestination(
+      destination({ translations: { vi: translation({ content: { type: "doc", content: [{ type: "paragraph" }] } }), en: translation({ name: "", slug: "", isPublished: false }) } }),
+    );
+    expect(repo.upsertDestinationTranslation).toHaveBeenCalledWith(expect.objectContaining({ locale: "vi", content: null }));
+  });
+
+  it("refuses to publish a description whose image lacks an alt text", async () => {
+    const id = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
+    repo.findMediaRows.mockResolvedValueOnce({ data: [{ id, path: "a.jpg", alt: { vi: "Hang" } }], error: null });
+    const content = { type: "doc", content: [{ type: "image", attrs: { mediaId: id } }] };
+    expect(
+      await service.saveDestination(destination({ translations: { vi: translation({ content }), en: translation({ name: "", slug: "", isPublished: false }) } })),
+    ).toEqual({ ok: false, error: "contentImageAlt", field: "translations.vi.content" });
+    expect(repo.insertDestination).not.toHaveBeenCalled();
   });
 
   it("never keeps a parent on a country", async () => {

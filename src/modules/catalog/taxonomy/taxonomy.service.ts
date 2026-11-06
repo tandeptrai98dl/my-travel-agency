@@ -4,11 +4,14 @@ import { updateTag } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
+import { emptyRichText, richTextIsEmpty, richTextMediaIds } from "@/lib/rich-text";
 import { getPathname } from "@/i18n/navigation";
 import { readAlt } from "@/modules/media/media.schemas";
+import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
 
 import { DESTINATIONS_TAG } from "../destinations.service";
+
 import * as repo from "./taxonomy.repository";
 import {
   type CancellationPolicyInput,
@@ -35,6 +38,7 @@ export type SaveError =
   | "requiredToPublish"
   | "default_required"
   | "hero_alt_missing"
+  | "contentImageAlt"
   | "not_found"
   | "failed";
 export type SaveResult = { ok: true; id: string; warning?: "default_not_moved" } | { ok: false; error: SaveError; field?: string };
@@ -113,8 +117,10 @@ async function redirectIfSlugChanged(
 ) {
   const old = before.find((row) => row.locale === locale);
   if (!old?.is_published || old.slug === nextSlug) return;
-  const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), publicPath(kind, locale, nextSlug));
+  const to = publicPath(kind, locale, nextSlug);
+  const { error } = await repo.saveRedirect(publicPath(kind, locale, old.slug), to);
   if (error) logger.error("taxonomy.redirect_failed", { kind, locale, message: error.message });
+  else await syncSlugRedirect(to);
 }
 
 /** Free slug for this kind and language (the editor checks on blur; saving checks again). */
@@ -161,13 +167,23 @@ export async function listDestinations(): Promise<DestinationListItem[]> {
   return roots;
 }
 
-export type DestinationDetail = { values: DestinationInput; hero: HeroSummary };
+/** Preview data for images inside the rich text (the JSON keeps only their ids). */
+export type ContentMedia = Record<string, { url: string; alt: string }>;
+export type DestinationDetail = { values: DestinationInput; hero: HeroSummary; contentMedia: ContentMedia };
+
+async function contentMediaRows(ids: string[]) {
+  if (ids.length === 0) return [];
+  const { data, error } = await repo.findMediaRows([...new Set(ids)]);
+  if (error) throw new Error(`media query failed: ${error.message}`);
+  return (data ?? []).map((row) => ({ id: row.id, url: getMediaUrl(row.path), alt: readAlt(row.alt) }));
+}
 
 const emptyDestinationTranslation = {
   slug: "",
   name: "",
   summary: "",
   bestTimeToVisit: "",
+  content: emptyRichText(),
   seoTitle: "",
   seoDescription: "",
   isPublished: false,
@@ -200,12 +216,16 @@ export async function getDestination(id: string): Promise<DestinationDetail | nu
           name: row.name,
           summary: row.summary ?? "",
           bestTimeToVisit: row.best_time_to_visit ?? "",
+          content: row.content ?? emptyRichText(),
           seoTitle: row.seo_title ?? "",
           seoDescription: row.seo_description ?? "",
           isPublished: row.is_published,
         }
-      : { ...emptyDestinationTranslation };
+      : { ...emptyDestinationTranslation, content: emptyRichText() };
   };
+  const vi = translation("vi");
+  const en = translation("en");
+  const media = await contentMediaRows([...richTextMediaIds(vi.content), ...richTextMediaIds(en.content)]);
   return {
     values: {
       id: data.id,
@@ -217,9 +237,10 @@ export async function getDestination(id: string): Promise<DestinationDetail | nu
       latitude: data.latitude,
       longitude: data.longitude,
       sortOrder: data.sort_order,
-      translations: { vi: translation("vi"), en: translation("en") },
+      translations: { vi, en },
     },
     hero: await heroSummary(data.hero_media_id),
+    contentMedia: Object.fromEntries(media.map((item) => [item.id, { url: item.url, alt: item.alt.vi || item.alt.en }])),
   };
 }
 
@@ -233,6 +254,16 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
   }
   const heroProblem = await checkHero(values.status, values.heroMediaId);
   if (heroProblem) return heroProblem;
+  // Decision 6: images in a language being published need both alt texts.
+  for (const locale of LOCALES) {
+    const t = values.translations[locale];
+    if (!t.name || !t.isPublished) continue;
+    const ids = richTextMediaIds(t.content);
+    const rows = await contentMediaRows(ids);
+    if (ids.some((mediaId) => !rows.find((item) => item.id === mediaId && item.alt.vi.trim() && item.alt.en.trim()))) {
+      return { ok: false, error: "contentImageAlt", field: `translations.${locale}.content` };
+    }
+  }
 
   const row = {
     key: values.key,
@@ -269,6 +300,8 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
       name: t.name,
       summary: t.summary,
       best_time_to_visit: t.bestTimeToVisit,
+      // An empty editor is stored as nothing, so public pages fall back to the summary.
+      content: richTextIsEmpty(t.content) ? null : t.content,
       seo_title: t.seoTitle,
       seo_description: t.seoDescription,
       is_published: t.isPublished,

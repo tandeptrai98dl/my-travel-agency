@@ -113,7 +113,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/admin/tours` (Phase 2 PR D): TourEditor (sections for general facts, admin-only prices, catalog links, media, VI/EN content, publishing), TourTranslationFields (itinerary day cards, lists, FAQs, SEO, sharing image), GalleryField and RowControls (button reordering with announcements), NewTourForm, DuplicateTourButton
 - `src/components/admin/departures` (Phase 2 PR E): DepartureCalendar (Monday-first month grid, a day list below `md`), DepartureBulkCreator (weekday pattern or date list, server preview, skipped duplicates), DepartureEditor, shared CountField, PriceFields and PriceSummary
 - `src/components/typography/rich-text.tsx` (Phase 2 PR F): RichText, the server-only whitelist renderer of Tiptap JSON into Prose (`renderImage` for public image components); `src/lib/rich-text.ts` holds the shared sanitizer
-- `src/components/admin` (Phase 2 PR F): RichTextEditor (Tiptap with the fixed extension set, labelled toolbar, link dialog, library images); `admin/content`: PostEditor, PageEditor, CategoryForm, ContentTranslationFields, DeleteContentButton
+- `src/components/admin` (Phase 2 PR F): RichTextEditor (Tiptap with the fixed extension set, labelled toolbar, link dialog, library images); `admin/content`: PostEditor, PageEditor, CategoryForm, ContentTranslationFields, DeleteContentButton, ReviewActions, RedirectForm, DeleteRedirectButton, ResyncRedirectsButton, ExportSubscribersButton; StatusBadge also maps `review_status`
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned

@@ -42,7 +42,7 @@ async function NewDestination({ searchParams }: Props) {
   const [parents, pickerLabels] = await Promise.all([listParentOptions(), getMediaPickerLabels()]);
   const parent = parents.find((option) => option.id === parentId);
   return (
-    <AdminMessages namespaces={["Taxonomy", "Form", "Shell"]}>
+    <AdminMessages namespaces={["Taxonomy", "Content", "Form", "Shell"]}>
       <DestinationForm
         initial={newDestinationValues(parent)}
         hero={null}
