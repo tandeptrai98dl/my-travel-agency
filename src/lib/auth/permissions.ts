@@ -44,7 +44,7 @@ export const PERMISSIONS = {
   "tours.read": STAFF_ROLES,
   "tours.edit_content": ["editor", "admin"],
   "departures.edit": ["operator", "admin"],
-  // Pending ADR-016: whether sales_manager may edit departure prices. Until decided, admin only.
+  // ADR-016: only admin edits departure prices (sales_manager does not).
   "prices.edit": ["admin"],
 
   "content.manage": ["editor", "admin"],

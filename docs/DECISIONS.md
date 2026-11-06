@@ -138,7 +138,7 @@ Template:
 ## ADR-016: Booking business defaults
 
 - **Date:** 2026-11-06
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-06)
 - **Context:** The full scope needs concrete booking rules. They can change before Phase 4 without touching the architecture.
 - **Decision:** Defaults, configurable in Settings where possible:
   - Private-tour requests go through an inquiry; a booking is created only when sales sends a quote.
@@ -153,13 +153,13 @@ Template:
   - Homepage sections are fixed in code; content is picked through "featured" flags and the `homepage` setting.
   - No passport numbers are collected on the website.
   - Destinations have a language-independent `key` used in filter URLs.
-  - Pending: may `sales_manager` edit departure prices? Until decided, only `admin` can.
+  - `sales_manager` does not edit departure prices; only `admin` does (owner accepted the recommended default, 2026-11-06). Revisit with a new ADR if needed.
 - **Consequences:** Implemented in Phase 4. Changing a rule later means updating this ADR, `ARCHITECTURE.md` and the affected code.
 
 ## ADR-017: Light theme on the public website
 
 - **Date:** 2026-11-06
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-06)
 - **Context:** Brief §8 asked whether to keep the starter's light/dark switch.
 - **Decision:** The public website uses a fixed light theme with Deep Navy sections for contrast. next-themes stays installed; dark mode may be offered in the admin later.
 - **Consequences:** The theme switcher is removed from the public layout in Phase 1.
@@ -167,7 +167,7 @@ Template:
 ## ADR-018: Hosting on Vercel Pro and Supabase Pro (Singapore)
 
 - **Date:** 2026-11-06
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-06)
 - **Context:** The Vercel Hobby plan forbids commercial use and limits cron jobs. Supabase Free projects pause and lack backups.
 - **Decision:** Free tiers for local development; Vercel Pro and Supabase Pro in the Singapore region for staging and production, with point-in-time recovery enabled at launch.
 - **Consequences:** Needs a monthly cost estimate and owner approval before staging goes live.
@@ -175,7 +175,7 @@ Template:
 ## ADR-019: Delivery plan in seven phases
 
 - **Date:** 2026-11-06
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-06)
 - **Context:** The full scope (ADR-005) replaces the original five-phase plan.
 - **Decision:** Phases 0–6 as described in `DEVELOPMENT_PLAN.md`, about 16 weeks for one developer or 12–13 weeks for two.
 - **Consequences:** `PROGRESS.md` tracks phases by these numbers. Non-code tracks (VNPay contract, e-commerce notification, bilingual content) start in Phase 0.
@@ -193,3 +193,16 @@ Template:
   - At most two implementation streams run in parallel, and only one stream owns `supabase/migrations/` at a time.
   - `docs/PROGRESS.md` is updated in every pull request.
 - **Consequences:** GitHub (pull requests, CI runs, commit history) is the record of what is done. Branch protection on `main` (require the CI checks) should be enabled by the owner.
+
+## ADR-021: Design system values and Phase 1 implementation choices
+
+- **Date:** 2026-11-06
+- **Status:** Accepted (owner allowed the recommended solutions, 2026-11-06)
+- **Context:** `DESIGN_SYSTEM.md` proposed a palette and fonts pending owner confirmation, and Phase 1 needs concrete values. Two proposed colours fail WCAG AA as text on the ivory background, and the shadcn/ui registry cannot be reached from the build workspace.
+- **Decision:**
+  - Palette as proposed (Deep Navy `#0F1B2D`, Warm Ivory `#F7F3EC`, Champagne Gold `#C9A96E`, White, Success `#2F6B4F`, Error `#A23B3B`), with two AA adjustments for text: muted text `#726D65` (Warm Gray darkened; 4.6:1 on ivory) while `#8A847B` stays for borders and decoration, and warning text `#865A11` (5.4:1 on ivory). Gold is never used for body text on light surfaces. Contrast pairs are unit-tested against `globals.css`.
+  - Fonts: Cormorant Garamond (500–600) for display and headings, Be Vietnam Pro (400–600) for body and UI, both through `next/font` with the `latin` and `vietnamese` subsets.
+  - Radius `0.25rem`; no shadows on cards; fixed light theme on the public site (ADR-017).
+  - shadcn/ui primitives are added by copying the new-york component source onto the Radix packages from npm (what the CLI does), because the registry is not reachable from the workspace.
+  - `partialPrefetching: true` alongside `cacheComponents`, as Next.js recommends for new projects.
+- **Consequences:** `DESIGN_SYSTEM.md` values are final. Changing a colour means updating `globals.css`, this ADR and the contrast test.

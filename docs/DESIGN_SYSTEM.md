@@ -16,17 +16,18 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 
 ## Color palette
 
-> Status: **proposed** values (from the brief's color direction). Confirm them, then apply them to `globals.css`.
+> Status: **approved** (ADR-021). Applied in `src/app/globals.css`; contrast pairs are unit-tested.
 
-| Name | Hex (proposed) | Role |
+| Name | Hex | Role |
 | --- | --- | --- |
 | Deep Navy | `#0F1B2D` | primary brand color, headings, dark sections, primary buttons |
 | Warm Ivory | `#F7F3EC` | main page background |
 | Champagne Gold | `#C9A96E` | accents: dividers, icons, highlights, focus |
 | White | `#FFFFFF` | cards, form fields, elevated surfaces |
-| Warm Gray | `#8A847B` | secondary text, borders, muted UI |
+| Warm Gray | `#8A847B` | borders, dividers, decorative muted UI |
+| Muted text | `#726D65` | secondary text (Warm Gray darkened for AA: 4.6:1 on ivory) |
 | Success | `#2F6B4F` | paid, seats available |
-| Warning | `#9A6A16` | almost full, awaiting payment |
+| Warning | `#865A11` | almost full, awaiting payment (darkened for AA text on ivory) |
 | Error | `#A23B3B` | errors, cancelled |
 
 ### Token mapping (light theme)
@@ -39,25 +40,25 @@ Built on **shadcn/ui** (new-york style) and **Tailwind CSS 3**, with tokens as C
 | `primary` / `primary-foreground` | Deep Navy / Warm Ivory |
 | `secondary` | a lighter ivory tint |
 | `accent` | Champagne Gold (with Deep Navy text) |
-| `muted-foreground` | Warm Gray, darkened if needed for AA on ivory |
+| `muted-foreground` | Muted text `#726D65` |
 | `border`, `input` | a light tint of Warm Gray |
 | `ring` | Champagne Gold |
 | `success`, `warning`, `destructive` | Success, Warning, Error |
 
 ### Theme
 
-Proposed (ADR-017): the public website uses a fixed light theme, with Deep Navy sections (ivory text, gold accents) for contrast. Remove the theme switcher from the public layout. next-themes stays for a possible admin dark mode later.
+ADR-017: the public website uses a fixed light theme, with Deep Navy sections (ivory text, gold accents) for contrast. Remove the theme switcher from the public layout. next-themes stays for a possible admin dark mode later.
 
 **Contrast**: gold on ivory or white fails AA for body text. Use gold only for decoration, large text (≥ 24px) or on navy.
 
 ## Typography
 
-> Status: **proposed**. Load through `next/font` with the `latin` and `vietnamese` subsets.
+> Status: **approved** (ADR-021). Loaded through `next/font` with the `latin` and `vietnamese` subsets.
 
-| Use | Font (proposed) | Notes |
+| Use | Font | Notes |
 | --- | --- | --- |
 | Display / headings | Cormorant Garamond, weight 500–600 | serif, editorial feel |
-| Body / UI | Be Vietnam Pro or Inter, weight 400–600 | both support Vietnamese well; Be Vietnam Pro is designed for it |
+| Body / UI | Be Vietnam Pro, weight 400–600 | designed for Vietnamese |
 
 - Check stacked diacritics (ặ, ẫ, ỡ) at every size; heading line-height at least 1.15 so diacritics are never clipped.
 

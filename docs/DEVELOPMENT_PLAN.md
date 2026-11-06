@@ -1,6 +1,6 @@
 # Development Plan
 
-Full-scope MVP (ADR-005) in seven phases (ADR-019, proposed): about 16 weeks for one developer, 12–13 weeks for two (Phase 2 in parallel with Phase 3, Phase 5 with the second half of Phase 4).
+Full-scope MVP (ADR-005) in seven phases (ADR-019): about 16 weeks for one developer, 12–13 weeks for two (Phase 2 in parallel with Phase 3, Phase 5 with the second half of Phase 4).
 Scope comes from `PROJECT_BRIEF.md` and `FEATURES.md`. Track status in `PROGRESS.md`. Each phase ends with a deployable app on staging, checked against the Definition of Done.
 
 Non-code tracks that can block launch start in Phase 0: VNPay merchant contract, e-commerce website notification to the Ministry of Industry and Trade, bilingual content and photography.
