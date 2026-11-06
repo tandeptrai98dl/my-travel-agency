@@ -47,7 +47,7 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [ ] Metadata, JSON-LD, sitemap, hreflang, OG images, redirects; CSP per page type
 - [ ] Acceptance: Core Web Vitals "Good" on staging; Rich Results Test passes; pages without an English translation return 404
 
-## Phase 4: Booking and payments (4 weeks)
+## Phase 4: Booking and payments (4 weeks) — spec: `docs/specs/phase-4-booking-payments.md`
 
 - [ ] `pricing.ts`, `state-machine.ts`; `reserve_and_create_payment`, `confirm_payment`, `expire_holds`, `cancel_booking`, `check_seat_invariant` + pgTAP; `pg_cron` schedules
 - [ ] Book-now flow with VAT invoice details, terms consent, cancellation policy summary
