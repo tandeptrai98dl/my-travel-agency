@@ -133,6 +133,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
+          SHOW_DESIGN_SYSTEM: "true"
         run: npm run build
       - name: Check that server-only values did not leak into client bundles
         run: |
@@ -185,6 +186,8 @@ jobs:
           # Test setup only (generating email-link tokens); the app keeps the sentinel key.
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
+          # Serves /admin/design-system in the production build so axe can check it.
+          SHOW_DESIGN_SYSTEM: "true"
         run: npm run test:e2e
         timeout-minutes: 8
       - uses: actions/upload-artifact@v4

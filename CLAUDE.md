@@ -22,7 +22,7 @@ Objective: build a website system capable of operating a real-world business: to
 - Testing: Vitest, Playwright, pgTAP
 - Vercel (hosting)
 
-Stack additions are recorded in `docs/DECISIONS.md` (ADR-014). Add each library only in the phase that needs it.
+Stack additions are recorded in `docs/DECISIONS.md` (ADR-014, ADR-022). Add each library only in the phase that needs it.
 
 ## DOCUMENTATION
 

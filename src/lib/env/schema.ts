@@ -54,6 +54,8 @@ export const serverEnvSchema = z.object({
       message: "must be the secret (service_role) key",
     }),
   GOOGLE_OAUTH_ENABLED: booleanFlag,
+  // Serves /admin/design-system in a production build (CI and previews). Off by default.
+  SHOW_DESIGN_SYSTEM: booleanFlag,
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,
   SENTRY_DSN: z.preprocess((value) => (value === "" ? undefined : value), z.url().optional()),

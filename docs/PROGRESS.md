@@ -4,11 +4,24 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 1 (Design system and UI shell); Phase 0 code-complete
-- **Next up:** Phase 1 PR 7 (remaining primitives, `/admin/design-system`, axe accessibility checks). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's accounts
+- **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
+- **Next up:** Phase 2 spec (`docs/specs/phase-2-catalog-admin.md`), then AdminShell, DataTable, LocaleTabs, media upload. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-06 (Phase 1 — PR 7: primitives, design system page, axe)
+
+Branch `feat/p1-primitives` (`docs/specs/phase-1-design-system.md` steps 12–14).
+
+- Done:
+  - Primitives: textarea, select, radio group, tooltip, popover, tabs, separator, avatar, skeleton, spinner, alert, toast (Radix) with a small `Toaster`/`toast()` store, pagination (real links; page range unit-tested), icon button (required label), form (React Hook Form + Zod; Zod messages are translation keys), tag, status badge (one colour map for every status enum, unit-tested) and empty state. DatePicker, Combobox, PhoneInput and Stepper wait for their forms (Phases 2 and 4).
+  - `/admin/design-system`: tokens, the type scale with Vietnamese diacritics, every button, badge and status, a validated form, overlays, toasts, feedback states, pagination and a navy section. Staff only; 404 in production builds unless `SHOW_DESIGN_SYSTEM=true` (set in CI).
+  - axe (`@axe-core/playwright`, WCAG 2.2 AA tags) in E2E: `/`, `/en` and a 404 at 375 and 1280 px with the cookie banner open and after a choice, the cookie settings dialog, the mobile menu, the mega menu, and the design system page signed in as an editor (also with form errors). Serious or critical violations fail CI.
+  - ADR-022 (`@hookform/resolvers`, `@axe-core/playwright`, Radix packages).
+- Verified locally: lint, typecheck, unit tests; production build; the public axe tests (12) against the REST stub. The design system page was checked in a dev server with the staff gate temporarily bypassed (not committed): axe found no violations at 1280 and 375 px, also with form errors, and screenshots with the real Cormorant Garamond and Be Vietnam Pro fonts (from npm, since Google Fonts is blocked here) show no clipped diacritics at any size. The signed-in axe test runs in CI.
+- Found and fixed while checking: the toast store's server snapshot was not a stable reference (React warned of an infinite loop); axe flagged Radix NavigationMenu's focus sentinel (see known issues).
+- Independent review: approved with minor findings, all addressed: a removable `Tag` requires its remove label (type-level); form fields reference only descriptions and messages that exist, and the message live region is never `display:none`; `Alert` has no live role unless asked (`live`) and its title is a paragraph (no heading jumps); active tab uses the tested 3:1 gold with a semibold label; focus rings have offsets everywhere; error toasts stay until closed and toasts are announced as "Thông báo" in a "Thông báo (F8)" region; the design system flag is a unit-tested helper and the page is documented as never for Vercel Production (`README.md`, `.env.example`); axe also runs with the select list, a dialog and an error toast open (scoped to the overlay, after animations finish); ADR-022 records that it was accepted under the owner's standing instruction.
 
 ### 2026-11-06 (Phase 1 — PR 6: public layout shell)
 
@@ -136,6 +149,7 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 ## Known issues
 
+- Radix NavigationMenu adds an `aria-hidden` focusable sentinel after an open trigger (axe `aria-hidden-focus`). It only forwards focus into the menu, and the E2E test proves Tab lands on a destination link; it is excluded from axe by its exact selector. Revisit when Radix changes it.
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
 - Phase 3: cheap initial-JS wins to try before the 150 KB budget review: render the desktop nav without client JS until the mega menu is opened, and load the floating contact's client code after idle.
