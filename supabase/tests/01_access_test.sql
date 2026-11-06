@@ -31,18 +31,26 @@ update public.profiles set role = 'accountant' where id = '00000000-0000-4000-80
 update public.profiles set role = 'editor' where id = '00000000-0000-4000-8000-000000000014';
 update public.profiles set role = 'admin' where id = '00000000-0000-4000-8000-000000000015';
 
+-- Tours start as drafts and are published once they meet the publish rules (*_tour_rules.sql).
 insert into public.tours (id, code, type, scope, status, duration_days, duration_nights, from_price) values
-  ('10000000-0000-4000-8000-000000000001', 'T-PUB', 'group', 'domestic', 'published', 3, 2, 5000000),
+  ('10000000-0000-4000-8000-000000000001', 'T-PUB', 'group', 'domestic', 'draft', 3, 2, 5000000),
   ('10000000-0000-4000-8000-000000000002', 'T-DRAFT', 'group', 'domestic', 'draft', 3, 2, 5000000);
 
-insert into public.tour_translations (tour_id, locale, slug, title, summary, is_published) values
-  ('10000000-0000-4000-8000-000000000001', 'vi', 'tour-cong-khai', 'Tour công khai', 'Tóm tắt', true),
-  ('10000000-0000-4000-8000-000000000001', 'en', 'public-tour', 'Public tour', 'Summary', false),
-  ('10000000-0000-4000-8000-000000000002', 'vi', 'tour-nhap', 'Tour nháp', 'Tóm tắt', true);
+insert into public.tour_translations (tour_id, locale, slug, title, summary, seo_description, is_published) values
+  ('10000000-0000-4000-8000-000000000001', 'vi', 'tour-cong-khai', 'Tour công khai', 'Tóm tắt', 'Mô tả', true),
+  ('10000000-0000-4000-8000-000000000001', 'en', 'public-tour', 'Public tour', 'Summary', null, false),
+  ('10000000-0000-4000-8000-000000000002', 'vi', 'tour-nhap', 'Tour nháp', 'Tóm tắt', 'Mô tả', true);
 
 insert into public.departures (id, tour_id, start_date, end_date, capacity, price_adult) values
   ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001',
    current_date + 60, current_date + 62, 20, 5000000);
+
+insert into public.media (id, path, mime_type, size_bytes, alt) values
+  ('80000000-0000-4000-8000-000000000001', '2026/01/80000000-0000-4000-8000-000000000001.jpg',
+   'image/jpeg', 1, '{"vi": "Ảnh", "en": "Image"}');
+update public.tours
+set status = 'published', hero_media_id = '80000000-0000-4000-8000-000000000001'
+where id = '10000000-0000-4000-8000-000000000001';
 
 insert into public.bookings (
   id, code, type, tour_id, departure_id, start_date, customer_id, adults, contact_name,

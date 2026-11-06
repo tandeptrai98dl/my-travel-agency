@@ -110,6 +110,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/admin` (Phase 2 PR A): AdminShell (role-based sidebar from the permission matrix, top bar, sheet below lg), PageHeader, DataTable (URL-driven sort and paging), FilterBar (GET form), LocaleTabs, SlugInput, SeoFields, MoneyInput, ConfirmDialog, ListEditor
 - `src/components/admin/media` (Phase 2 PR B): MediaUploader (signed direct upload, live status per file, drag and drop), MediaEditDialog (VI/EN alt text, credit, delete when unused), MediaPicker (search, inline upload, single or multiple)
 - `src/components/admin/taxonomy` (Phase 2 PR C): DestinationForm, TravelStyleForm, CancellationPolicyForm (React Hook Form + Zod, server errors put back on their fields), TranslationFields (one language: name, slug with an on-blur availability check, text, SEO, its own publish switch), HeroField (MediaPicker), LocaleBadges, DeleteEntityButton; `AdminMessages` passes one page's admin strings to its client components; StatusBadge also maps `publish_status`
+- `src/components/admin/tours` (Phase 2 PR D): TourEditor (sections for general facts, admin-only prices, catalog links, media, VI/EN content, publishing), TourTranslationFields (itinerary day cards, lists, FAQs, SEO, sharing image), GalleryField and RowControls (button reordering with announcements), NewTourForm, DuplicateTourButton
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned

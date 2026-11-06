@@ -839,6 +839,9 @@ isOneToOne: false
 "current_user_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
                            },
+"default_cancellation_policy_id":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "has_role":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
                            },
@@ -856,6 +859,9 @@ isOneToOne: false
                            },
 "is_valid_slug":
 { Args: { "slug": string }; Returns: boolean
+                           },
+"media_alt_complete":
+{ Args: { "media_id": string }; Returns: boolean
                            },
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined

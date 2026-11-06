@@ -157,6 +157,17 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   // Exact: the list page navigated away from may still be in the DOM, hidden.
   await expect(page.getByText("Phiên bản 1", { exact: true })).toBeVisible();
   await expectNoSeriousViolations(page, "cancellation policy editor");
+
+  // Only this aal2 admin edits tour prices (ADR-024): the private tour gets a new from price.
+  await menu.getByRole("link", { name: "Tour", exact: true }).click();
+  await page.getByRole("link", { name: "Di sản Hội An và Huế" }).click();
+  const fromPrice = page.getByLabel("Giá từ (đồng)");
+  await expect(fromPrice).toBeVisible();
+  await fromPrice.fill("19.500.000");
+  await page.getByRole("button", { name: "Lưu", exact: true }).click();
+  await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText("Đã lưu")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Giá từ (đồng)")).toHaveValue("19.500.000");
 });
 
 test("only admins see and open the audit log", async ({ page }) => {

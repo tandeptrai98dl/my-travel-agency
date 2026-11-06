@@ -56,7 +56,7 @@ One pull request per group, one commit per step. Every Server Action: `requireRo
 
 11. Price-column guard triggers (decision 1) with pgTAP for editor, operator, sales_manager, admin with and without aal2.
 12. `/admin/tours`: list (status, scope, type, featured, per-language publish state, next departure), create, duplicate (copies content and media, not departures; new code, `draft`).
-13. Tour editor: general (code, type, scope, duration, pax limits, child/infant ages), prices and terms (admin only; read-only for others), destinations and travel styles, gallery (MediaPicker, drag to reorder), VI/EN content (title, subtitle, summary, highlights, itinerary builder with day cards — title, description, meals, accommodation, images — inclusions, exclusions, practical info, FAQs), SEO and OG image, publish checks (decision 3), preview link (signed, draft mode).
+13. Tour editor: general (code, type, scope, duration, pax limits, child/infant ages), prices and terms (admin only; read-only for others), destinations and travel styles, gallery (MediaPicker, reordered with move buttons rather than drag and drop, so it works with a keyboard), VI/EN content (title, subtitle, summary, highlights, itinerary builder with day cards — title, description, meals, accommodation — inclusions, exclusions, practical info, FAQs), SEO and OG image, publish checks (decision 3). Day images and the signed preview link move to Phase 3, with the public tour page they show on.
 
 ### PR E — Departures
 

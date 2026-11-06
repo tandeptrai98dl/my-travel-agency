@@ -19,7 +19,7 @@ export type AuditPage = {
 /** One page of the audit log for an MFA-verified admin (permission `audit.read`). */
 export async function listAuditLogs(params: ListParams<AuditSort>): Promise<AuditPage> {
   await requirePermission("audit.read");
-  const entityId = z.uuid().safeParse(params.q).success ? params.q : undefined;
+  const entityId = z.guid().safeParse(params.q).success ? params.q : undefined;
   const invalidEntityId = params.q !== "" && entityId === undefined;
   const query = {
     entityType: params.filters.entity,

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileClock, Images, LayoutDashboard, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
+import { FileClock, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -21,6 +21,7 @@ const ICONS = {
   destinations: MapPinned,
   styles: Sparkles,
   policies: ScrollText,
+  tours: MapIcon,
 } as const;
 
 type Props = {

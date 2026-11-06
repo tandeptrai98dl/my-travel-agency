@@ -5,10 +5,41 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR D (tours, with the price guards of ADR-024), then departures, content, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up:** Phase 2 PR E (departures), then journal, pages, reviews, redirects, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Log
+
+### 2026-11-07 (Phase 2 — PR 11: tours)
+
+Branch `feat/p2-tours` (`docs/specs/phase-2-catalog-admin.md` steps 11–13, ADR-024).
+
+- Done:
+  - Migration `20261107100000_tour_rules.sql` (ADR-024):
+    - price guards: only an MFA-verified admin sets tour prices, deposit, balance terms and cancellation policy, and departure prices; editors' new tours get the defaults, operators' new departures copy the prices of the tour's latest departure, and a tour's first departure needs an admin;
+    - publish rules: a published tour needs a published translation, a hero with VI/EN alt text and a price (a departure for group tours, a from price for private tours); a published translation needs a title, summary and SEO description; a published tour keeps its hero and its last published language;
+    - heroes of published destinations and travel styles keep both alt texts, and an image used as one cannot lose them;
+    - tour code format.
+    - pgTAP: 30 assertions for editor, operator, sales manager and admin with and without aal2; dropping the triggers makes 15 of them fail.
+  - Seed and access-test fixtures insert tours as drafts and publish them once complete (with sample hero image rows).
+  - `/admin/tours`: list for every staff role (edit links for editors and admins only), search by code or title, status/type/scope filters, per-language state and next departure.
+  - `/admin/tours/new`: a draft from a title and the key facts.
+  - Tour editor: general facts, prices and terms (admin only, read-only otherwise), destinations and travel styles, hero and an ordered gallery, VI/EN content with itinerary day cards, highlights, inclusions, exclusions, practical information, FAQs, SEO and sharing image, per-language publishing and the tour status.
+    - Saving publishes in an order the database accepts (content and links first, status last; the reverse when unpublishing), sends prices only for admins, adds 301s language by language, refreshes the `tours` cache tag and maps the database rules back to their fields.
+  - Duplicate: content, images and links as an unpublished draft with free slugs, no departures.
+- Verified locally:
+  - lint, typecheck, 256 unit tests (schemas, including parsing their own output again; save order, admin-only prices, publish checks, hero alt and kept languages, link diffs, cache tags, redirects, error mapping, duplication);
+  - pgTAP on the local Postgres shim: 153 assertions;
+  - production build.
+  - Signed-in E2E (CI only; results in the PR): editor filters, creates a draft, is refused publishing without a language and a hero, saves the itinerary; duplication; operators read without edit links; the aal2 admin edits a from price.
+- Deviations:
+  - Gallery reordering uses move buttons (keyboard and screen-reader friendly) instead of drag and drop.
+  - Day images in the itinerary and the signed preview link move to Phase 3 with the public tour page.
+- Independent review: changes requested, addressed:
+  - Major: the media picker search and the media edit dialog submitted the tour editor form through the React tree (portal); both now stop the event.
+  - Minor: a translation cannot move to another tour; the hero alt text is checked before anything is written; a failed publish keeps an archived tour archived; new tours get the default policy for admins too; clearing a saved language's title is refused (`keepLanguage`) instead of deleting it; links are diffed (gallery upserts before removals); the `tour:<id>` tag is refreshed; the media dialog explains a hero alt refusal; focus moves to the next row (or the add button) after a removal; E2E locators scoped to the seeded row and the page header.
+  - Nits: `default_cancellation_policy_id()` is security invoker; audit entity ids use `z.guid()`; the read-only price uses `formatVnd`; English copies get `-copy` slugs; the default copy code fits the format; the form alert is announced again on a second failed save.
+  - Left for PR E: the publish rules do not stop an operator cancelling a published group tour's last departure.
 
 ### 2026-11-07 (Phase 2 — PR 10: destinations, travel styles, cancellation policies)
 
@@ -231,7 +262,6 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 ## Known issues
 
 - Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
-- PR D: hero alt text is checked by the services only. Fold it into the publish trigger for tours, destinations and travel styles, and stop clearing the alt text of an image that published content uses.
 - Phase 3: when tour pages embed cancellation-policy summaries, a policy save must also refresh the `tours` cache tag (spec decision 9's shared cache helper).
 - PRs D and F: image ids inside JSON (itinerary `media_ids`, Tiptap image nodes) are not foreign keys, so deleting an image does not see them yet; add a usage check that scans them before the editors that write them ship.
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
@@ -240,7 +270,6 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
 - Phase 3: cheap initial-JS wins to try before the 150 KB budget review: render the desktop nav without client JS until the mega menu is opened, and load the floating contact's client code after idle.
-- Phase 2: tour and departure price columns are not yet guarded per role (`DATABASE.md` "Known Phase 0 limits").
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.

@@ -213,9 +213,10 @@ export async function updateMedia(input: {
   id: string;
   alt: { vi: string; en: string };
   credit: string | null;
-}): Promise<Result<MediaItem, "not_found" | "failed">> {
+}): Promise<Result<MediaItem, "not_found" | "hero_alt_required" | "failed">> {
   await requirePermission("media.manage");
   const { data, error } = await updateMediaRow(input.id, { alt: input.alt, credit: input.credit || null });
+  if (error?.code === "23514") return { ok: false, error: "hero_alt_required" };
   if (error || !data) return { ok: false, error: error?.code === "PGRST116" ? "not_found" : "failed" };
   return { ok: true, value: toItem(data) };
 }

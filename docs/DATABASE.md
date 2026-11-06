@@ -605,8 +605,9 @@ API roles: anon has no INSERT/UPDATE/DELETE privilege on any table, and TRUNCATE
 
 Column grants (RLS picks the rows, grants pick the columns): on `bookings`, API roles may only update contact fields, `special_requests`, `assigned_to`, `invoice_requested` and `invoice_info`, and cannot insert; `booking_items` has no write policy; on `departures`, `seats_reserved` is never writable through the API. Status, money, seats, ownership and snapshots change only in service-role Postgres functions (ADR-012). Staff-created (manual) bookings and price adjustments therefore arrive with those functions in Phase 4.
 
+Tour rules (Phase 2, `*_tour_rules.sql`, ADR-024): `guard_tour_prices()` and `guard_departure_prices()` let only an MFA-verified admin (or the service role and `postgres`) set `tours.from_price`, `deposit_percent`, `balance_due_days`, `cancellation_policy_id` and the four departure price columns; non-admin inserts get defaults (tours) or the prices of the tour's latest departure (departures; a tour's first departure needs an admin). `validate_tour_publishable` (`check_tour_publishable()`) requires a published translation, a hero with VI/EN alt text (`media_alt_complete()`) and a price (a non-cancelled departure for group tours, `from_price > 0` for private tours); `check_tour_translation()` requires a title, summary and SEO description on published translations and keeps a published tour's last one; `check_hero_alt()` and `keep_hero_alt()` keep heroes of published destinations, travel styles and tours described; tour codes match `^[A-Z0-9]+(-[A-Z0-9]+)*$`.
+
 Known Phase 0 limits:
-- Phase 2: editors can update tour price columns (`from_price`, `deposit_percent`) and operators can update departure prices; column-level guards come with the tour and departure editors.
 - Phase 5: a customer's row policy on their own `bookings` and `payments` exposes internal columns (`needs_attention`, `attention_reason`, `assigned_to`, `idempotency_key`, `utm`, payment `raw_response`, `note`, `recorded_by`). The account area must read through a customer-safe view or RPC, and the direct customer SELECT policies are then narrowed.
 
 | Table | anon | Signed-in customer | Staff |
@@ -634,6 +635,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | Function | Callable by | Purpose |
 | --- | --- | --- |
 | `search_tours(...)` | anon, authenticated (`security invoker`) | Filtered, sorted tour listing (`docs/specs/tour-listing.md`) |
+| `media_alt_complete(media_id)` | everyone (`security invoker`) | Both alt texts present (publish rules) |
+| `default_cancellation_policy_id()` | authenticated (`security definer`) | The default policy for new tours (price guard) |
 | `set_default_cancellation_policy(policy_id)` | authenticated (`security invoker`; RLS lets only an MFA-verified admin write) | Move the default cancellation policy in one transaction |
 | `next_booking_code()` | service_role | Booking codes from the sequence |
 | `reserve_and_create_payment(...)` | service_role | Hold seats, booking → `pending_payment`, create payment |

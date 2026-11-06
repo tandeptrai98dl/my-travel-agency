@@ -160,10 +160,12 @@ insert into public.tours (
   code, type, scope, status, duration_days, duration_nights, min_pax, max_pax, min_pax_to_operate,
   from_price, deposit_percent, balance_due_days, is_featured, cancellation_policy_id, published_at
 )
-select v.code, v.type::public.tour_type, v.scope::public.tour_scope, v.status::public.publish_status,
+-- Inserted as drafts; the ones marked published are published at the end of this file, once they
+-- have translations, departures and a hero image (the publish rules apply to the seed too).
+select v.code, v.type::public.tour_type, v.scope::public.tour_scope, 'draft'::public.publish_status,
        v.days, v.nights, v.min_pax, v.max_pax, v.min_operate, v.from_price, 30, 30, v.featured,
        (select id from public.cancellation_policies where is_default limit 1),
-       case when v.status = 'published' then now() end
+       null
 from (values
   ('VN-HLB-03', 'group', 'domestic', 'published', 3, 2, 1, 16, 6, 12900000::bigint, true),
   ('VN-NTH-06', 'group', 'domestic', 'published', 6, 5, 1, 14, 6, 24500000::bigint, true),
@@ -303,3 +305,33 @@ cross join lateral (
   from generate_series(0, 12) as g
 ) d
 where t.type = 'group';
+
+-- Hero images for the sample tours. Rows only: the files are not in Storage, so admin previews show
+-- an empty frame until real photos are uploaded through /admin/media. Ids are deterministic
+-- version-4 UUIDs (the admin validates ids as RFC 9562 UUIDs).
+create function pg_temp.seed_uuid(seed text)
+returns uuid
+language sql
+immutable
+as $$
+  select (substr(h, 1, 8) || '-' || substr(h, 9, 4) || '-4' || substr(h, 14, 3) || '-8'
+          || substr(h, 18, 3) || '-' || substr(h, 21, 12))::uuid
+  from (select md5(seed) as h) as m
+$$;
+
+insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit)
+select pg_temp.seed_uuid('seed-media-' || t.code),
+       '2026/01/' || pg_temp.seed_uuid('seed-media-' || t.code) || '.jpg',
+       'image/jpeg', 2400, 1600, 850000,
+       jsonb_build_object('vi', vi.title, 'en', coalesce(en.title, vi.title)),
+       'Sample image'
+from public.tours t
+join public.tour_translations vi on vi.tour_id = t.id and vi.locale = 'vi'
+left join public.tour_translations en on en.tour_id = t.id and en.locale = 'en';
+
+update public.tours t
+set hero_media_id = pg_temp.seed_uuid('seed-media-' || t.code);
+
+update public.tours
+set status = 'published', published_at = now()
+where code in ('VN-HLB-03', 'VN-NTH-06', 'VN-HER-05', 'JP-KYT-07', 'FR-PRV-09');
