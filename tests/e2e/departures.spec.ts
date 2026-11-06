@@ -10,8 +10,9 @@ import { expectNoSeriousViolations } from "./support/axe";
 const DAY = 86_400_000;
 const iso = (offsetDays: number) => new Date(Date.now() + offsetDays * DAY).toISOString().slice(0, 10);
 const dmy = (value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
-// Far enough out to miss the seed, and different on every run (a retry does not find its own rows).
-const offset = 300 + (Math.floor(Date.now() / 1000) % 150);
+// Far enough out to miss the seed (day 182 at most), and random so that a retry, which keeps the
+// rows of the failed attempt, almost never meets its own dates.
+const offset = 300 + Math.floor(Math.random() * 220);
 const fresh = [iso(offset), iso(offset + 7)];
 const seeded = iso(14);
 
@@ -78,7 +79,7 @@ test.describe("departures admin", () => {
     await row.getByRole("link").click();
     await expect(page.getByRole("heading", { level: 1, name: new RegExp(`^VN-NTH-06 · ${dmy(fresh[0])}$`) })).toBeVisible();
     await expect(page.getByTestId("departure-seats")).toHaveText("0/14");
-    await expect(page.getByText("Chỉ quản trị viên (đã xác thực hai lớp) sửa giá.")).toBeVisible();
+    await expect(page.getByText("Chỉ quản trị viên (đã xác thực hai lớp) sửa giá.", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Giá người lớn (đồng)")).toHaveCount(0);
     await page.getByRole("combobox", { name: "Trạng thái" }).click();
     await expect(page.getByRole("option", { name: "Đã huỷ" })).toBeDisabled();
