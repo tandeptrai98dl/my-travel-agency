@@ -926,6 +926,9 @@ isOneToOne: false
 "next_booking_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"raise_on_seat_mismatch":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "record_payment_event":
 { Args: { "amount": number,"event_key": string,"payload": Json,"provider": Database["public"]['Enums']["payment_provider"],"provider_txn_id": string,"reference": string,"succeeded": boolean }; Returns: Json
                            },

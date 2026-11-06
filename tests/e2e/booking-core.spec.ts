@@ -1,3 +1,5 @@
+import { spawn, spawnSync } from "node:child_process";
+
 import { expect, test } from "@playwright/test";
 
 import { adminApi } from "./support/admin-api";
@@ -10,7 +12,7 @@ test.skip(!process.env.E2E_SUPABASE_SECRET_KEY, "needs the local Supabase stack 
 
 type Db = ReturnType<typeof adminApi>;
 
-async function departureWithOneSeat(db: Db) {
+async function departureWithOneSeat(db: Db, capacity = 1) {
   const { data: tour, error } = await db.from("tours").select("id").eq("code", "VN-HLB-03").single();
   if (error) throw error;
   // A date of its own (unique per tour), far from the seeded departures.
@@ -20,7 +22,7 @@ async function departureWithOneSeat(db: Db) {
     const end = new Date(Date.now() + (offset + 2) * 86_400_000).toISOString().slice(0, 10);
     const inserted = await db
       .from("departures")
-      .insert({ tour_id: tour.id, start_date: start, end_date: end, capacity: 1, price_adult: 9_000_000 })
+      .insert({ tour_id: tour.id, start_date: start, end_date: end, capacity, price_adult: 9_000_000 })
       .select("id")
       .single();
     if (!inserted.error) return { tourId: tour.id, departureId: inserted.data.id };
@@ -108,4 +110,69 @@ test("two customers on the last seat: exactly one hold; ten copies of one IPN: o
   const invariant = await db.rpc("check_seat_invariant");
   expect(invariant.error).toBeNull();
   expect(invariant.data).toBe(0);
+});
+
+/** Runs SQL in its own psql session (a second database connection the REST API cannot give). */
+function psql(sql: string): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn("psql", [process.env.E2E_DB_URL!, "-qXtA", "-v", "ON_ERROR_STOP=1", "-c", sql]);
+    let out = "";
+    child.stdout.on("data", (chunk) => (out += chunk));
+    child.stderr.on("data", (chunk) => (out += chunk));
+    child.on("close", () => resolve(out));
+  });
+}
+
+const hasPsql = spawnSync("psql", ["--version"]).status === 0;
+
+test("the hold-expiry job never waits on a booking a customer holds (no deadlock)", async () => {
+  // PR 25 review: the job held a departure lock while waiting for a booking whose own function
+  // waited for that departure. Reproduced with two sessions, as the reviewer did.
+  test.skip(!process.env.E2E_DB_URL || !hasPsql, "needs psql and the local database URL (CI)");
+  const db = adminApi();
+  const { tourId, departureId } = await departureWithOneSeat(db, 3);
+  const run = Date.now().toString(36).toUpperCase();
+  const row = (n: number, minutesAgo: number) => ({
+    code: `PTA-E2E${run}-${n}`,
+    type: "instant" as const,
+    status: "pending_payment" as const,
+    tour_id: tourId,
+    departure_id: departureId,
+    start_date: new Date(Date.now() + 200 * 86_400_000).toISOString().slice(0, 10),
+    adults: 1,
+    contact_name: "Khách thử",
+    contact_email: `deadlock-${run}-${n}@example.test`,
+    contact_phone: "+84 900 000 000",
+    locale: "vi" as const,
+    subtotal: 9_000_000,
+    total: 9_000_000,
+    deposit_amount: 9_000_000,
+    payment_plan: "full" as const,
+    tour_snapshot: {},
+    hold_expires_at: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+  });
+  const inserted = await db.from("bookings").insert([row(1, 20), row(2, 10)]).select("id, code");
+  if (inserted.error) throw inserted.error;
+  const [b1, b2] = [...inserted.data].sort((a, b) => a.code.localeCompare(b.code));
+  const seats = await db.from("departures").update({ seats_reserved: 2 }).eq("id", departureId);
+  if (seats.error) throw seats.error;
+
+  const job = psql(`begin; select pg_sleep(0.5); select 'job', public.expire_holds(); commit;`);
+  const customer = psql(
+    `begin; select 'locked' from public.bookings where id = '${b2.id}' for update; select pg_sleep(2);
+     select 'took', public.take_seats('${departureId}', 1); rollback;`,
+  );
+  const [jobOut, customerOut] = await Promise.all([job, customer]);
+  expect(jobOut + customerOut).not.toContain("deadlock");
+  expect(customerOut).toContain("took|t");
+  // The job expired the free booking and skipped the one the customer held.
+  expect(jobOut).toContain("job|");
+  const { data: after } = await db.from("bookings").select("id, status").in("id", [b1.id, b2.id]);
+  expect(after?.find((b) => b.id === b1.id)?.status).toBe("expired");
+  expect(after?.find((b) => b.id === b2.id)?.status).toBe("pending_payment");
+
+  // The next run picks it up, and the seats match the bookings again.
+  await db.rpc("expire_holds");
+  const { data: departure } = await db.from("departures").select("seats_reserved").eq("id", departureId).single();
+  expect(departure?.seats_reserved).toBe(0);
 });

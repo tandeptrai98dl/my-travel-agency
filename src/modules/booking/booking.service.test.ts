@@ -97,6 +97,10 @@ describe("startPayment", () => {
     }
     repo.reserve.mockResolvedValueOnce({ data: null, error: { code: "P0002", message: "not_found" } });
     expect(await service.startPayment({ bookingId: "b-1", provider: "vnpay", kind: "deposit" })).toEqual({ ok: false, error: "not_found" });
+    repo.reserve.mockResolvedValueOnce({ data: null, error: { code: "40P01", message: "deadlock detected" } });
+    expect(await service.startPayment({ bookingId: "b-1", provider: "vnpay", kind: "deposit" })).toEqual({ ok: false, error: "retry" });
+    repo.reserve.mockResolvedValueOnce({ data: null, error: { code: "40001", message: "could not serialize access" } });
+    expect(await service.startPayment({ bookingId: "b-1", provider: "vnpay", kind: "deposit" })).toEqual({ ok: false, error: "retry" });
     repo.reserve.mockResolvedValueOnce({ data: null, error: { code: "XX000", message: "boom" } });
     expect(await service.startPayment({ bookingId: "b-1", provider: "vnpay", kind: "deposit" })).toEqual({ ok: false, error: "failed" });
     expect(revalidateTag).not.toHaveBeenCalled();

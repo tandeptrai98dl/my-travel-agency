@@ -3,7 +3,7 @@
 -- the end). Concurrency (two customers on the last seat, ten copies of one IPN) is tested against
 -- the real stack in tests/e2e/booking-core.spec.ts.
 begin;
-select plan(69);
+select plan(80);
 
 -- Fixtures: a 4-seat departure 60 days out on a published group tour --------------------------------
 insert into public.departures (id, tour_id, start_date, end_date, capacity, price_adult, price_child, single_supplement)
@@ -64,6 +64,19 @@ select is((pg_temp.booking('a')).cancellation_policy_snapshot -> 'rules' -> 0 ->
 select throws_ok(
   $$ select public.create_draft_booking(pg_temp.payload('wrong-price', 1, 0, 'deposit', 9000000)) $$,
   'P0001', 'price_changed', 'a draft priced differently from the departure is refused'
+);
+select throws_ok(
+  $$ select public.create_draft_booking(jsonb_set(pg_temp.payload('addon', 1), '{items}',
+       pg_temp.payload('addon', 1) -> 'items' || '[{"type": "addon", "unit_price": 1, "quantity": 1, "amount": 1}]')) $$,
+  'P0001', 'invalid_draft: items', 'a line type outside the four priced ones is refused'
+);
+select throws_ok(
+  $$ select public.create_draft_booking(jsonb_set(pg_temp.payload('qty', 2), '{adults}', '3')) $$,
+  'P0001', 'invalid_draft: items', 'a line quantity must equal the party'
+);
+select throws_ok(
+  $$ select public.create_draft_booking(jsonb_set(pg_temp.payload('rooms', 1), '{single_rooms}', '2')) $$,
+  'P0001', 'invalid_draft: party', 'single rooms cannot exceed the adults'
 );
 
 -- Holds ----------------------------------------------------------------------------------------------
@@ -269,6 +282,27 @@ select public.next_booking_code(), 'instant', 'confirmed', t.id, '21000000-0000-
 select ok(public.complete_bookings() >= 1, 'complete_bookings runs');
 select is((pg_temp.booking('done')).status, 'completed', 'a confirmed trip that has ended is completed');
 
+-- Money for an attempt the gateway had reported failed; a repeated transaction id ----------------
+select isnt(public.create_draft_booking(pg_temp.payload('h', 1)), null, 'a draft to fail and then pay');
+select is(
+  (public.reserve_and_create_payment((pg_temp.booking('h')).id, 'vnpay', 'deposit') ->> 'amount')::bigint,
+  3000000::bigint, 'its deposit attempt'
+);
+select is(
+  pg_temp.pay((select reference from public.payments where booking_id = (pg_temp.booking('h')).id), 3000000, 'evt-11', false) ->> 'result',
+  'failed', 'reported failed first'
+);
+select is(
+  pg_temp.pay((select reference from public.payments where booking_id = (pg_temp.booking('h')).id and status = 'failed'), 3000000, 'evt-12') ->> 'attention_reason',
+  'paid_after_failure', 'money for a failed attempt is its own reason'
+);
+select is(
+  public.record_payment_event('vnpay', 'evt-12-again', '{}',
+    (select reference from public.payments where booking_id = (pg_temp.booking('h')).id and status = 'failed'), 3000000, 'evt-12', true) ->> 'result',
+  'duplicate', 'the same gateway transaction under a new event key is a duplicate'
+);
+select is((pg_temp.booking('h')).amount_paid, 3000000::bigint, 'and is not counted twice');
+
 -- Seat invariant and privileges ---------------------------------------------------------------------
 select is(public.check_seat_invariant(), 0, 'seats match the bookings after the whole sequence');
 update public.departures set seats_reserved = seats_reserved + 1 where id = '21000000-0000-4000-8000-000000001401';
@@ -276,13 +310,35 @@ select is(public.check_seat_invariant(), 1, 'a mismatch is reported');
 select is(
   (select changes ->> 'expected' from public.audit_logs where action = 'departures.seat_mismatch'
      and entity_id = '21000000-0000-4000-8000-000000001401' order by created_at desc limit 1),
-  '1', 'and written to the audit log with the expected seats'
+  '2', 'and written to the audit log with the expected seats'
 );
-select ok(
-  not has_function_privilege('authenticated', 'public.reserve_and_create_payment(uuid, public.payment_provider, public.payment_kind)', 'execute')
-  and not has_function_privilege('anon', 'public.record_payment_event(public.payment_provider, text, jsonb, text, bigint, text, boolean)', 'execute')
-  and not has_function_privilege('authenticated', 'public.create_draft_booking(jsonb)', 'execute'),
-  'API roles cannot call the booking functions'
+select throws_ok(
+  $$ select public.raise_on_seat_mismatch() $$,
+  'P0001', null, 'the alert job fails while a mismatch from the last day is on record'
+);
+select is(
+  (select array_agg(p.proname::text order by p.proname)
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = any (array['hold_minutes', 'next_booking_code', 'booking_prices_current', 'log_booking_event',
+        'take_seats', 'release_seats', 'refresh_payment_state', 'expire_booking_if_due', 'check_draft_payload',
+        'create_draft_booking', 'update_draft_booking', 'reserve_and_create_payment', 'record_payment_event',
+        'expire_holds', 'cancel_booking', 'complete_bookings', 'check_seat_invariant', 'raise_on_seat_mismatch'])
+      and not (p.prosecdef
+               and p.proconfig @> array['search_path=""']
+               and has_function_privilege('service_role', p.oid, 'execute')
+               and not has_function_privilege('anon', p.oid, 'execute')
+               and not has_function_privilege('authenticated', p.oid, 'execute'))),
+  null, 'every booking function is security definer, has an empty search path and only the service role may run it'
+);
+select is(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = any (array['hold_minutes', 'next_booking_code', 'booking_prices_current',
+      'log_booking_event', 'take_seats', 'release_seats', 'refresh_payment_state', 'expire_booking_if_due',
+      'check_draft_payload', 'create_draft_booking', 'update_draft_booking', 'reserve_and_create_payment',
+      'record_payment_event', 'expire_holds', 'cancel_booking', 'complete_bookings', 'check_seat_invariant',
+      'raise_on_seat_mismatch'])),
+  18, 'all eighteen functions exist'
 );
 
 select * from finish();

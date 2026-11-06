@@ -184,6 +184,11 @@ declare
   t public.tours;
   items_total bigint;
   priced boolean;
+  adults int := coalesce((payload ->> 'adults')::int, 0);
+  children int := coalesce((payload ->> 'children')::int, 0);
+  infants int := coalesce((payload ->> 'infants')::int, 0);
+  singles int := coalesce((payload ->> 'single_rooms')::int, 0);
+  item_count int;
 begin
   select * into d from public.departures where id = (payload ->> 'departure_id')::uuid;
   select * into t from public.tours where id = d.tour_id;
@@ -193,6 +198,26 @@ begin
   if t.status <> 'published' or t.type <> 'group' or d.status not in ('open', 'guaranteed')
      or d.start_date < public.vietnam_today() + public.booking_cutoff_days() then
     raise exception 'departure_closed';
+  end if;
+  -- Party rules (pricing.ts checkParty; ADR-016): an adult, infants x 2 <= adults, single rooms
+  -- <= adults, travellers within the tour's limits.
+  if adults < 1 or children < 0 or infants < 0 or singles < 0 or infants * 2 > adults or singles > adults
+     or adults + children < t.min_pax or (t.max_pax is not null and adults + children > t.max_pax) then
+    raise exception 'invalid_draft: party';
+  end if;
+  -- Exactly one line per priced type with a count, of that count, and no other line types.
+  select count(*) into item_count from jsonb_array_elements(payload -> 'items');
+  if item_count <> (adults > 0)::int + (children > 0)::int + (infants > 0)::int + (singles > 0)::int
+     or exists (
+       select 1 from jsonb_array_elements(payload -> 'items') i
+        where i ->> 'type' is null
+           or i ->> 'type' not in ('adult', 'child', 'infant', 'single_supplement')
+           or (i ->> 'quantity')::int <> case i ->> 'type'
+                when 'adult' then adults when 'child' then children
+                when 'infant' then infants else singles end
+     )
+     or (select count(distinct i ->> 'type') from jsonb_array_elements(payload -> 'items') i) <> item_count then
+    raise exception 'invalid_draft: items';
   end if;
   select coalesce(sum((i ->> 'amount')::bigint), 0),
          coalesce(bool_and(
@@ -488,6 +513,18 @@ begin
   select * into b from public.bookings where id = p.booking_id for update;
   select * into p from public.payments where id = p.id for update;
 
+  -- The same gateway transaction under another event key (unique (provider, provider_txn_id))
+  -- is a repeat: recording it again would fail on every retry. Adapters should key events on the
+  -- gateway transaction id (4C).
+  if record_payment_event.provider_txn_id is not null and exists (
+       select 1 from public.payments
+        where payments.provider = record_payment_event.provider
+          and payments.provider_txn_id = record_payment_event.provider_txn_id
+     ) then
+    update public.webhook_events set processed_at = now(), error = 'duplicate_transaction' where id = event_id;
+    return jsonb_build_object('result', 'duplicate', 'booking_id', b.id);
+  end if;
+
   if p.status = 'pending' then
     update public.payments
        set status = 'succeeded', amount = record_payment_event.amount,
@@ -510,10 +547,14 @@ begin
     values (b.id, p.provider, p.kind, 'succeeded', record_payment_event.amount, received_ref,
             record_payment_event.provider_txn_id, now(), payload,
             'received for ' || p.reference || ' (' || p.status || ')');
+    -- paid_after_switch: the attempt was cancelled by a method switch; paid_after_failure: the
+    -- gateway had reported it failed; paid_after_expiry: its window had passed.
     reason := case
       when b.status = 'cancelled' then 'paid_after_cancel'
       when p.status = 'succeeded' then 'overpaid'
       when b.status = 'expired' then null  -- the late-payment rules below decide
+      when p.status = 'failed' then 'paid_after_failure'
+      when p.status = 'expired' then 'paid_after_expiry'
       else 'paid_after_switch'
     end;
   end if;
@@ -573,11 +614,16 @@ declare
   target uuid;
   expired int := 0;
 begin
+  -- The job holds a departure's lock once it releases seats, so it must never wait for a booking
+  -- lock afterwards: a customer's function locks its booking first and then the departure, and
+  -- waiting here would deadlock against it (PR 25 review). Bookings locked by someone else are
+  -- skipped; their own functions expire them first, and the next run gets the rest.
   for target in
     select id from public.bookings
      where (status = 'pending_payment' and hold_expires_at <= now())
         or (status = 'quoted' and quote_expires_at <= now())
-     order by hold_expires_at nulls last
+     order by id
+     for update skip locked
   loop
     if public.expire_booking_if_due(target) then
       expired := expired + 1;
@@ -585,7 +631,11 @@ begin
   end loop;
   with old_drafts as (
     update public.bookings set status = 'expired'
-     where status = 'draft' and created_at < now() - interval '7 days'
+     where id in (
+       select id from public.bookings
+        where status = 'draft' and created_at < now() - interval '7 days'
+        for update skip locked
+     )
     returning id
   )
   insert into public.booking_events (booking_id, type, from_status, to_status, message)
@@ -693,6 +743,26 @@ begin
 end;
 $$;
 
+-- Fails (so the pg_cron run is marked failed and alerts) when the invariant check of the last day
+-- found a mismatch. A separate job: raising inside check_seat_invariant() would roll back the
+-- audit rows that explain the mismatch.
+create function public.raise_on_seat_mismatch()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  mismatches int;
+begin
+  select count(*) into mismatches from public.audit_logs
+   where action = 'departures.seat_mismatch' and created_at > now() - interval '1 day';
+  if mismatches > 0 then
+    raise exception 'seat invariant: % mismatch(es) in the last day, see audit_logs departures.seat_mismatch', mismatches;
+  end if;
+end;
+$$;
+
 -- Service role only ----------------------------------------------------------------------------------
 do $$
 declare
@@ -715,7 +785,8 @@ begin
     'public.expire_holds()',
     'public.cancel_booking(uuid, uuid, text)',
     'public.complete_bookings()',
-    'public.check_seat_invariant()'
+    'public.check_seat_invariant()',
+    'public.raise_on_seat_mismatch()'
   ] loop
     execute format('revoke execute on function %s from public, anon, authenticated', fn);
     execute format('grant execute on function %s to service_role', fn);

@@ -28,6 +28,7 @@ export type BookingError =
   | "not_payable"
   | "plan_unavailable"
   | "not_cancellable"
+  | "retry"
   | "failed";
 
 type DbError = { code?: string; message?: string } | null;
@@ -45,6 +46,8 @@ const KNOWN: BookingError[] = [
 /** Function errors raise their name as the message (P0001), or P0002 for a missing row. */
 export function mapBookingError(error: DbError): BookingError {
   if (error?.code === "P0002" || error?.message === "not_found") return "not_found";
+  // A deadlock or serialisation failure rolled the call back: nothing changed, trying again is safe.
+  if (error?.code === "40P01" || error?.code === "40001") return "retry";
   const known = KNOWN.find((name) => error?.message === name);
   if (known) return known;
   logger.error("booking.write_failed", { code: error?.code, message: error?.message });
