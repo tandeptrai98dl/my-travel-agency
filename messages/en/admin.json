@@ -139,7 +139,9 @@
       "pages": "Pages",
       "reviews": "Reviews",
       "redirects": "Redirects",
-      "subscribers": "Newsletter"
+      "subscribers": "Newsletter",
+      "settings": "Settings",
+      "staff": "Staff"
     },
     "Shell": {
       "skipToContent": "Skip to content",

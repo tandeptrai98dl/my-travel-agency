@@ -1,12 +1,12 @@
 import type { Permission } from "@/lib/auth/permissions";
 
 /** Icons are named, not imported, so this list stays importable from server and client code. */
-export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers";
+export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff";
 
 export type AdminNavItem = {
   href: string;
   /** Key in the `Admin.Nav` messages. */
-  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers";
+  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff";
   icon: AdminNavIcon;
   /** Shown only to roles holding it; the page and its actions check it again on the server. */
   permission: Permission;
@@ -50,6 +50,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     labelKey: "groupSystem",
     items: [
+      { href: "/admin/settings", labelKey: "settings", icon: "settings", permission: "settings.manage" },
       { href: "/admin/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read" },
       {
         href: "/admin/design-system",
