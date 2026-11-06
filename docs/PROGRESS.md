@@ -5,10 +5,24 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 0 (Foundation) of the full-scope plan (ADR-005, ADR-019)
-- **Next up:** implement `docs/specs/phase-0-foundation.md` (TASK-P0-01): housekeeping, test tooling, env validation, Supabase schema + RLS, auth/roles/MFA, i18n, admin shell, CI
+- **Next up:** Phase 0 PR 3 (`docs/specs/phase-0-foundation.md` steps 7–9): Supabase admin client, auth helpers and `requireRole()`, next-intl routing, proxy rewrite, admin shell with MFA, `/api/health`
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; confirm the proposed ADRs (016–019) and the palette/fonts
 
 ## Log
+
+### 2026-11-06 (Phase 0 — PR 2 of 4: schema, RLS, storage, pgTAP, seed)
+
+Branch `feat/p0-database` (spec steps 4–6 + the CI database job from step 10).
+
+- Done:
+  - Supabase CLI (`supabase init`, CLI as a dev dependency); `config.toml` with email confirmations, TOTP MFA and redirect URLs for `/auth/confirm` and `/auth/callback`.
+  - 14 migrations: extensions (`extensions` schema; `pg_cron` in `pg_catalog`, no jobs), enums, `set_updated_at()`, all 36 tables copied from `DATABASE.md`, auth integration (role helpers, `can_act_as()`, profile trigger, email sync, profile guard), RLS on every table, storage buckets `media` and `private`.
+  - pgTAP: `00_schema_test.sql` (36 tables, RLS enabled everywhere, every table has a policy, security definer functions set `search_path`, privileges, buckets) and `01_access_test.sql` (34 assertions for anon, customer, sales, editor, operator, accountant and admin).
+  - `seed.sql` (settings, cancellation policy, 3 countries with regions and cities, 4 travel styles, 6 tours, price tiers, departures for 6 months) and `npm run seed:users` (one confirmed account per role; local only unless `--allow-remote`).
+  - CI job "Database": `supabase start`, `db reset`, `test db`, `db lint`, type generation with a staleness check, `seed:users` run twice.
+- Verified locally against Postgres 16 with a Supabase-like shim (container registries are blocked in the cloud workspace, so `supabase start` runs only in CI): all migrations and the seed apply; 44/44 pgTAP assertions pass; a mutation check (dropping the guard, leaking a policy, disabling RLS, faking MFA) makes 7 assertions fail as expected. `npm run lint`, `npm run typecheck`, `npm test` pass.
+- Deviations: `can_act_as()` added as the single place for the admin/accountant `aal2` rule; `guard_profile_update()` also protects `is_active`, `deleted_at` and `email`; `internal_notes` gets its own migration after the booking group (it references bookings); bucket MIME and size limits added.
+- Known limits for Phase 2: column-level guards for tour and departure prices; pgTAP coverage for every write policy (Phase 0 tests cover the spec's required cases).
 
 ### 2026-11-06 (Phase 0 — PR 1 of 4: housekeeping, test tooling, env validation, CI)
 

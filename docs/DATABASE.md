@@ -2,7 +2,7 @@
 
 Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 
-> Status: **approved design** (ADR-005, ADR-009, ADR-010, ADR-011, ADR-012). Not yet migrated. Update this file whenever a migration changes the schema.
+> Status: **approved design** (ADR-005, ADR-009, ADR-010, ADR-011, ADR-012). **Migrated** in Phase 0 (`supabase/migrations/20261106120000_*` to `20261106121300_*`). Update this file whenever a migration changes the schema.
 
 ## Conventions
 
@@ -594,6 +594,14 @@ create index on audit_logs (actor_id, created_at);
 
 Helpers (`security definer`, `stable`, `set search_path = ''`): `current_user_role()`, `has_role(user_role[])`, `is_staff()`, `is_mfa_verified()` (`auth.jwt() ->> 'aal' = 'aal2'`, required for admin and accountant). `is_admin()` may remain as a wrapper for `has_role('{admin}')`.
 
+Policies call `can_act_as(user_role[])`: true when the user holds one of the roles and, for admin and accountant, the session is `aal2`. It keeps the MFA rule in one place. `current_user_role()` returns null for deactivated or soft-deleted profiles, so they lose all staff access.
+
+Triggers: `handle_new_user()` creates a `customer` profile for each new `auth.users` row (name and locale from user metadata); `handle_user_email_change()` keeps `profiles.email` in sync; `guard_profile_update()` lets only an MFA-verified admin change `role`, `is_active`, `deleted_at` or `email` (the service role and `postgres` are trusted, for seeding and invitations).
+
+API roles: anon has no INSERT/UPDATE/DELETE privilege on any table, and TRUNCATE (which ignores RLS) is revoked from anon and authenticated.
+
+Known Phase 0 limits, closed in Phase 2: editors can update tour price columns (`from_price`, `deposit_percent`) and operators can update departure prices; column-level guards come with the tour and departure editors.
+
 | Table | anon | Signed-in customer | Staff |
 | --- | --- | --- | --- |
 | tours, departures, destinations, travel_styles, posts, pages, media + translation tables | Read `published` rows and translations with `is_published` | Same as anon | Read all; write per the matrix in `ARCHITECTURE.md` |
@@ -610,8 +618,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 
 ## Storage
 
-- `media`: public read; editor and admin write. Replaces the draft `tour-images` bucket.
-- `private`: no public access, signed URLs only (vouchers and PDF quotes, P1).
+- `media`: public read; editor and admin write. JPEG, PNG, WebP and AVIF only (no SVG), up to 20 MB. Replaces the draft `tour-images` bucket.
+- `private`: no public access and no API-role policies; signed URLs created by the service role only (vouchers and PDF quotes, P1). PDF only, up to 10 MB.
 
 ## Postgres functions
 

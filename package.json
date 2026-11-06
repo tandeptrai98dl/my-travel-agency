@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "db:types": "supabase gen types typescript --local --schema public > src/types/database.types.ts",
+    "db:types": "mkdir -p src/types && supabase gen types typescript --local --schema public > src/types/database.types.ts",
     "seed:users": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/seed-users.ts"
   },
   "dependencies": {
