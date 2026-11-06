@@ -243,3 +243,19 @@ Template:
   - Publish rules: a published tour needs a published translation, a hero image with VI/EN alt text, and a price (a departure that is not cancelled for group tours, `from_price` above 0 for private tours); a published tour translation needs a title, summary and SEO description; a published tour cannot lose its hero or its last published translation; published destinations and travel styles need a described hero when they have one; an image used as the hero of published content keeps both alt texts.
   - Tour codes are upper-case letters, digits and hyphens (shown to customers and on bookings).
 - **Consequences:** Closes the Phase 0 price limit. Seeds and tests insert tours as drafts and publish them once complete. Admin-only price editing in the UI is a convenience; the database is the rule. Changing who sets prices means a new ADR and a migration.
+
+## ADR-025: Faster delivery — parallel streams, focused reviews, lighter ceremony
+
+- **Date:** 2026-11-07
+- **Status:** Accepted (owner, 2026-11-07: "apply all 4")
+- **Context:** ADR-020 delivered one pull request at a time. Most of the elapsed time went into full second-round reviews of minor findings, CI-only E2E round trips, local visual checks of admin CRUD pages and long progress entries, while Phase 3 (public pages) does not depend on the remaining Phase 2 admin work.
+- **Decision:** Amends ADR-020:
+  - **Two parallel streams**, each implemented by its own agent in its own git worktree, coordinated by the main session, which reviews, merges and keeps `docs/PROGRESS.md`:
+    - Stream A: the rest of Phase 2 (departures; journal, pages, reviews, redirects; settings and staff).
+    - Stream B: Phase 3 public pages (Claude Design mockups first, then homepage, tour detail, destinations, static pages, tour listing).
+  - **Migrations in parallel**: both streams may add migrations when they touch different tables. The coordinator assigns each stream a timestamp range, so the order is fixed. `database.types.ts` is regenerated on the branch that merges second, and CI's staleness check still applies. A migration that changes a function or table owned by the other stream waits for that stream's merge.
+  - **Messages per namespace**: UI strings live in `messages/<locale>/<file>.json`, listed once in `src/i18n/message-files.ts`, so the two streams edit different files.
+  - **Focused reviews**: an independent reviewer still checks every PR. Critical and major findings block the merge. Minor findings are fixed only when cheap; the rest are added to the phase backlog in `PROGRESS.md` and handled in a polish PR at the end of the phase. A re-review checks only the fix commit.
+  - **Lighter ceremony**: progress entries list what was done, what was verified, deviations and review outcome in about ten lines. PR bodies keep the acceptance pass/fail table and the blockers. Local screenshot and axe checks with a faked user are done for public pages only; admin pages rely on the CI axe and E2E tests.
+  - Small related slices may share one PR (for example settings and staff).
+- **Consequences:** More usage per hour (each agent reads the docs on start) in exchange for shorter elapsed time. Shared files (`messages`, nav items, PROGRESS) are kept apart by the namespace split and by the coordinator owning PROGRESS. Minor findings may wait until the end of a phase.

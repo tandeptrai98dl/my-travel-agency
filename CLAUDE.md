@@ -51,7 +51,7 @@ Task specs live in `docs/specs/` (e.g. `phase-0-foundation.md`, `tour-listing.md
 8. Do not hardcode business data in production. Load tours, prices, contacts and similar data from Supabase.
 9. Do not commit API keys, passwords, or secrets. Use `.env.local` and keep `.env.example` updated.
 10. Do not skip Supabase RLS security checks. Every table has RLS enabled and policies defined.
-11. Write all code, comments, commit messages, PR descriptions and documentation in English (ADR-007). UI text goes in `messages/vi.json` and `messages/en.json`.
+11. Write all code, comments, commit messages, PR descriptions and documentation in English (ADR-007). UI text goes in `messages/vi/*.json` and `messages/en/*.json`, one file per area (ADR-025).
 12. Seat holds and payment recording happen only in Postgres functions; payments are confirmed only from verified IPN/webhooks (ADR-012).
 
 ## WORKFLOW
@@ -73,7 +73,8 @@ Before each task:
 - The pull request description reports every acceptance criterion as pass/fail with evidence, and lists anything blocked by missing accounts or secrets.
 - An independent reviewer (a separate agent) checks each pull request against the spec, RLS rules and security rules.
 - Squash-merge only when CI is green and the review has no unresolved critical or major findings.
-- Only one branch at a time may add files to `supabase/migrations/`.
+- At most two parallel streams (ADR-025). Both may add migrations when they touch different tables, using the timestamp range the coordinator assigned; the branch that merges second regenerates `database.types.ts`.
+- Reviews: critical and major findings block the merge; other findings are fixed when cheap or go to the phase backlog in `docs/PROGRESS.md`. A re-review checks only the fix commit.
 
 ## PROGRESS MANAGEMENT
 
@@ -122,7 +123,7 @@ src/
   types/          # generated database types (never edit by hand)
   proxy.ts        # Next.js proxy: locale, Supabase session refresh, redirects, security headers
 supabase/         # migrations, seed.sql, pgTAP tests
-messages/         # vi.json, en.json
+messages/         # vi/*.json, en/*.json (one file per area, listed in src/i18n/messages.ts)
 emails/           # React Email templates
 public/           # static assets
 docs/             # project documentation and task specs

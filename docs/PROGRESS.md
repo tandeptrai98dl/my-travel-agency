@@ -5,10 +5,26 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 2 (Content and catalog admin); Phases 0 and 1 code-complete
-- **Next up:** Phase 2 PR E (departures), then journal, pages, reviews, redirects, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
+- **Next up (two streams, ADR-025):** Stream A: Phase 2 PR E (departures), then journal, pages, reviews, redirects, settings and staff (`docs/specs/phase-2-catalog-admin.md`). Stream B: Phase 3 — design system and mockups in Claude Design, then homepage, tour detail, destinations, static pages and tour listing. Phase 0's last acceptance items (Vercel preview health check, Sentry test event) and a Lighthouse run wait for the owner's accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
+## Phase backlog (non-blocking review findings, ADR-025)
+
+Phase 2 polish PR:
+- `updateTourLinks` writes destinations, styles and gallery one after another without a transaction; a failure partway leaves some link changes applied (move into a Postgres function if it matters).
+- PR E: an operator can cancel or delete every departure of a published group tour, leaving nothing to book; add a check or warning.
+- No explicit "remove language" action on tours (clearing the title is refused); add one with a confirmation and a 301 when the language was published.
+- `tests/e2e/tours.spec.ts` finds the header status badge with `xpath=../..`; give `PageHeader` a labelled container.
+
 ## Log
+
+### 2026-11-07 (workflow — ADR-025: parallel streams, messages per area)
+
+Branch `chore/parallel-workflow`.
+
+- ADR-025 (owner: "apply all 4"): two parallel streams with their own agents and worktrees, parallel migrations on different tables, focused reviews with a phase backlog, lighter progress entries and local visual checks for public pages only.
+- UI strings split into `messages/<locale>/<area>.json`, merged by `src/i18n/messages.ts` (duplicate keys fail); files for the next streams are created empty. The parity test now also checks that every file is listed.
+- Verified: lint, typecheck, unit tests, production build.
 
 ### 2026-11-07 (Phase 2 — PR 11: tours)
 
