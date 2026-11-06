@@ -1,6 +1,6 @@
 "use client";
 
-import { FileClock, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
+import { CalendarDays, FileClock, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -22,6 +22,7 @@ const ICONS = {
   styles: Sparkles,
   policies: ScrollText,
   tours: MapIcon,
+  departures: CalendarDays,
 } as const;
 
 type Props = {

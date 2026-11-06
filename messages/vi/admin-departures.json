@@ -1,1 +1,54 @@
-{}
+{
+  "Admin": {
+    "Departures": {
+      "title": "Lịch khởi hành",
+      "description": "Ngày khởi hành, sức chứa và trạng thái của các tour ghép đoàn. Số chỗ đã giữ chỉ thay đổi qua đặt chỗ; giá chỉ quản trị viên sửa được.",
+      "newDepartures": "Thêm ngày khởi hành",
+      "tour": "Tour",
+      "allTours": "Tất cả tour",
+      "status": "Trạng thái",
+      "allStatuses": "Mọi trạng thái",
+      "month": "Tháng",
+      "upcoming": "Sắp tới (từ hôm nay)",
+      "thisMonth": "Tháng này",
+      "monthOption": "Tháng {month}/{year}",
+      "upcomingHint": "Đang hiện các chuyến từ hôm nay trở đi. Chọn một tháng để xem cả các chuyến đã qua.",
+      "viewLabel": "Kiểu xem",
+      "views": {
+        "table": "Bảng",
+        "calendar": "Lịch"
+      },
+      "statuses": {
+        "open": "Mở bán",
+        "guaranteed": "Chắc chắn khởi hành",
+        "closed": "Ngừng nhận khách",
+        "cancelled": "Đã huỷ"
+      },
+      "columns": {
+        "dates": "Ngày đi – về",
+        "tour": "Tour",
+        "status": "Trạng thái",
+        "seats": "Đã giữ / sức chứa",
+        "price": "Giá người lớn",
+        "note": "Ghi chú"
+      },
+      "seatsLabel": "Đã giữ {reserved} trên {capacity} chỗ",
+      "full": "Hết chỗ",
+      "previousMonth": "Tháng trước",
+      "nextMonth": "Tháng sau",
+      "monthTotal": "{count, plural, =0 {Không có chuyến nào} other {# chuyến}} trong tháng.",
+      "monthEmpty": "Không có chuyến nào trong tháng này.",
+      "calendarCaption": "Lịch khởi hành {month}",
+      "truncated": "Tháng này có {count} chuyến nhưng lịch chỉ hiện {limit} chuyến đầu. Hãy lọc theo tour hoặc trạng thái.",
+      "weekdays": {
+        "mon": "Thứ 2",
+        "tue": "Thứ 3",
+        "wed": "Thứ 4",
+        "thu": "Thứ 5",
+        "fri": "Thứ 6",
+        "sat": "Thứ 7",
+        "sun": "Chủ nhật"
+      }
+    }
+  }
+}
