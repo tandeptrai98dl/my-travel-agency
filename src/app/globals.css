@@ -94,6 +94,13 @@
   }
 }
 
+/* The floating contact buttons step aside on small screens while the cookie banner is open. */
+@media (max-width: 767px) {
+  html[data-consent-open] .floating-contact {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
