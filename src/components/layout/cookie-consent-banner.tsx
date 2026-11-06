@@ -1,11 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Link } from "@/i18n/navigation";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   ALL_ACCEPTED,
   CONSENT_EVENT,
@@ -15,6 +13,8 @@ import {
   ESSENTIAL_ONLY,
   readConsentCookie,
 } from "@/lib/consent";
+import { useLabels } from "./labels";
+import { LocaleLink as Link } from "./locale-link";
 
 // The settings dialog (Radix dialog + switch) loads only when opened, keeping it out of the
 // initial JS on public pages.
@@ -32,7 +32,7 @@ function focusMain() {
  * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
  */
 export function CookieConsentBanner() {
-  const t = useTranslations("Consent");
+  const t = useLabels("Consent");
   const titleId = useId();
   const [decided, setDecided] = useState<ConsentChoice | null | undefined>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -119,11 +119,16 @@ export function CookieConsentBanner() {
               </Link>
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <Button onClick={() => save(ALL_ACCEPTED)}>{t("acceptAll")}</Button>
+              <button type="button" className={buttonVariants()} onClick={() => save(ALL_ACCEPTED)}>
+                {t("acceptAll")}
+              </button>
               {/* Same weight as "Accept all": refusing is as easy as accepting. */}
-              <Button onClick={() => save(ESSENTIAL_ONLY)}>{t("rejectAll")}</Button>
-              <Button
-                variant="ghost"
+              <button type="button" className={buttonVariants()} onClick={() => save(ESSENTIAL_ONLY)}>
+                {t("rejectAll")}
+              </button>
+              <button
+                type="button"
+                className={buttonVariants({ variant: "ghost" })}
                 onClick={(event) => {
                   openerRef.current = event.currentTarget;
                   setSettingsLoaded(true);
@@ -131,7 +136,7 @@ export function CookieConsentBanner() {
                 }}
               >
                 {t("settings")}
-              </Button>
+              </button>
             </div>
           </div>
         </section>

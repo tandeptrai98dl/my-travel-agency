@@ -663,6 +663,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `confirm_payment(...)` | service_role | Idempotent payment recording, late-payment handling |
 | `expire_holds()` | `pg_cron`, every 5 min | Expire overdue holds, release seats |
 | `cancel_booking(...)` | service_role | Cancel, release seats, record event |
+| `request_newsletter_subscription(email, locale, source, token_hash)` | service_role | Newsletter double opt-in step 1: stores the token hash; true when a confirmation email should be sent (ADR-029) |
+| `confirm_newsletter_subscription(token_hash, document_version, ip, user_agent)` | service_role | Step 2: confirms once and records the marketing consent in `consent_records` |
 | `check_seat_invariant()` | `pg_cron`, nightly | `seats_reserved` must equal adults + children of `pending_payment`, `confirmed` and `completed` bookings; logs mismatches |
 
 Data-changing functions use `security definer` + `set search_path = ''` and grant execute to `service_role` only.

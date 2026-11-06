@@ -1,1 +1,98 @@
-{}
+{
+  "Home": {
+    "metaTitle": "Private and small-group journeys in Vietnam and beyond",
+    "metaDescription": "Private journeys and small-group tours designed down to the detail: Vietnam, Japan, Europe. Clear prices, live departure dates and attentive advice.",
+    "hero": {
+      "defaultEyebrow": "Private journeys",
+      "defaultTitle": "Journeys shaped down to the smallest detail",
+      "lead": "Private itineraries, small groups and guides who know every place they show you.",
+      "searchLabel": "Find a journey",
+      "destination": "Destination",
+      "anyDestination": "Any destination",
+      "month": "Departure month",
+      "anyMonth": "Any month",
+      "style": "Travel style",
+      "anyStyle": "Any style",
+      "submit": "Find a journey"
+    },
+    "trust": {
+      "label": "Why travel with us",
+      "licence": "International tour operator licence {number}",
+      "company": "{name}",
+      "hours": "Advice {hours}",
+      "hotline": "Hotline {phone}",
+      "payments": "Pay by VNPay or VietQR bank transfer"
+    },
+    "featured": {
+      "eyebrow": "Featured journeys",
+      "title": "Journeys our travellers love",
+      "viewAll": "View all journeys"
+    },
+    "destinations": {
+      "eyebrow": "Destinations",
+      "title": "Where we take you",
+      "bestTime": "Best time: {value}"
+    },
+    "styles": {
+      "eyebrow": "Travel styles",
+      "title": "Travel your way"
+    },
+    "testimonial": {
+      "eyebrow": "In our travellers' words",
+      "rating": "{rating} out of 5 stars",
+      "verified": "Travelled with us"
+    },
+    "journal": {
+      "eyebrow": "Journal",
+      "title": "Ideas for your next journey",
+      "viewAll": "Read the journal"
+    },
+    "tailorMade": {
+      "eyebrow": "Tailor-made",
+      "title": "A journey made only for you",
+      "text": "Tell us where you would like to go, when, and who is coming. A travel designer will send you a private itinerary.",
+      "call": "Call {phone}",
+      "email": "Email us",
+      "contact": "Talk to a travel designer"
+    },
+    "newsletter": {
+      "eyebrow": "Newsletter",
+      "title": "New journeys, once a month",
+      "text": "Seasonal ideas and new departure dates. No flood of promotions; unsubscribe at any time.",
+      "email": "Your email",
+      "placeholder": "name@email.com",
+      "submit": "Subscribe",
+      "sending": "Sending…",
+      "privacy": "We use this email only for the newsletter, as our privacy policy describes.",
+      "unavailable": "Newsletter sign-up opens soon.",
+      "success": "Almost done: open the email we just sent and click the confirmation link.",
+      "errors": {
+        "invalidEmail": "Please enter a valid email address.",
+        "verification": "We could not verify the request. Please try again.",
+        "rateLimited": "Too many attempts. Please try again in a few minutes.",
+        "unavailable": "Newsletter sign-up is not open yet.",
+        "failed": "Something went wrong. Please try again later."
+      }
+    }
+  },
+  "NewsletterConfirm": {
+    "metaTitle": "Confirm your newsletter subscription",
+    "title": "Confirm your newsletter subscription",
+    "text": "Click the button below to start receiving our newsletter.",
+    "button": "Confirm subscription",
+    "confirmedTitle": "Thank you for subscribing",
+    "confirmedText": "Our next newsletter will arrive in your inbox.",
+    "invalidTitle": "This link is no longer valid",
+    "invalidText": "The confirmation link has been used or has expired. You can sign up again on the home page.",
+    "unavailable": "We could not confirm right now. Please try again in a few minutes.",
+    "backHome": "Back to the home page"
+  },
+  "NewsletterEmail": {
+    "subject": "Confirm your {brand} newsletter subscription",
+    "greeting": "Hello,",
+    "body": "You (or someone using this address) signed up for the {brand} newsletter. Please click the link below to confirm.",
+    "button": "Confirm subscription",
+    "expiry": "The link is valid for 7 days.",
+    "ignore": "If you did not sign up, ignore this email; you will not receive anything else."
+  }
+}

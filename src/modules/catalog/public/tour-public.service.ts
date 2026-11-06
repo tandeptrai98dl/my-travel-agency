@@ -433,3 +433,22 @@ export async function getAllTourCards(locale: Locale): Promise<TourCardItem[]> {
   }
 }
 
+
+/**
+ * Featured tours for the homepage (`tours.is_featured`, recommended order; cached, so cards show no
+ * seat badges, decision 3). An empty list on failure: the section is then left out (decision 12).
+ */
+export async function getFeaturedTourCards(locale: Locale, limit = 3): Promise<TourCardItem[]> {
+  "use cache";
+  cacheTag(TOURS_TAG, DESTINATIONS_TAG);
+  cacheLife("hours");
+  try {
+    const { data, error } = await repo.searchTours({ locale, featuredOnly: true, limit });
+    if (error) fail("featured tours", error);
+    return await cardsFor(locale, data ?? []);
+  } catch (error) {
+    console.error("getFeaturedTourCards failed", error instanceof Error ? error.message : error);
+    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
+    return [];
+  }
+}

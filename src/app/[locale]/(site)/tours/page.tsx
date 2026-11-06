@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
@@ -8,7 +7,7 @@ import { Container } from "@/components/layout/container";
 import { TourCard } from "@/components/tour/tour-card";
 import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { isLocale, routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 import { getAllTourCards } from "@/modules/catalog/public/tour-public.service";
 
@@ -16,7 +15,7 @@ type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) return {};
+  if (!isLocale(locale)) return {};
   const t = await getTranslations({ locale, namespace: "TourList" });
   return {
     title: t("title"),
@@ -34,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function ToursPage({ params }: Props) {
   const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) notFound();
+  if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
   const [t, tDetail, tours] = await Promise.all([
     getTranslations({ locale, namespace: "TourList" }),

@@ -3,12 +3,6 @@
     "siteName": "Premium Travel Agency",
     "defaultDescription": "Hành trình riêng tư và nhóm nhỏ được thiết kế tỉ mỉ."
   },
-  "HomePage": {
-    "metaTitle": "Sắp ra mắt",
-    "metaDescription": "Website mới của chúng tôi đang được hoàn thiện.",
-    "eyebrow": "Sắp ra mắt",
-    "title": "Website mới của chúng tôi sắp ra mắt"
-  },
   "LanguageSwitcher": {
     "label": "Ngôn ngữ",
     "vi": "Tiếng Việt",

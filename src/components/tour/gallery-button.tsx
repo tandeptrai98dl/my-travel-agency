@@ -2,7 +2,7 @@
 
 import { lazy, Suspense, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import type { ImageData } from "@/lib/images";
 
 export type GalleryLabels = { viewAll: string; dialogTitle: string; close: string; previous: string; next: string; counter: string };
@@ -18,18 +18,17 @@ export function GalleryButton({ images, title, labels }: { images: ImageData[]; 
 
   return (
     <>
-      <Button
+      <button
         ref={trigger}
         type="button"
-        variant="secondary"
-        size="sm"
+        className={buttonVariants({ variant: "secondary", size: "sm" })}
         onClick={() => {
           setRequested(true);
           setOpen(true);
         }}
       >
         {labels.viewAll.replace("{count}", String(images.length))}
-      </Button>
+      </button>
       {requested && (
         <Suspense fallback={null}>
           <GalleryLightbox

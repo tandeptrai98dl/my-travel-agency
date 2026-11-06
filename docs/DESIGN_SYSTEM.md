@@ -116,6 +116,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/admin` (Phase 2 PR F): RichTextEditor (Tiptap with the fixed extension set, labelled toolbar, link dialog, library images); `admin/content`: PostEditor, PageEditor, CategoryForm, ContentTranslationFields, DeleteContentButton, ReviewActions, RedirectForm, DeleteRedirectButton, ResyncRedirectsButton, ExportSubscribersButton; StatusBadge also maps `review_status`
 - `src/components/media`, `src/components/seo`, `src/components/tour` (Phase 3 PR H): ResponsiveImage (Supabase transform loader, blur placeholder, ImageFrame stand-in), JsonLd (escaped), Breadcrumbs (with BreadcrumbList), LocaleAlternates (per-language paths for the LanguageSwitcher), TourCard, TourDetailView with TourGallery (+ lightbox on demand), TourHeader, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable (live; cards below `md`), PriceTiers, PolicySummary, ReviewSummary, FaqList (`<details>`), BookingBox, RelatedTours
 - `src/components/admin/settings`, `src/components/admin/staff` (Phase 2 PR G): SettingsForms (one form per settings key, HeroField for the homepage image), InviteStaffForm, StaffRowActions (role select, deactivate with ConfirmDialog, disabled with the reason on your own row and the last admin); the `/admin` landing page lists the role's sections as cards
+- `src/components/marketing` (Phase 3 PR I): Hero + HeroSearch (GET form, native selects on a white bar in brand colours), TrustBar, FeaturedTours, DestinationShowcase (7/5 split), TravelStyleCards, Testimonial, JournalTeaser, TailorMadeCta, NewsletterSignup + NewsletterForm (Turnstile on first interaction), ConfirmNewsletterForm. Public client components use `cx()` (`@/lib/cx`), `buttonVariants` (`@/components/ui/button-variants`), `LocaleLink` and `useLabels()` instead of `cn()`, `Button`, next-intl's `Link` and `useTranslations` (initial-JS budget, ADR-029)
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -126,7 +127,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Typography | DateText |
 | Layout | Breadcrumbs |
 | Media | ResponsiveImage (blur placeholder), HeroMedia (image/video), Gallery + Lightbox, ImageCarousel |
-| Marketing | Hero + HeroSearch, FeaturedTours, DestinationGrid, DestinationCard, TravelStyleCards, EditorialSplit, Testimonials, TrustBar, PressLogos, NewsletterSignup, CTABanner (tailor-made), JournalTeaser |
+| Marketing | DestinationGrid, DestinationCard, EditorialSplit, PressLogos (the homepage set shipped in PR I) |
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |
 | Booking | BookingStepper, PaxSelector, DepartureCalendar, PriceBreakdown, ContactForm, TravellerForm, PaymentPlanSelector, PaymentMethodSelector, VietQRPanel, HoldCountdown, PaymentResult, BookingSummaryCard, InvoiceInfoForm, CancellationPolicySummary, TermsConsent |
 | Consultation | TailorMadeWizard (destination → timing → travellers → budget & style → contact), InquirySuccess |

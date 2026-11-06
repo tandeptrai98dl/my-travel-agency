@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { type ConsentChoice, ESSENTIAL_ONLY } from "@/lib/consent";
+import { useLabels } from "./labels";
 
 type Props = {
   open: boolean;
@@ -35,8 +35,8 @@ export default function ConsentSettingsDialog({
   onCloseAutoFocus,
 }: Props) {
   const id = useId();
-  const t = useTranslations("Consent");
-  const tNav = useTranslations("Navigation");
+  const t = useLabels("Consent");
+  const tNav = useLabels("Navigation");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

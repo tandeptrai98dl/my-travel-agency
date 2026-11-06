@@ -1,16 +1,18 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Link, usePathname } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { internalRoute, splitLocale } from "@/i18n/paths";
+import { cx } from "@/lib/cx";
 import type { DestinationNode } from "@/modules/catalog/destinations";
 
 import { LanguageSwitcher } from "./language-switcher";
 import { MegaMenu } from "./mega-menu";
 import { MobileNav } from "./mobile-nav";
 import { OVERLAY_HEADER_ROUTES } from "./nav-items";
+import { useLabels } from "./labels";
+import { LocaleLink as Link } from "./locale-link";
 
 type Props = { brandName: string; destinations: DestinationNode[] };
 
@@ -19,9 +21,9 @@ type Props = { brandName: string; destinations: DestinationNode[] };
  * scrolls. Desktop shows the mega menu; small screens get the mobile sheet.
  */
 export function SiteHeader({ brandName, destinations }: Props) {
-  const t = useTranslations("Navigation");
-  const pathname = usePathname();
-  const overlay = OVERLAY_HEADER_ROUTES.has(pathname);
+  const t = useLabels("Navigation");
+  const { locale, path } = splitLocale(usePathname());
+  const overlay = OVERLAY_HEADER_ROUTES.has(internalRoute(locale, path).pathname);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export function SiteHeader({ brandName, destinations }: Props) {
 
   return (
     <header
-      className={cn(
+      className={cx(
         "inset-x-0 top-0 z-40 transition-colors duration-400 ease-luxe",
         overlay ? "fixed" : "sticky",
         transparent
@@ -53,7 +55,9 @@ export function SiteHeader({ brandName, destinations }: Props) {
         </Link>
         <MegaMenu destinations={destinations} className="hidden lg:block" />
         <div className="flex items-center gap-2">
-          <LanguageSwitcher className="hidden md:flex" />
+          <div className="hidden md:block">
+            <LanguageSwitcher />
+          </div>
           <MobileNav destinations={destinations} className="lg:hidden" />
         </div>
       </div>

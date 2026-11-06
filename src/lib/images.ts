@@ -59,3 +59,35 @@ export function openGraphImageUrl(src: string): { url: string; width: number; he
   }
   return { url: src };
 }
+
+/** Widths offered in `srcset` (next/image's default device sizes). */
+export const IMAGE_WIDTHS = [640, 750, 828, 1080, 1200, 1920, 2048, 3840] as const;
+
+/**
+ * `<img>` attributes for a photo that fills its positioned parent: what `next/image` with `fill`
+ * renders, built here so public pages ship no `next/image` client code (Phase 3 spec decision 16).
+ * Without image transformations the original is used as is (no `srcset`).
+ */
+export function fillImageAttributes(image: Pick<ImageData, "src" | "blurDataUrl">, sizes: string, priority: boolean) {
+  const transforms = imageTransformsEnabled();
+  const srcSet = transforms
+    ? IMAGE_WIDTHS.map((width) => `${supabaseImageLoader({ src: image.src, width })} ${width}w`).join(", ")
+    : undefined;
+  return {
+    src: transforms ? supabaseImageLoader({ src: image.src, width: IMAGE_WIDTHS[IMAGE_WIDTHS.length - 1] }) : image.src,
+    srcSet,
+    sizes: srcSet ? sizes : undefined,
+    loading: priority ? ("eager" as const) : ("lazy" as const),
+    fetchPriority: priority ? ("high" as const) : undefined,
+    decoding: "async" as const,
+    style: {
+      position: "absolute" as const,
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      ...(image.blurDataUrl
+        ? { backgroundImage: `url("${image.blurDataUrl}")`, backgroundSize: "cover", backgroundPosition: "50% 50%" }
+        : {}),
+    },
+  };
+}

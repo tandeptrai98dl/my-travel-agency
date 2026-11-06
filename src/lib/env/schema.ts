@@ -45,6 +45,9 @@ export const publicEnvSchema = z.object({
   // Serve public images through Supabase Storage image transformations (Pro plan; Phase 3 spec
   // decision 1). Off locally and in CI, where the original object is served as is.
   NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: booleanFlag,
+  // Cloudflare Turnstile site key for public forms (ADR-014). Optional until the owner's account
+  // exists: without it (or the secret) the forms that need it show a disabled state.
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: optionalString,
 });
 
 export const serverEnvSchema = z
@@ -74,6 +77,8 @@ export const serverEnvSchema = z
     z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
   ),
   UPSTASH_REDIS_REST_TOKEN: optionalString,
+  // Cloudflare Turnstile secret (server-side verification of public form submissions).
+  TURNSTILE_SECRET_KEY: optionalString,
 }).superRefine((env, ctx) => {
   // Both or neither: one without the other would make every redirect sync fail at run time.
   const missing = env.UPSTASH_REDIS_REST_URL && !env.UPSTASH_REDIS_REST_TOKEN

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
 import { fontVariables } from "@/app/fonts";
 import { ContactFloatingButton } from "@/components/layout/contact-floating-button";
 import { CookieConsentBanner } from "@/components/layout/cookie-consent-banner";
+import { LabelsProvider, type LabelTree } from "@/components/layout/labels";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { routing } from "@/i18n/routing";
+import { isLocale, routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
@@ -27,7 +27,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Omit<Props, "children">): Promise<Metadata> {
   const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) return {};
+  if (!isLocale(locale)) return {};
   const [t, settings] = await Promise.all([
     getTranslations({ locale, namespace: "Metadata" }),
     getPublicSettings(),
@@ -44,18 +44,20 @@ export async function generateMetadata({ params }: Omit<Props, "children">): Pro
 /** Root layout of the public website and customer account (VI default, EN under /en). */
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) notFound();
+  if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
 
-  // Only the namespaces client components use; everything else stays on the server.
+  // Client strings: plain labels through a light context instead of NextIntlClientProvider, so no
+  // message formatter reaches the initial JS of public pages (Phase 3 spec decision 16). Client
+  // components here only show plain strings; anything formatted is rendered on the server.
   const messages = await getMessages();
-  const clientMessages = {
-    LanguageSwitcher: messages.LanguageSwitcher,
-    Navigation: messages.Navigation,
-    Consent: messages.Consent,
-    // The tour page's error boundary is a client component (Phase 3 spec decision 12).
-    TourDetail: { error: (messages.TourDetail as Record<string, unknown> | undefined)?.error },
-  } as typeof messages;
+  const plain = (value: unknown) => value as Record<string, string>;
+  const labels: LabelTree = {
+    LanguageSwitcher: plain(messages.LanguageSwitcher),
+    Navigation: plain(messages.Navigation),
+    Consent: plain(messages.Consent),
+    TourDetailError: plain((messages.TourDetail as Record<string, unknown> | undefined)?.error),
+  };
 
   // Shell data from Supabase (cached; CLAUDE.md rule 8: no business data in code).
   const [settings, destinations, t] = await Promise.all([
@@ -69,7 +71,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} className={fontVariables}>
       <body className="flex min-h-screen flex-col">
-        <NextIntlClientProvider messages={clientMessages}>
+        <LabelsProvider locale={locale} labels={labels}>
           <a
             href="#main"
             className="sr-only z-50 rounded-md bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -83,7 +85,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <SiteFooter settings={settings} brandName={brandName} locale={locale} />
           <ContactFloatingButton contact={settings.contact} />
           <CookieConsentBanner />
-        </NextIntlClientProvider>
+        </LabelsProvider>
       </body>
     </html>
   );

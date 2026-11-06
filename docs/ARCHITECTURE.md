@@ -200,6 +200,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Checkout | `/thanh-toan/[code]`, `…/phuong-thuc`, `…/ket-qua` | `/en/checkout/[code]`, `…/payment`, `…/result` |
 | Sales payment link | `/thanh-toan/link/[token]` | `/en/pay/[token]` |
 | Booking lookup | `/tra-cuu-booking` | `/en/booking-lookup` |
+| Newsletter confirmation (noindex) | `/ban-tin/xac-nhan` | `/en/newsletter/confirm` |
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/profile` |
 
@@ -215,7 +216,7 @@ Technical routes: `/sitemap.xml`, `/robots.txt`, `opengraph-image` file routes (
 
 **Supabase**: secret key only in server env vars (never `NEXT_PUBLIC_`); RLS on every table; `supabase db lint` in CI; Security Advisor clean before launch; `security definer` functions set `search_path = ''` and revoke execute from `public`, `anon`, `authenticated` unless intentionally public (e.g. `search_tours`).
 
-**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; CSP per page type (ADR-027): a nonce-free policy on cached public pages and `/auth/*`, and on checkout, account and admin fully dynamic rendering (root layout with `instant = false` and `connection()`) with a per-request nonce from the proxy and `'strict-dynamic'`; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms; redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
+**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; CSP per page type (ADR-027): a nonce-free policy on cached public pages and `/auth/*`, and on checkout, account and admin fully dynamic rendering (root layout with `instant = false` and `connection()`) with a per-request nonce from the proxy and `'strict-dynamic'`; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms (its script loads on the first interaction with the form; CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` on public pages, ADR-029); redirects read from Redis, never from the database in `proxy.ts`; uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
 
 **Personal data and compliance** (verify with legal counsel): Vietnamese personal data rules (Decree 13/2023/ND-CP and the Personal Data Protection Law) — privacy policy, consent before collection, proof in `consent_records`, export and deletion on request; e-commerce website notification to the Ministry of Industry and Trade; company details and tour operator licence in the footer; no passport numbers on the website; audit log for bookings, payments and customer data; daily backups + PITR from launch; SPF, DKIM, DMARC on the sending domain.
 
@@ -236,7 +237,7 @@ Technical routes: `/sitemap.xml`, `/robots.txt`, `opengraph-image` file routes (
 | Initial JS on public pages | < 150 KB gzip |
 | TTFB on cached pages | < 300 ms from Vietnam |
 
-Server Components by default; `next/image` with a Supabase image-transformation loader, correct `sizes`, AVIF/WebP and blur placeholders; fonts via `next/font` with only the needed subsets; third-party scripts after interaction or consent; indexes for every filter query; listing queries in one Postgres function call.
+Server Components by default; images as `<img>` with next/image's `fill` attributes built on the server (`fillImageAttributes()`: Supabase image-transformation `srcset`, correct `sizes`, WebP/AVIF from Supabase, blur placeholders) and no `next/image` client code; no next-intl client provider or tailwind-merge in public client components (ADR-029); fonts via `next/font` with only the needed subsets; third-party scripts after interaction or consent; indexes for every filter query; listing queries in one Postgres function call.
 
 ## Scalability
 

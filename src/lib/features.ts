@@ -8,6 +8,8 @@ export const features = {
   booking: false,
   /** Tailor-made wizard and tour inquiries (Phase 5). */
   inquiry: false,
-  /** Double opt-in newsletter sign-up (Phase 5). */
-  newsletter: false,
+  /** Journal list and article pages (Phase 3 PR K): the homepage journal teaser waits for them. */
+  journal: false,
+  /** Contact page (Phase 3 PR K): until then contact calls to action use the hotline and email. */
+  contactPage: false,
 } as const;

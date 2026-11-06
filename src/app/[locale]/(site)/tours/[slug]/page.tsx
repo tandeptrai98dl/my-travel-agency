@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 
 import { TourDetailView } from "@/components/tour/tour-detail-view";
 import { getPathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { isLocale, routing } from "@/i18n/routing";
 import { openGraphImageUrl } from "@/lib/images";
 import {
   getPublishedTourSlugs,
@@ -24,12 +23,12 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NO_TOUR = "no-published-tour";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = hasLocale(routing.locales, params.locale) ? await getPublishedTourSlugs(params.locale) : [];
+  const slugs = isLocale(params.locale) ? await getPublishedTourSlugs(params.locale) : [];
   return (slugs.length ? slugs : [NO_TOUR]).map((slug) => ({ slug }));
 }
 
 async function load(locale: string, slug: string): Promise<{ locale: Locale; tour: TourPage }> {
-  if (!hasLocale(routing.locales, locale) || slug === NO_TOUR) notFound();
+  if (!isLocale(locale) || slug === NO_TOUR) notFound();
   const result = await getTourPage(locale, slug);
   if (result.kind === "redirect") {
     permanentRedirect(getPathname({ locale, href: { pathname: "/tours/[slug]", params: { slug: result.slug } } }));
@@ -40,7 +39,7 @@ async function load(locale: string, slug: string): Promise<{ locale: Locale; tou
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: raw, slug } = await params;
-  if (!hasLocale(routing.locales, raw) || slug === NO_TOUR) return {};
+  if (!isLocale(raw) || slug === NO_TOUR) return {};
   const result = await getTourPage(raw, slug);
   if (result.kind !== "found") return {};
   const tour = result.tour;
