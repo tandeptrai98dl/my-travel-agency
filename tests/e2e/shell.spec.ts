@@ -191,7 +191,6 @@ test.describe("site shell (mobile)", () => {
     await expect(page.getByRole("button", { name: "Mở menu" })).toBeFocused();
   });
 
-
   test("the floating contact steps aside while the cookie banner is open", async ({ page }) => {
     await page.goto("/en");
     await expect(page.getByRole("region", { name: "Cookies on this website" })).toBeVisible();

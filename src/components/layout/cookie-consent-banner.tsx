@@ -26,6 +26,11 @@ const ConsentSettingsDialog = dynamic(() => import("./consent-settings-dialog"),
  * cookie so cached pages stay static, and a `consentchange` event tells GA4 Consent Mode
  * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
  */
+/** Continues from the main content without jumping to the top of the page. */
+function focusMain() {
+  document.getElementById("main")?.focus({ preventScroll: true });
+}
+
 export function CookieConsentBanner() {
   const t = useTranslations("Consent");
   const titleId = useId();
@@ -41,8 +46,9 @@ export function CookieConsentBanner() {
     const stored = readConsentCookie(document.cookie);
     setDecided(stored);
     setDraft(stored ?? ESSENTIAL_ONLY);
-    const open = () => {
-      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const open = (event: Event) => {
+      const detail = event instanceof CustomEvent ? event.detail : null;
+      openerRef.current = detail instanceof HTMLElement ? detail : null;
       setDraft(readConsentCookie(document.cookie) ?? ESSENTIAL_ONLY);
       setSettingsLoaded(true);
       setSettingsOpen(true);
@@ -66,14 +72,29 @@ export function CookieConsentBanner() {
     setSettingsOpen(false);
     window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: choice }));
     // The banner disappears with the focused button; continue from the main content.
-    if (focusWasInBanner) requestAnimationFrame(() => document.getElementById("main")?.focus());
+    if (focusWasInBanner) requestAnimationFrame(focusMain);
   }, []);
 
   const restoreFocus = useCallback(() => {
     const opener = openerRef.current;
-    if (opener?.isConnected) opener.focus();
-    else document.getElementById("main")?.focus();
+    if (opener?.isConnected && opener.offsetParent !== null) opener.focus();
+    else focusMain();
   }, []);
+
+  // Publishes the banner's height so scroll padding keeps focused elements above it (WCAG 2.4.11).
+  useEffect(() => {
+    const banner = bannerRef.current;
+    const root = document.documentElement;
+    if (!bannerVisible || !banner) return;
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty("--consent-banner-h", `${banner.getBoundingClientRect().height}px`);
+    });
+    observer.observe(banner);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--consent-banner-h");
+    };
+  }, [bannerVisible]);
 
   return (
     <>

@@ -50,7 +50,9 @@ export async function getPublicSettings(): Promise<PublicSettings> {
   } catch (error) {
     console.error("getPublicSettings failed", error instanceof Error ? error.message : error);
     // Do not keep a failure for the whole "minutes" profile: retry soon.
-    cacheLife("seconds");
+    // Retry soon, but stay prerenderable: an entry expiring in under 5 minutes would turn the
+    // layout into a dynamic hole and fail the build (or a background render) during an outage.
+    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
     return EMPTY;
   }
 }

@@ -30,7 +30,10 @@ export default function MobileNavSheet({ destinations, open, onOpenChange, retur
         aria-describedby={undefined}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          returnFocusTo.current?.focus();
+          const button = returnFocusTo.current;
+          // Resized to desktop while open: the menu button is hidden, continue from the content.
+          if (button?.isConnected && button.offsetParent !== null) button.focus();
+          else document.getElementById("main")?.focus({ preventScroll: true });
         }}
       >
         <SheetTitle className="sr-only">{t("menuTitle")}</SheetTitle>

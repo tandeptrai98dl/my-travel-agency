@@ -100,7 +100,8 @@
     "hotline": "Gọi hotline {phone}",
     "zalo": "Nhắn Zalo",
     "whatsapp": "Nhắn WhatsApp",
-    "email": "Gửi email"
+    "email": "Gửi email",
+    "newTab": "mở trong thẻ mới"
   },
   "Consent": {
     "title": "Cookie trên website",

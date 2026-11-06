@@ -24,7 +24,7 @@ Branch `feat/p1-layout-shell` (`docs/specs/phase-1-design-system.md` steps 5–1
 - Measured: home initial JS ≈ 179 KB gzip (local webpack; ≈ 158 KB before the shell). Over the 150 KB budget; see known issues.
 - Independent review: changes requested (major: the desktop cookie banner covered the floating contact buttons; focus was lost after closing the mobile menu and the cookie settings, which have no Radix trigger. Minor: vacuous brand test, errors cached for the full `minutes` profile, `javascript:`/`data:` URLs accepted in settings, no scroll padding under the sticky header and the banner, `<dl>` without terms, duplicate "Language" landmarks, missing 768 px, focus-return and third-party-request tests, docs overclaims), all addressed:
   - The floating contact hides whenever the banner is open; banner choices move focus to `#main`; the menu sheet and the settings dialog return focus to their opener (or `#main`).
-  - Settings URLs must be `https:`; failed reads are cached for `seconds` only; `scroll-padding-top`/`-bottom` keep focused elements clear of the header and banner.
+  - Settings URLs must be `https:`; failed reads are retried after 30 s but stay prerenderable (a `seconds` profile would fail the build during an outage); `scroll-padding-top`/`-bottom` keep focused elements clear of the header and banner.
   - The footer and menu switchers are plain groups (one "Language" landmark, in the header), language names carry `lang`, new-tab links say so to screen readers, "Essential only" has the same weight as "Accept all", consent switches are described by their text, a malformed `consent` cookie counts as undecided, and the page title uses the brand from `settings` like the header.
   - New E2E: exact seeded brand in header, footer and title; tablet (768 px) layout; focus return after Escape and after saving; no third-party requests before a consent choice; one Language landmark; no empty footer lists.
   - The plan's shell checkbox stays open until the PR 7 axe checks pass.
@@ -137,8 +137,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 ## Known issues
 
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
+- Build cache after a Supabase outage: a local build made with the database unreachable succeeds (empty shell), but a following build that reused its `.next/cache` served an empty 404 page until the cache was deleted. If a deploy ever runs during an outage, redeploy afterwards without the build cache. Re-check on Vercel in Phase 6.
 - Phase 3: cheap initial-JS wins to try before the 150 KB budget review: render the desktop nav without client JS until the mega menu is opened, and load the floating contact's client code after idle.
-
 - Phase 2: tour and departure price columns are not yet guarded per role (`DATABASE.md` "Known Phase 0 limits").
 - Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).

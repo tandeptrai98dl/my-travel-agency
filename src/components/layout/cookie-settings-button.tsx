@@ -8,7 +8,11 @@ export function CookieSettingsButton({ label, className }: { label: string; clas
     <button
       type="button"
       className={className}
-      onClick={() => window.dispatchEvent(new Event(CONSENT_OPEN_EVENT))}
+      // The opener travels with the event: Safari does not focus buttons on click, so
+      // `document.activeElement` would be <body> and focus could not return here.
+      onClick={(event) =>
+        window.dispatchEvent(new CustomEvent(CONSENT_OPEN_EVENT, { detail: event.currentTarget }))
+      }
     >
       {label}
     </button>

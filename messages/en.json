@@ -100,7 +100,8 @@
     "hotline": "Call our hotline {phone}",
     "zalo": "Message us on Zalo",
     "whatsapp": "Message us on WhatsApp",
-    "email": "Send an email"
+    "email": "Send an email",
+    "newTab": "opens in a new tab"
   },
   "Consent": {
     "title": "Cookies on this website",

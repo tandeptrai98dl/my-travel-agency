@@ -106,7 +106,8 @@ html {
   scroll-padding-top: 5.5rem;
 }
 html[data-consent-open] {
-  scroll-padding-bottom: 18rem;
+  /* Measured by the banner; the fallback covers the first frame. */
+  scroll-padding-bottom: calc(var(--consent-banner-h, 26rem) + 1rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -27,12 +27,12 @@ export async function ContactFloatingButton({ contact }: Props) {
     },
     contact.zalo && {
       href: `https://zalo.me/${digits(contact.zalo)}`,
-      label: t("zalo"),
+      label: `${t("zalo")} (${t("newTab")})`,
       icon: <span className="text-[0.6875rem] font-semibold tracking-wide">Zalo</span>,
     },
     contact.whatsapp && {
       href: `https://wa.me/${digits(contact.whatsapp)}`,
-      label: t("whatsapp"),
+      label: `${t("whatsapp")} (${t("newTab")})`,
       icon: <MessageCircle className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />,
     },
     !contact.phone &&
