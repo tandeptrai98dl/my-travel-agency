@@ -20,7 +20,7 @@ import { Label } from "./label";
 /**
  * React Hook Form + Zod wiring (shadcn new-york "form"). Use with
  * `useForm({ resolver: zodResolver(schema) })`. Zod messages are translation keys or already
- * translated strings; `FormMessage` takes `translate` to map keys to text.
+ * translated strings; `FormMessage` takes `formatMessage` to map keys to text.
  */
 const Form = FormProvider;
 
@@ -116,16 +116,16 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = "FormDescription";
 
-type FormMessageProps = React.HTMLAttributes<HTMLParagraphElement> & {
+type FormMessageProps = Omit<React.HTMLAttributes<HTMLParagraphElement>, "translate"> & {
   /** Maps a Zod message (a translation key) to display text. */
-  translate?: (message: string) => string;
+  formatMessage?: (message: string) => string;
 };
 
 const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
-  ({ className, children, translate, ...props }, ref) => {
+  ({ className, children, formatMessage, ...props }, ref) => {
     const { error, formMessageId } = useFormField();
     const raw = error?.message ? String(error.message) : null;
-    const body = raw ? (translate ? translate(raw) : raw) : children;
+    const body = raw ? (formatMessage ? formatMessage(raw) : raw) : children;
     // Always rendered, so the id referenced by aria-describedby exists and changes are announced.
     return (
       <p
