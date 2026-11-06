@@ -125,10 +125,14 @@ test.describe("homepage", () => {
     test.setTimeout(90_000);
     const origin = new URL(baseURL!).origin;
     const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : null;
+    // Error monitoring is a processor for the site itself (as in shell.spec.ts); CI's fake DSN
+    // envelopes are answered here so nothing leaves the runner.
+    const sentryHost = process.env.NEXT_PUBLIC_SENTRY_DSN ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).host : null;
+    await page.route("**/api/*/envelope/**", (route) => route.fulfill({ status: 200, body: "{}" }));
     const thirdParty: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
-      if (["data:", "blob:"].includes(url.protocol) || url.origin === origin || url.origin === supabase) return;
+      if (["data:", "blob:"].includes(url.protocol) || url.origin === origin || url.origin === supabase || url.host === sentryHost) return;
       thirdParty.push(request.url());
     });
     for (const width of [375, 1280]) {

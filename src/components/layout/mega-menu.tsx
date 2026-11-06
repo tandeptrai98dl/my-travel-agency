@@ -30,6 +30,8 @@ export function MegaMenu({ destinations, className }: Props) {
   const navRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeTimer = useRef<number | undefined>(undefined);
+  // When the pointer opened the panel just before a click, that click must not close it again.
+  const hoverOpenedAt = useRef(0);
 
   const close = useCallback((returnFocus: boolean) => {
     setOpen(false);
@@ -49,7 +51,10 @@ export function MegaMenu({ destinations, className }: Props) {
   const hoverOpen = (event: React.PointerEvent) => {
     if (event.pointerType !== "mouse") return;
     window.clearTimeout(closeTimer.current);
-    setOpen(true);
+    setOpen((value) => {
+      if (!value) hoverOpenedAt.current = performance.now();
+      return true;
+    });
   };
   const hoverClose = (event: React.PointerEvent) => {
     if (event.pointerType !== "mouse") return;
@@ -84,7 +89,11 @@ export function MegaMenu({ destinations, className }: Props) {
             aria-expanded={open}
             aria-controls={panelId}
             className={cx(linkClass, "group", open && "underline")}
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => {
+              // The hover state may not have rendered yet when the click arrives: keep it open.
+              if (performance.now() - hoverOpenedAt.current < 600) setOpen(true);
+              else setOpen((value) => !value);
+            }}
           >
             {t("destinations")}
             <ChevronDown
