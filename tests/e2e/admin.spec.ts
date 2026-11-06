@@ -58,12 +58,14 @@ for (const [role, label] of [
 }
 
 test("the Sentry test route is closed to everyone but MFA-verified admins", async ({ page }) => {
-  const signedOut = await page.request.get("/api/monitoring/test-error");
+  const signedOut = await page.request.post("/api/monitoring/test-error");
   expect(signedOut.status()).toBe(401);
 
   await signInAs(page, "editor");
-  const editor = await page.request.get("/api/monitoring/test-error");
+  const editor = await page.request.post("/api/monitoring/test-error");
   expect(editor.status()).toBe(403);
+  // A visited link (GET) never triggers it.
+  expect((await page.request.get("/api/monitoring/test-error")).status()).toBe(405);
 });
 
 test("accountant is sent to MFA enrolment", async ({ page }) => {
@@ -81,6 +83,8 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   test.setTimeout(90_000);
   await signInAs(page, "admin");
   await expect(page).toHaveURL(/\/admin\/mfa$/);
+  // Below aal2 even an admin cannot trigger the Sentry test error.
+  expect((await page.request.post("/api/monitoring/test-error")).status()).toBe(403);
 
   // Enrol: read the manual key and answer with a computed TOTP code.
   await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
@@ -93,6 +97,8 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByTestId("admin-role")).toHaveText("Vai trò: Quản trị viên");
   await expect(page.getByTestId("admin-aal")).toHaveText("Xác thực hai lớp: đã xác minh");
+  // At aal2 the route throws on purpose (reported by onRequestError when a DSN is set).
+  expect((await page.request.post("/api/monitoring/test-error")).status()).toBe(500);
 
   // A new session starts at aal1: the admin must verify the existing factor.
   await page.getByRole("button", { name: "Đăng xuất" }).click();

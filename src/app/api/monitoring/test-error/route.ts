@@ -4,9 +4,10 @@ import { AccessDeniedError, requireRole } from "@/lib/auth/require-role";
 
 /**
  * Deliberately throws so an admin can confirm errors reach Sentry (Phase 0 acceptance:
- * "a test error reaches Sentry"). Admin at aal2 only; everyone else gets 401/403.
+ * "a test error reaches Sentry"). Admin at aal2 only; everyone else gets 401/403. POST, so a
+ * visited link never triggers it.
  */
-export async function GET() {
+export async function POST() {
   await connection();
   try {
     await requireRole(["admin"]);

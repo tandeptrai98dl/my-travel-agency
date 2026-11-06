@@ -22,6 +22,8 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   silent: !process.env.CI,
   telemetry: false,
   widenClientFileUpload: true,
+  // Browser tracing is off (sentry-options.ts), so navigation hooks are not needed.
+  suppressOnRouterTransitionStartWarning: true,
   // Smaller browser bundle: no debug statements, no Session Replay code (not used).
   bundleSizeOptimizations: {
     excludeDebugStatements: true,

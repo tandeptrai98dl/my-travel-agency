@@ -123,10 +123,13 @@ jobs:
         run: npm run seed:users
       # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
       # Phase 0 never uses the service role in the app, and the leak check below needs them.
+      # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested;
+      # monitoring.spec.ts intercepts every request to it. No server DSN is set.
       - name: Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
+          NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
         run: npm run build
       - name: Check that server-only values did not leak into client bundles
         run: |
@@ -152,17 +155,21 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           for attempt in 1 2 3; do
-            timeout 180 npx playwright install --with-deps chromium && exit 0
+            timeout -k 15 240 npx playwright install --with-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # A killed apt/dpkg run can leave the package database half-configured.
+            sudo dpkg --configure -a || true
           done
           exit 1
-        timeout-minutes: 10
+        timeout-minutes: 14
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: |
           for attempt in 1 2 3; do
-            timeout 180 npx playwright install-deps chromium && exit 0
+            timeout -k 15 180 npx playwright install-deps chromium && exit 0
             echo "Attempt $attempt failed or timed out; retrying." >&2
+            # A killed apt/dpkg run can leave the package database half-configured.
+            sudo dpkg --configure -a || true
           done
           exit 1
         timeout-minutes: 10
@@ -171,6 +178,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
+          NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
           # Test setup only (generating email-link tokens); the app keeps the sentinel key.
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}

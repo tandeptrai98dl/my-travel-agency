@@ -33,12 +33,26 @@ npm run build          # production build
 npm run lint           # ESLint
 npm run typecheck      # tsc --noEmit
 npm test               # Vitest unit tests
-npm run test:e2e       # Playwright against a production build (needs local Supabase + seeded users)
+npm run test:e2e       # Playwright against a production build (see "End-to-end tests" below)
 npx supabase db reset  # re-apply migrations + seed
 npx supabase test db   # pgTAP tests
 npx supabase db lint   # schema lint
 npm run db:types       # regenerate src/types/database.types.ts after a migration
 ```
+
+## End-to-end tests
+
+`npm run test:e2e` starts `npm run start`, so build first, with local Supabase running and the sample users seeded:
+
+```bash
+npm run build
+SEED_USER_PASSWORD=... \
+E2E_SUPABASE_URL=http://127.0.0.1:54321 \
+E2E_SUPABASE_SECRET_KEY=<SERVICE_ROLE_KEY from npx supabase status -o env> \
+npm run test:e2e
+```
+
+`E2E_SUPABASE_*` are used only by the tests (to create email-link tokens), never by the app. The browser-monitoring test runs only when the build has a `NEXT_PUBLIC_SENTRY_DSN`; it intercepts every request to Sentry. CI runs all of this on every pull request.
 
 ## Environment variables
 
@@ -58,13 +72,13 @@ Never commit real values. `.env.example` lists every variable; `.env.local` is g
 | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | build only | Sentry → organization auth token (scope: project releases) | Vercel (build); leave empty locally |
 | `SEED_USER_PASSWORD` | local tool | Choose one (at least 12 characters) for `npm run seed:users` | `.env.local` only |
 
-Sentry is off whenever no DSN is set, so local development and CI send nothing. Once deployed, an MFA-verified admin can open `/api/monitoring/test-error` to confirm that errors reach Sentry.
+Sentry is off whenever no DSN is set, so local development sends nothing (CI builds the browser SDK with a fake DSN and intercepts it). Collection is minimised in `src/lib/monitoring/sentry-options.ts`: no IPs, user details, cookies, request bodies, query strings or credential headers, payment-link tokens redacted from URLs, no browser tracing. Once deployed, an MFA-verified admin can send `POST /api/monitoring/test-error` (for example `fetch("/api/monitoring/test-error", { method: "POST" })` in the browser console while signed in) to confirm that errors reach Sentry.
 
 ## Deployment (Vercel + Supabase, Singapore)
 
 Owner setup, once (ADR-018):
 
-1. **Supabase**: create the staging project (Singapore). Link it with `npx supabase link --project-ref <ref>` and apply migrations with `npx supabase db push`. In Auth settings: enable email confirmations and TOTP MFA, add the site URL and the redirect URLs `https://<host>/auth/confirm` and `https://<host>/auth/callback`, and configure Resend as SMTP.
+1. **Supabase**: create the staging project (Singapore). Link it with `npx supabase link --project-ref <ref>` and apply migrations with `npx supabase db push`. In Auth settings: enable email confirmations and TOTP MFA, set the site URL, add the redirect URLs `https://<host>/auth/confirm` and `https://<host>/auth/callback` for each fixed host, add a wildcard for Vercel previews (for example `https://*-<team-slug>.vercel.app/**`, since preview hosts change on every deployment), and configure Resend as SMTP.
 2. **Sentry**: create a Next.js project; note the DSN, org and project slugs; create an auth token for source maps.
 3. **Vercel**: import the GitHub repository (framework preset Next.js, region `sin1`). Add the variables above for Preview and Production. Every pull request then gets a preview URL; `main` deploys to production once a production Supabase project exists.
 4. **GitHub**: enable branch protection on `main`, requiring the CI checks (`Lint, typecheck, unit tests`, `Database (migrations, pgTAP, lint, types)`, `Build and E2E`).
