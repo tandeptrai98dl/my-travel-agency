@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { RICH_TEXT_MAX_BYTES, richTextIsEmpty, sanitizeRichText } from "@/lib/rich-text";
+import { RICH_TEXT_MAX_BYTES, richTextBytes, richTextIsEmpty, sanitizeRichText } from "@/lib/rich-text";
 import { isValidSlug } from "@/lib/slug";
 
 /**
@@ -31,7 +31,7 @@ const optionalText = (max: number) =>
 /** Tiptap JSON: sanitized here (decision 7), so only whitelisted nodes are ever stored. */
 export const richTextSchema = z
   .unknown()
-  .refine((value) => JSON.stringify(value ?? null).length <= RICH_TEXT_MAX_BYTES, "tooLong")
+  .refine((value) => richTextBytes(value) <= RICH_TEXT_MAX_BYTES, "tooLong")
   .transform((value) => sanitizeRichText(value));
 
 const translationFields = {

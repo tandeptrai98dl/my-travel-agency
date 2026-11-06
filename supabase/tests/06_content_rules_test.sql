@@ -2,7 +2,7 @@
 -- their text, published posts a described cover, images in published content keep their alt texts,
 -- and images referenced inside JSON cannot be deleted.
 begin;
-select plan(24);
+select plan(33);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -164,6 +164,52 @@ select throws_ok(
 );
 with d as (delete from public.media where id = '80000000-0000-4000-8000-000000000604' returning 1)
 select is(count(*)::int, 1, 'an unused image can be deleted') from d;
+reset role;
+
+-- PR 16 review follow-ups -----------------------------------------------------------------------------
+-- An upper-case id written through the API still counts as a use.
+insert into public.media (id, path, mime_type, size_bytes, alt) values
+  ('80000000-0000-4000-8000-0000000006aa', '2026/01/80000000-0000-4000-8000-0000000006aa.jpg', 'image/jpeg', 1, '{}');
+select pg_temp.claims('00000000-0000-4000-8000-000000000614');
+set local role authenticated;
+insert into public.post_translations (post_id, locale, slug, title, content)
+values ('50000000-0000-4000-8000-000000000602', 'vi', 'ban-nhap', 'Bản nháp',
+        '{"type": "doc", "content": [{"type": "image", "attrs": {"mediaId": "80000000-0000-4000-8000-0000000006AA"}}]}');
+select throws_ok(
+  $$ delete from public.media where id = '80000000-0000-4000-8000-0000000006aa' $$,
+  '23503', 'this image is used in content', 'an image id written in upper case still counts as used'
+);
+select ok(public.media_used_in_content('80000000-0000-4000-8000-0000000006aa'), 'staff see where an image is used');
+
+-- A published article cannot be deleted, a draft can.
+reset role;
+update public.posts set cover_media_id = '80000000-0000-4000-8000-000000000601', status = 'published'
+ where id = '50000000-0000-4000-8000-000000000601';
+select pg_temp.claims('00000000-0000-4000-8000-000000000614');
+set local role authenticated;
+select throws_ok(
+  $$ delete from public.posts where id = '50000000-0000-4000-8000-000000000601' $$,
+  '23514', 'unpublish the article before deleting it', 'a published article cannot be deleted'
+);
+with d as (delete from public.posts where id = '50000000-0000-4000-8000-000000000602' returning 1)
+select is(count(*)::int, 1, 'a draft article can be deleted') from d;
+
+-- The definer helpers answer only for staff and trusted roles.
+select ok(public.is_staff_or_trusted(), 'an editor is staff');
+reset role;
+select ok(public.is_staff_or_trusted(), 'the owner (migrations, seed, pg_cron) is trusted');
+set local role service_role;
+select ok(public.is_staff_or_trusted(), 'the service role is trusted');
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-000000000616', 'customer-c@example.test', '{}');
+select pg_temp.claims('00000000-0000-4000-8000-000000000616');
+set local role authenticated;
+select ok(not public.is_staff_or_trusted(), 'a customer is neither');
+select ok(
+  not public.media_used_in_content('80000000-0000-4000-8000-000000000601'),
+  'a customer learns nothing about where images are used'
+);
 reset role;
 
 select ok(

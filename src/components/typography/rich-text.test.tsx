@@ -44,6 +44,9 @@ describe("RichText", () => {
       '<a href="https://example.com" rel="noopener noreferrer">x</a>',
     );
     expect(html(p({ type: "text", text: "x", marks: [{ type: "link", attrs: { href: "/tours" } }] }))).toContain('<a href="/tours">x</a>');
+    expect(html(p({ type: "text", text: "x", marks: [{ type: "link", attrs: { href: "http:example.com" } }] }))).toContain(
+      'rel="noopener noreferrer"',
+    );
   });
 
   it("shows library images with the page language's alt text, never a URL from the JSON", () => {

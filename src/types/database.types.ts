@@ -857,6 +857,9 @@ isOneToOne: false
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_staff_or_trusted":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "is_valid_cancellation_rules":
 { Args: { "rules": Json }; Returns: boolean
                            },

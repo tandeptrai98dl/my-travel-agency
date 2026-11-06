@@ -347,7 +347,8 @@ export async function deletePost(id: string): Promise<DeleteResult> {
   if (!existing) return { ok: false, error: "not_found" };
   if (existing.status === "published") return { ok: false, error: "published" };
   const { data, error } = await repo.deletePostRow(id);
-  if (error) return { ok: false, error: error.code === "23503" ? "in_use" : "failed" };
+  // 23514: published meanwhile (guard_post_delete).
+  if (error) return { ok: false, error: error.code === "23503" ? "in_use" : error.code === "23514" ? "published" : "failed" };
   if (!data?.length) return { ok: false, error: "not_found" };
   refreshPost(id);
   return { ok: true };

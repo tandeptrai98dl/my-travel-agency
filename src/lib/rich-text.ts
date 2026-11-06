@@ -41,7 +41,7 @@ export const RICH_TEXT_NODES = [
 ] as const;
 export const RICH_TEXT_MARKS = ["bold", "italic", "link"] as const;
 
-/** Stored documents above this size are refused by the admin schemas. */
+/** Stored documents above this size (UTF-8 bytes) are refused by the admin schemas. */
 export const RICH_TEXT_MAX_BYTES = 300_000;
 const MAX_DEPTH = 12;
 const MAX_NODES = 10_000;
@@ -81,9 +81,22 @@ export function safeHref(value: unknown): string | null {
   }
 }
 
-/** Absolute web links leave the site: they get `rel="noopener noreferrer"`. */
+/**
+ * Absolute web links leave the site: they get `rel="noopener noreferrer"`. Read from the parsed
+ * protocol, so `http:host` (which browsers open as http://host/) counts too.
+ */
 export function isExternalHref(href: string): boolean {
-  return /^https?:\/\//i.test(href);
+  try {
+    const { protocol } = new URL(href);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Size of a stored document in UTF-8 bytes (Vietnamese letters take two or three). */
+export function richTextBytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value ?? null)).length;
 }
 
 // Sanitizing ----------------------------------------------------------------------------------------
