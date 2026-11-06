@@ -52,7 +52,7 @@ test.describe("departures admin", () => {
     await expect(page.getByLabel("Giá người lớn (đồng)")).toHaveCount(0);
     await page.getByRole("radio", { name: "Danh sách ngày" }).check();
     await page.getByLabel("Ngày khởi hành", { exact: true }).fill([seeded, dmy(fresh[0]), fresh[1]].join("\n"));
-    await page.getByLabel("Ghi chú nội bộ").fill(`E2E ${offset}`);
+    await page.getByLabel("Ghi chú (hiển thị cho khách)").fill(`E2E ${offset}`);
     await expectNoSeriousViolations(page, "/admin/departures/new");
     await page.getByRole("button", { name: "Xem trước" }).click();
 
@@ -62,7 +62,7 @@ test.describe("departures admin", () => {
     await expect(page.getByText("Sẽ tạo 2 chuyến; bỏ qua 1 ngày đã có.")).toBeVisible();
     await expectNoSeriousViolations(page, "bulk creation preview");
     // A change after the preview hides it until the next preview.
-    await page.getByLabel("Ghi chú nội bộ").fill(`E2E ${offset} (sửa)`);
+    await page.getByLabel("Ghi chú (hiển thị cho khách)").fill(`E2E ${offset} (sửa)`);
     await expect(page.getByText("Thông tin đã thay đổi sau lần xem trước.", { exact: false })).toBeVisible();
     await page.getByRole("button", { name: "Xem trước" }).click();
     await page.getByRole("button", { name: "Tạo 2 chuyến" }).click();
@@ -87,14 +87,14 @@ test.describe("departures admin", () => {
     await expect(page.getByRole("listbox")).toBeHidden();
     // Role locators skip the previous page, which the router keeps hidden in the DOM.
     await page.getByRole("spinbutton", { name: "Sức chứa (chỗ)" }).fill("20");
-    await page.getByRole("textbox", { name: "Ghi chú nội bộ" }).fill("Đóng sớm");
+    await page.getByRole("textbox", { name: "Ghi chú (hiển thị cho khách)" }).fill("Đóng sớm");
     await expectNoSeriousViolations(page, "departure editor");
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
     await expect(toasts(page).getByText("Đã lưu chuyến khởi hành.")).toBeVisible();
     await page.reload();
     await expect(page.getByTestId("departure-seats")).toHaveText("0/20");
     await expect(page.getByRole("combobox", { name: "Trạng thái" })).toHaveText("Ngừng nhận khách");
-    await expect(page.getByRole("textbox", { name: "Ghi chú nội bộ" })).toHaveValue("Đóng sớm");
+    await expect(page.getByRole("textbox", { name: "Ghi chú (hiển thị cho khách)" })).toHaveValue("Đóng sớm");
 
     // Delete (no bookings, not the tour's last departure).
     await page.getByRole("button", { name: "Xoá chuyến" }).click();

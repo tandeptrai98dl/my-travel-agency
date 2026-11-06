@@ -191,6 +191,7 @@ export function DepartureEditor({ data, tourHref }: Props) {
                 <FormControl>
                   <Textarea rows={3} maxLength={500} {...field} value={field.value ?? ""} />
                 </FormControl>
+                <FormDescription>{t("noteHint")}</FormDescription>
                 <FormMessage formatMessage={errorText} />
               </FormItem>
             )}

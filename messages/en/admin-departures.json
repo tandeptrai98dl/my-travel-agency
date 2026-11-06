@@ -30,7 +30,7 @@
         "status": "Status",
         "seats": "Reserved / capacity",
         "price": "Adult price",
-        "note": "Note",
+        "note": "Customer note",
         "start": "Departs",
         "end": "Returns",
         "result": "Result"
@@ -68,7 +68,7 @@
       "capacity": "Capacity (seats)",
       "capacityHint": "Seats for adults and children; infants do not take a seat.",
       "initialStatus": "Initial status",
-      "note": "Internal note",
+      "note": "Note (shown to customers)",
       "pricesTitle": "Prices",
       "pricesPrefilled": "Prefilled with the latest departure's prices; you can change them.",
       "pricesFirst": "This tour has no departures yet: enter the prices of the first one.",
@@ -136,7 +136,8 @@
         "hasBookings": "This departure has bookings and cannot be deleted; change its status instead.",
         "duplicate": "The tour already has a departure on this date.",
         "failed": "Could not save. Please try again."
-      }
+      },
+      "noteHint": "Customers see this note on the tour page, for example “Early start at 6:00”. Do not put internal remarks here."
     }
   }
 }
