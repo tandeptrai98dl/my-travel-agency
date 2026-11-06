@@ -5,10 +5,22 @@ Update this log at the start and end of each work session. Newest first.
 ## Current status
 
 - **Phase:** 0 (Foundation) of the full-scope plan (ADR-005, ADR-019)
-- **Next up:** Phase 0 PR 4 (step 10): Sentry, Vercel previews, README; then Phase 1 (design system)
+- **Next up:** Phase 1 (design system and UI shell). Phase 0 is code-complete; its last acceptance items (Vercel preview health check, Sentry test event) wait for the owner's Vercel and Sentry accounts
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; confirm the proposed ADRs (016–019) and the palette/fonts
 
 ## Log
+
+### 2026-11-06 (Phase 0 — PR 4 of 4: monitoring, deployment docs)
+
+Branch `chore/p0-monitoring-docs` (spec step 10, the parts that do not need the owner's accounts).
+
+- Done:
+  - Sentry (`@sentry/nextjs`, ADR-014): server and edge configs started from `src/instrumentation.ts`, `onRequestError` capture, browser SDK loaded lazily after idle (adds ~0.6 KB to the initial JS instead of ~60 KB), no default PII and credential headers, cookies and bodies scrubbed (`src/lib/monitoring/sentry-options.ts`, unit-tested). Off whenever no DSN is set. Source maps upload only with `SENTRY_AUTH_TOKEN`.
+  - `/api/monitoring/test-error`: throws for an MFA-verified admin so the owner can confirm events arrive; 401/403 for everyone else (E2E).
+  - `README.md` rewritten: local setup, commands, every environment variable with where it comes from and where to set it, Vercel/Supabase/Sentry/GitHub owner setup.
+- Verified: lint, typecheck, unit tests, production build (local webpack check) and CI (see the PR).
+- Blocked by owner accounts: Vercel previews per PR, `/api/health` on a preview, and "a test error reaches Sentry" (needs the Sentry project and DSN). The steps are in `README.md` "Deployment".
+- Measured: initial JS on the home page is ~158 KB gzip in a local webpack build without browser Sentry (budget 150 KB). Re-measure on the Turbopack production build and trim in Phase 3/6.
 
 ### 2026-11-06 (Phase 0 — PR 3 of 4: clients, auth helpers, i18n, proxy, admin shell, health)
 
@@ -85,7 +97,7 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 ## Blockers
 
-- None
+- Vercel previews and the Sentry test event (Phase 0 acceptance) need the owner's Vercel and Sentry accounts; see `README.md` "Deployment".
 
 ## Known issues
 
@@ -96,3 +108,4 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
+- Phase 3/6: initial JS on public pages is ~158 KB gzip (local webpack measurement) against the 150 KB budget.
