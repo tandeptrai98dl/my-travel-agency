@@ -38,7 +38,11 @@ function FormField<
   );
 }
 
-type FormItemContextValue = { id: string };
+type FormItemContextValue = {
+  id: string;
+  hasDescription: boolean;
+  setHasDescription: (value: boolean) => void;
+};
 const FormItemContext = React.createContext<FormItemContextValue | null>(null);
 
 function useFormField() {
@@ -56,6 +60,8 @@ function useFormField() {
     formItemId: `${id}-item`,
     formDescriptionId: `${id}-description`,
     formMessageId: `${id}-message`,
+    hasDescription: itemContext.hasDescription,
+    setHasDescription: itemContext.setHasDescription,
     ...fieldState,
   };
 }
@@ -63,8 +69,10 @@ function useFormField() {
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
     const id = React.useId();
+    const [hasDescription, setHasDescription] = React.useState(false);
+    const value = React.useMemo(() => ({ id, hasDescription, setHasDescription }), [id, hasDescription]);
     return (
-      <FormItemContext.Provider value={{ id }}>
+      <FormItemContext.Provider value={value}>
         <div ref={ref} className={cn("flex flex-col gap-2", className)} {...props} />
       </FormItemContext.Provider>
     );
@@ -87,12 +95,14 @@ const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+  const { error, formItemId, formDescriptionId, formMessageId, hasDescription } = useFormField();
+  // Only ids that exist on the page: the description when one is rendered, the message on error.
+  const describedBy = [hasDescription && formDescriptionId, error && formMessageId].filter(Boolean).join(" ");
   return (
     <Slot
       ref={ref}
       id={formItemId}
-      aria-describedby={error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId}
+      aria-describedby={describedBy || undefined}
       aria-invalid={!!error}
       {...props}
     />
@@ -104,7 +114,11 @@ const FormDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField();
+  const { formDescriptionId, setHasDescription } = useFormField();
+  React.useEffect(() => {
+    setHasDescription(true);
+    return () => setHasDescription(false);
+  }, [setHasDescription]);
   return (
     <p
       ref={ref}
@@ -132,7 +146,8 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
         ref={ref}
         id={formMessageId}
         aria-live="polite"
-        className={cn("min-h-0 text-small font-medium text-destructive empty:hidden", className)}
+        // Never display:none: a live region that starts hidden is announced unreliably.
+        className={cn("text-small font-medium text-destructive empty:-mt-2", className)}
         {...props}
       >
         {body}

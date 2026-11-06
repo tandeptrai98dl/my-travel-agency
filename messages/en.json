@@ -124,7 +124,10 @@
       "statusConfirmed": "Confirmed",
       "statusPending": "Awaiting payment",
       "statusCancelled": "Cancelled",
-      "statusGuaranteed": "Guaranteed"
+      "statusGuaranteed": "Guaranteed",
+      "eyebrow": "Phase 1",
+      "switchDemo": "Remind me about new departures",
+      "notification": "Notification"
     }
   },
   "Navigation": {

@@ -3,11 +3,15 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-type TagProps = React.HTMLAttributes<HTMLSpanElement> & {
-  /** When set, a remove button is shown; `removeLabel` names it ("Remove Hạ Long"). */
-  onRemove?: () => void;
-  removeLabel?: string;
-};
+type TagProps = React.HTMLAttributes<HTMLSpanElement> &
+  (
+    | {
+        /** Shows a remove button; `removeLabel` is its required name ("Remove Hạ Long"). */
+        onRemove: () => void;
+        removeLabel: string;
+      }
+    | { onRemove?: never; removeLabel?: never }
+  );
 
 /**
  * Quiet label for filters and taxonomy (destinations, travel styles). Unlike `Badge` it uses
@@ -29,7 +33,7 @@ function Tag({ className, children, onRemove, removeLabel, ...props }: TagProps)
           type="button"
           onClick={onRemove}
           aria-label={removeLabel}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         >
           <X className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
         </button>

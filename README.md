@@ -65,6 +65,7 @@ Never commit real values. `.env.example` lists every variable; `.env.local` is g
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | Local: `PUBLISHABLE_KEY` (or `ANON_KEY`). Hosted: Supabase → API keys → publishable key | `.env.local`; Vercel |
 | `SUPABASE_SECRET_KEY` | **server only** | Local: `SERVICE_ROLE_KEY` (or `SECRET_KEY`). Hosted: Supabase → API keys → secret key. Bypasses RLS | `.env.local`; Vercel (never `NEXT_PUBLIC_`) |
 | `GOOGLE_OAUTH_ENABLED` | server | `true` only after the Google provider is configured in Supabase Auth | `.env.local`; Vercel |
+| `SHOW_DESIGN_SYSTEM` | server | `true` serves the staff-only `/admin/design-system` page in a production build (always on in development) | CI only; optionally Vercel Preview. **Never** Vercel Production |
 | `RESEND_API_KEY`, `EMAIL_FROM` | server | Resend dashboard (Phase 4); also configured as Supabase Auth SMTP in the Supabase dashboard | Vercel |
 | `SENTRY_DSN` | server | Sentry → project settings → Client Keys (DSN) | Vercel |
 | `NEXT_PUBLIC_SENTRY_DSN` | public | Same DSN (it is designed to be public) | Vercel |

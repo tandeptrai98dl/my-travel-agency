@@ -18,22 +18,29 @@ const alertVariants = cva(
   },
 );
 
-const Alert = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
->(({ className, variant, ...props }, ref) => (
+type AlertProps = React.HTMLAttributes<HTMLDivElement> &
+  VariantProps<typeof alertVariants> & {
+    /**
+     * Announce the alert when it appears: "polite" for confirmations, "assertive" for errors the
+     * user must act on now. Static notices ("Almost full" on a tour page) leave it unset.
+     */
+    live?: "polite" | "assertive";
+  };
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(({ className, variant, live, ...props }, ref) => (
   <div
     ref={ref}
-    role={variant === "destructive" ? "alert" : "status"}
+    role={live === "assertive" ? "alert" : live === "polite" ? "status" : undefined}
     className={cn(alertVariants({ variant }), className)}
     {...props}
   />
 ));
 Alert.displayName = "Alert";
 
-const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+/** A paragraph, not a heading, so alerts never break the page's heading order. */
+const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <h5 ref={ref} className={cn("mb-1 font-semibold leading-none", className)} {...props} />
+    <p ref={ref} className={cn("mb-1 font-semibold leading-snug", className)} {...props} />
   ),
 );
 AlertTitle.displayName = "AlertTitle";

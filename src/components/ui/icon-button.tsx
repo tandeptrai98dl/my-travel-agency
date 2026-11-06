@@ -20,7 +20,6 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       variant={variant}
       size="icon"
       aria-label={label}
-      title={label}
       className={cn(size === "sm" && "h-9 w-9", className)}
       {...props}
     >

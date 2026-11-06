@@ -211,7 +211,7 @@ Template:
 ## ADR-022: Libraries for forms and accessibility checks
 
 - **Date:** 2026-11-06
-- **Status:** Accepted (owner allowed the recommended solutions, 2026-11-06)
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution", no further questions); listed in the owner report so it can be reverted
 - **Context:** ADR-014 approved React Hook Form, Zod and Playwright. Phase 1 step 12 wires forms to Zod and step 14 asks for automated accessibility checks, which need two small additions. The shadcn primitives also need their Radix packages.
 - **Decision:**
   - `@hookform/resolvers` connects React Hook Form to Zod schemas (the standard bridge; part of the React Hook Form project).

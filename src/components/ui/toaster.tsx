@@ -53,16 +53,18 @@ const NO_TOASTS: Entry[] = [];
 const getServerSnapshot = () => NO_TOASTS;
 
 type Props = {
-  /** Translated labels: close button and the viewport's landmark ("Notifications ({hotkey})"). */
+  /** Translated labels: the close button, the word announced before each toast ("Notification")
+   * and the toast region's landmark ("Notifications ({hotkey})"; Radix fills in the hotkey). */
   closeLabel: string;
+  toastLabel: string;
   regionLabel: string;
 };
 
 /** Renders queued toasts. Mount once per root layout that uses `toast()`. */
-export function Toaster({ closeLabel, regionLabel }: Props) {
+export function Toaster({ closeLabel, toastLabel, regionLabel }: Props) {
   const queue = React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return (
-    <ToastProvider duration={6000} label={regionLabel}>
+    <ToastProvider duration={6000} label={toastLabel}>
       {queue.map(({ id, open, title, description, variant }) => (
         <Toast
           key={id}
@@ -70,6 +72,8 @@ export function Toaster({ closeLabel, regionLabel }: Props) {
           variant={variant}
           // Errors are announced assertively; confirmations politely.
           type={variant === "destructive" ? "foreground" : "background"}
+          // Errors stay until closed; confirmations close after the provider's 6 s.
+          duration={variant === "destructive" ? Infinity : undefined}
           onOpenChange={(next) => {
             if (!next) dismiss(id);
           }}
@@ -81,7 +85,7 @@ export function Toaster({ closeLabel, regionLabel }: Props) {
           <ToastClose label={closeLabel} />
         </Toast>
       ))}
-      <ToastViewport />
+      <ToastViewport label={regionLabel} />
     </ToastProvider>
   );
 }

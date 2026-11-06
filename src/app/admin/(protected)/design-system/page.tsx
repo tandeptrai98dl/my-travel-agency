@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { RemovableTagDemo } from "@/components/admin/design-system/removable-tag-demo";
 import {
   InteractiveShowcase,
   type ShowcaseLabels,
@@ -25,11 +26,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tag } from "@/components/ui/tag";
 import { STAFF_ROLES } from "@/lib/auth/permissions";
+import { isDesignSystemEnabled } from "@/lib/env/design-system-flag";
 import { serverEnv } from "@/lib/env/server";
 
 import { requireAdminAccess } from "../../admin-gate";
 
-export const metadata: Metadata = { title: "Hệ thống thiết kế" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: "vi", namespace: "Admin.DesignSystem" });
+  return { title: t("metaTitle") };
+}
 
 const COLOUR_TOKENS = [
   "background",
@@ -61,7 +66,7 @@ const BADGE_VARIANTS = ["default", "secondary", "outline", "gold", "success", "w
  * and the check below); in a production build it exists only when SHOW_DESIGN_SYSTEM=true (CI).
  */
 export default async function DesignSystemPage() {
-  if (process.env.NODE_ENV === "production" && !serverEnv.SHOW_DESIGN_SYSTEM) notFound();
+  if (!isDesignSystemEnabled(process.env.NODE_ENV, serverEnv.SHOW_DESIGN_SYSTEM)) notFound();
   await requireAdminAccess(STAFF_ROLES);
   const t = await getTranslations({ locale: "vi", namespace: "Admin.DesignSystem" });
 
@@ -71,6 +76,7 @@ export default async function DesignSystemPage() {
     "errorRequired", "errorEmail", "saved", "savedBody", "failed", "showToast", "showError",
     "openDialog", "openSheet", "dialogTitle", "dialogBody", "tooltip", "tooltipBody", "popover",
     "popoverBody", "tabOne", "tabTwo", "tabOneBody", "tabTwoBody", "faq", "faqBody", "close",
+    "switchDemo", "notification",
   ] as const;
   const labels = {
     ...Object.fromEntries(keys.map((key) => [key, t(key)])),
@@ -88,7 +94,7 @@ export default async function DesignSystemPage() {
     <main className="bg-background text-foreground">
       <Container className="flex flex-col gap-16 py-12">
         <header className="flex flex-col gap-3">
-          <Eyebrow>Phase 1</Eyebrow>
+          <Eyebrow>{t("eyebrow")}</Eyebrow>
           <Heading level={1} size="h1">
             {t("title")}
           </Heading>
@@ -174,6 +180,7 @@ export default async function DesignSystemPage() {
             <StatusBadge kind="booking" status="cancelled" label={t("statusCancelled")} />
             <StatusBadge kind="departure" status="guaranteed" label={t("statusGuaranteed")} />
             <Tag>Hội An</Tag>
+            <RemovableTagDemo label="Kyoto" removeLabel={t("remove", { name: "Kyoto" })} />
           </div>
         </section>
 
@@ -188,7 +195,7 @@ export default async function DesignSystemPage() {
               <AlertTitle>{t("alertTitle")}</AlertTitle>
               <AlertDescription>{t("alertBody")}</AlertDescription>
             </Alert>
-            <Alert variant="destructive">
+            <Alert variant="destructive" live="assertive">
               <AlertTitle>{t("failed")}</AlertTitle>
               <AlertDescription>{t("errorRequired")}</AlertDescription>
             </Alert>

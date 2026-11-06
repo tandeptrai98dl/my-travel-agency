@@ -36,15 +36,15 @@ One pull request per group, one commit per step.
 
 ## Acceptance criteria
 
-- [ ] Tokens and fonts applied; the public site has no dark theme or theme switcher
-- [ ] Contrast unit test passes for every token pair; gold never used as body text on light surfaces
-- [ ] Vietnamese diacritics render without clipping at every type size (design-system page, visual check)
-- [ ] Header, mega menu, mobile nav, footer, language switcher, floating contact button, cookie banner and 404 work on 375 px, 768 px and 1280 px
-- [ ] Company and contact details come from `settings`; destinations from the database; nothing hard-coded
-- [ ] Keyboard: skip link, visible focus, menu and sheet operable and closable with Escape
-- [ ] axe: no serious or critical violations on the checked pages (Lighthouse Accessibility ≥ 95 equivalent)
-- [ ] Initial JS on public pages measured and reported (budget 150 KB gzip)
-- [ ] VI/EN strings for every new UI text; `PROGRESS.md` updated
+- [x] Tokens and fonts applied; the public site has no dark theme or theme switcher
+- [x] Contrast unit test passes for every token pair; gold never used as body text on light surfaces
+- [x] Vietnamese diacritics render without clipping at every type size (design-system page, visual check with the real fonts; re-check on the first Vercel preview)
+- [x] Header, mega menu, mobile nav, footer, language switcher, floating contact button, cookie banner and 404 work on 375 px, 768 px and 1280 px
+- [x] Company and contact details come from `settings`; destinations from the database; nothing hard-coded
+- [x] Keyboard: skip link, visible focus, menu and sheet operable and closable with Escape
+- [x] axe: no serious or critical violations on the checked pages (Lighthouse Accessibility ≥ 95 equivalent; Lighthouse itself on the first Vercel preview)
+- [x] Initial JS on public pages measured and reported (budget 150 KB gzip; over budget, tracked in `PROGRESS.md`)
+- [x] VI/EN strings for every new UI text (key parity unit-tested in `src/i18n/messages.test.ts`); `PROGRESS.md` updated
 
 ## Out of scope
 

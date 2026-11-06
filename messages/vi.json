@@ -124,7 +124,10 @@
       "statusConfirmed": "Đã xác nhận",
       "statusPending": "Chờ thanh toán",
       "statusCancelled": "Đã huỷ",
-      "statusGuaranteed": "Chắc chắn khởi hành"
+      "statusGuaranteed": "Chắc chắn khởi hành",
+      "eyebrow": "Giai đoạn 1",
+      "switchDemo": "Nhắc tôi khi có lịch khởi hành mới",
+      "notification": "Thông báo"
     }
   },
   "Navigation": {

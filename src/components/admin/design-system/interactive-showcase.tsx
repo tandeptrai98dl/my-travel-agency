@@ -87,7 +87,9 @@ export type ShowcaseLabels = Record<
   | "faq"
   | "faqBody"
   | "close"
-  | "notifications",
+  | "notification"
+  | "notifications"
+  | "switchDemo",
   string
 > & { destinations: { key: string; name: string }[] };
 
@@ -177,12 +179,12 @@ export function InteractiveShowcase({ labels }: { labels: ShowcaseLabels }) {
               name="style"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel asChild>
-                    <span>{labels.travelStyle}</span>
-                  </FormLabel>
+                  <p id="ds-style-label" className="text-small font-medium leading-none">
+                    {labels.travelStyle}
+                  </p>
                   <FormControl>
                     <RadioGroup
-                      aria-label={labels.travelStyle}
+                      aria-labelledby="ds-style-label"
                       value={field.value}
                       onValueChange={field.onChange}
                       className="flex gap-6"
@@ -226,7 +228,7 @@ export function InteractiveShowcase({ labels }: { labels: ShowcaseLabels }) {
               )}
             />
             <div className="flex items-center gap-3 md:col-span-2">
-              <Switch id="ds-switch" aria-label={labels.newsletter} />
+              <Switch id="ds-switch" aria-label={labels.switchDemo} />
               <Button type="submit">{labels.submit}</Button>
             </div>
           </form>
@@ -300,7 +302,7 @@ export function InteractiveShowcase({ labels }: { labels: ShowcaseLabels }) {
           </AccordionItem>
         </Accordion>
       </section>
-      <Toaster closeLabel={labels.close} regionLabel={labels.notifications} />
+      <Toaster closeLabel={labels.close} toastLabel={labels.notification} regionLabel={labels.notifications} />
     </TooltipProvider>
   );
 }
