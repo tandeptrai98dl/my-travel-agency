@@ -135,7 +135,10 @@
       "deleteDemo": "Xoá tour mẫu",
       "deleteTitle": "Xoá tour này?",
       "deleteBody": "Tour sẽ bị xoá vĩnh viễn. Không thể hoàn tác.",
-      "deleteConfirm": "Xoá"
+      "deleteConfirm": "Xoá",
+      "mediaPicker": "Chọn ảnh từ thư viện",
+      "openPicker": "Mở thư viện ảnh",
+      "chosen": "Đã chọn {count} ảnh"
     },
     "Nav": {
       "label": "Điều hướng quản trị",
@@ -146,7 +149,9 @@
       "closeMenu": "Đóng menu",
       "groupGeneral": "Chung",
       "groupSystem": "Hệ thống",
-      "site": "Xem trang web"
+      "site": "Xem trang web",
+      "media": "Thư viện ảnh",
+      "groupContent": "Nội dung"
     },
     "Shell": {
       "skipToContent": "Bỏ qua đến nội dung",
@@ -154,7 +159,9 @@
       "mfaVerified": "Đã xác thực hai lớp",
       "mfaNotVerified": "Chưa xác thực hai lớp",
       "breadcrumb": "Đường dẫn",
-      "close": "Đóng"
+      "close": "Đóng",
+      "notification": "Thông báo",
+      "notifications": "Thông báo ({hotkey})"
     },
     "Table": {
       "empty": "Chưa có dữ liệu.",
@@ -171,7 +178,9 @@
       "sortAscending": "bấm để sắp xếp tăng dần",
       "sortDescending": "bấm để sắp xếp giảm dần",
       "outOfRange": "Trang này không còn dữ liệu.",
-      "lastPage": "Về trang cuối ({page})"
+      "lastPage": "Về trang cuối ({page})",
+      "sortBy": "Sắp xếp theo {column}",
+      "error": "Không tải được dữ liệu. Vui lòng thử lại."
     },
     "Form": {
       "vi": "Tiếng Việt",
@@ -225,6 +234,55 @@
       "body": "Đã có lỗi khi tải dữ liệu. Vui lòng thử lại; nếu lỗi lặp lại, hãy báo cho quản trị viên.",
       "reference": "Mã lỗi: {digest}.",
       "retry": "Thử lại"
+    },
+    "Media": {
+      "title": "Thư viện ảnh",
+      "description": "Ảnh dùng cho tour, điểm đến và bài viết. JPEG, PNG, WebP hoặc AVIF, tối đa 20 MB; nên dài ít nhất 2400 px ở cạnh dài.",
+      "upload": "Tải ảnh lên",
+      "chooseFiles": "Chọn ảnh",
+      "dropHint": "hoặc kéo thả ảnh vào đây",
+      "uploading": "Đang tải {name}…",
+      "uploaded": "Đã tải {name}",
+      "uploadFailed": "Không tải được {name}: {reason}",
+      "uploadsTitle": "Tiến trình tải lên",
+      "errors": {
+        "too_large": "ảnh lớn hơn 20 MB",
+        "unsupported_type": "chỉ nhận JPEG, PNG, WebP hoặc AVIF",
+        "unreadable": "không đọc được ảnh",
+        "failed": "có lỗi, vui lòng thử lại",
+        "forbidden": "bạn không có quyền",
+        "invalid": "dữ liệu không hợp lệ",
+        "in_use": "ảnh đang được dùng trong nội dung",
+        "not_found": "ảnh không còn tồn tại"
+      },
+      "search": "Tìm theo mô tả hoặc tên tệp",
+      "empty": "Chưa có ảnh nào.",
+      "edit": "Sửa ảnh",
+      "editTitle": "Thông tin ảnh",
+      "altVi": "Mô tả ảnh (tiếng Việt)",
+      "altEn": "Mô tả ảnh (tiếng Anh)",
+      "altHint": "Mô tả điều ảnh thể hiện cho người không nhìn thấy ảnh. Bắt buộc cả hai ngôn ngữ trước khi dùng trong nội dung đã xuất bản.",
+      "credit": "Ghi công (nhiếp ảnh gia, nguồn)",
+      "save": "Lưu",
+      "saved": "Đã lưu thông tin ảnh",
+      "delete": "Xoá ảnh",
+      "deleteTitle": "Xoá ảnh này?",
+      "deleteBody": "Ảnh sẽ bị xoá khỏi thư viện và kho lưu trữ. Không thể hoàn tác.",
+      "deleted": "Đã xoá ảnh",
+      "deleteFailed": "Không xoá được ảnh: {reason}",
+      "small": "Ảnh nhỏ hơn 2400 px",
+      "smallHint": "Ảnh có thể bị mờ trên màn hình lớn.",
+      "altMissing": "Thiếu mô tả",
+      "dimensions": "{width} × {height} px",
+      "fileSize": "{size} MB",
+      "pickerTitle": "Chọn ảnh",
+      "select": "Chọn",
+      "selectCount": "Chọn {count} ảnh",
+      "selected": "Đã chọn",
+      "loadMore": "Xem thêm",
+      "loading": "Đang tải ảnh",
+      "pickerDescription": "Chọn từ thư viện hoặc tải ảnh mới lên.",
+      "forbidden": "Bạn không có quyền dùng thư viện ảnh."
     }
   },
   "Navigation": {
