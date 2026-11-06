@@ -54,14 +54,19 @@ for (const viewport of [
       });
     }
 
-    test("404 after a consent choice, header scrolled", async ({ page }) => {
+    test("home after a consent choice, header over the hero and scrolled", async ({ page }) => {
       await dismissConsent(page);
-      await page.goto("/en/does-not-exist");
+      await page.goto("/en");
       await expect(page.getByRole("region", { name: /cookie/i })).toBeHidden();
-      await page.mouse.wheel(0, 400);
-      // The sticky header switches to its solid, scrolled state.
-      await expect(page.getByRole("banner")).toHaveClass(/border-b/);
-      await expectNoSeriousViolations(page, "/en/does-not-exist scrolled");
+      const header = page.getByRole("banner");
+      // Transparent over the navy hero first…
+      await expect(header).toHaveClass(/theme-navy/);
+      await expectNoSeriousViolations(page, "/en header over the hero");
+      // …then solid once the page scrolls.
+      await page.mouse.wheel(0, 600);
+      await expect(header).not.toHaveClass(/theme-navy/);
+      await expect(header).toHaveClass(/border-b/);
+      await expectNoSeriousViolations(page, "/en scrolled");
     });
 
     test("cookie settings dialog", async ({ page }) => {
