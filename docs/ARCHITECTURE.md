@@ -205,7 +205,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/profile` |
 
-Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings`, `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
+Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
 Technical routes: `/sitemap.xml`, `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 

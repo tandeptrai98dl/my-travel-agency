@@ -2,11 +2,16 @@ import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
 import { ADMIN_NAV } from "@/components/admin/nav-items";
 import { PageHeader } from "@/components/admin/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { type CurrentUser } from "@/lib/auth/get-user";
 import { can, STAFF_ROLES } from "@/lib/auth/permissions";
 import { designSystemEnabled } from "@/lib/env/flags";
+import { attentionCount } from "@/modules/booking/booking-admin.service";
+import { unmatchedTransferCount } from "@/modules/payment/payment-admin.service";
 
 import { requireAdminAccess } from "../admin-gate";
 
@@ -59,6 +64,12 @@ export default async function AdminHomePage() {
         </dl>
       </section>
 
+      {can(user.role, "bookings.read") && (
+        <Suspense fallback={<Skeleton className="h-24 w-full" aria-hidden="true" />}>
+          <WorkCounts user={user} />
+        </Suspense>
+      )}
+
       <section aria-labelledby="dashboard-shortcuts-title" className="flex flex-col gap-6">
         <h2 id="dashboard-shortcuts-title" className="font-serif text-h3 font-semibold lg:text-h3-lg">
           {t("Dashboard.sectionsTitle")}
@@ -86,5 +97,38 @@ export default async function AdminHomePage() {
         ))}
       </section>
     </div>
+  );
+}
+
+/** Counts of what needs a person today, for the roles that work bookings (spec Phase 4 step 18). */
+async function WorkCounts({ user }: { user: CurrentUser }) {
+  const t = await getTranslations({ locale: "vi", namespace: "Admin" });
+  const [attention, unmatched] = await Promise.all([attentionCount(), unmatchedTransferCount(user.role)]);
+  const items = [
+    { id: "attention", href: "/admin/bookings/attention", label: t("Work.attention", { count: attention }), count: attention },
+    ...(can(user.role, "payments.record")
+      ? [{ id: "unmatched", href: "/admin/payments#unmatched", label: t("Work.unmatched", { count: unmatched }), count: unmatched }]
+      : []),
+  ];
+  return (
+    <section aria-labelledby="dashboard-work-title" className="flex flex-col gap-4">
+      <h2 id="dashboard-work-title" className="font-serif text-h3 font-semibold lg:text-h3-lg">
+        {t("Work.title")}
+      </h2>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {items.map((item) => (
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              data-testid={`work-${item.id}`}
+              className={`flex h-full items-center justify-between gap-2 rounded-lg border bg-card p-4 font-medium transition-colors duration-200 hover:border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${item.count > 0 ? "border-warning/60" : "border-border"}`}
+            >
+              {item.label}
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
