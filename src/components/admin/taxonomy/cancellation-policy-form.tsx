@@ -56,7 +56,11 @@ export function CancellationPolicyForm({
       setAlert(applyErrors(form, result));
       return;
     }
-    toast({ title: t("saved"), variant: "success" });
+    toast(
+      result.warning
+        ? { title: errorText(result.warning), variant: "destructive" }
+        : { title: t("saved"), variant: "success" },
+    );
     if (!initial.id && result.id) router.push(`/admin/cancellation-policies/${result.id}`);
     else router.refresh();
   }

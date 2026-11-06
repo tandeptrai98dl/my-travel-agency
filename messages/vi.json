@@ -388,7 +388,8 @@
         "invalid": "Dữ liệu chưa hợp lệ.",
         "in_use": "Đang được tour hoặc mục con sử dụng, không xoá được.",
         "default_required": "Phải luôn có một chính sách mặc định. Hãy chọn chính sách khác làm mặc định trước.",
-        "is_default": "Không xoá được chính sách mặc định. Hãy chọn chính sách khác làm mặc định trước."
+        "is_default": "Không xoá được chính sách mặc định. Hãy chọn chính sách khác làm mặc định trước.",
+        "default_not_moved": "Đã lưu chính sách nhưng chưa đặt được làm mặc định. Vui lòng thử lại."
       },
       "defaultHint": "Chính sách mặc định không bỏ chọn được; hãy đặt chính sách khác làm mặc định."
     }

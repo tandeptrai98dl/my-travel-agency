@@ -38,7 +38,8 @@ export function useActionErrors() {
 export function errorPaths(errors: object, prefix = ""): string[] {
   const out: string[] = [];
   for (const [key, value] of Object.entries(errors)) {
-    if (!value || typeof value !== "object") continue;
+    // `ref` holds the field's DOM element, not nested errors.
+    if (key === "ref" || !value || typeof value !== "object") continue;
     const path = prefix ? `${prefix}.${key}` : key;
     if ("message" in value && typeof (value as { message?: unknown }).message === "string") out.push(path);
     else out.push(...errorPaths(value, path));

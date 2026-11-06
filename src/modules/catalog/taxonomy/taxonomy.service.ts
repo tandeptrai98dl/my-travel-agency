@@ -37,7 +37,7 @@ export type SaveError =
   | "hero_alt_missing"
   | "not_found"
   | "failed";
-export type SaveResult = { ok: true; id: string } | { ok: false; error: SaveError; field?: string };
+export type SaveResult = { ok: true; id: string; warning?: "default_not_moved" } | { ok: false; error: SaveError; field?: string };
 export type DeleteResult = { ok: true } | { ok: false; error: "in_use" | "is_default" | "not_found" | "failed" };
 
 type LocaleState = { exists: boolean; published: boolean };
@@ -496,7 +496,9 @@ export async function saveCancellationPolicy(values: CancellationPolicyValues): 
     const moved = await repo.setDefaultCancellationPolicy(id);
     if (moved.error) {
       updateTag(CANCELLATION_POLICIES_TAG);
-      return mapWriteError(moved.error);
+      // The policy itself was saved: return its id so the editor moves to it (no duplicate on retry).
+      const failure = mapWriteError(moved.error);
+      return existing ? failure : { ok: true, id, warning: "default_not_moved" };
     }
   }
   updateTag(CANCELLATION_POLICIES_TAG);

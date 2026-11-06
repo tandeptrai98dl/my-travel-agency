@@ -22,7 +22,7 @@ Branch `feat/p2-taxonomy` (`docs/specs/phase-2-catalog-admin.md` steps 8–10).
     - `is_valid_cancellation_rules()` (1–10 tiers, days falling to 0, refunds never growing; missing keys, non-objects and nulls refused);
     - keys of published destinations and travel styles locked by a trigger;
     - a single default policy, moved in one transaction by `set_default_cancellation_policy()` (security invoker) and never switched off or deleted (deferred constraint trigger).
-    - pgTAP: 27 assertions.
+    - pgTAP: 28 assertions.
   - `src/modules/catalog/taxonomy`: Zod schemas, repository, service and Server Actions.
     - Keys are fixed once published.
     - Publishing with a hero image needs its VI/EN alt text.
@@ -44,7 +44,7 @@ Branch `feat/p2-taxonomy` (`docs/specs/phase-2-catalog-admin.md` steps 8–10).
   - Shared pieces: `AdminMessages` gives a page's client components only its admin strings; `FormField` accepts schemas that transform values; `StatusBadge` maps `publish_status`.
 - Verified locally:
   - lint, typecheck, 234 unit tests (schemas, including parsing their own output again; service rules; action order);
-  - pgTAP on the local Postgres shim: 121 assertions, all four files;
+  - pgTAP on the local Postgres shim: 122 assertions, all four files;
   - production build.
   - The destination tree, the destination, travel style and policy forms (empty and with errors) were rendered against the REST stub with a temporarily faked admin (not committed): no axe violations at 1280 or 375 px. The narrow layout of the policy rules was fixed after the screenshots.
   - Signed-in E2E (CI only; results in the PR): the editor builds and deletes a country → region branch with the publish checks; a slug already in use is caught on blur; editor and operator are blocked from the pages they cannot use; the aal2 admin creates a policy, and rules out of order are refused.

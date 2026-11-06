@@ -16,7 +16,7 @@ import * as service from "./taxonomy.service";
 
 export type FieldErrors = Record<string, string>;
 export type ActionResult =
-  | { ok: true; id?: string }
+  | { ok: true; id?: string; warning?: string }
   | { ok: false; error: string; field?: string; fields?: FieldErrors };
 
 /** Zod issues → { "translations.vi.name": "required" } for the form. */

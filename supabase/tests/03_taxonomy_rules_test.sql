@@ -1,7 +1,7 @@
 -- Taxonomy and cancellation-policy rules (docs/specs/phase-2-catalog-admin.md decisions 3–4,
 -- steps 8–10).
 begin;
-select plan(27);
+select plan(28);
 
 insert into public.destinations (id, key, type, parent_id) values
   ('50000000-0000-4000-8000-000000000201', 'rules-country', 'country', null),
@@ -110,6 +110,11 @@ select throws_ok(
   $$ update public.destinations set key = 'renamed' where id = '50000000-0000-4000-8000-000000000201' $$,
   '23514', null, 'a published destination keeps its key'
 );
+update public.travel_styles set status = 'published' where id = '60000000-0000-4000-8000-000000000201';
+select throws_ok(
+  $$ update public.travel_styles set key = 'renamed' where id = '60000000-0000-4000-8000-000000000201' $$,
+  '23514', null, 'a published travel style keeps its key'
+);
 select lives_ok(
   $$ update public.destinations set key = 'rules-region-2' where id = '50000000-0000-4000-8000-000000000202' $$,
   'a draft destination may change its key'
@@ -120,7 +125,10 @@ insert into public.cancellation_policies (id, name, rules, summary) values
   ('70000000-0000-4000-8000-000000000201', 'Rules policy',
    '[{"min_days_before": 0, "refund_percent": 0}]', '{"vi": "x", "en": "x"}');
 select lives_ok(
-  $$ select public.set_default_cancellation_policy('70000000-0000-4000-8000-000000000201') $$,
+  $$ do $d$ begin
+       perform public.set_default_cancellation_policy('70000000-0000-4000-8000-000000000201');
+       set constraints all immediate;
+     end $d$ $$,
   'the default can be moved to another policy'
 );
 select is(
