@@ -23,10 +23,12 @@ env:
   SUPABASE_SECRET_KEY: sb_secret_ci_sentinel_value_never_in_client
   CRON_SECRET: ci_cron_sentinel_never_in_client
 
+# Runners are pinned to Ubuntu 24.04: `ubuntu-latest` moved to 26.04, where Playwright's
+# system-dependency list does not install yet. Revisit when Playwright supports 26.04.
 jobs:
   checks:
     name: Lint, typecheck, unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +43,7 @@ jobs:
 
   database:
     name: Database (migrations, pgTAP, lint, types)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +97,7 @@ jobs:
 
   build-e2e:
     name: Build and E2E
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -123,10 +125,14 @@ jobs:
         run: npm run seed:users
       # The app keeps the sentinel SUPABASE_SECRET_KEY and CRON_SECRET from the workflow env:
       # Phase 0 never uses the service role in the app, and the leak check below needs them.
+      # A fake public Sentry DSN, so the browser SDK is built in and its scrubbing can be tested
+      # (monitoring.spec.ts intercepts its requests; a stray browser error in another spec would be
+      # rejected by Sentry, since the key is fake). No server DSN is set.
       - name: Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
+          NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
         run: npm run build
       - name: Check that server-only values did not leak into client bundles
         run: |
@@ -147,19 +153,35 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}-chromium
+      # apt mirrors on hosted runners occasionally stall; retry each install with its own timeout.
       - name: Install Playwright browser
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-        timeout-minutes: 5
+        run: |
+          for attempt in 1 2 3; do
+            timeout -k 15 240 npx playwright install --with-deps chromium && exit 0
+            echo "Attempt $attempt failed or timed out; retrying." >&2
+            # A killed apt/dpkg run can leave the package database half-configured.
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+        timeout-minutes: 14
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-        timeout-minutes: 5
+        run: |
+          for attempt in 1 2 3; do
+            timeout -k 15 180 npx playwright install-deps chromium && exit 0
+            echo "Attempt $attempt failed or timed out; retrying." >&2
+            # A killed apt/dpkg run can leave the package database half-configured.
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+        timeout-minutes: 10
       - name: E2E tests
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
+          NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
           # Test setup only (generating email-link tokens); the app keeps the sentinel key.
           E2E_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           E2E_SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}

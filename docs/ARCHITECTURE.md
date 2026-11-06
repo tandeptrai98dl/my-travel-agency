@@ -204,7 +204,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 
 Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings`, `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
-Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/auth/confirm`, `/auth/callback`.
+Technical routes: `/sitemap.xml`, `/robots.txt`, `/api/og`, `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 
 ## Security
 
