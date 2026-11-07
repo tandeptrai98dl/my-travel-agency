@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 4 code-complete (acceptance needs the owner's payment sandbox and staging); 3 in progress (PR M left); 5 starting (spec); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 5 spec, then accounts, booking lookup, inquiry inbox and operations, plus a small Phase 4 polish. Stream B: Phase 3 PR M (SEO, CSP, redirects, real 404/308, JS budget, online-booking availability), then the Phase 5 tailor-made wizard. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance items wait for the owner's Vercel, Upstash and VNPay accounts); 5 in progress; Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 5 PRs 5A–5D (accounts, booking lookup, inquiry inbox, operations). Stream B: Phase 5 PR 5W (tailor-made wizard), with the PR M backlog first. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -13,7 +13,6 @@ Update this log at the start and end of each work session. Newest first.
 Open items:
 - Publishing a language in the journal, page and taxonomy editors does not yet remove a redirect from that path (tours do, #22).
 - Email client (`email.service.ts`): `skipped` rows in `email_logs` and status-code-only error logs, in Phase 4 PR 4E.
-- Phase 3 (PR 15 and PR 18 reviews): PR M must serve real 404s for unpublished tours and real 308s for other-language slugs (E2E on status codes); name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
 - Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
 - Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
@@ -22,9 +21,39 @@ Open items:
 - Contact form and newsletter stay disabled until the owner's Turnstile, Upstash and Resend keys exist and a privacy policy is published.
 
 - Emails (PR 4E review): alert or runbook for `email_logs` rows stuck in `queued` and for `failed` sends, plus a staff "resend"; `skipped` keys are spent for good (README); the emailed access token is reusable for 7 days (record or make single use); payment-link email through `after()`.
-- Before staging (PR L review): the trust bar and booking box must claim online payment only when a payment method is configured (PR M).
+
+- Phase 3 (PR M review): skip the Redis lookup for paths that fail `isSitePath`; measure the 50 ms redirect timeout on cold starts on staging; write cross-language slug pairs to Redis (Next 16.4.5 308-without-Location issue); check a sitemap build during a Supabase outage; `bankAccount()` must throw so read errors use the 30 s cache profile; one source for the public and secure CSP path lists.
+- Emails (PR 4 polish review): window failed emails on a `failed_at` time, not the claim time; nothing reads failed pg_cron runs yet (Phase 6 alerting); expired access-token cleanup (Phase 6 housekeeping).
 
 ## Log
+
+### 2026-11-07 (Phase 3 — PR M: SEO completion, CSP, redirects, status codes)
+
+PR #40, branch `feat/p3-seo`.
+
+- #35 backlog first: `onlineBookingAvailable()` (booking button, deposit note and trust bar only when a payment method is configured), `Object.hasOwn` filter keys, desktop filters as a plain section, future-dated posts hidden, contact prefill E2E.
+- Real 308 (other-language slug) and 404 (missing or unpublished) via `slugParams()`; sitemap index with per-type sitemaps; `robots.txt`.
+- CSP per page type: static nonce-free policy for public pages and `/auth/*`; admin now fully dynamic with a proxy nonce; Sentry in every policy; an E2E fixture fails any test on a CSP violation.
+- Redis redirects in the proxy: site-path checks, never decoded, 301/302 only, 50 ms timeout failing open, 60 s cache; Upstash required in production.
+- JS budget enforced in CI (`/tours` 149.9 KB); Turbopack proof in CI; shared `zod-config`.
+- Known Next.js 16.4.5 issue: after a tag refresh a re-rendered redirect is stored as a 308 without `Location` (browsers follow, crawlers don't until the next build); mitigation planned via Redis.
+- Independent review: approved; backlog below.
+
+### 2026-11-07 (Phase 4 — polish)
+
+PR #39, branch `fix/p4-polish` (ADR-038).
+
+- `email-problems-alert` pg_cron job fails on emails stuck in `queued` or recently `failed`; README runbook; staff "resend" for customer emails with a fresh key.
+- Single-use emailed access tokens (`booking_access_tokens`, hash only, 7 days); the click sets a fresh signed cookie.
+- Payment-link email sent through `after()`.
+- Independent review: approved.
+
+### 2026-11-07 (Phase 5 — spec)
+
+PR #37, branch `docs/p5-spec` (ADR-037).
+
+- `docs/specs/phase-5-accounts-inquiries-operations.md`: Stream A PRs 5A–5D (customer auth and account area, customer-safe reads, booking lookup, inquiry inbox, reminders, alerts, dashboard, CSV, deletion and export), Stream B PR 5W (tailor-made wizard).
+- Independent review: changes requested (booking attachment relied on a hosted setting; deletion missed tables; stored overdue flag; inquiry permissions beyond the matrix), fixed; re-review approved.
 
 ### 2026-11-07 (Phase 4 — 4E: transactional emails)
 
