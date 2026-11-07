@@ -4,22 +4,25 @@ import { getTranslations } from "next-intl/server";
 import { Price } from "@/components/typography/price";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { bookingHref } from "@/lib/booking-href";
 import { formatDate } from "@/lib/dates";
 import { features } from "@/lib/features";
 import type { Locale } from "@/modules/catalog/public/types";
 
 type Props = {
   locale: Locale;
-  tour: { code: string; type: "group" | "private"; fromPrice: number; depositPercent: number; minTierPrice: number | null };
+  tour: { code: string; slug: string; type: "group" | "private"; fromPrice: number; depositPercent: number; minTierPrice: number | null };
   /** Bookable departures, earliest first (live). Empty for private tours. */
-  bookable: { startDate: string; priceAdult: number }[];
+  bookable: { id: string; startDate: string; priceAdult: number }[];
   contact: { phone: string | null; email: string | null };
 };
 
 /**
- * Price and the one primary action of the tour page. Until online booking ships (Phase 4,
- * decision 9) the action opens the contact page with the tour code and the next date, and the
- * hotline is the quieter alternative (before the contact page existed: hotline, then email).
+ * Price and the one primary action of the tour page. A group tour with a bookable departure opens
+ * the book-now flow on its earliest date (`bookingHref`, Phase 4 decision 13; the booking page
+ * lets the visitor change it). Private tours, group tours without a bookable date, and every
+ * tour while `features.booking` is off open the contact page with the tour code (and date); the
+ * hotline is the quieter alternative.
  */
 export async function BookingBox({ locale, tour, bookable, contact }: Props) {
   const t = await getTranslations({ locale, namespace: "TourDetail.booking" });
@@ -33,6 +36,7 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
   const tel = contact.phone ? `tel:${contact.phone.replace(/[^+\d]/g, "")}` : null;
   const contactPage = features.contactPage;
   const mail = !contactPage && contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent(t("emailSubject", { code: tour.code }))}` : null;
+  const book = features.booking && !isPrivate && next ? bookingHref(locale, tour.slug, { departureId: next.id }) : null;
 
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-6 md:p-8">
@@ -53,7 +57,12 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
         </p>
       )}
       <div className="flex flex-col gap-3">
-        {contactPage && (
+        {book && (
+          <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+            <a href={book}>{t("book")}</a>
+          </Button>
+        )}
+        {contactPage && !book && (
           <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <Link href={{ pathname: "/contact", query: { tour: tour.code, ...(next && !isPrivate ? { date: next.startDate } : {}) } }}>
               {isPrivate ? t("contactPrivate") : t("contact")}
@@ -61,7 +70,7 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
           </Button>
         )}
         {tel && (
-          <Button asChild variant={contactPage ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+          <Button asChild variant={contactPage || book ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <a href={tel}>
               <Phone aria-hidden="true" strokeWidth={1.5} />
               {isPrivate ? t("callPrivate", { phone: contact.phone! }) : t("call", { phone: contact.phone! })}
@@ -77,7 +86,9 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
           </Button>
         )}
       </div>
-      <p className="text-small text-muted-foreground">{t("note", { deposit: tour.depositPercent })}</p>
+      <p className="text-small text-muted-foreground">
+        {features.booking ? t("noteOnline", { deposit: tour.depositPercent }) : t("note", { deposit: tour.depositPercent })}
+      </p>
     </div>
   );
 }

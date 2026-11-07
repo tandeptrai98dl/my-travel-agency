@@ -319,6 +319,7 @@ async function LiveBookingBox({
       locale={locale}
       tour={{
         code: tour.code,
+        slug: tour.slug,
         type: tour.type,
         fromPrice: tour.fromPrice,
         depositPercent: tour.depositPercent,

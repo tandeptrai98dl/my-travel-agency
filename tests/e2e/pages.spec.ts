@@ -92,12 +92,21 @@ test.describe("static pages, journal, reviews and contact", () => {
   });
 
   test("contact: details from settings, a disabled form without its services, prefilled from a tour", async ({ page }) => {
+    // A group tour with a bookable date opens the book-now flow on its earliest date (Phase 4).
     await page.goto("/tours/du-thuyen-vinh-ha-long");
-    const book = page.getByRole("complementary", { name: "Đặt tour" }).getByRole("link", { name: "Liên hệ đặt chỗ" });
-    await expect(book).toHaveAttribute("href", /^\/lien-he\?tour=VN-HLB-03&date=\d{4}-\d{2}-\d{2}$/);
-    await book.click();
+    const box = page.getByRole("complementary", { name: "Đặt tour" });
+    await expect(box.getByRole("link", { name: "Đặt tour này" })).toHaveAttribute(
+      "href",
+      /^\/dat-tour\/du-thuyen-vinh-ha-long\?departure=[0-9a-f-]{36}$/,
+    );
+    await expect(box.getByRole("link", { name: "Liên hệ đặt chỗ" })).toHaveCount(0);
+    // A private tour asks for a quote through the contact page, which names the tour.
+    await page.goto("/tours/di-san-hoi-an-hue");
+    const quote = page.getByRole("complementary", { name: "Đặt tour" }).getByRole("link", { name: "Yêu cầu báo giá riêng" });
+    await expect(quote).toHaveAttribute("href", "/lien-he?tour=VN-HER-05");
+    await quote.click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Liên hệ");
-    await expect(page.getByRole("textbox", { name: "Lời nhắn" })).toHaveValue(/^Tôi muốn đặt tour VN-HLB-03, khởi hành \d{2}\/\d{2}\/\d{4}\.$/);
+    await expect(page.getByRole("textbox", { name: "Lời nhắn" })).toHaveValue("Tôi muốn hỏi về tour VN-HER-05.");
     await expect(page.getByRole("textbox", { name: "Họ và tên" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Gửi lời nhắn" })).toBeDisabled();
     await expect(page.getByText(/Biểu mẫu sẽ sớm mở/)).toBeVisible();

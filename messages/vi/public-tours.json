@@ -105,7 +105,9 @@
       "email": "Gửi email cho chúng tôi",
       "emailSubject": "Đặt chỗ tour {code}",
       "note": "Đặt cọc {deposit}%. Thanh toán trực tuyến sẽ có trên trang này trong thời gian tới.",
-      "unavailable": "Chưa tải được ngày khởi hành."
+      "unavailable": "Chưa tải được ngày khởi hành.",
+      "book": "Đặt tour này",
+      "noteOnline": "Đặt cọc {deposit}% khi thanh toán trực tuyến; phần còn lại trước ngày khởi hành. Giá được tính lại khi bạn đặt."
     },
     "related": {
       "eyebrow": "Có thể bạn quan tâm",

@@ -105,7 +105,9 @@
       "email": "Email us",
       "emailSubject": "Booking tour {code}",
       "note": "{deposit}% deposit. Online payment arrives on this page soon.",
-      "unavailable": "The departures could not be loaded."
+      "unavailable": "The departures could not be loaded.",
+      "book": "Book this journey",
+      "noteOnline": "Pay a {deposit}% deposit online; the rest before departure. The price is confirmed when you book."
     },
     "related": {
       "eyebrow": "You may also like",

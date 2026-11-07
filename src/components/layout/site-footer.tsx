@@ -98,7 +98,7 @@ export async function SiteFooter({ settings, brandName, locale, policyLinks }: P
                 {t("faq")}
               </Link>
             </li>
-            {features.booking && (
+            {features.bookingLookup && (
               <li>
                 <Link href="/booking-lookup" className={linkClass}>
                   {t("bookingLookup")}
