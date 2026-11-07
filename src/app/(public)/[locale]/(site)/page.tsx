@@ -17,6 +17,7 @@ import { getPathname } from "@/i18n/navigation";
 import { isLocale, routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
+import { onlineBookingAvailable } from "@/modules/catalog/public/online-booking.service";
 import { getHomepage } from "@/modules/content/public/homepage";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -63,11 +64,12 @@ export default async function HomePage({ params }: Props) {
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
 
-  const [home, settings, destinationTree, brand] = await Promise.all([
+  const [home, settings, destinationTree, brand, onlinePayment] = await Promise.all([
     getHomepage(locale),
     getPublicSettings(),
     getDestinationTree(locale),
     brandName(locale),
+    onlineBookingAvailable(),
   ]);
 
   return (
@@ -84,7 +86,7 @@ export default async function HomePage({ params }: Props) {
         styles={home.travelStyles.map(({ key, name }) => ({ key, name }))}
         months={home.searchMonths}
       />
-      <TrustBar locale={locale} settings={settings} />
+      <TrustBar locale={locale} settings={settings} onlinePayment={onlinePayment} />
       <FeaturedTours locale={locale} tours={home.featuredTours} />
       <DestinationShowcase locale={locale} destinations={home.destinations} flushTop={home.featuredTours.length > 0} />
       <TravelStyleCards locale={locale} styles={home.travelStyles} />

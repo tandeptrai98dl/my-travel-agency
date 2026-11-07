@@ -12,6 +12,7 @@ import { itemListJsonLd } from "@/components/seo/item-list-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getPathname, Link } from "@/i18n/navigation";
 import { isLocale, routing } from "@/i18n/routing";
+import { slugParams } from "@/i18n/static-params";
 import { openGraphImageUrl } from "@/lib/images";
 import { siteUrl } from "@/lib/site-url";
 import {
@@ -29,8 +30,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NONE = "no-published-style";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = isLocale(params.locale) ? await getPublishedTravelStyleSlugs(params.locale) : [];
-  return (slugs.length ? slugs : [NONE]).map((slug) => ({ slug }));
+  return slugParams(params.locale, getPublishedTravelStyleSlugs, NONE);
 }
 
 async function load(raw: string, slug: string): Promise<{ locale: Locale; page: TravelStylePage }> {

@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
 
@@ -14,12 +14,20 @@ async function dismissConsent(page: Page) {
   await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
 }
 
+/**
+ * A page that does not exist in this language. Slugs listed at build time (the other language's
+ * published slugs) answer a real 404 at once. An unknown slug's first visit gets the prerendered
+ * fallback shell (200, noindex) while the page renders; from then on the stored page answers 404
+ * (Phase 3 spec step 22).
+ */
 async function expectNotFound(page: Page, path: string, title: string) {
-  await page.goto(path);
-  // The not-found UI streams after the shell (Cache Components), so the status is 200 with a
-  // noindex robots tag rather than 404 (see the PR's deviations).
+  const response = await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
   await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+  if (response?.status() !== 404) {
+    expect(response?.status()).toBe(200);
+    await expect.poll(async () => (await page.request.get(path, { maxRedirects: 0 })).status(), { timeout: 15_000 }).toBe(404);
+  }
 }
 
 test.describe("tour detail", () => {
@@ -66,6 +74,7 @@ test.describe("tour detail", () => {
   });
 
   test("a slug of the other language redirects to this language's slug", async ({ page }) => {
+    // The status codes are checked on the fresh build in status-codes.spec.ts.
     await page.goto("/en/tours/du-thuyen-vinh-ha-long");
     await expect(page).toHaveURL(new RegExp(`${GROUP_EN}$`));
   });

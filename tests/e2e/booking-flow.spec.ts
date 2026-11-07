@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 import { adminApi } from "./support/admin-api";
 import { expectNoSeriousViolations } from "./support/axe";
@@ -33,10 +33,9 @@ async function watchCsp(page: Page) {
     );
   });
 }
-// The Sentry ingest host is not in connect-src yet: a known issue PR M closes with the public
-// CSP (PROGRESS.md), so its report is left out here.
-const violations = async (page: Page) =>
-  (await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? [])).filter((entry) => !/ingest\.sentry\.io/.test(entry));
+// The Sentry ingest host is in connect-src since Phase 3 PR M; the shared guard (support/test.ts)
+// also fails a test on any violation.
+const violations = async (page: Page) => page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
 
 let code = "";
 

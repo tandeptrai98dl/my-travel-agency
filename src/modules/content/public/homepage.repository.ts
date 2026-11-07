@@ -65,6 +65,8 @@ export async function findLatestPosts(locale: Locale, limit: number) {
        post_translations!inner(slug, title, excerpt, locale, is_published)`,
     )
     .eq("status", "published")
+    // Scheduled articles (published_at in the future) are not public yet.
+    .lte("published_at", new Date().toISOString())
     .eq("post_translations.locale", locale)
     .eq("post_translations.is_published", true)
     .order("published_at", { ascending: false })

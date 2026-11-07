@@ -57,6 +57,15 @@ describe("search arguments", () => {
     expect(known.style).toEqual(["family"]);
   });
 
+  it("never takes inherited object keys for destinations or styles", () => {
+    const known = knownCriteria({ ...EMPTY_TOUR_SEARCH, dest: ["constructor", "tostring", "vietnam"], style: ["constructor", "hasownproperty"] }, options);
+    expect(known.dest).toEqual(["vietnam"]);
+    expect(known.style).toEqual([]);
+    const args = searchArgs("vi", { ...EMPTY_TOUR_SEARCH, dest: ["constructor"], style: ["constructor"] }, options);
+    expect(args.destinationIds).toEqual([]);
+    expect(args.travelStyleIds).toEqual([]);
+  });
+
   it("expands destinations to their children, months to first days, pages to offsets", () => {
     const args = searchArgs(
       "vi",

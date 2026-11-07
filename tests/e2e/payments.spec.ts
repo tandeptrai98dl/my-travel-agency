@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 import { adminApi } from "./support/admin-api";
 import { booking, closeTestDepartures, heldBooking, pay, testDeparture, vnpaySign } from "./support/booking";

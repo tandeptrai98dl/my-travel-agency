@@ -157,6 +157,20 @@ describe("serverEnvSchema", () => {
     });
     expect(env.UPSTASH_REDIS_REST_TOKEN).toBe("token");
   });
+
+  it("requires Upstash in production only", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", VERCEL_ENV: "production" })).toThrow(
+      /required in production/,
+    );
+    expect(parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", VERCEL_ENV: "preview" }).UPSTASH_REDIS_REST_URL).toBeUndefined();
+    const env = parseEnv("server", serverEnvSchema, {
+      SUPABASE_SECRET_KEY: "sb_secret_example",
+      VERCEL_ENV: "production",
+      UPSTASH_REDIS_REST_URL: "https://eu1.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+    });
+    expect(env.VERCEL_ENV).toBe("production");
+  });
 });
 
 describe("payment variables", () => {

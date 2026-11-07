@@ -147,9 +147,15 @@ jobs:
             echo "A server-only environment value was found in client bundles." >&2
             exit 1
           fi
-      # Initial JS on public pages (Phase 3 spec decision 16): a warning until PR M enforces it.
+      # The production build is Turbopack (the Next.js 16 default), so the E2E run below (CSP nonces
+      # on the admin and checkout, real 308 and 404 status codes) is the Turbopack proof that local
+      # webpack builds cannot give (ADR-027, Phase 3 spec decision 13). Only Turbopack writes this
+      # manifest for the proxy's matchers.
+      - name: Confirm the build used Turbopack
+        run: ls .next/static/*/_clientMiddlewareManifest.js
+      # Initial JS on public pages (Phase 3 spec decision 16): over 150 KB gzip fails the build.
       - name: Check the initial JavaScript budget
-        run: node scripts/check-js-budget.mjs
+        run: node scripts/check-js-budget.mjs --enforce
       # Cache the downloaded browser per Playwright version and runner image,
       # so most runs skip the download and only install system libraries.
       - name: Get Playwright version and runner image

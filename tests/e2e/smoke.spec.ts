@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 test("Vietnamese home page is served without a prefix", async ({ page }) => {
   const response = await page.goto("/");

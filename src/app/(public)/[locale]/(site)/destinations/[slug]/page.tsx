@@ -14,6 +14,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { RichText } from "@/components/typography/rich-text";
 import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname } from "@/i18n/navigation";
+import { slugParams } from "@/i18n/static-params";
 import { isLocale, routing } from "@/i18n/routing";
 import { openGraphImageUrl } from "@/lib/images";
 import { siteUrl } from "@/lib/site-url";
@@ -32,8 +33,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NONE = "no-published-destination";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = isLocale(params.locale) ? await getPublishedDestinationSlugs(params.locale) : [];
-  return (slugs.length ? slugs : [NONE]).map((slug) => ({ slug }));
+  return slugParams(params.locale, getPublishedDestinationSlugs, NONE);
 }
 
 async function load(raw: string, slug: string): Promise<{ locale: Locale; page: DestinationPage }> {

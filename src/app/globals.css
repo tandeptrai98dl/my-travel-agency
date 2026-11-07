@@ -110,57 +110,42 @@ html[data-consent-open] {
   scroll-padding-bottom: calc(var(--consent-banner-h, 26rem) + 1rem);
 }
 
-/* Tour listing filters (docs/specs/tour-listing.md §2.2): one <dialog> that is an inline column
-   on large screens and, once the page's JavaScript runs, a modal sheet below them (full screen on
-   phones, a right-hand panel on tablets). Without JavaScript it stays an inline block everywhere. */
-.filter-panel {
-  display: block;
-  position: static;
+/* Tour listing filters: a plain column inside the listing form from lg (and on every width
+   without JavaScript); below lg, once the page's JavaScript runs, the column gives way to the sheet,
+   a native modal dialog (full screen on phones, a right-hand panel on tablets). */
+@media (max-width: 1023.98px) {
+  [data-js] .filter-column {
+    display: none;
+  }
+}
+/* With JavaScript the column's changes apply at once: no Apply button. */
+[data-js] .filter-column .filter-apply {
+  display: none;
+}
+.filter-sheet[open] {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
   margin: 0;
   padding: 0;
   border: 0;
-  background: transparent;
-  color: inherit;
-  width: auto;
+  width: 100%;
   max-width: none;
-  height: auto;
-  max-height: none;
-  overflow: visible;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
-.filter-panel::backdrop {
+.filter-sheet::backdrop {
   background: hsl(var(--navy) / 0.55);
 }
-@media (max-width: 1023.98px) {
-  [data-js] .filter-panel:not([open]) {
-    display: none;
-  }
-  .filter-panel[open] {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    background: hsl(var(--background));
-  }
-}
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  .filter-panel[open] {
+@media (min-width: 768px) {
+  .filter-sheet[open] {
     left: auto;
     max-width: 28rem;
     border-left: 1px solid hsl(var(--border));
-  }
-}
-/* The sheet's header and Reset button exist only while it is open as a modal. */
-.filter-panel:not([open]) .filter-sheet-only {
-  display: none;
-}
-@media (min-width: 1024px) {
-  /* Filters apply at once on large screens when JavaScript runs: no Apply button there. */
-  [data-js] .filter-panel .filter-apply {
-    display: none;
   }
 }
 

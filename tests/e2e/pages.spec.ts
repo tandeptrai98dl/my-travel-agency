@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
 
@@ -77,6 +77,12 @@ test.describe("static pages, journal, reviews and contact", () => {
     expect(article).toMatchObject({ headline: "Một ngày trên vịnh Lan Hạ", inLanguage: "vi" });
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "article");
 
+    // A scheduled article (published, published_at tomorrow) is not public yet.
+    await page.goto("/journal/mua-nuoc-do-mu-cang-chai");
+    await expect(page.getByRole("heading", { level: 1, name: "Mùa nước đổ ở Mù Cang Chải" })).toHaveCount(0);
+    await page.goto("/tim-kiem?q=mu%20cang%20chai");
+    await expect(page.getByRole("link", { name: "Mùa nước đổ ở Mù Cang Chải" })).toHaveCount(0);
+
     await page.goto("/en/journal");
     await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(2);
     await page.goto("/en/journal/kyoto-in-autumn");
@@ -110,6 +116,16 @@ test.describe("static pages, journal, reviews and contact", () => {
     await expect(page.getByRole("textbox", { name: "Họ và tên" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Gửi lời nhắn" })).toBeDisabled();
     await expect(page.getByText(/Biểu mẫu sẽ sớm mở/)).toBeVisible();
+
+    // A group tour without a bookable date (TH-BKK-10: every date closed) keeps the contact page,
+    // with no date; a date in the link (the booking box offers one while online booking is off)
+    // prefills the message with it.
+    await page.goto("/tours/bangkok-va-co-do-ayutthaya");
+    const closed = page.getByRole("complementary", { name: "Đặt tour" });
+    await expect(closed.getByRole("link", { name: "Đặt tour này" })).toHaveCount(0);
+    await expect(closed.getByRole("link", { name: "Liên hệ đặt chỗ" })).toHaveAttribute("href", "/lien-he?tour=TH-BKK-10");
+    await page.goto("/lien-he?tour=TH-BKK-10&date=2027-03-14");
+    await expect(page.getByRole("textbox", { name: "Lời nhắn" })).toHaveValue("Tôi muốn đặt tour TH-BKK-10, khởi hành 14/03/2027.");
     await expect(page.getByRole("main").getByRole("link", { name: /^\+84/ })).toHaveAttribute("href", /^tel:\+84/);
     // The tailor-made menu item opens the contact page until the wizard exists (Phase 5).
     await expect(page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Thiết kế riêng" })).toHaveAttribute("href", "/lien-he");

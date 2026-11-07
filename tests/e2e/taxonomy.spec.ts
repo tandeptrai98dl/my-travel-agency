@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "./support/test";
 
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";

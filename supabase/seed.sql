@@ -559,3 +559,20 @@ select pg_temp.seed_uuid('seed-media-' || s.code), '2026/01/' || pg_temp.seed_uu
 from listing_seed s;
 update public.tours t set hero_media_id = pg_temp.seed_uuid('seed-media-' || t.code) from listing_seed s where s.code = t.code;
 update public.tours t set status = 'published', published_at = now() - interval '1 day' from listing_seed s where s.code = t.code;
+
+-- ============================================================================================
+-- Phase 3 PR M: a scheduled article (development only)
+-- ============================================================================================
+-- Published, but with published_at tomorrow: public pages and search leave it out until then.
+insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit) values
+  (pg_temp.seed_uuid('seed-post-scheduled'), '2026/01/' || pg_temp.seed_uuid('seed-post-scheduled') || '.jpg',
+   'image/jpeg', 2400, 1600, 700000, '{"vi": "Ruộng bậc thang mùa nước đổ", "en": "Terraced fields in the flooding season"}', 'Sample image');
+insert into public.posts (id, status, category_id, cover_media_id) values
+  (pg_temp.seed_uuid('seed-post-scheduled'), 'draft', pg_temp.seed_uuid('seed-topic-guides'), pg_temp.seed_uuid('seed-post-scheduled'));
+insert into public.post_translations (post_id, locale, slug, title, excerpt, content, seo_description, is_published) values
+  (pg_temp.seed_uuid('seed-post-scheduled'), 'vi', 'mua-nuoc-do-mu-cang-chai', 'Mùa nước đổ ở Mù Cang Chải',
+   'Bài hẹn giờ: chưa đến ngày đăng.',
+   '{"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Bài hẹn giờ."}]}]}',
+   'Bài hẹn giờ.', true);
+update public.posts set status = 'published', published_at = now() + interval '1 day'
+where id = pg_temp.seed_uuid('seed-post-scheduled');

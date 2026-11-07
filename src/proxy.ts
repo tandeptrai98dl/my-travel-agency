@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
-import { createNonce, isSecurePath, secureCsp } from "@/lib/csp";
+import { adminCsp, createNonce, isAdminPath, isSecurePath, secureCsp } from "@/lib/csp";
+import { createRedirectLookup } from "@/lib/redirect-lookup";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
@@ -16,33 +17,74 @@ const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
  */
 const METADATA_IMAGE = /^\/(?:vi|en)(?:\/[^/]+)*\/(?:opengraph|twitter)-image(?:-[\w-]+)?$/;
 
+const log = (event: string, fields?: Record<string, string | number>) =>
+  console.warn(JSON.stringify({ level: "warn", event, time: new Date().toISOString(), ...fields }));
+
 /**
- * Next.js proxy: Supabase session refresh and locale routing. Security headers are set for every
- * path in next.config.ts.
+ * Redirects saved in the admin, read from Upstash Redis (Phase 3 spec decision 14). Without its
+ * two variables there is no lookup at all (logged once per instance).
+ */
+const lookupRedirect = (() => {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    log("redirects.disabled", { reason: "UPSTASH_REDIS_REST_URL and _TOKEN are not set" });
+    return null;
+  }
+  return createRedirectLookup({ url, token, log });
+})();
+
+/**
+ * Next.js proxy: redirects from Redis, Supabase session refresh, CSP nonces and locale routing.
+ * Security headers and the public CSP are set for every path in next.config.ts.
  * Not an authentication layer (ARCHITECTURE.md "Auth"): protected pages check the user
- * themselves. Redirects from Redis are added in Phase 2.
+ * themselves.
  */
 export async function proxy(request: NextRequest) {
   if (METADATA_IMAGE.test(request.nextUrl.pathname)) return NextResponse.next();
 
+  // 0. A redirect saved in the admin, for public page requests only. The target is used exactly
+  // as stored (already checked by the lookup) and must stay on this site.
+  const { pathname } = request.nextUrl;
+  if (
+    lookupRedirect &&
+    (request.method === "GET" || request.method === "HEAD") &&
+    pathname !== "/" &&
+    !NON_LOCALIZED.test(pathname) &&
+    !isSecurePath(pathname)
+  ) {
+    const found = await lookupRedirect(pathname);
+    if (found) {
+      const target = new URL(found.to, request.nextUrl.origin);
+      if (target.origin === request.nextUrl.origin) return NextResponse.redirect(target, found.status);
+    }
+  }
+
   // 1. Refresh the session first, so the locale handler forwards the refreshed cookies.
   const session = await refreshSession(request);
 
-  // 2. Checkout and account (ADR-027): a per-request nonce. Next.js reads it from the request's
-  // CSP header and puts it on every script of these fully dynamic pages.
+  // 2. Checkout, account and the admin (ADR-027 option 2): a per-request nonce. Next.js reads it
+  // from the request's CSP header and puts it on every script of these fully dynamic pages. The
+  // public pages get their nonce-free policy from next.config.ts.
+  const hosts = {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    development: process.env.NODE_ENV === "development",
+  };
   let policy: string | null = null;
-  if (isSecurePath(request.nextUrl.pathname)) {
+  if (isSecurePath(pathname)) {
     policy = secureCsp({
+      ...hosts,
       nonce: createNonce(),
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       paymentUrl: process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-      development: process.env.NODE_ENV === "development",
     });
-    request.headers.set("Content-Security-Policy", policy);
+  } else if (isAdminPath(pathname)) {
+    policy = adminCsp({ ...hosts, nonce: createNonce() });
   }
+  if (policy) request.headers.set("Content-Security-Policy", policy);
 
   // 3. Locale routing for the public website; everything else passes through.
-  const response = NON_LOCALIZED.test(request.nextUrl.pathname)
+  const response = NON_LOCALIZED.test(pathname)
     ? NextResponse.next({ request })
     : handleLocale(request);
   if (policy) response.headers.set("Content-Security-Policy", policy);

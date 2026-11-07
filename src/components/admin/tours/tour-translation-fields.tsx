@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef } from "react";

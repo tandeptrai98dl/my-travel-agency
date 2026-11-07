@@ -37,6 +37,8 @@ type Props = {
   related: TourCardItem[];
   reviews: TourReviews;
   contact: { phone: string | null; email: string | null };
+  /** Whether online booking and payment can run (`onlineBookingAvailable()`; decision 19). */
+  onlineBooking: boolean;
   /** Reads the live departures (anon on the public page, the staff session in the preview). */
   loadDepartures: (tourId: string) => Promise<Departure[]>;
   /** Staff preview: no structured data, alternates or breadcrumbs JSON-LD. */
@@ -47,7 +49,7 @@ type Props = {
  * The public tour page body (Phase 3 spec PR H): cached content around two live sections,
  * departures and the booking box, each in Suspense behind its own error boundary.
  */
-export async function TourDetailView({ locale, tour, related, reviews, contact, loadDepartures, preview = false }: Props) {
+export async function TourDetailView({ locale, tour, related, reviews, contact, onlineBooking, loadDepartures, preview = false }: Props) {
   // One departures read per render for the table and the booking box.
   const departuresOnce = cache(loadDepartures);
   const [t, tCard] = await Promise.all([
@@ -133,7 +135,7 @@ export async function TourDetailView({ locale, tour, related, reviews, contact, 
           <aside aria-label={t("booking.label")} className="min-w-0 pb-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start lg:pt-12">
             <DeparturesErrorBoundary message={t("booking.unavailable")} retryLabel={t("departures.retry")}>
               <Suspense fallback={<Skeleton className="h-80 w-full" />}>
-                <LiveBookingBox locale={locale} tour={tour} contact={contact} load={departuresOnce} />
+                <LiveBookingBox locale={locale} tour={tour} contact={contact} onlineBooking={onlineBooking} load={departuresOnce} />
               </Suspense>
             </DeparturesErrorBoundary>
           </aside>
@@ -305,11 +307,13 @@ async function LiveBookingBox({
   locale,
   tour,
   contact,
+  onlineBooking,
   load,
 }: {
   locale: Locale;
   tour: TourPage;
   contact: Props["contact"];
+  onlineBooking: boolean;
   load: Loader;
 }) {
   await connection();
@@ -327,6 +331,7 @@ async function LiveBookingBox({
       }}
       bookable={rows.filter((row) => row.bookable)}
       contact={contact}
+      onlineBooking={onlineBooking}
     />
   );
 }

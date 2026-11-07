@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";

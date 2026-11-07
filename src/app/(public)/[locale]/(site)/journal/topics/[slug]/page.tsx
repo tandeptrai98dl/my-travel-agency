@@ -13,6 +13,7 @@ import { pageMetadata } from "@/components/seo/page-metadata";
 import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
+import { slugParams } from "@/i18n/static-params";
 import { siteUrl } from "@/lib/site-url";
 import { getTopicPage, getTopicSlugs } from "@/modules/content/public/content-public.service";
 
@@ -21,8 +22,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NONE = "no-published-topic";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = isLocale(params.locale) ? await getTopicSlugs(params.locale) : [];
-  return (slugs.length ? slugs : [NONE]).map((slug) => ({ slug }));
+  return slugParams(params.locale, getTopicSlugs, NONE);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

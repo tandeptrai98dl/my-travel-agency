@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "./support/test";
 
 import { adminApi } from "./support/admin-api";
 import { signInAs } from "./support/auth";
@@ -119,4 +119,20 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
   await expect(page.getByRole("heading", { level: 1, name: titleVi })).toBeVisible();
   await page.goto(`/en/tours/${slugEn}`);
   await expect(page.getByRole("heading", { level: 1, name: titleEn })).toBeVisible();
+
+  await expect.poll(async () => (await page.request.get("/sitemaps/tours.xml")).text(), { timeout: 15_000 }).toContain(`/en/tours/${slugEn}</loc>`);
+
+  // Unpublishing the English version: after the save the cached page renders again and answers a
+  // real 404 (the first request may still get the noindex shell while it re-renders; Phase 3
+  // spec step 22).
+  await page.goto(`/admin/tours/${tourId}`);
+  await page.getByRole("tab", { name: /^Tiếng Anh/ }).click();
+  await page.getByRole("tabpanel", { name: /^Tiếng Anh/ }).getByRole("switch", { name: "Xuất bản bản tiếng Anh" }).click();
+  await page.getByRole("button", { name: "Lưu", exact: true }).click();
+  await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText("Đã lưu")).toBeVisible();
+  await expect.poll(async () => (await page.request.get(`/en/tours/${slugEn}`, { maxRedirects: 0 })).status(), { timeout: 15_000 }).toBe(404);
+  await expect((await page.request.get(`/tours/${slugVi}`, { maxRedirects: 0 })).status()).toBe(200);
+  // ...and leaves the sitemap, while the Vietnamese page stays (step 19).
+  await expect.poll(async () => (await page.request.get("/sitemaps/tours.xml")).text(), { timeout: 15_000 }).not.toContain(`/en/tours/${slugEn}</loc>`);
+  expect(await (await page.request.get("/sitemaps/tours.xml")).text()).toContain(`/tours/${slugVi}</loc>`);
 });

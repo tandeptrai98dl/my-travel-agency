@@ -71,7 +71,7 @@ export const serverEnvSchema = z
     z.string().min(16, "must be at least 16 characters").optional(),
   ),
   // Upstash Redis REST (redirects, decision 5; rate limits later). Optional until the account
-  // exists: without both, redirect sync is a logged no-op. Required in production from Phase 3.
+  // exists: without both, redirect sync and lookups are logged no-ops. Required in production.
   UPSTASH_REDIS_REST_URL: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
@@ -129,6 +129,10 @@ export const serverEnvSchema = z
       : null;
   if (missing) {
     ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both Upstash variables or neither)` });
+  }
+  // Production serves the admin's redirects and rate limits from Upstash (ADR-031, Phase 3 PR M).
+  if (env.VERCEL_ENV === "production" && !env.UPSTASH_REDIS_REST_URL) {
+    ctx.addIssue({ code: "custom", path: ["UPSTASH_REDIS_REST_URL"], message: "UPSTASH_REDIS_REST_URL and _TOKEN are required in production" });
   }
 });
 

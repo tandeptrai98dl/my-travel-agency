@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 // CI builds with a fake public DSN (NEXT_PUBLIC_SENTRY_DSN); requests to it are intercepted here
 // and never leave the runner. Skipped when no DSN was built in.

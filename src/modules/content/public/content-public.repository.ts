@@ -59,11 +59,19 @@ const POST_LIST_COLUMNS = `id, published_at, category_id,
   cover:media!posts_cover_media_id_fkey(${MEDIA_COLUMNS}),
   post_translations!inner(slug, title, excerpt, locale, is_published)`;
 
+/**
+ * Now, for "published by" filters: an article whose `published_at` is in the future is scheduled,
+ * not public yet (like `search_site`). The pages are cached for up to an hour, so a scheduled
+ * article can appear up to that much later.
+ */
+const now = () => new Date().toISOString();
+
 export async function findPosts(locale: Locale, options: { categoryId?: string; excludeId?: string; limit: number }) {
   let query = createPublicClient()
     .from("posts")
     .select(POST_LIST_COLUMNS)
     .eq("status", "published")
+    .lte("published_at", now())
     .eq("post_translations.locale", locale)
     .eq("post_translations.is_published", true)
     .order("published_at", { ascending: false })
@@ -85,6 +93,7 @@ export async function findPostBySlug(locale: Locale, slug: string) {
     .eq("slug", slug)
     .eq("is_published", true)
     .eq("posts.status", "published")
+    .lte("posts.published_at", now())
     .maybeSingle();
 }
 
@@ -106,10 +115,11 @@ export async function findPostSlugs(postId: string) {
 export async function listPostSlugs(locale: Locale) {
   return createPublicClient()
     .from("post_translations")
-    .select("slug, posts!inner(status)")
+    .select("slug, posts!inner(status, published_at)")
     .eq("locale", locale)
     .eq("is_published", true)
     .eq("posts.status", "published")
+    .lte("posts.published_at", now())
     .limit(1000);
 }
 
@@ -127,6 +137,7 @@ export async function findPostCategoryIds(locale: Locale) {
     .from("posts")
     .select("category_id, post_translations!inner(locale, is_published)")
     .eq("status", "published")
+    .lte("published_at", now())
     .eq("post_translations.locale", locale)
     .eq("post_translations.is_published", true)
     .limit(5000);

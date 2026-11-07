@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 import { adminApi } from "./support/admin-api";
 import { signInAs } from "./support/auth";

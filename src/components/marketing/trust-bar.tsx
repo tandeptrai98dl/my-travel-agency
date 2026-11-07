@@ -2,18 +2,22 @@ import { BadgeCheck, Clock, CreditCard, Phone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Container } from "@/components/layout/container";
-import { features } from "@/lib/features";
 import type { Locale } from "@/modules/catalog/public/types";
 import type { PublicSettings } from "@/modules/settings/settings.schemas";
 
-type Props = { locale: Locale; settings: PublicSettings };
+type Props = {
+  locale: Locale;
+  settings: PublicSettings;
+  /** Online booking and payment can run (`onlineBookingAvailable()`). */
+  onlinePayment: boolean;
+};
 
 /**
  * Trust signals from real data only (decision 19): the licence and legal name from
  * `settings.company`, office hours and hotline from `settings.contact`, and the payment methods
- * once online payment exists (Phase 4). Items without data are left out; nothing is invented.
+ * only while online payment can really run. Items without data are left out; nothing is invented.
  */
-export async function TrustBar({ locale, settings }: Props) {
+export async function TrustBar({ locale, settings, onlinePayment }: Props) {
   const t = await getTranslations({ locale, namespace: "Home.trust" });
   const company = settings.company;
   const contact = settings.contact;
@@ -23,7 +27,7 @@ export async function TrustBar({ locale, settings }: Props) {
     company?.legal_name && !company.tour_operator_licence && { icon: BadgeCheck, text: t("company", { name: company.legal_name }) },
     hours && { icon: Clock, text: t("hours", { hours }) },
     contact?.phone && { icon: Phone, text: t("hotline", { phone: contact.phone }) },
-    features.booking && { icon: CreditCard, text: t("payments") },
+    onlinePayment && { icon: CreditCard, text: t("payments") },
   ].filter((item): item is { icon: typeof Clock; text: string } => Boolean(item));
   if (items.length === 0) return null;
 

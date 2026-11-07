@@ -2,6 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { PUBLIC_CSP_SOURCE, publicCsp } from "./src/lib/csp";
 import { securityHeaders } from "./src/lib/security-headers";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -11,7 +12,17 @@ const nextConfig: NextConfig = {
   // ADR-021: Partial Prefetching alongside Cache Components, as Next.js recommends.
   partialPrefetching: true,
   async headers() {
-    return [{ source: "/:path*", headers: [...securityHeaders] }];
+    // Public pages and /auth (ADR-027): a static nonce-free policy; checkout, account and the
+    // admin get a nonce policy from src/proxy.ts instead.
+    const csp = publicCsp({
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      development: process.env.NODE_ENV === "development",
+    });
+    return [
+      { source: "/:path*", headers: [...securityHeaders] },
+      { source: PUBLIC_CSP_SOURCE, headers: [{ key: "Content-Security-Policy", value: csp }] },
+    ];
   },
 };
 

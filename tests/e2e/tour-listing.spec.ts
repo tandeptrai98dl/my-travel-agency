@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
 
@@ -55,7 +55,12 @@ test.describe("tour listing", () => {
   test("desktop filters apply at once, keep one URL per search, and Back restores it", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/tours");
-    const filters = page.getByRole("group", { name: "Điểm đến" });
+    // From lg the filters are a plain region of the listing form, not a dialog (#35 review m3).
+    const column = page.getByRole("region", { name: "Bộ lọc" });
+    await expect(column).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(column.getByRole("button", { name: "Áp dụng" })).toBeHidden();
+    const filters = column.getByRole("group", { name: "Điểm đến" });
     await filters.getByRole("checkbox", { name: "Thái Lan", exact: true }).check();
     await expect(page).toHaveURL(/\/tours\?dest=thailand$/);
     await expect(count(page)).toHaveText("13 hành trình");
