@@ -25,6 +25,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"booking_access_tokens": {
+                  Row: {
+                    "booking_id": string,"created_at": string,"expires_at": string,"id": string,"purpose": string,"token_hash": string,"used_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "booking_id": string,"created_at"?: string,"expires_at": string,"id"?: string,"purpose": string,"token_hash": string,"used_at"?: string | null
+                  }
+                  Update: {
+                    "booking_id"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"purpose"?: string,"token_hash"?: string,"used_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "booking_access_tokens_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"booking_events": {
                   Row: {
                     "actor_id": string | null,"booking_id": string,"created_at": string,"from_status": Database["public"]['Enums']["booking_status"] | null,"id": string,"message": string | null,"to_status": Database["public"]['Enums']["booking_status"] | null,"type": string
@@ -839,6 +859,9 @@ isOneToOne: false
 "attention_resolvers":
 { Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
                            },
+"booking_access_token_state":
+{ Args: { "target_code": string,"token_hash": string }; Returns: string
+                           },
 "booking_checkout_status":
 { Args: { "target_code": string }; Returns: Json
                            },
@@ -929,6 +952,9 @@ isOneToOne: false
 "is_valid_slug":
 { Args: { "slug": string }; Returns: boolean
                            },
+"issue_booking_access_token":
+{ Args: { "purpose": string,"target_id": string,"token_hash": string,"valid_minutes": number }; Returns: string
+                           },
 "itinerary_media_ids":
 { Args: { "itinerary": Json }; Returns: (string)[]
                            },
@@ -953,6 +979,9 @@ isOneToOne: false
 "payment_link_state":
 { Args: { "token_hash": string }; Returns: string
                            },
+"raise_on_email_problems":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
@@ -967,6 +996,9 @@ isOneToOne: false
                            },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
+                           },
+"redeem_booking_access_token":
+{ Args: { "target_code": string,"token_hash": string }; Returns: Json
                            },
 "redeem_payment_link":
 { Args: { "token_hash": string }; Returns: Json
