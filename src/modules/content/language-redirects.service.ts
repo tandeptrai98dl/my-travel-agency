@@ -66,7 +66,7 @@ export function scheduleLanguageRedirects(): void {
   try {
     after(() => rebuildLanguageRedirects());
   } catch {
-    // Outside a request (scripts, tests): run it now.
-    void rebuildLanguageRedirects();
+    // Outside a request (scripts, unit tests) there is no response to wait for: skip; the next
+    // save or the redirect resync rebuilds the hash.
   }
 }
