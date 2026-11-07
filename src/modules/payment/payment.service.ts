@@ -105,9 +105,14 @@ export async function vnpayReturnTarget(query: URLSearchParams): Promise<{ code:
   return { code: payment.bookings.code, locale: payment.bookings.locale };
 }
 
-/** The receiving account from settings.bank_account, or null while it is incomplete (method hidden). */
+/**
+ * The receiving account from settings.bank_account, or null while it is incomplete (method hidden).
+ * A failed read throws, so cached callers (`onlineBookingAvailable()`) keep their short error
+ * profile instead of caching "no bank account" for hours.
+ */
 export async function bankAccount(): Promise<BankAccount | null> {
-  const { data } = await repo.bankAccountSetting();
+  const { data, error } = await repo.bankAccountSetting();
+  if (error) throw new Error(`bank account setting read failed: ${error.code ?? "unknown"}`);
   const value = (data?.value ?? {}) as Record<string, unknown>;
   const text = (key: string) => (typeof value[key] === "string" ? (value[key] as string) : "");
   const account = { bankBin: text("bank_bin"), bankName: text("bank_name"), accountNumber: text("account_number"), accountHolder: text("account_holder") };
