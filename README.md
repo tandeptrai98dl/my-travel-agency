@@ -90,6 +90,25 @@ Owner setup, once (ADR-018):
 
 Staging data: `npm run seed:users -- --allow-remote=<project-host>` creates the sample staff accounts on a non-production project. Never run it against production.
 
+## Runbooks (bookings and payments)
+
+Money is confirmed only by a verified gateway result or recorded by an MFA-verified accountant or admin with a note (ADR-012). Every manual step below writes a payment row, a booking event and an `audit_logs` row naming the staff member.
+
+- **A customer says they paid, but the booking is still waiting.** Open the booking in `/admin/bookings`. VNPay: look the transaction up in the VNPay merchant portal; if it succeeded there, the IPN failed. Check Sentry for `payment.vnpay_*` errors, then record the payment with method "Khác (ghi tay)" and the VNPay transaction number in the note. Bank transfer: first look for it under "Chuyển khoản chưa khớp" in `/admin/payments`, because a wrong memo lands there. If it is not there, check the bank statement and record it as "Chuyển khoản" with the bank's reference in the note.
+- **Unmatched transfer** (`/admin/payments`, accountant or admin): find the booking (code in the customer's receipt, amount, date), enter its code and a note, and press "Gán". The amount comes from the bank webhook, never from the form, and a transfer can be assigned once.
+- **"Needs attention" queue** (`/admin/bookings/attention`, oldest first):
+  - Underpaid: ask the customer for the rest. Record it when it arrives, or refund the partial amount and cancel.
+  - Overpaid, or paid twice: refund the extra (`Hoàn tiền`, at most what was received).
+  - Paid an attempt that was replaced, failed or expired: if the booking is confirmed, the money counts towards it; refund anything above the total.
+  - Paid after cancellation (also set when cash is recorded for a cancelled booking): refund in full.
+  - Late payment, no seats: offer another departure (cancel this booking and book the new one by hand in Phase 4 PR 4D), or refund.
+  - Cancellation requested: an operator cancels. The page shows the refund suggested by the policy; the accountant records the refund after paying it.
+  - Balance overdue: remind the customer. Bookings are never cancelled automatically (ADR-016). This item clears when the balance is paid or the booking is cancelled.
+  - Departure cancelled: contact the customer, then cancel with a full refund or move them.
+  - Paid a quote (`paid_quoted`) or a draft: money recorded for a booking with no hold never confirms it. Send the customer a payment link (Phase 4 PR 4D) or start a hold first, then refund or move the money.
+  - When done, write what was done in "Đánh dấu đã xử lý". Money reasons are cleared by an MFA-verified accountant or admin, a cancellation request by an operator or admin. A cancellation requested while a money reason was open comes back to the operators once the money is resolved. Derived items (overdue balance, cancelled departure) clear on their own.
+- **Refund:** pay the customer first, by bank transfer or cash, or refund in the VNPay portal. Then record it on the booking. The form refuses more than the amount received, net of earlier refunds.
+
 ## Workflow
 
 Work happens on short-lived branches with one commit per spec step, merged through pull requests after CI and an independent review (ADR-020). See [`CLAUDE.md`](CLAUDE.md).

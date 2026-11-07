@@ -55,7 +55,7 @@ export function mapBookingError(error: DbError): BookingError {
 }
 
 /** Departures in the cached catalog change bookability: refresh the tour's pages (decision 11). */
-function refreshTour(tourId: string) {
+export function refreshTour(tourId: string) {
   revalidateTag(TOURS_TAG, "max");
   revalidateTag(tourTag(tourId), "max");
 }

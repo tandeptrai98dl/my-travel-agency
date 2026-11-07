@@ -833,7 +833,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "booking_cutoff_days":
+            "assign_unmatched_transfer":
+{ Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
+                           },
+"attention_resolvers":
+{ Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
+                           },
+"booking_cutoff_days":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "booking_prices_current":
@@ -929,8 +935,14 @@ isOneToOne: false
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"record_manual_payment":
+{ Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json
+                           },
 "record_payment_event":
 { Args: { "amount": number,"event_key": string,"payload": Json,"provider": Database["public"]['Enums']["payment_provider"],"provider_txn_id": string,"reference": string,"succeeded": boolean }; Returns: Json
+                           },
+"record_refund":
+{ Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json
                            },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
@@ -941,11 +953,20 @@ isOneToOne: false
 "release_seats":
 { Args: { "seats": number,"target_departure": string }; Returns: undefined
                            },
+"request_cancellation":
+{ Args: { "note": string,"target_id": string }; Returns: undefined
+                           },
 "request_newsletter_subscription":
 { Args: { "p_email": string,"p_locale": Database["public"]['Enums']["locale"],"p_source": string,"p_token_hash": string }; Returns: boolean
                            },
+"require_note":
+{ Args: { "note": string }; Returns: string
+                           },
 "reserve_and_create_payment":
 { Args: { "kind": Database["public"]['Enums']["payment_kind"],"provider": Database["public"]['Enums']["payment_provider"],"target_id": string }; Returns: Json
+                           },
+"resolve_attention":
+{ Args: { "note": string,"target_id": string }; Returns: undefined
                            },
 "rich_text_alt_complete":
 { Args: { "doc": Json }; Returns: boolean
@@ -966,6 +987,9 @@ isOneToOne: false
                            },
 "set_tour_links":
 { Args: { "destination_ids": (string)[],"media_ids": (string)[],"target_id": string,"travel_style_ids": (string)[] }; Returns: undefined
+                           },
+"staff_cancel_booking":
+{ Args: { "reason": string,"target_id": string }; Returns: Json
                            },
 "take_seats":
 { Args: { "seats": number,"target_departure": string }; Returns: boolean

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { can, PERMISSIONS } from "@/lib/auth/permissions";
 
+import bookings from "../../../messages/vi/admin-bookings.json";
 import vi from "../../../messages/vi/admin-settings.json";
 
 import { ADMIN_NAV, isActive } from "./nav-items";
@@ -22,12 +23,18 @@ describe("admin navigation", () => {
 
   it("has a dashboard description for every section, and shows settings and staff to admins only", () => {
     const items = ADMIN_NAV.flatMap((group) => group.items).filter((item) => item.href !== "/admin");
-    const links = vi.Admin.Dashboard.links as Record<string, string>;
+    const links = { ...vi.Admin.Dashboard.links, ...bookings.Admin.Dashboard.links } as Record<string, string>;
     for (const item of items) expect(links[item.labelKey]).toBeTruthy();
     const admin = items.filter((item) => can("admin", item.permission)).map((item) => item.href);
     const editor = items.filter((item) => can("editor", item.permission)).map((item) => item.href);
     expect(admin).toEqual(expect.arrayContaining(["/admin/settings", "/admin/staff"]));
     expect(editor).not.toContain("/admin/settings");
     expect(editor).not.toContain("/admin/staff");
+    // Bookings and payments are for the booking roles, never for editors.
+    expect(editor).not.toContain("/admin/bookings");
+    expect(editor).not.toContain("/admin/payments");
+    expect(items.filter((item) => can("accountant", item.permission)).map((item) => item.href)).toEqual(
+      expect.arrayContaining(["/admin/bookings", "/admin/payments"]),
+    );
   });
 });

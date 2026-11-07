@@ -1,12 +1,12 @@
 import type { Permission } from "@/lib/auth/permissions";
 
 /** Icons are named, not imported, so this list stays importable from server and client code. */
-export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff";
+export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments";
 
 export type AdminNavItem = {
   href: string;
   /** Key in the `Admin.Nav` messages. */
-  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff";
+  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments";
   icon: AdminNavIcon;
   /** Shown only to roles holding it; the page and its actions check it again on the server. */
   permission: Permission;
@@ -15,7 +15,7 @@ export type AdminNavItem = {
 };
 
 export type AdminNavGroup = {
-  labelKey: "groupGeneral" | "groupCatalog" | "groupContent" | "groupSystem";
+  labelKey: "groupGeneral" | "groupSales" | "groupCatalog" | "groupContent" | "groupSystem";
   items: AdminNavItem[];
 };
 
@@ -25,6 +25,13 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     labelKey: "groupGeneral",
     items: [{ href: "/admin", labelKey: "dashboard", icon: "dashboard", permission: "dashboard.view" }],
+  },
+  {
+    labelKey: "groupSales",
+    items: [
+      { href: "/admin/bookings", labelKey: "bookings", icon: "bookings", permission: "bookings.read" },
+      { href: "/admin/payments", labelKey: "payments", icon: "payments", permission: "payments.read" },
+    ],
   },
   {
     labelKey: "groupCatalog",
