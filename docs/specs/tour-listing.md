@@ -316,6 +316,19 @@ question affects the code. When done, update docs/PROGRESS.md and report every
 acceptance criterion in section 7.4 as pass/fail with evidence.
 ```
 
+## As shipped (Phase 3 PR L)
+
+Differences from the text above, decided while building it:
+
+- **Parser without Zod**: `tour-search-params.ts` is plain TypeScript (comma-separated and repeated values, fixed order, sorted lists, thousands separators in typed prices, a `price=<min>-<max>` preset sent by the form). The filter form serialises in the browser, and Zod there would cost initial JavaScript (ADR-029). `listingHref()` (`tour-listing-href.ts`) builds every listing link.
+- **Client**: results are read with the session-less public client as anon (Phase 3 spec decision 2), not the session client; RLS applies the same way.
+- **Files**: `src/modules/catalog/public/tour-listing.{mapping,service}.ts` (filter options from the cached destination index: destinations with tours, children expanded), components in `src/components/tour/listing/`, the route in `src/app/(public)/[locale]/(site)/tours/(list)/` (a route group, so the listing's `error.tsx` does not wrap and weigh down tour pages).
+- **One form, one panel**: toolbar, filters and results sit in one GET form. The filter panel is a single `<dialog>`: an inline column from `lg`, a modal sheet below (full screen on phones, a right-hand panel on tablets) opened with `showModal()`, so focus stays inside, Escape closes it and focus returns. Changes apply at once on desktop (native `change` events; typed prices on blur or Enter) and are staged in the sheet until "Apply"; closing without it restores the URL's values. Chips and page links are plain links.
+- **Without JavaScript**: the listing renders inside Suspense (it reads `searchParams`), and streamed content needs JavaScript to appear, so a visitor without it sees the skeleton. The form stays a real GET form, so it still submits when the client code fails after load.
+- **Out-of-range pages** redirect inside the streamed boundary, so the browser follows a client-side redirect (HTTP 200), like the tour page's 308; real status codes are PR M step 22.
+- **Seed**: seats are never reserved in the seed (`check_seat_invariant()` compares them with bookings), so the few-seats sample has a small capacity and the sold-out sample a closed first date; sold-out departures are covered by pgTAP (`09_public_catalog_reads_test.sql`).
+- **Error state** is checked locally against a failing stub; Playwright cannot make the server's database calls fail in CI.
+
 ## Open questions
 
 The spec uses the listed option; reply only to change it.
@@ -325,7 +338,7 @@ The spec uses the listed option; reply only to change it.
 | L1 | Price for filter/sort | Lowest bookable departure price; private tours use `from_price` | `from_price` everywhere: simpler, may drift from reality |
 | L2 | Show group tours with no departures? | Yes, "Contact us for dates" | Hide: tidier, fewer inquiry chances |
 | L3 | Private tours under a month filter | Always match | Exclude: fewer results |
-| L4 | Price presets (VND per guest) | < 30M · 30–60M · 60–100M · 100–200M · > 200M | Constants only |
+| L4 | Price presets (VND per guest) | < 30M · 30–60M · 60–100M · 100–200M · > 200M (`TOUR_PRICE_PRESETS`) | Constants only |
 | L5 | Duration buckets | 1–4 · 5–8 · 9–14 · 15+ | Constants only |
 | L6 | "Few seats left" threshold | ≤ 4 | Constant; 0 disables |
 | L7 | `noindex` on filtered pages | Yes; destination SEO uses destination pages | Indexing risks duplicate content |
