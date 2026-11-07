@@ -125,6 +125,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - Phase 4 PR 4D: QuoteForm and PaymentLinkForm (`src/components/admin/bookings`), RedeemLinkButton and the payment-link page (`src/components/booking`, `(secure)/[locale]/(booking)/pay/[token]`)
 - `emails/` (Phase 4 PR 4E, ADR-036): EmailLayout (600 px table layout, ivory page, white card, gold rule, serif brand name with Georgia fallback), Eyebrow, Heading, Text, ButtonLink (one navy action per email), Details (label/value rows), SignOff; CustomerEmail frame; templates BookingReceived, PaymentReceived, BookingConfirmed (with the cancellation policy summary), PaymentLink, BalanceReminder, BookingCancelled and StaffBooking (confirmed or needs attention, Vietnamese). `src/components/booking/open-checkout-button.tsx` opens a checkout from an emailed link on click
 - `src/components/account` (Phase 5 PR 5A): AuthForm (one form for every auth and account step: server field errors linked to their fields, a focused status line, Turnstile on first interaction when needed), AuthShell (480 px card column), GoogleButton (only when configured), AccountFrame (title and account navigation with the current page marked), BookingList, TravellersForm (rows up to the party, one lead, never a passport number), ProfileForm and MarketingForm; plain `buttonVariants` and `cx()`, no next-intl client provider
+- Phase 5 PR 5C: `src/components/admin/inquiries` InquiryAssignForm (owner select for managers and admins, "take" for sales), InquiryStatusForm, InquiryNoteForm (with "I have contacted the customer"); the inbox list with time to first response and the inquiry page (summary, contact, consent, trip, message, notes, history, quote link); QuoteForm accepts prefilled values. `emails/`: InquiryReceived (customer, the inquiry's language) and StaffInquiry (team alert, Vietnamese, no contact details or message)
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -142,6 +143,6 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Account | DeleteAccountDialog (PR 5B) |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
 | Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
-| Email (React Email) | InquiryReceived, NewInquiryAlert, PasswordReset, VerifyEmail (Phase 5) |
+| Email (React Email) | PasswordReset, VerifyEmail (Phase 5) |
 
 Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.

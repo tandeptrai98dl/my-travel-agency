@@ -181,7 +181,7 @@ RLS is the source of truth; `requireRole()` is the first check in every Server A
 | Redirects, newsletter | — | — | — | Edit | Full |
 | Settings, staff, audit log | — | — | — | — | Full |
 
-`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037; enforced from Phase 5 PR 5C, until then the Phase 0 policy limits managers to assigned and unassigned inquiries like Sales); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
+`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037); inquiry status, owner and first response change only through the role-checked inquiry functions (`DATABASE.md`); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
 
 ## Routes
 
@@ -206,7 +206,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |
 
-Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
+Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote, prefilled from an inquiry with `?inquiry=<code>`), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries` (the inbox, with `/admin/inquiries/[id]`), `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
 Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tours, destinations, travel styles, journal), `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 

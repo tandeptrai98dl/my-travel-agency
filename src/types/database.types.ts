@@ -853,7 +853,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "assign_unmatched_transfer":
+            "add_inquiry_note":
+{ Args: { "body": string,"contacted"?: boolean,"target_id": string }; Returns: string
+                           },
+"assign_inquiry":
+{ Args: { "assignee": string,"target_id": string }; Returns: undefined
+                           },
+"assign_unmatched_transfer":
 { Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
                            },
 "attach_customer_bookings":
@@ -876,6 +882,12 @@ isOneToOne: false
                            },
 "can_act_as":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean
+                           },
+"can_read_inquiry":
+{ Args: { "owner": string }; Returns: boolean
+                           },
+"can_work_inquiry":
+{ Args: { "owner": string }; Returns: boolean
                            },
 "cancel_booking":
 { Args: { "actor": string,"reason": string,"target_id": string }; Returns: Json
@@ -948,6 +960,16 @@ isOneToOne: false
 "immutable_unaccent":
 { Args: { "value": string }; Returns: string
                            },
+"inquiry_activity":
+{ Args: { "target_id": string }; Returns: {
+              "action": string,"actor_id": string,"changes": Json,"created_at": string
+            }[]
+                           },
+"inquiry_consents":
+{ Args: { "target_id": string }; Returns: {
+              "created_at": string,"document_version": string,"granted": boolean,"purpose": Database["public"]['Enums']["consent_purpose"]
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -981,8 +1003,14 @@ isOneToOne: false
 "lock_tour_row":
 { Args: { "target_id": string }; Returns: undefined
                            },
+"lock_workable_inquiry":
+{ Args: { "target_id": string }; Returns: undefined
+                           },
 "log_booking_event":
 { Args: { "actor"?: string,"event_type": string,"from_status": Database["public"]['Enums']["booking_status"],"message"?: string,"target_id": string,"to_status": Database["public"]['Enums']["booking_status"] }; Returns: undefined
+                           },
+"log_inquiry_change":
+{ Args: { "action": string,"changes": Json,"target_id": string }; Returns: undefined
                            },
 "media_alt_complete":
 { Args: { "media_id": string }; Returns: boolean
@@ -1091,6 +1119,9 @@ isOneToOne: false
                            },
 "update_draft_booking":
 { Args: { "payload": Json,"target_id": string }; Returns: undefined
+                           },
+"update_inquiry_status":
+{ Args: { "new_status": Database["public"]['Enums']["inquiry_status"],"note"?: string,"target_id": string }; Returns: undefined
                            },
 "vietnam_today":
 { Args: Record<PropertyKey, never>; Returns: string

@@ -29,6 +29,8 @@ export const PERMISSIONS = {
 
   "inquiries.read": [...SALES, "operator", "admin"],
   "inquiries.edit": [...SALES, "admin"],
+  // ADR-037: sales managers and admins see every inquiry and assign anyone (sales take unassigned ones).
+  "inquiries.manage_all": ["sales_manager", "admin"],
 
   "bookings.read": [...SALES, "operator", "accountant", "admin"],
   "bookings.edit": [...SALES, "admin"],

@@ -23,8 +23,11 @@ import { useBookingErrorText } from "./use-booking-error-text";
 
 type TourOption = { id: string; code: string; type: "group" | "private"; title: string };
 
-/** A private-trip quote from sales (spec Phase 4 step 13): final prices per guest and an expiry. */
-export function QuoteForm({ tours, defaultDate }: { tours: TourOption[]; defaultDate: string }) {
+/**
+ * A private-trip quote from sales (spec Phase 4 step 13): final prices per guest and an expiry.
+ * `initial` prefills it from an inquiry (Phase 5 PR 5C: `/admin/bookings/new?inquiry=<code>`).
+ */
+export function QuoteForm({ tours, defaultDate, initial = {} }: { tours: TourOption[]; defaultDate: string; initial?: Partial<CreateQuoteInput> }) {
   const t = useTranslations("Admin.Quote");
   const errorText = useBookingErrorText();
   const router = useRouter();
@@ -47,6 +50,7 @@ export function QuoteForm({ tours, defaultDate }: { tours: TourOption[]; default
       contactPhone: "",
       specialRequests: "",
       inquiryCode: "",
+      ...initial,
     },
   });
   const children = useWatch({ control: form.control, name: "children" });
