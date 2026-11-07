@@ -35,7 +35,7 @@ export async function getPageSitemap(): Promise<SitemapEntry[]> {
   const { data, error } = await repo.listPageEntries();
   if (error) fail("page sitemap", error);
   const fixed = LOCALES.flatMap((locale) =>
-    (["/", "/tours", "/destinations", "/reviews", "/contact"] as const).map((href) => ({ path: getPathname({ locale, href }), lastModified: null })),
+    (["/", "/tours", "/destinations", "/tailor-made", "/reviews", "/contact"] as const).map((href) => ({ path: getPathname({ locale, href }), lastModified: null })),
   );
   const pages = (data ?? []).flatMap((row) => {
     const { locale } = row;

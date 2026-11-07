@@ -8,8 +8,8 @@ export const features = {
   booking: true,
   /** Guest booking lookup by code and email (Phase 5): the footer links it. */
   bookingLookup: false,
-  /** Tailor-made wizard and tour inquiries (Phase 5). */
-  inquiry: false,
+  /** Tailor-made wizard and private-tour inquiry form (Phase 5 PR 5W). */
+  inquiry: true,
   /** Journal list and article pages (Phase 3 PR K): the homepage journal teaser shows. */
   journal: true,
   /** Contact page (Phase 3 PR K): contact calls to action open it (hotline and email before). */
