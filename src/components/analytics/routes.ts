@@ -12,7 +12,8 @@ import { unsafeValue } from "./scrub";
 type Route = keyof typeof pathnames;
 
 /**
- * Routes where GA is not loaded at all (and nothing is sent if it already is): the payment link,
+ * Routes where GA is not loaded at all (and, if a client-side navigation arrives with gtag.js
+ * already loaded, `ga-disable-<id>` switches every hit off until an allowed route): the payment link,
  * booking lookup, the account area and the customer sign-in pages, and the single-use newsletter
  * pages. Only book, checkout and its result may use GA among the secure routes.
  */

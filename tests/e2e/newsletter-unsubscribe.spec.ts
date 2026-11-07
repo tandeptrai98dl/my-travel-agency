@@ -70,7 +70,8 @@ test("the exported link unsubscribes once, on the button press, and records the 
   await expect(reader.getByTestId("newsletter-unsubscribe")).toHaveAttribute("data-status", "invalid");
   expect(await withdrawals()).toHaveLength(1);
 
-  // A made-up or missing token offers no button.
+  // A well-formed made-up token shows the button, which then answers "invalid"; a missing token
+  // offers no button at all.
   await reader.goto(`/en/newsletter/unsubscribe?token=${"x".repeat(43)}`);
   await reader.getByRole("button", { name: "Unsubscribe" }).click();
   await expect(reader.getByTestId("newsletter-unsubscribe")).toHaveAttribute("data-status", "invalid");

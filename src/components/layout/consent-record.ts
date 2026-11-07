@@ -32,13 +32,21 @@ async function send(entry: Entry): Promise<boolean> {
   }
 }
 
+const same = (a: Entry, b: Entry) => JSON.stringify(a) === JSON.stringify(b);
+
 /**
  * Records a choice that is already applied (the cookie is set first, so a failure never blocks
- * it). A choice that could not be recorded waits for one retry on the next page view.
+ * it). The record is kept as pending before the request and removed once it is stored, so a choice
+ * whose request fails, or is cut off by a full page load, gets one retry on the next page view.
  */
 export async function recordChoice(id: string, action: ConsentAction, choice: ConsentChoice, locale: "vi" | "en"): Promise<void> {
   const entry: Entry = { id, action, analytics: choice.analytics, marketing: choice.marketing, locale };
-  if (!(await send(entry))) writePending([...readPending(), entry]);
+  writePending([...readPending(), entry]);
+  if (!(await send(entry))) return;
+  const pending = readPending();
+  const index = pending.findIndex((item) => same(item, entry));
+  if (index >= 0) pending.splice(index, 1);
+  writePending(pending);
 }
 
 /** The one retry: the pending records are taken off the list before they are sent again. */

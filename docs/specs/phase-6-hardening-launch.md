@@ -31,7 +31,7 @@ Nothing in this list can be produced by the team. Each item names the step it un
 | 7 | Upstash Redis database (Singapore), Cloudflare Turnstile site (production domain), Sentry organisation and project | rate limits, redirects, forms, error monitoring |
 | 8 | VNPay merchant contract with sandbox and production credentials, the production IPN URL registered with VNPay, and VNPay's test-case sign-off | VNPay go-live (decision 9) |
 | 9 | Receiving bank account and the choice of SePay or Casso, with its API key and the webhook registered | bank transfer go-live |
-| 10 | Google: GA4 property (measurement ID), Search Console for the domain (both languages), optionally an OAuth client for Google sign-in | analytics (6P), SEO (6Q) |
+| 10 | Google: GA4 property (measurement ID) with Enhanced measurement off in the GA4 data stream, checked in DebugView on a client-side navigation into checkout (it would send real URLs on history changes); Search Console for the domain (both languages), optionally an OAuth client for Google sign-in | analytics (6P), SEO (6Q) |
 | 11 | An uptime monitor account (any provider that can call a URL every minute and alert by email or SMS), and who receives alerts and when (on-call names, phone numbers) | monitoring (decision 3) |
 | 12 | Staff list with roles for invitations and UAT, and two half-days of their time | staff UAT (decision 10) |
 | 13 | Main consultation channel (Zalo OA, WhatsApp Business or both) with the numbers | floating contact, contact page |
@@ -240,7 +240,7 @@ Public site
 - [ ] Keyboard and screen-reader passes done; no open serious accessibility issue
 - [ ] Real content in both languages; legal footer with licence and the Ministry notification
 - [ ] Terms, privacy, cancellation and payment policies published in both languages after counsel's review
-- [ ] Analytics loads only after consent, events verified in GA4 DebugView, no code or token in what GA receives; cookie choices recorded
+- [ ] Analytics loads only after consent, events verified in GA4 DebugView, no code or token in what GA receives (Enhanced measurement off in the GA4 data stream, checked in DebugView on a client-side navigation into checkout); cookie choices recorded
 - [ ] Newsletter unsubscribe live before any campaign; contact and newsletter forms enabled in production
 - [ ] Old-site URLs answer 301 to live pages (if an old site exists)
 - [ ] Search Console verified for both languages, sitemaps submitted, Rich Results Test passing

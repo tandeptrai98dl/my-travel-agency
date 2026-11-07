@@ -99,12 +99,12 @@ function loadScript(id: string) {
   document.head.appendChild(script);
 }
 
-/** Removes Google Analytics cookies (`_ga`, `_ga_<id>`) on this host and its parent domains. */
+/** Removes Google cookies (`_ga`, `_ga_<id>`, and the ads `_gcl_*`) on this host and its parent domains. */
 export function deleteGaCookies() {
   const names = document.cookie
     .split(";")
     .map((part) => part.trim().split("=")[0])
-    .filter((name) => name.startsWith("_ga"));
+    .filter((name) => name.startsWith("_ga") || name.startsWith("_gcl"));
   if (!names.length) return;
   const labels = window.location.hostname.split(".");
   const domains = [""];
@@ -180,6 +180,10 @@ export function sync(measurementId: string, choice: ConsentChoice, pathname: str
     window.__ptaAnalytics = [];
     return;
   }
+  // gtag.js stays in memory after a client-side navigation: on a route without analytics (from
+  // checkout to the account, say) every hit is switched off, and back on where GA is allowed.
+  (window as unknown as Record<string, boolean>)[`ga-disable-${measurement}`] = !pageAllowed;
+  if (!pageAllowed) viewedPath = null;
   if (pageAllowed && pathname !== viewedPath) {
     const origin = window.location.origin;
     const referrer = lastLocation ?? pageReferrer(document.referrer, origin);

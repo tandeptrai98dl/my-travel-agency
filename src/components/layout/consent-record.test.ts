@@ -23,9 +23,15 @@ beforeEach(() => {
 });
 
 describe("consent record fail mode", () => {
-  it("leaves nothing pending when the record is written", async () => {
-    mocks.record.mockResolvedValue({ status: "recorded" });
+  it("keeps the record pending during the request, and nothing once it is written", async () => {
+    let pendingDuringRequest: string | undefined;
+    mocks.record.mockImplementation(async () => {
+      // A full page load now would still find the record and retry it.
+      pendingDuringRequest = mocks.store.get(CONSENT_RETRY_KEY);
+      return { status: "recorded" };
+    });
     await recordChoice(ID, "custom", choice, "vi");
+    expect(JSON.parse(pendingDuringRequest!)).toEqual([{ id: ID, action: "custom", analytics: true, marketing: false, locale: "vi" }]);
     expect(mocks.record).toHaveBeenCalledWith({ id: ID, action: "custom", analytics: true, marketing: false, locale: "vi" });
     expect(mocks.store.has(CONSENT_RETRY_KEY)).toBe(false);
   });

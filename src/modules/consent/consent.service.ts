@@ -20,7 +20,8 @@ const IP_LIMIT = { limit: 20, window: 600 };
 export async function recordConsent(input: RecordConsentInput, ip: string | null): Promise<RecordConsentStatus> {
   const limit = await rateLimit([rateLimitKey("cookie-consent-ip", ip ?? "unknown")], IP_LIMIT.limit, IP_LIMIT.window);
   if (limit === "unavailable") {
-    logger.warn("consent.record_unavailable", { reason: "rate_limit" });
+    // Error level: a gap in the proof of consent should show in Sentry.
+    logger.error("consent.record_unavailable", { reason: "rate_limit" });
     return "unavailable";
   }
   if (limit === "limited") {
