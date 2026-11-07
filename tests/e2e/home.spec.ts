@@ -54,7 +54,7 @@ test.describe("homepage", () => {
 
     // Tailor-made: the contact page until the inquiry wizard exists (Phase 5), then the hotline and email.
     const tailorMade = page.getByRole("region", { name: "Một hành trình chỉ dành cho bạn" });
-    await expect(tailorMade.getByRole("link", { name: "Liên hệ tư vấn" })).toHaveAttribute("href", "/lien-he");
+    await expect(tailorMade.getByRole("link", { name: "Liên hệ tư vấn" })).toHaveAttribute("href", "/thiet-ke-rieng");
     await expect(tailorMade.getByRole("link", { name: /^Gọi \+84/ })).toHaveAttribute("href", /^tel:\+84/);
     await expect(tailorMade.getByRole("link", { name: "Gửi email cho chúng tôi" })).toHaveAttribute("href", /^mailto:/);
   });

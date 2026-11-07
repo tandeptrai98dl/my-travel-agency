@@ -193,7 +193,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Tour listing / detail | `/tours`, `/tours/[slug]` | `/en/tours`, `/en/tours/[slug]` |
 | Destinations | `/diem-den`, `/diem-den/[slug]` | `/en/destinations`, `/en/destinations/[slug]` |
 | Travel styles | `/phong-cach/[slug]` | `/en/travel-styles/[slug]` |
-| Tailor-made inquiry | `/thiet-ke-rieng` | `/en/tailor-made` |
+| Tailor-made inquiry (wizard, Phase 5 PR 5W) | `/thiet-ke-rieng` | `/en/tailor-made` |
 | Journal | `/journal`, `/journal/[slug]`, `/journal/chu-de/[slug]` | `/en/journal`, `/en/journal/[slug]`, `/en/journal/topics/[slug]` |
 | About, reviews, contact, FAQ | `/ve-chung-toi`, `/danh-gia`, `/lien-he`, `/cau-hoi-thuong-gap` | `/en/about`, `/en/reviews`, `/en/contact`, `/en/faq` |
 | Policies | `/chinh-sach/[slug]` | `/en/policies/[slug]` |

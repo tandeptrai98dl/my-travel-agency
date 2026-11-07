@@ -106,16 +106,13 @@ test.describe("static pages, journal, reviews and contact", () => {
       /^\/dat-tour\/du-thuyen-vinh-ha-long\?departure=[0-9a-f-]{36}$/,
     );
     await expect(box.getByRole("link", { name: "Liên hệ đặt chỗ" })).toHaveCount(0);
-    // A private tour asks for a quote through the contact page, which names the tour.
+    // A private tour takes an inquiry on its own page (Phase 5 PR 5W); the booking box points to it.
     await page.goto("/tours/di-san-hoi-an-hue");
     const quote = page.getByRole("complementary", { name: "Đặt tour" }).getByRole("link", { name: "Yêu cầu báo giá riêng" });
-    await expect(quote).toHaveAttribute("href", "/lien-he?tour=VN-HER-05");
-    await quote.click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Liên hệ");
-    await expect(page.getByRole("textbox", { name: "Lời nhắn" })).toHaveValue("Tôi muốn hỏi về tour VN-HER-05.");
-    await expect(page.getByRole("textbox", { name: "Họ và tên" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Gửi lời nhắn" })).toBeDisabled();
-    await expect(page.getByText(/Biểu mẫu sẽ sớm mở/)).toBeVisible();
+    await expect(quote).toHaveAttribute("href", "#tour-inquiry");
+    const inquiry = page.getByRole("region", { name: "Yêu cầu tư vấn hành trình này" });
+    await expect(inquiry.getByRole("textbox", { name: "Họ và tên" })).toBeDisabled();
+    await expect(inquiry.getByRole("button", { name: "Gửi yêu cầu tư vấn" })).toBeDisabled();
 
     // A group tour without a bookable date (TH-BKK-10: every date closed) keeps the contact page,
     // with no date; a date in the link (the booking box offers one while online booking is off)
@@ -127,8 +124,8 @@ test.describe("static pages, journal, reviews and contact", () => {
     await page.goto("/lien-he?tour=TH-BKK-10&date=2027-03-14");
     await expect(page.getByRole("textbox", { name: "Lời nhắn" })).toHaveValue("Tôi muốn đặt tour TH-BKK-10, khởi hành 14/03/2027.");
     await expect(page.getByRole("main").getByRole("link", { name: /^\+84/ })).toHaveAttribute("href", /^tel:\+84/);
-    // The tailor-made menu item opens the contact page until the wizard exists (Phase 5).
-    await expect(page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Thiết kế riêng" })).toHaveAttribute("href", "/lien-he");
+    // The tailor-made menu item opens the wizard (Phase 5 PR 5W).
+    await expect(page.getByRole("navigation", { name: "Điều hướng chính" }).getByRole("link", { name: "Thiết kế riêng" })).toHaveAttribute("href", "/thiet-ke-rieng");
   });
 
   test("no serious axe violations at 375 and 1280 px", async ({ page }) => {
