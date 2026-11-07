@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { internalRoute, splitLocale } from "@/i18n/paths";
+import { currentRoute } from "@/i18n/paths";
 import { cx } from "@/lib/cx";
 import type { DestinationNode } from "@/modules/catalog/destinations";
 
@@ -26,8 +26,9 @@ type Props = {
  */
 export function SiteHeader({ brandName, destinations, desktopNav }: Props) {
   const t = useLabels("Navigation");
-  const { locale, path } = splitLocale(usePathname());
-  const overlay = OVERLAY_HEADER_ROUTES.has(internalRoute(locale, path).pathname);
+  // currentRoute also reads the internal path seen while prerendering, so the Vietnamese home is
+  // rendered with the overlay header too (no switch from sticky to fixed after hydration).
+  const overlay = OVERLAY_HEADER_ROUTES.has(currentRoute(usePathname()).pathname);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {

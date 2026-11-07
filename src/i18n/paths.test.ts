@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createNavigation } from "next-intl/navigation";
 
 import { pathnames } from "./pathnames";
-import { internalRoute, localizedPath, splitLocale, switchLocalePath } from "./paths";
+import { currentRoute, internalRoute, localizedPath, splitLocale, switchLocalePath } from "./paths";
 import { routing } from "./routing";
 
 // next-intl's own implementation, as the reference.
@@ -49,6 +49,18 @@ describe("client-safe localized paths", () => {
     expect(switchLocalePath("/en", "vi")).toBe("/");
     expect(switchLocalePath("/", "en")).toBe("/en");
     expect(switchLocalePath("/en/checkout/PTA-2611-0042/payment", "vi")).toBe("/thanh-toan/PTA-2611-0042/phuong-thuc");
+  });
+
+  it("understands the proxy's internal Vietnamese paths that usePathname() gives while prerendering", () => {
+    expect(switchLocalePath("/vi/contact", "en")).toBe("/en/contact");
+    expect(switchLocalePath("/vi/contact", "vi")).toBe("/lien-he");
+    expect(switchLocalePath("/vi/destinations/ha-long-bay", "en")).toBe("/en/destinations/ha-long-bay");
+    expect(switchLocalePath("/vi", "en")).toBe("/en");
+    expect(switchLocalePath("/vi/tailor-made", "en")).toBe("/en/tailor-made");
+    expect(currentRoute("/vi")).toEqual({ locale: "vi", pathname: "/", params: {} });
+    expect(currentRoute("/")).toEqual({ locale: "vi", pathname: "/", params: {} });
+    expect(currentRoute("/en")).toEqual({ locale: "en", pathname: "/", params: {} });
+    expect(currentRoute("/vi/tours/du-thuyen")).toEqual({ locale: "vi", pathname: "/tours/[slug]", params: { slug: "du-thuyen" } });
   });
 
   it("keeps an unknown path (e.g. a 404) as it is", () => {
