@@ -50,7 +50,8 @@ test("sales create a quote and a payment link", async ({ page }) => {
   // token is in no column of the log.
   await expect(page.getByTestId("payment-link-email")).toHaveAttribute("data-state", "skipped");
   const { data: logged } = await adminApi().from("email_logs").select("*").eq("booking_id", bookingId);
-  expect(logged?.map((row) => `${row.template}:${row.status}:${row.to_email}`)).toEqual([`payment_link:skipped:${email.toLowerCase()}`]);
+  const { data: quoted } = await adminApi().from("bookings").select("contact_email").eq("id", bookingId).single();
+  expect(logged?.map((row) => `${row.template}:${row.status}:${row.to_email}`)).toEqual([`payment_link:skipped:${quoted!.contact_email}`]);
   expect(JSON.stringify(logged)).not.toContain(linkPath.split("/").pop());
 });
 

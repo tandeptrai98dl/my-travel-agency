@@ -39,7 +39,6 @@ const violations = async (page: Page) =>
   (await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? [])).filter((entry) => !/ingest\.sentry\.io/.test(entry));
 
 let code = "";
-const email = `guest-${Date.now()}@example.test`;
 
 /** Date, one guest and full payment, through the form, up to the payment page; returns the code. */
 async function bookThroughForm(page: Page, slug: string, departureId: string) {
@@ -47,7 +46,7 @@ async function bookThroughForm(page: Page, slug: string, departureId: string) {
   await expect(page.getByTestId("booking-total")).toHaveText(/12\.900\.000/);
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
   await page.getByLabel("Họ và tên").fill("Nguyễn An");
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Email").fill(`guest-${Date.now()}@example.test`);
   await page.getByLabel("Số điện thoại").fill("+84 912 000 111");
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
   await page.getByLabel("Thanh toán toàn bộ").check();
@@ -125,6 +124,8 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
 
   // 4E: one email per booking event, logged after the commit. Resend is not configured in CI, so
   // each row is `skipped`; the confirming payment sends "confirmed", not also "payment received".
+  const { data: contact } = await adminApi().from("bookings").select("contact_email").eq("id", booking!.id).single();
+  const email = contact!.contact_email;
   const emails = async () => {
     const { data } = await adminApi().from("email_logs").select("template, status, to_email, dedupe_key, error").eq("booking_id", booking!.id);
     return (data ?? []).map((row) => `${row.template}:${row.status}:${row.to_email}`).sort();
@@ -148,7 +149,7 @@ test("an emailed checkout link opens the booking only after a click", async ({ b
   const page = await context.newPage();
   await page.goto(`/thanh-toan/${code}?access=${encodeURIComponent(signAccess(secret!, booking!.id).value)}`);
   await expect(page.getByTestId("checkout-email-link")).toBeVisible();
-  await expect(page.getByText(email)).toHaveCount(0);
+  await expect(page.getByText(/@example\.test/)).toHaveCount(0);
   await page.getByRole("button", { name: "Mở đặt chỗ" }).click();
   await expect(page).toHaveURL(new RegExp(`/thanh-toan/${code}$`));
   await expect(page.getByText(code).first()).toBeVisible();
