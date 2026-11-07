@@ -16,7 +16,7 @@ describe("secure CSP", () => {
       expect(isSecurePath(path), path).toBe(true);
     }
     // Customer sign-in and the account (Phase 5 PR 5A).
-    for (const path of ["/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password", "/tai-khoan", "/tai-khoan/booking", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/bookings/PTA-2611-0042", "/en/account/profile"]) {
+    for (const path of ["/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password", "/tai-khoan", "/tai-khoan/booking", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/bookings/PTA-2611-0042", "/en/account/profile", "/tra-cuu-booking", "/en/booking-lookup"]) {
       expect(isSecurePath(path), path).toBe(true);
     }
     // Public pages, including look-alikes of the secure paths.
@@ -86,9 +86,9 @@ describe("public CSP", () => {
 
   it("is generated from the secure route list, like isSecurePath", () => {
     expect(PUBLIC_CSP_SOURCE).toBe(
-      "/((?!admin/|admin$|api/|dat-tour/|en/book/|thanh-toan/|en/checkout/|thanh-toan/link/|en/pay/|dang-nhap$|dang-nhap/|en/login$|en/login/|dang-ky$|dang-ky/|en/register$|en/register/|quen-mat-khau$|quen-mat-khau/|en/forgot-password$|en/forgot-password/|dat-lai-mat-khau$|dat-lai-mat-khau/|en/reset-password$|en/reset-password/|tai-khoan$|tai-khoan/|en/account$|en/account/).*)",
+      "/((?!admin/|admin$|api/|dat-tour/|en/book/|thanh-toan/|en/checkout/|thanh-toan/link/|en/pay/|dang-nhap$|dang-nhap/|en/login$|en/login/|dang-ky$|dang-ky/|en/register$|en/register/|quen-mat-khau$|quen-mat-khau/|en/forgot-password$|en/forgot-password/|dat-lai-mat-khau$|dat-lai-mat-khau/|en/reset-password$|en/reset-password/|tai-khoan$|tai-khoan/|en/account$|en/account/|tra-cuu-booking$|tra-cuu-booking/|en/booking-lookup$|en/booking-lookup/).*)",
     );
-    expect(SECURE_ROUTES).toEqual(["/book/[tourSlug]", "/checkout/[code]", "/pay/[token]", "/login", "/register", "/forgot-password", "/reset-password", "/account"]);
+    expect(SECURE_ROUTES).toEqual(["/book/[tourSlug]", "/checkout/[code]", "/pay/[token]", "/login", "/register", "/forgot-password", "/reset-password", "/account", "/booking-lookup"]);
   });
 
   it("covers a route without parameters and the paths below it, in both languages (Phase 5 routes)", () => {
@@ -103,7 +103,7 @@ describe("public CSP", () => {
     for (const path of [
       "/admin", "/admin/tours", "/api/health", "/dat-tour/x", "/thanh-toan/PTA-1", "/thanh-toan/link/abc", "/en/book/x", "/en/checkout/PTA-1/result", "/en/pay/abc",
       "/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password",
-      "/tai-khoan", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/profile",
+      "/tai-khoan", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/profile", "/tra-cuu-booking", "/en/booking-lookup",
       // Below a route without parameters: the secure root answers it (its 404), so it needs the nonce policy.
       "/dang-nhap/x", "/en/login/x",
     ]) {

@@ -7,6 +7,7 @@ import { localizedPath } from "@/i18n/paths";
 import { BalanceReminderEmail } from "../../../emails/balance-reminder";
 import { BookingCancelledEmail } from "../../../emails/booking-cancelled";
 import { BookingConfirmedEmail } from "../../../emails/booking-confirmed";
+import { BookingLookupEmail } from "../../../emails/booking-lookup";
 import { BookingReceivedEmail } from "../../../emails/booking-received";
 import type { BookingFacts, EmailLocale, EmailT } from "../../../emails/components/booking";
 import type { EmailBrand } from "../../../emails/components/layout";
@@ -277,6 +278,25 @@ export function buildBalanceReminderEmail(booking: EmailBooking, context: BuildC
       booking: bookingFacts(booking),
       name: booking.contact_name,
       checkoutUrl: checkoutUrl(booking, context.siteUrl, checkoutToken),
+    }),
+  };
+}
+
+/** The guest lookup email (Phase 5 PR 5B): a single-use link to the checkout summary. */
+export function buildBookingLookupEmail(booking: EmailBooking, link: { token: string; expiresAt: string }, context: BuildContext): BuiltEmail {
+  const t = emailTranslator(booking.locale, context.messages[booking.locale]);
+  return {
+    to: "customer",
+    template: "booking_lookup",
+    subject: t("bookingLookup.subject", { code: booking.code }),
+    element: BookingLookupEmail({
+      locale: booking.locale,
+      t,
+      brand: context.brand,
+      booking: bookingFacts(booking),
+      name: booking.contact_name,
+      checkoutUrl: checkoutUrl(booking, context.siteUrl, link.token),
+      expiresAt: link.expiresAt,
     }),
   };
 }

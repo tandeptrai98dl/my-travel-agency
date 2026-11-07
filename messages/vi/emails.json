@@ -159,6 +159,16 @@
         "vi": "Tiếng Việt",
         "en": "Tiếng Anh"
       }
+    },
+    "bookingLookup": {
+      "subject": "Đường dẫn xem đặt chỗ · {code}",
+      "preview": "Đường dẫn mở đặt chỗ {code}.",
+      "eyebrow": "Tra cứu đặt chỗ",
+      "heading": "Đặt chỗ của bạn",
+      "intro": "Bạn vừa yêu cầu xem đặt chỗ {code}. Nhấn nút dưới đây để mở đặt chỗ trên trình duyệt này.",
+      "button": "Mở đặt chỗ",
+      "expiry": "Đường dẫn chỉ dùng được một lần, đến {time} (giờ Việt Nam).",
+      "ignore": "Nếu bạn không yêu cầu, hãy bỏ qua email này; đặt chỗ của bạn vẫn an toàn."
     }
   }
 }

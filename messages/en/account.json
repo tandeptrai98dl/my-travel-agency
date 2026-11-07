@@ -158,7 +158,11 @@
         "tooLong": "Too long.",
         "invalidPhone": "This phone number is not valid.",
         "invalid": "This value is not valid."
-      }
+      },
+      "deletionTitle": "Delete your account and data",
+      "deletionIntro": "We remove your name, phone number and email address from the account, unlink your bookings and delete your newsletter subscription. Booking and payment records are kept for the period accounting law requires. This cannot be undone.",
+      "deletionSubmit": "Delete my account",
+      "deletionPending": "We have recorded your request. Because a journey or a payment is still open, our team will complete the deletion afterwards and let you know."
     }
   }
 }

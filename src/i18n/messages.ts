@@ -24,6 +24,7 @@ export const MESSAGE_FILES = [
   "emails",
   "auth",
   "account",
+  "booking-lookup",
 ] as const;
 
 export type MessageTree = { [key: string]: string | MessageTree };

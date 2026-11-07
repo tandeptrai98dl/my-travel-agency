@@ -131,7 +131,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032) | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -201,7 +201,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Book a tour | `/dat-tour/[tourSlug]` | `/en/book/[tourSlug]` |
 | Checkout | `/thanh-toan/[code]`, `…/phuong-thuc`, `…/ket-qua` | `/en/checkout/[code]`, `…/payment`, `…/result` |
 | Sales payment link | `/thanh-toan/link/[token]` | `/en/pay/[token]` |
-| Booking lookup | `/tra-cuu-booking` | `/en/booking-lookup` |
+| Booking lookup (noindex; the emailed single-use link opens `/thanh-toan/[code]?access=…`) | `/tra-cuu-booking` | `/en/booking-lookup` |
 | Newsletter confirmation (noindex) | `/ban-tin/xac-nhan` | `/en/newsletter/confirm` |
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |

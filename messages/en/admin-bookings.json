@@ -279,7 +279,8 @@
         "payment_link": "Payment link",
         "staff_booking_confirmed": "Team: confirmed",
         "staff_attention": "Team: needs attention",
-        "other": "Other email"
+        "other": "Other email",
+        "booking_lookup": "Booking lookup"
       },
       "emailStatuses": {
         "queued": "Queued",

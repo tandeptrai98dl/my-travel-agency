@@ -46,6 +46,8 @@ async function Login({ locale, searchParams }: { locale: Locale; searchParams: P
   const [t, tAuth] = await Promise.all([getTranslations({ locale, namespace: "Auth.login" }), getTranslations({ locale, namespace: "Auth" })]);
   const labels = await authLabels(locale, t("submit"), t("pending"));
   const oauthError = first(query.error) === "oauth";
+  // After an account deletion (5B): the account is gone, or the request is with the team.
+  const deleted = first(query.deleted);
 
   return (
     <AuthShell
@@ -65,6 +67,11 @@ async function Login({ locale, searchParams }: { locale: Locale; searchParams: P
       }
     >
       <div className="flex flex-col gap-6">
+        {deleted === "1" || deleted === "received" ? (
+          <p role="status" data-testid="account-deleted" className="text-body">
+            {deleted === "1" ? t("deleted") : t("deletionReceived")}
+          </p>
+        ) : null}
         {oauthError ? (
           <p role="alert" className="text-small text-destructive">
             {t("oauthError")}

@@ -54,6 +54,7 @@ const EMAIL_TEMPLATES = [
   "booking_confirmed",
   "booking_cancelled",
   "balance_reminder",
+  "booking_lookup",
   "payment_link",
   "staff_booking_confirmed",
   "staff_attention",

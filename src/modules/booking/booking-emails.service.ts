@@ -17,6 +17,7 @@ import {
   type BuildContext,
   type BuiltEmail,
   buildBalanceReminderEmail,
+  buildBookingLookupEmail,
   buildBookingEmail,
   buildPaymentLinkEmail,
   type EmailBooking,
@@ -171,6 +172,23 @@ export async function sendBalanceReminder(bookingId: string, dedupeKey: string):
     return (await deliver(buildBalanceReminderEmail(booking as EmailBooking, context, token), booking as EmailBooking, dedupeKey, context.staffEmail)) ?? "failed";
   } catch (caught) {
     logger.error("booking.email_failed", { template: "balance_reminder", error: caught instanceof Error ? caught.name : "Error" });
+    return "failed";
+  }
+}
+
+/**
+ * The guest lookup email (spec Phase 5 decision 7), keyed `booking_lookup:<token id>`: one email
+ * per issued token. The token goes only into the body. Without Resend the row is `skipped`.
+ */
+export async function sendBookingLookupEmail(input: { bookingId: string; tokenId: string; token: string; expiresAt: string }): Promise<SendResult | "not_found"> {
+  try {
+    const { data: booking, error } = await repo.findBookingForEmail(input.bookingId);
+    if (error || !booking) return "not_found";
+    const context = await buildContext();
+    const built = buildBookingLookupEmail(booking as EmailBooking, { token: input.token, expiresAt: input.expiresAt }, context);
+    return (await deliver(built, booking as EmailBooking, `booking_lookup:${input.tokenId}`, context.staffEmail)) ?? "failed";
+  } catch (caught) {
+    logger.error("booking.email_failed", { template: "booking_lookup", error: caught instanceof Error ? caught.name : "Error" });
     return "failed";
   }
 }

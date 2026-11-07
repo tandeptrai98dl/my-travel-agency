@@ -9,6 +9,7 @@ import { MarketingForm, ProfileForm } from "@/components/account/profile-forms";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPathname } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
+import { deleteAccountAction } from "@/modules/account/account-deletion.actions";
 import { getMyProfile, requireCustomer } from "@/modules/account/account.service";
 import { changeEmailAction, changePasswordAction } from "@/modules/identity/customer-auth.actions";
 
@@ -49,9 +50,12 @@ async function Profile({ locale }: { locale: Locale }) {
     status: { ...Object.fromEntries(statusKeys.map((key) => [key, t(`status.${key}`)])), failed: t("status.failed") },
     errors: { ...Object.fromEntries(errorKeys.map((key) => [key, t(`errors.${key}`)])), invalid: t("errors.invalid") },
   };
-  const [emailLabels, passwordLabels] = await Promise.all([
+  const [emailLabels, passwordLabels, deletionLabels] = await Promise.all([
     authLabels(locale, t("emailSubmit"), t("pending")),
     authLabels(locale, t("passwordSubmit"), t("pending")),
+    authLabels(locale, t("deletionSubmit"), t("pending"), {
+      status: { deletion_pending: t("deletionPending") },
+    }),
   ]);
   const sectionClass = "flex flex-col gap-5 rounded-lg border border-border bg-card p-6 md:p-8";
 
@@ -120,6 +124,22 @@ async function Profile({ locale }: { locale: Locale }) {
             { name: "password", type: "password", label: tAuth("fields.newPassword"), autoComplete: "new-password", required: true, hint: tAuth("fields.passwordHint") },
             { name: "confirm", type: "password", label: tAuth("fields.confirm"), autoComplete: "new-password", required: true },
           ]}
+        />
+      </section>
+
+      <section aria-labelledby="deletion-heading" className={sectionClass}>
+        <h2 id="deletion-heading" className="font-serif text-h3 font-semibold">
+          {t("deletionTitle")}
+        </h2>
+        <p className="text-small text-muted-foreground">{t("deletionIntro")}</p>
+        <AuthForm
+          action={deleteAccountAction}
+          locale={locale}
+          labels={deletionLabels}
+          doneOn={["deletion_pending"]}
+          resetOn={["invalid"]}
+          testId="deletion-form"
+          fields={[{ name: "current", type: "password", label: tAuth("fields.current"), autoComplete: "current-password", required: true }]}
         />
       </section>
     </AccountFrame>

@@ -856,6 +856,12 @@ isOneToOne: false
             "add_inquiry_note":
 { Args: { "body": string,"contacted"?: boolean,"target_id": string }; Returns: string
                            },
+"admin_anonymise_customer":
+{ Args: { "note": string,"target_id": string }; Returns: Json
+                           },
+"anonymise_customer":
+{ Args: { "target_id": string }; Returns: Json
+                           },
 "assign_inquiry":
 { Args: { "assignee": string,"target_id": string }; Returns: undefined
                            },
@@ -904,6 +910,9 @@ isOneToOne: false
 "confirm_newsletter_subscription":
 { Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
                            },
+"confirmed_customer_email":
+{ Args: { "target_id": string }; Returns: string
+                           },
 "create_checkout_draft":
 { Args: { "ip": unknown,"marketing": boolean,"payload": Json,"privacy_version": string,"terms_version": string,"user_agent": string }; Returns: string
                            },
@@ -938,6 +947,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "adults": number,"amount_paid": number,"balance_due_date": string,"children": number,"code": string,"created_at": string,"end_date": string,"infants": number,"payment_state": Database["public"]['Enums']["booking_payment_state"],"start_date": string,"status": Database["public"]['Enums']["booking_status"],"total": number,"tour_code": string,"tour_title": string
             }[]
+                           },
+"customer_deletion_state":
+{ Args: { "target_id": string }; Returns: Json
                            },
 "customer_travellers_editable":
 { Args: { "booking_status": Database["public"]['Enums']["booking_status"],"start_date": string }; Returns: boolean
@@ -1000,6 +1012,9 @@ isOneToOne: false
 "issue_booking_access_token":
 { Args: { "purpose": string,"target_id": string,"token_hash": string,"valid_minutes": number }; Returns: string
                            },
+"issue_booking_lookup":
+{ Args: { "email": string,"target_code": string,"token_hash": string,"valid_minutes"?: number }; Returns: Json
+                           },
 "itinerary_media_ids":
 { Args: { "itinerary": Json }; Returns: (string)[]
                            },
@@ -1020,6 +1035,9 @@ isOneToOne: false
                            },
 "media_used_in_content":
 { Args: { "target_id": string }; Returns: boolean
+                           },
+"name_initials":
+{ Args: { "full_name": string }; Returns: string
                            },
 "next_booking_code":
 { Args: Record<PropertyKey, never>; Returns: string
@@ -1065,6 +1083,9 @@ isOneToOne: false
                            },
 "request_cancellation":
 { Args: { "note": string,"target_id": string }; Returns: undefined
+                           },
+"request_customer_deletion":
+{ Args: { "target_id": string }; Returns: (string)[]
                            },
 "request_newsletter_subscription":
 { Args: { "p_email": string,"p_locale": Database["public"]['Enums']["locale"],"p_source": string,"p_token_hash": string }; Returns: boolean

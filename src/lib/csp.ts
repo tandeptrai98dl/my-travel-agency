@@ -29,6 +29,8 @@ export const SECURE_ROUTES = [
   "/forgot-password",
   "/reset-password",
   "/account",
+  // Phase 5 PR 5B: the guest booking lookup.
+  "/booking-lookup",
 ] as const satisfies readonly (keyof typeof pathnames)[];
 
 const LOCALES: Locale[] = ["vi", "en"];
