@@ -180,7 +180,7 @@ RLS is the source of truth; `requireRole()` is the first check in every Server A
 | Redirects, newsletter | — | — | — | Edit | Full |
 | Settings, staff, audit log | — | — | — | — | Full |
 
-`sales_manager` has the Sales permissions; only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
+`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037; enforced from Phase 5 PR 5C, until then the Phase 0 policy limits managers to assigned and unassigned inquiries like Sales); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
 
 ## Routes
 
