@@ -17,14 +17,14 @@ Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 - Customer profiles are soft-deleted (`deleted_at`) and anonymised on request; content uses `archived`.
 - `updated_at` is maintained by a shared `set_updated_at()` trigger.
 
-## Table groups (36 tables)
+## Table groups (37 tables)
 
 | Group | Tables |
 | --- | --- |
 | Identity | profiles (1–1 with `auth.users`) |
 | Catalog | tours, tour_translations, tour_media, tour_destinations, tour_travel_styles, price_tiers, departures, cancellation_policies |
 | Taxonomy | destinations, destination_translations, travel_styles, travel_style_translations |
-| Booking | bookings, booking_items, travellers, booking_events |
+| Booking | bookings, booking_items, travellers, booking_events, booking_access_tokens |
 | Payments | payments, payment_links, webhook_events |
 | Inquiries | inquiries, internal_notes |
 | Content | posts, post_translations, post_categories, post_category_translations, pages, page_translations, reviews, media, redirects, subscribers |
@@ -383,6 +383,16 @@ create table booking_events (
 );
 create index on booking_events (booking_id, created_at);
 
+create table booking_access_tokens (  -- single-use emailed checkout (and Phase 5 lookup) links, ADR-038
+  id         uuid primary key default gen_random_uuid(),
+  booking_id uuid not null references bookings (id) on delete cascade,
+  purpose    text not null check (purpose in ('email', 'lookup')),
+  token_hash text not null unique,  -- SHA-256 hex of the emailed token
+  expires_at timestamptz not null,
+  used_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+
 -- Payments
 create table payments (
   id              uuid primary key default gen_random_uuid(),
@@ -632,7 +642,8 @@ Known Phase 0 limits:
 | inquiries, internal_notes | — | — | sales, sales_manager, admin; operator read-only |
 | payment_links, webhook_events | — | — | accountant, admin read; writes only via service role |
 | settings | Read keys with `is_public` | Same as anon | admin writes |
-| consent_records, email_logs, audit_logs | — | — | admin reads; writes only via service role or triggers |
+| consent_records, email_logs, audit_logs | — | — | admin reads; `email_logs` rows of a booking also for staff who read bookings (resend); writes only via service role or triggers |
+| booking_access_tokens | — | — | admin reads; writes only via service-role functions |
 | redirects, subscribers | — | — | editor, admin |
 
 Guests create draft bookings, inquiries and newsletter sign-ups only through Server Actions using the service role after validation, Turnstile and rate limiting. Every policy has pgTAP tests.
@@ -682,6 +693,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `create_quote(payload)` | authenticated (`security definer`; sales, sales_manager, admin) | A `quoted` booking for a private tour only (group tours are refused, `*_quote_private_only.sql`) at staff prices per adult and child (infants free), the snapshot title in the quote's language or else the other language's, the tour's deposit rule, `quote_expires_at`, snapshots and price lines; links and marks the inquiry `quoted`; `bookings.quote` in `audit_logs` (`*_quotes_payment_links.sql`) |
 | `create_payment_link(target_id, token_hash, valid_hours)` | authenticated (`security definer`; sales, sales_manager, admin) | Stores only the SHA-256 of an app-made token for the amount due now (deposit, full or balance), at most 7 days and never past the quote's expiry; booking event `payment_link_created` |
 | `redeem_payment_link(token_hash)`, `payment_link_state(token_hash)` | service_role | Opens a link once before its expiry for a booking still payable (the link page's button, never a plain visit); the state check has no side effects |
+| `issue_booking_access_token(target_id, purpose, token_hash, valid_minutes)`, `booking_access_token_state(target_code, token_hash)`, `redeem_booking_access_token(target_code, token_hash)` | service_role | Single-use emailed checkout links (ADR-038): store only the hash (up to 7 days), report valid/used/expired/invalid for the booking in the URL without side effects, redeem once on the customer's click (`*_email_polish.sql`) |
+| `raise_on_email_problems()` | `pg_cron`, every 15 min | Fails the run (the alert) when an email stayed `queued` 10–25 minutes or one `failed` in the last 15 minutes |
 | `hold_minutes()`, `booking_prices_current()`, `take_seats()`, `release_seats()`, `refresh_payment_state()`, `log_booking_event()`, `check_draft_payload()` | service_role | Helpers of the booking functions (`*_booking_functions.sql`) |
 
 Data-changing functions use `security definer` + `set search_path = ''` and grant execute to `service_role` only.
