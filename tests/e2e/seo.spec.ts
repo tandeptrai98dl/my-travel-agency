@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 // Phase 3 spec step 19: sitemap.xml split by type, robots.txt. Seed (supabase/seed.sql): VN-HLB-03
 // published in VI and EN, VN-PQC-04 a draft, JP-KYT-07 published in Vietnamese only, and a

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 import { magicLinkTokenHash } from "./support/admin-api";
 import { signInAs } from "./support/auth";

@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 import { adminApi } from "./support/admin-api";
 

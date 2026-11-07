@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./support/test";
 
 /** Pretend the visitor already chose "essential only", so the banner stays out of the way. */
 async function dismissConsent(page: Page) {

@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
-import { createNonce, isSecurePath, secureCsp } from "@/lib/csp";
+import { adminCsp, createNonce, isAdminPath, isSecurePath, secureCsp } from "@/lib/csp";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
@@ -28,21 +28,29 @@ export async function proxy(request: NextRequest) {
   // 1. Refresh the session first, so the locale handler forwards the refreshed cookies.
   const session = await refreshSession(request);
 
-  // 2. Checkout and account (ADR-027): a per-request nonce. Next.js reads it from the request's
-  // CSP header and puts it on every script of these fully dynamic pages.
+  // 2. Checkout, account and the admin (ADR-027 option 2): a per-request nonce. Next.js reads it
+  // from the request's CSP header and puts it on every script of these fully dynamic pages. The
+  // public pages get their nonce-free policy from next.config.ts.
+  const { pathname } = request.nextUrl;
+  const hosts = {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    development: process.env.NODE_ENV === "development",
+  };
   let policy: string | null = null;
-  if (isSecurePath(request.nextUrl.pathname)) {
+  if (isSecurePath(pathname)) {
     policy = secureCsp({
+      ...hosts,
       nonce: createNonce(),
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       paymentUrl: process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-      development: process.env.NODE_ENV === "development",
     });
-    request.headers.set("Content-Security-Policy", policy);
+  } else if (isAdminPath(pathname)) {
+    policy = adminCsp({ ...hosts, nonce: createNonce() });
   }
+  if (policy) request.headers.set("Content-Security-Policy", policy);
 
   // 3. Locale routing for the public website; everything else passes through.
-  const response = NON_LOCALIZED.test(request.nextUrl.pathname)
+  const response = NON_LOCALIZED.test(pathname)
     ? NextResponse.next({ request })
     : handleLocale(request);
   if (policy) response.headers.set("Content-Security-Policy", policy);
