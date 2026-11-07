@@ -3,6 +3,7 @@ import { expect, test } from "./support/test";
 import { magicLinkTokenHash } from "./support/admin-api";
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";
+import { startTotpEnrolment } from "./support/staff";
 import { totp } from "./support/totp";
 
 // The MFA test enrols a factor on the shared admin account; a retry would find it already
@@ -88,8 +89,7 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
   expect((await page.request.post("/api/monitoring/test-error")).status()).toBe(403);
 
   // Enrol: read the manual key and answer with a computed TOTP code.
-  await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
-  const secret = (await page.getByTestId("mfa-secret").textContent())?.trim() ?? "";
+  const secret = await startTotpEnrolment(page);
   expect(secret).toMatch(/^[A-Z2-7]+=*$/);
   await page.getByLabel("Mã xác thực").fill(totp(secret));
   await page.getByRole("button", { name: "Xác minh" }).click();
