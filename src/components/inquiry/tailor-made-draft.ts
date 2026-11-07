@@ -1,7 +1,7 @@
 /**
- * The tailor-made wizard's browser draft (Phase 5 PR 5W). Its own chunk, loaded after the wizard
- * mounts: the draft is not needed to show or use the form, and the wizard page stays inside the
- * initial-JS budget (Phase 3 spec decision 16).
+ * The tailor-made wizard's browser draft and campaign tags (Phase 5 PR 5W). Its own chunk, loaded
+ * after the wizard mounts: neither is needed to show or use the form, and the wizard page stays
+ * inside the initial-JS budget (Phase 3 spec decision 16).
  */
 
 const DRAFT_KEY = "pta:tailor-made:draft:v1";
@@ -54,4 +54,13 @@ export function restoreDraft(form: HTMLFormElement, entries: [string, string][])
       else if (element.type === "checkbox") element.checked = false;
     } else if (saved) element.value = saved[0];
   }
+}
+
+/** `utm_*` tags from the page URL as hidden fields (`utm_source`, …), each at most 100 characters. */
+export function campaignTags(search: string = window.location.search): [string, string][] {
+  const params = new URLSearchParams(search);
+  return ["source", "medium", "campaign", "term", "content"].flatMap((key) => {
+    const value = params.get(`utm_${key}`);
+    return value ? [[`utm_${key}`, value.slice(0, 100)] as [string, string]] : [];
+  });
 }

@@ -84,19 +84,20 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
   useEffect(() => {
     setReady(true);
     setMonths(upcomingMonths());
-    const params = new URLSearchParams(window.location.search);
-    setUtm(["source", "medium", "campaign", "term", "content"].flatMap((key) => (params.get(`utm_${key}`) ? [[`utm_${key}`, params.get(`utm_${key}`)!.slice(0, 100)] as [string, string]] : [])));
   }, []);
 
   useEffect(() => {
     if (pending) preloadInquirySuccess();
   }, [pending]);
 
-  // The draft goes back in once the month options exist (a saved month needs its option).
+  // The draft goes back in once the month options exist (a saved month needs its option); campaign
+  // tags from the URL come with the same on-demand module.
   useEffect(() => {
     if (!months.length || !formRef.current) return;
     let cancelled = false;
-    void loadDraft().then(({ readDraft, restoreDraft }) => {
+    void loadDraft().then(({ readDraft, restoreDraft, campaignTags }) => {
+      if (cancelled) return;
+      setUtm(campaignTags());
       const draft = readDraft();
       if (cancelled || !draft?.length || !formRef.current) return;
       restoreDraft(formRef.current, draft);

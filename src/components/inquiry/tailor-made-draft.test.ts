@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { clearDraft, readDraft } from "./tailor-made-draft";
+import { campaignTags, clearDraft, readDraft } from "./tailor-made-draft";
 
 const KEY = "pta:tailor-made:draft:v1";
 
@@ -67,5 +67,12 @@ describe("tailor-made draft", () => {
     const store = stubStorage({ [KEY]: "[]" });
     clearDraft();
     expect(store.has(KEY)).toBe(false);
+  });
+
+  it("reads campaign tags from the URL, known keys only, shortened", () => {
+    expect(campaignTags(`?utm_source=news&utm_medium=&utm_evil=x&utm_campaign=${"a".repeat(150)}`)).toEqual([
+      ["utm_source", "news"],
+      ["utm_campaign", "a".repeat(100)],
+    ]);
   });
 });

@@ -19,8 +19,6 @@ export function useSubmitWithoutReset(dispatch: (formData: FormData) => void, be
       event.preventDefault();
       const submitter = (event.nativeEvent as SubmitEvent).submitter;
       const data = new FormData(event.currentTarget, submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter : undefined);
-      // React's own hidden fields for the no-JavaScript post (`$ACTION_…`) are not form data.
-      for (const key of [...data.keys()]) if (key.startsWith("$ACTION")) data.delete(key);
       startTransition(() => dispatch(data));
     },
     [dispatch, before],
