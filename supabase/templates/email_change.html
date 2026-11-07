@@ -1,0 +1,15 @@
+<!-- Email change (Phase 5 spec decisions 4 and 15). With double confirmation both addresses get
+     this email; /auth/confirm verifies on the server and re-attaches bookings once the new address
+     is confirmed. Set the same template on hosted projects (Authentication > Email Templates >
+     Change email address). -->
+{{ if eq .Data.locale "en" }}
+<h2>Confirm your new email</h2>
+<p>A change of your account's email from {{ .Email }} to {{ .NewEmail }} was requested.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email_change&amp;next=/en/account/profile">Confirm the change</a></p>
+<p>If you did not ask for this, ignore this email and sign in to check your account.</p>
+{{ else }}
+<h2>Xác nhận email mới</h2>
+<p>Có yêu cầu đổi email của tài khoản từ {{ .Email }} sang {{ .NewEmail }}.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email_change&amp;next=/tai-khoan/ho-so">Xác nhận thay đổi</a></p>
+<p>Nếu bạn không yêu cầu, hãy bỏ qua email này và đăng nhập để kiểm tra tài khoản.</p>
+{{ end }}

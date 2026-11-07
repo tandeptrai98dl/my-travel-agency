@@ -1,0 +1,15 @@
+<!-- Sign-up confirmation (docs/specs/phase-5-accounts-inquiries-operations.md decision 15). The link
+     goes to /auth/confirm with a token hash, which verifies it on the server, attaches earlier
+     bookings and opens the account in the customer's language. Set the same template on hosted
+     projects (Authentication > Email Templates > Confirm signup). -->
+{{ if eq .Data.locale "en" }}
+<h2>Confirm your email</h2>
+<p>Thank you for creating an account. Confirm your email address to see your bookings.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/en/account">Confirm my email</a></p>
+<p>If you did not create an account, ignore this email.</p>
+{{ else }}
+<h2>Xác nhận email của bạn</h2>
+<p>Cảm ơn bạn đã tạo tài khoản. Hãy xác nhận địa chỉ email để xem các booking của bạn.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/tai-khoan">Xác nhận email</a></p>
+<p>Nếu bạn không tạo tài khoản, hãy bỏ qua email này.</p>
+{{ end }}

@@ -15,8 +15,8 @@ const password = `e2e-staff-${stamp}-Aa1!`;
 async function signIn(page: Page, email: string, secret: string) {
   await page.goto("/auth/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(secret);
-  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(secret);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).not.toHaveURL(/\/auth\/login/);
 }
 
@@ -131,8 +131,9 @@ test("an aal2 admin edits settings, invites staff and changes their role and acc
   const inviteePage = await invitee.newPage();
   await inviteePage.goto(path);
   await expect(inviteePage).toHaveURL(/\/auth\/update-password$/);
-  await inviteePage.getByLabel("New password").fill(`${password}-invitee`);
-  await inviteePage.getByRole("button", { name: "Save new password" }).click();
+  await inviteePage.getByLabel("Mật khẩu mới", { exact: true }).fill(`${password}-invitee`);
+  await inviteePage.getByLabel("Nhập lại mật khẩu mới").fill(`${password}-invitee`);
+  await inviteePage.getByRole("button", { name: "Lưu mật khẩu mới" }).click();
   await expect(inviteePage).toHaveURL(/\/admin$/);
   await expect(inviteePage.getByTestId("admin-role")).toHaveText("Vai trò: Biên tập");
 

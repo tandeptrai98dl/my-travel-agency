@@ -105,8 +105,8 @@ test("an MFA-verified accountant records money, refunds within the cap and assig
 
   await page.goto("/auth/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/mfa$/);
   await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
   const secret = (await page.getByTestId("mfa-secret").textContent())?.trim() ?? "";

@@ -15,8 +15,12 @@ describe("secure CSP", () => {
     for (const path of ["/dat-tour/ha-long", "/thanh-toan/PTA-2611-0042", "/thanh-toan/PTA-2611-0042/ket-qua", "/en/book/ha-long", "/en/checkout/PTA-2611-0042/result", "/thanh-toan/link/abc", "/en/pay/abc"]) {
       expect(isSecurePath(path), path).toBe(true);
     }
-    // Not served by the secure root yet (the account): the public root answers them.
-    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/tai-khoan", "/en/account/bookings", "/book/x"]) {
+    // Customer sign-in and the account (Phase 5 PR 5A).
+    for (const path of ["/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password", "/tai-khoan", "/tai-khoan/booking", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/bookings/PTA-2611-0042", "/en/account/profile"]) {
+      expect(isSecurePath(path), path).toBe(true);
+    }
+    // Public pages, including look-alikes of the secure paths.
+    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/book/x", "/tai-khoanx", "/dang-nhap/x", "/en/loginx", "/en/accounts", "/login", "/auth/login"]) {
       expect(isSecurePath(path), path).toBe(false);
     }
   });
@@ -81,10 +85,15 @@ describe("public CSP", () => {
   });
 
   it("applies to public pages and /auth, never to the admin, the API or the secure paths", () => {
-    for (const path of ["/", "/en", "/tours", "/tours/ha-long", "/en/tours/x", "/diem-den/viet-nam", "/auth/login", "/robots.txt", "/administrator", "/tai-khoan"]) {
+    for (const path of ["/", "/en", "/tours", "/tours/ha-long", "/en/tours/x", "/diem-den/viet-nam", "/auth/login", "/auth/update-password", "/robots.txt", "/administrator", "/tai-khoanx", "/en/accounts", "/dang-nhap/x"]) {
       expect(publicSource.test(path), path).toBe(true);
+      expect(isSecurePath(path) || isAdminPath(path), path).toBe(false);
     }
-    for (const path of ["/admin", "/admin/tours", "/api/health", "/dat-tour/x", "/thanh-toan/PTA-1", "/thanh-toan/link/abc", "/en/book/x", "/en/checkout/PTA-1/result", "/en/pay/abc"]) {
+    for (const path of [
+      "/admin", "/admin/tours", "/api/health", "/dat-tour/x", "/thanh-toan/PTA-1", "/thanh-toan/link/abc", "/en/book/x", "/en/checkout/PTA-1/result", "/en/pay/abc",
+      "/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password",
+      "/tai-khoan", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/profile",
+    ]) {
       expect(publicSource.test(path), path).toBe(false);
       expect(isSecurePath(path) || isAdminPath(path) || path.startsWith("/api/"), path).toBe(true);
     }
