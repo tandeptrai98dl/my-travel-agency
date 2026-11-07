@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { TourDetailView } from "@/components/tour/tour-detail-view";
 import { getPathname } from "@/i18n/navigation";
+import { slugParams } from "@/i18n/static-params";
 import { isLocale, routing } from "@/i18n/routing";
 import { openGraphImageUrl } from "@/lib/images";
 import {
@@ -24,8 +25,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NO_TOUR = "no-published-tour";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = isLocale(params.locale) ? await getPublishedTourSlugs(params.locale) : [];
-  return (slugs.length ? slugs : [NO_TOUR]).map((slug) => ({ slug }));
+  return slugParams(params.locale, getPublishedTourSlugs, NO_TOUR);
 }
 
 async function load(locale: string, slug: string): Promise<{ locale: Locale; tour: TourPage }> {

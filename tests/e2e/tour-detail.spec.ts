@@ -14,12 +14,20 @@ async function dismissConsent(page: Page) {
   await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
 }
 
+/**
+ * A page that does not exist in this language. Slugs listed at build time (the other language's
+ * published slugs) answer a real 404 at once. An unknown slug's first visit gets the prerendered
+ * fallback shell (200, noindex) while the page renders; from then on the stored page answers 404
+ * (Phase 3 spec step 22).
+ */
 async function expectNotFound(page: Page, path: string, title: string) {
-  await page.goto(path);
-  // The not-found UI streams after the shell (Cache Components), so the status is 200 with a
-  // noindex robots tag rather than 404 (see the PR's deviations).
+  const response = await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
   await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+  if (response?.status() !== 404) {
+    expect(response?.status()).toBe(200);
+    await expect.poll(async () => (await page.request.get(path, { maxRedirects: 0 })).status(), { timeout: 15_000 }).toBe(404);
+  }
 }
 
 test.describe("tour detail", () => {
@@ -65,9 +73,25 @@ test.describe("tour detail", () => {
     await expect(page.getByRole("banner").getByRole("link", { name: "English" })).toHaveAttribute("href", "/en/tours");
   });
 
-  test("a slug of the other language redirects to this language's slug", async ({ page }) => {
+  test("a slug of the other language is a real 308 to this language's slug", async ({ page }) => {
+    for (const [from, to] of [
+      ["/en/tours/du-thuyen-vinh-ha-long", GROUP_EN],
+      ["/tours/ha-long-bay-cruise", GROUP_VI],
+      ["/en/destinations/viet-nam", "/en/destinations/vietnam"],
+    ]) {
+      const response = await page.request.get(from, { maxRedirects: 0 });
+      expect(response.status(), from).toBe(308);
+      expect(new URL(response.headers().location!, "http://x").pathname, from).toBe(to);
+    }
     await page.goto("/en/tours/du-thuyen-vinh-ha-long");
     await expect(page).toHaveURL(new RegExp(`${GROUP_EN}$`));
+  });
+
+  test("the other language's slug without a published translation here is a real 404", async ({ page }) => {
+    // JP-KYT-07 is published in Vietnamese only.
+    const response = await page.goto("/en/tours/kyoto-tokyo-mua-thu");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
   });
 
   test("drafts and unpublished translations are not found", async ({ page }) => {

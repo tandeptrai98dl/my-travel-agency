@@ -14,6 +14,7 @@ import { RichText } from "@/components/typography/rich-text";
 import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname, Link } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
+import { slugParams } from "@/i18n/static-params";
 import { formatDate } from "@/lib/dates";
 import { siteUrl } from "@/lib/site-url";
 import { getPostPage, getPostSlugs } from "@/modules/content/public/content-public.service";
@@ -24,8 +25,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 const NONE = "no-published-article";
 
 export async function generateStaticParams({ params }: { params: { locale: string } }) {
-  const slugs = isLocale(params.locale) ? await getPostSlugs(params.locale) : [];
-  return (slugs.length ? slugs : [NONE]).map((slug) => ({ slug }));
+  return slugParams(params.locale, getPostSlugs, NONE);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
