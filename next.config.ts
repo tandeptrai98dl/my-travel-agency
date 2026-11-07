@@ -37,6 +37,10 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   widenClientFileUpload: true,
   // Browser tracing is off (sentry-options.ts), so navigation hooks are not needed.
   suppressOnRouterTransitionStartWarning: true,
+  // No route manifest in the browser bundle: it only names spans after route patterns (tracing is
+  // off), it listed every route, admin included, in every public page's initial JavaScript
+  // (≈ 0.8 KB gzip, growing with each route), and beforeSend already redacts transaction paths.
+  routeManifestInjection: false,
   // Smaller browser bundle: no debug statements, tracing or Session Replay code (none are used).
   bundleSizeOptimizations: {
     excludeDebugStatements: true,
