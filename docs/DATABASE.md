@@ -571,8 +571,9 @@ create table email_logs (
   booking_id          uuid references bookings (id),
   inquiry_id          uuid references inquiries (id),
   provider_message_id text,
-  status              text not null,  -- queued | sent | failed
-  error               text,
+  status              text not null,  -- queued | sent | failed | skipped (no Resend configured)
+  error               text,           -- provider HTTP status or error class only, never its message
+  dedupe_key          text unique,    -- exactly-once key (e.g. booking_confirmed:<booking_events.id>), 4E
   created_at          timestamptz not null default now()
 );
 
