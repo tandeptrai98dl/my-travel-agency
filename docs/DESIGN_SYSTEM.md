@@ -127,6 +127,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/account` (Phase 5 PR 5A): AuthForm (one form for every auth and account step: server field errors linked to their fields, a focused status line, Turnstile on first interaction when needed), AuthShell (480 px card column), GoogleButton (only when configured), AccountFrame (title and account navigation with the current page marked), BookingList, TravellersForm (rows up to the party, one lead, never a passport number), ProfileForm and MarketingForm; plain `buttonVariants` and `cx()`, no next-intl client provider
 - Phase 5 PR 5C: `src/components/admin/inquiries` InquiryAssignForm (owner select for managers and admins, "take" for sales), InquiryStatusForm, InquiryNoteForm (with "I have contacted the customer"); the inbox list with time to first response and the inquiry page (summary, contact, consent, trip, message, notes, history, quote link); QuoteForm accepts prefilled values. `emails/`: InquiryReceived (customer, the inquiry's language) and StaffInquiry (team alert, Vietnamese, no contact details or message)
 - `src/components/inquiry` (Phase 5 PR 5W): TailorMadeWizard (five steps in one form, shown one at a time with JavaScript, per-step checks, a browser draft without contact details or the message), TourInquiryForm (private tour pages, loaded as its own chunk through LazyTourInquiryForm), InquirySuccess (the code and next steps), shared Field, ContactFields, ConsentField and Honeypot
+- Phase 5 PR 5B: the booking lookup page (AuthShell and AuthForm with code and email, the same answer whatever matched) and the account's "delete your account" section (AuthForm with the current password; answers for done, waiting and received); `emails/`: BookingLookup (one button to the single-use link and its expiry)
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -140,7 +141,6 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Marketing | EditorialSplit, PressLogos (the homepage set shipped in PR I, destination cards in PR J) |
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |
 | Booking | BookingStepper, PaxSelector, DepartureCalendar, PriceBreakdown, ContactForm, TravellerForm, PaymentPlanSelector, PaymentMethodSelector, VietQRPanel, HoldCountdown, PaymentResult, BookingSummaryCard, InvoiceInfoForm, CancellationPolicySummary, TermsConsent |
-| Account | DeleteAccountDialog (PR 5B) |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
 | Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | PasswordReset, VerifyEmail (Phase 5) |

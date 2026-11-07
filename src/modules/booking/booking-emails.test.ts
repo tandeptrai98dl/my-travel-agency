@@ -7,6 +7,7 @@ import {
   amountFromEvent,
   type BookingEventRow,
   buildBalanceReminderEmail,
+  buildBookingLookupEmail,
   buildBookingEmail,
   buildPaymentLinkEmail,
   checkoutUrl,
@@ -209,5 +210,17 @@ describe("templates", () => {
 
     const reminder = await renderEmail(buildBalanceReminderEmail(booking({ locale }), context).element);
     expect(reminder.text).toMatch(/21[.,]000[.,]000/);
+  });
+});
+
+describe("booking lookup email", () => {
+  it("links the checkout with the single-use token and says when it stops working", async () => {
+    const built = buildBookingLookupEmail(booking({ locale: "en" }), { token: "tok_abc", expiresAt: "2026-11-07T10:30:00Z" }, context);
+    expect(built.template).toBe("booking_lookup");
+    expect(built.subject).toBe("A link to your booking · PTA-2611-0042");
+    const { html, text } = await renderEmail(built.element);
+    expect(html).toContain("https://travel.example/en/checkout/PTA-2611-0042?access=tok_abc");
+    expect(text).toContain("17:30");
+    expect(built.subject).not.toContain("tok_abc");
   });
 });

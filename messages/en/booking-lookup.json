@@ -1,0 +1,17 @@
+{
+  "Lookup": {
+    "metaTitle": "Find your booking",
+    "eyebrow": "Your booking",
+    "title": "Find your booking",
+    "intro": "Enter your booking code and the email address you booked with. We will send that address a single-use link to open the booking.",
+    "code": "Booking code",
+    "codeHint": "For example PTA-2611-0042, in your confirmation email.",
+    "email": "Booking email",
+    "submit": "Send the link",
+    "pending": "Sending…",
+    "sent": "If those details match a booking, we have just emailed a link to that address. It works once, for a short time.",
+    "invalidCode": "Booking codes look like PTA-2611-0042.",
+    "unavailable": "Booking lookup is not available right now. Please contact us by email or phone.",
+    "account": "Have an account? Sign in to see all your bookings."
+  }
+}

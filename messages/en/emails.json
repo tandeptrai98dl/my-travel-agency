@@ -159,6 +159,16 @@
         "vi": "Vietnamese",
         "en": "English"
       }
+    },
+    "bookingLookup": {
+      "subject": "A link to your booking · {code}",
+      "preview": "A link to open booking {code}.",
+      "eyebrow": "Booking lookup",
+      "heading": "Your booking",
+      "intro": "You asked to see booking {code}. Use the button below to open it in this browser.",
+      "button": "Open the booking",
+      "expiry": "The link works once, until {time} (Vietnam time).",
+      "ignore": "If you did not ask for this, you can ignore this email; your booking stays safe."
     }
   }
 }

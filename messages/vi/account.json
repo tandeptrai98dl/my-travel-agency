@@ -56,10 +56,35 @@
       "paymentMethod": "Phương thức",
       "paymentAmount": "Số tiền",
       "paymentStatus": "Trạng thái",
-      "kinds": { "deposit": "Đặt cọc", "balance": "Phần còn lại", "full": "Toàn bộ", "refund": "Hoàn tiền" },
-      "providers": { "vnpay": "VNPay", "bank_transfer": "Chuyển khoản", "cash": "Tiền mặt", "manual": "Ghi nhận thủ công", "momo": "MoMo", "onepay": "OnePay", "paypal": "PayPal" },
-      "transactionStatuses": { "pending": "Đang chờ", "succeeded": "Thành công", "failed": "Không thành công", "expired": "Hết hạn", "cancelled": "Đã huỷ" },
-      "paymentStates": { "unpaid": "Chưa thanh toán", "deposit_paid": "Đã đặt cọc", "paid": "Đã thanh toán đủ", "partially_refunded": "Đã hoàn một phần", "refunded": "Đã hoàn tiền" },
+      "kinds": {
+        "deposit": "Đặt cọc",
+        "balance": "Phần còn lại",
+        "full": "Toàn bộ",
+        "refund": "Hoàn tiền"
+      },
+      "providers": {
+        "vnpay": "VNPay",
+        "bank_transfer": "Chuyển khoản",
+        "cash": "Tiền mặt",
+        "manual": "Ghi nhận thủ công",
+        "momo": "MoMo",
+        "onepay": "OnePay",
+        "paypal": "PayPal"
+      },
+      "transactionStatuses": {
+        "pending": "Đang chờ",
+        "succeeded": "Thành công",
+        "failed": "Không thành công",
+        "expired": "Hết hạn",
+        "cancelled": "Đã huỷ"
+      },
+      "paymentStates": {
+        "unpaid": "Chưa thanh toán",
+        "deposit_paid": "Đã đặt cọc",
+        "paid": "Đã thanh toán đủ",
+        "partially_refunded": "Đã hoàn một phần",
+        "refunded": "Đã hoàn tiền"
+      },
       "policy": "Chính sách huỷ",
       "noPolicy": "Chính sách huỷ được ghi trong xác nhận đặt tour.",
       "travellers": "Hành khách",
@@ -89,7 +114,12 @@
         "expired": "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
         "failed": "Đã có lỗi. Vui lòng thử lại."
       },
-      "errors": { "required": "Vui lòng điền họ và tên.", "tooLong": "Quá dài.", "invalidDate": "Ngày chưa hợp lệ.", "invalid": "Giá trị chưa hợp lệ." }
+      "errors": {
+        "required": "Vui lòng điền họ và tên.",
+        "tooLong": "Quá dài.",
+        "invalidDate": "Ngày chưa hợp lệ.",
+        "invalid": "Giá trị chưa hợp lệ."
+      }
     },
     "profile": {
       "metaTitle": "Hồ sơ",
@@ -99,7 +129,10 @@
       "phone": "Số điện thoại",
       "country": "Quốc gia",
       "language": "Ngôn ngữ nhận email",
-      "languages": { "vi": "Tiếng Việt", "en": "English" },
+      "languages": {
+        "vi": "Tiếng Việt",
+        "en": "English"
+      },
       "save": "Lưu thông tin",
       "saving": "Đang lưu…",
       "marketingTitle": "Thư giới thiệu hành trình",
@@ -120,7 +153,18 @@
         "expired": "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
         "failed": "Đã có lỗi. Vui lòng thử lại."
       },
-      "errors": { "required": "Vui lòng điền trường này.", "tooLong": "Quá dài.", "invalidPhone": "Số điện thoại chưa hợp lệ.", "invalid": "Giá trị chưa hợp lệ." }
+      "errors": {
+        "required": "Vui lòng điền trường này.",
+        "tooLong": "Quá dài.",
+        "invalidPhone": "Số điện thoại chưa hợp lệ.",
+        "invalid": "Giá trị chưa hợp lệ."
+      },
+      "deletionTitle": "Xoá tài khoản và dữ liệu",
+      "deletionIntro": "Chúng tôi xoá tên, số điện thoại và địa chỉ email của bạn khỏi tài khoản, gỡ các đặt chỗ khỏi tài khoản và xoá đăng ký nhận tin. Hồ sơ đặt chỗ và thanh toán được giữ theo thời hạn luật kế toán yêu cầu. Việc này không thể hoàn tác.",
+      "deletionSubmit": "Xoá tài khoản",
+      "deletionPending": "Chúng tôi đã ghi nhận yêu cầu. Vì bạn còn chuyến đi sắp tới hoặc khoản thanh toán chưa hoàn tất, đội ngũ của chúng tôi sẽ hoàn tất việc xoá sau đó và thông báo cho bạn.",
+      "deletionDone": "Tài khoản của bạn đã được xoá và bạn đã được đăng xuất. Cảm ơn bạn đã đồng hành cùng chúng tôi.",
+      "deletionReceived": "Chúng tôi đã nhận được yêu cầu xoá. Đội ngũ của chúng tôi sẽ hoàn tất và thông báo cho bạn."
     }
   }
 }

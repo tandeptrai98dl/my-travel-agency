@@ -54,6 +54,9 @@ export const changePasswordSchema = z
 
 export const changeEmailSchema = z.object({ current: z.string().min(1, "required").max(200, "invalid"), email, locale });
 
+export const deleteAccountSchema = z.object({ current: z.string().min(1, "required").max(200, "invalid"), locale });
+export type DeleteAccountInput = z.output<typeof deleteAccountSchema>;
+
 export const oauthStartSchema = z.object({ locale, next });
 
 export type SignInInput = z.infer<typeof signInSchema>;
@@ -64,7 +67,7 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
 
 /** The fields a form can show errors on. */
-export type AuthField = "fullName" | "email" | "password" | "confirm" | "current" | "privacy";
+export type AuthField = "fullName" | "email" | "password" | "confirm" | "current" | "privacy" | "code";
 
 /** Every answer of an auth form. `sent` is the "check your email" answer, whatever matched. */
 export type AuthStatus =
@@ -78,13 +81,16 @@ export type AuthStatus =
   | "rate_limited"
   | "unavailable"
   | "expired"
+  | "deleted"
+  | "deletion_pending"
+  | "received"
   | "failed";
 
 export type AuthState = { status: AuthStatus; errors?: Partial<Record<AuthField, string>> };
 
 /** Zod issues → field errors (first message per field). */
 export function fieldErrors(issues: readonly z.core.$ZodIssue[]): Partial<Record<AuthField, string>> {
-  const fields: readonly AuthField[] = ["fullName", "email", "password", "confirm", "current", "privacy"];
+  const fields: readonly AuthField[] = ["fullName", "email", "password", "confirm", "current", "privacy", "code"];
   const errors: Partial<Record<AuthField, string>> = {};
   for (const issue of issues) {
     const field = issue.path[0] as AuthField;

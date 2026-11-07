@@ -83,7 +83,7 @@ export function AuthForm({ action, fields, hidden = {}, labels, locale, turnstil
 
   const statusText =
     state.status === "idle" ? (disabled ? (labels.unavailable ?? "") : "") : state.status === "invalid" && Object.keys(errors).length > 0 ? "" : (labels.status[state.status] ?? labels.status.failed);
-  const positive = state.status === "sent" || state.status === "saved";
+  const positive = ["sent", "saved", "deleted", "deletion_pending", "received"].includes(state.status);
 
   return (
     <form

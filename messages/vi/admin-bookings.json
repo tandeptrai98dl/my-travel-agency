@@ -279,7 +279,8 @@
         "payment_link": "Liên kết thanh toán",
         "staff_booking_confirmed": "Báo nhóm: đã xác nhận",
         "staff_attention": "Báo nhóm: cần xử lý",
-        "other": "Email khác"
+        "other": "Email khác",
+        "booking_lookup": "Tra cứu đặt chỗ"
       },
       "emailStatuses": {
         "queued": "Đang chờ",

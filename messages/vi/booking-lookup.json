@@ -1,0 +1,17 @@
+{
+  "Lookup": {
+    "metaTitle": "Tra cứu đặt chỗ",
+    "eyebrow": "Đặt chỗ của bạn",
+    "title": "Tra cứu đặt chỗ",
+    "intro": "Nhập mã đặt chỗ và email bạn đã dùng khi đặt. Chúng tôi sẽ gửi tới email đó một đường dẫn dùng một lần để mở đặt chỗ.",
+    "code": "Mã đặt chỗ",
+    "codeHint": "Ví dụ: PTA-2611-0042, có trong email xác nhận.",
+    "email": "Email đặt chỗ",
+    "submit": "Gửi đường dẫn",
+    "pending": "Đang gửi…",
+    "sent": "Nếu thông tin khớp với một đặt chỗ, chúng tôi vừa gửi đường dẫn tới email đó. Đường dẫn dùng được một lần trong thời gian ngắn.",
+    "invalidCode": "Mã đặt chỗ có dạng PTA-2611-0042.",
+    "unavailable": "Tra cứu đặt chỗ tạm thời chưa hoạt động. Vui lòng liên hệ chúng tôi qua email hoặc điện thoại.",
+    "account": "Có tài khoản? Đăng nhập để xem mọi đặt chỗ."
+  }
+}
