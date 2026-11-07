@@ -24,8 +24,10 @@ Nothing in this list can be produced by the team. Each item names the step it un
 | 2 | Company details for the footer: legal name, tax code, address, tour-operator licence number, Ministry of Industry and Trade e-commerce notification link (approved) | legal footer (6Q); launch is not legal without the licence and the notification |
 | 3 | Bilingual content: tours with departures and prices, destinations, travel styles, journal articles, About, FAQ; photography with usage rights (originals ≥ 2400 px) | real content (6Q), Lighthouse on real pages (6Q) |
 | 4 | Legal texts reviewed by counsel in both languages: terms, privacy policy (decision 7 lists what it must cover), cancellation policy, payment policy; the actual deposit rate, balance due period and refund tiers | policy pages, booking rules in Settings, consent versions (ADR-035) |
+| 4a | Counsel's review of the deletion procedure and the 10-year retention of bookings and payments (ADR-037), the 5-year retention of cookie-consent records (decision 7), and whether the Decree 13/2023 and Personal Data Protection Law impact-assessment dossiers are needed: one for processing, one for cross-border transfer (Supabase in Singapore; Vercel, Sentry, Resend and Google in the US), with their filing if so | launch (legal) |
 | 5 | Vercel Pro team and project; Supabase Pro organisation with a **staging** and a **production** project in Singapore, the **PITR add-on** on production | everything in 6C and 6L |
-| 6 | Resend account and DNS access to add SPF, DKIM and DMARC for the sending domain | Auth emails, transactional emails |
+| 6 | Resend account and DNS access to add SPF, DKIM and DMARC for the sending domain; the team address for alerts and inquiries (`settings.contact.email`) | Auth emails, transactional emails, team alerts |
+| 6a | Supabase Auth production settings, set in the dashboard: "Confirm email" ON and "Secure email change" ON (Phase 5 decision 6), minimum password length 10 with leaked-password protection, the `[auth.rate_limit]` values of Phase 5 decision 2, SMTP through Resend with the four Auth templates, site URL and redirect URLs for production and previews | customer sign-up and reset, staff invitations (6L) |
 | 7 | Upstash Redis database (Singapore), Cloudflare Turnstile site (production domain), Sentry organisation and project | rate limits, redirects, forms, error monitoring |
 | 8 | VNPay merchant contract with sandbox and production credentials, the production IPN URL registered with VNPay, and VNPay's test-case sign-off | VNPay go-live (decision 9) |
 | 9 | Receiving bank account and the choice of SePay or Casso, with its API key and the webhook registered | bank transfer go-live |
@@ -37,7 +39,7 @@ Nothing in this list can be produced by the team. Each item names the step it un
 
 ## Decisions taken in this spec (recommended defaults, owner pre-approved "recommended solutions")
 
-1. **Security review with evidence, not a feeling.** One PR (6A) adds `docs/SECURITY_REVIEW.md`, a checklist where every line has a pass, a fail with an issue, or "accepted" with a reason:
+1. **Security review with evidence, not a feeling.** One PR (6A) adds `docs/SECURITY_REVIEW.md`, seeded with one line for every bullet of `ARCHITECTURE.md` "Security", plus the items below. Every line has a pass, a fail with an issue, or "accepted" with a reason:
    - **RLS:** every table has RLS on and policies for exactly the matrix in `ARCHITECTURE.md` "Authorization"; one pgTAP file (`supabase/tests/0x_role_matrix_test.sql`) walks the matrix per role (anon, customer, each staff role at aal1 and aal2) for read and write on every table. The existing tests stay; this one makes gaps visible.
    - **Definer functions:** a pgTAP check that every `security definer` function sets `search_path = ''` and has no `execute` for `public`, `anon` or `authenticated` unless it is on an explicit allow-list in the test (search, the customer-safe functions, the role-checked staff functions).
    - **Service-role use:** `createAdminClient()` is imported only from `src/modules/**` server files; a unit test greps the source tree and fails on any other importer. Each call site is listed in the review with why it needs the service role (guest write, webhook, cron, invitation, deletion).
@@ -46,31 +48,59 @@ Nothing in this list can be produced by the team. Each item names the step it un
    - **Rate limits and Turnstile:** an E2E or unit check per protected action (sign-in, sign-up, reset, lookup, inquiries, contact, newsletter, booking creation, payment start) proves the limit and its fail mode (ADR-029, ADR-037).
    - **Permissions:** an E2E per role opens every admin route and asserts allowed or 404, and calls one Server Action of each module as an under-privileged role (403 or refused).
    - **Dependencies:** `npm audit --omit=dev` with no high or critical issue unaccepted; secrets scan of the git history (gitleaks) in CI once.
-2. **Payment and webhook hardening** (the Phase 4 "Before go-live" list, Stream A): source-IP allow-lists from env (`VNPAY_IPN_ALLOWED_IPS`, `BANK_WEBHOOK_ALLOWED_IPS`, comma-separated CIDRs; empty means "not enforced", required when `VERCEL_ENV=production`), checked against the first `x-forwarded-for` hop that Vercel sets. VNPay sandbox IPNs for a cancelled and a failed payment become test vectors. The Casso signature header is checked against Casso's current documentation. The env schema refuses `VNPAY_STUB` whenever `VERCEL_ENV` is `production`.
+2. **Payment and webhook hardening** (the Phase 4 "Before go-live" list, Stream A): source-IP allow-lists from env (`VNPAY_IPN_ALLOWED_IPS`, `BANK_WEBHOOK_ALLOWED_IPS`, comma-separated CIDRs; empty means "not enforced", required when `VERCEL_ENV=production`), checked against the first `x-forwarded-for` hop that Vercel sets. Where a provider publishes no addresses, the review records an accepted exception and the signature check stays the only guard. VNPay sandbox IPNs for a cancelled and a failed payment become test vectors. The Casso signature header is checked against Casso's current documentation. The env schema refuses `VNPAY_STUB` whenever `VERCEL_ENV` is `production`.
 3. **Monitoring that is read.**
-   - **Failed scheduled jobs:** a service-role function `cron_failures(since timestamptz)` returns failed rows of `cron.job_run_details` (job name, start, message). The existing alert jobs (`booking-seat-invariant-alert`, `email-problems-alert`) already fail on purpose when something is wrong, so a failed run is the signal. A new Vercel Cron route `/api/cron/health-checks` (every 15 minutes, `CRON_SECRET`) emails the team once per failed run (key `cron_failure:<job>:<start>`, ADR-036) and reports it to Sentry. Without `pg_cron` (local, CI) the function returns nothing.
-   - **Missed scheduled jobs:** the same route alerts when a job that should run every 5 or 15 minutes has no successful run for three intervals.
+   - **Failed scheduled jobs:** `cron_failures(since timestamptz)` (`security definer`, `search_path = ''`, execute for the service role only) returns failed rows of `cron.job_run_details` (job name, start, message). It is guarded by `to_regclass('cron.job_run_details')`, so it returns nothing where `pg_cron` is missing. The existing alert jobs (`booking-seat-invariant-alert`, `email-problems-alert`) already fail on purpose when something is wrong, so a failed run is the signal. A new Vercel Cron route `/api/cron/health-checks` (every 15 minutes, `CRON_SECRET` checked as in Phase 5 decision 12: SHA-256 digests compared in constant time) emails the team once per failed run (key `cron_failure:<job>:<start>`, ADR-036) and reports it to Sentry. Without `pg_cron` (local, CI) the function returns nothing.
+   - **Missed scheduled jobs:** the same route alerts when a job that runs every 5 or 15 minutes has no successful run for three intervals, or a daily job has none for 26 hours.
+   - **Vercel Cron itself:** if Vercel Cron stops, nothing above runs. Each cron route pings a heartbeat on success (Sentry Cron Monitors, or the uptime monitor's heartbeat URL), which alerts when a ping is late.
    - **Uptime:** the owner's monitor calls `/api/health` every minute; two consecutive failures page the on-call person.
    - **Sentry:** alert rules for new issues, a spike rule, and an IPN or webhook failure rule (tag `payment.webhook`); release tracking with source maps from Vercel builds.
-   - **Runbooks:** `README.md` "Runbooks" gains "a job failed", "the site is down", "Sentry spike", "restore from backup" and "rotate a secret".
+   - **Runbooks:** `README.md` "Runbooks" gains "a job failed", "the site is down", "a payment gateway is down", "Sentry spike", "restore from backup" and "rotate a secret".
 4. **Housekeeping jobs** (Stream A):
-   - **Staged media:** objects in `media-uploads/pending/` older than 24 hours are removed (ADR-023). Storage files are removed through the Storage API, not by deleting `storage.objects` rows, so this runs in `/api/cron/housekeeping` (daily) with the service-role client; it lists by prefix in pages and logs the count.
-   - **Access tokens:** a `pg_cron` job deletes `booking_access_tokens` rows that expired or were used more than 30 days ago (`booking-tokens-cleanup`, daily).
-   - **Webhook payloads:** `webhook_events.payload` older than 400 days is replaced by `{}`. The row (provider, key, times) stays as idempotency proof.
+   - **Staged media:** objects in `media-uploads/pending/` older than 24 hours are removed (ADR-023). Storage files are removed through the Storage API, not by deleting `storage.objects` rows, so this runs in `/api/cron/housekeeping` (daily) with the service-role client. Storage `list()` is not recursive, so the job lists `pending/`, then each user folder, in pages. It removes only names that match `STAGED_PATH` (`src/modules/media/media.schemas.ts`) and whose `created_at` is older than 24 hours, and logs the count.
+   - **Access tokens:** a `pg_cron` job (`booking-tokens-cleanup`, daily) deletes `booking_access_tokens` rows where `least(coalesce(used_at, 'infinity'), expires_at) < now() - interval '30 days'`.
+   - **Job history:** `cron.job_run_details` rows older than 30 days are deleted daily, so the table does not grow without limit.
+   - **Webhook payloads:** after 400 days, `webhook_events.payload` is replaced by `{}` only for events whose payload is already copied into `payments.raw_response`: those recorded as a payment, duplicates and transfers that were later assigned. `unmatched` events and events with an `error` are never trimmed, because `assign_unmatched_transfer()` reads the amount from the payload and the "unmatched transfer" runbook depends on it. The row (provider, key, times) always stays as idempotency proof. pgTAP: an unmatched event older than 400 days can still be assigned after the job runs.
    - **Nothing else is deleted automatically.** `email_logs`, `audit_logs`, `consent_records`, bookings and payments follow the retention rules in the privacy policy and the deletion procedure (ADR-037), not a timer.
 5. **Performance, accessibility and responsive QA** (Stream B, with Stream A for the admin):
    - **Lighthouse** (mobile, on the production-like staging deployment with real content) for home, listing, a tour page, a destination, the journal and an article, the wizard, contact, checkout and the account overview. Targets: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 95, SEO 100; Core Web Vitals within `ARCHITECTURE.md` "Performance". Results are attached to the PR. A page that misses gets a fix or an issue the owner accepts.
    - **Field data:** Vercel Speed Insights on production for the two weeks of close monitoring.
    - **Manual accessibility pass:** keyboard only, then VoiceOver (iOS Safari) and NVDA (Windows Firefox), on the booking flow, the wizard, the menus, the consent banner and dialogs, and sign-in. Findings go into `docs/SECURITY_REVIEW.md`'s sibling `docs/QA_REPORT.md`.
    - **Responsive:** 360, 375, 768, 1024, 1280 and 1440 px, plus real devices (one recent iPhone, one mid-range Android), with Vietnamese and English content at their longest.
-   - **Budget:** the 150 KB initial-JS budget stays enforced. Analytics (decision 7) loads only after consent and is never counted against it.
+   - **Budget:** the 150 KB initial-JS budget stays enforced. Only Google's `gtag.js` is outside it; our own loader is imported dynamically after consent, so it is not in the initial JavaScript either.
 6. **Real content and SEO at launch** (Stream B for code, owner for content): content entered through the admin, never in seed files; production starts with migrations plus `settings` only (no development seed). Search Console verified for the domain, both sitemaps submitted, and Rich Results Test passing on a tour, an article, the FAQ and the home page. If an old site exists, its URLs are mapped to new ones in the admin's redirects (synced to Redis) before DNS moves, with a crawl of the old sitemap to check every URL answers 301 to a live page.
-7. **Analytics and cookie consent** (Stream B; ADR-039):
-   - **GA4 through `gtag.js`, not GTM.** A tag manager can inject any script, which the CSP (ADR-027) would have to allow with `unsafe-eval`; gtag.js needs only `https://www.googletagmanager.com` in `script-src` and Google Analytics hosts in `connect-src` and `img-src`. This amends `ARCHITECTURE.md` ("GA4 via GTM").
-   - **Basic Consent Mode v2:** nothing loads before the visitor chooses (the banner's promise and the E2E check stay). After "analytics" is granted, the page sets the Consent Mode defaults (`analytics_storage: granted`, `ad_storage`, `ad_user_data` and `ad_personalization` denied unless "marketing" is granted), then loads gtag.js. Withdrawing consent updates the state, stops events and deletes the `_ga*` cookies.
-   - **Events** from `ARCHITECTURE.md` "SEO": `view_item_list`, `view_item`, `begin_checkout`, `purchase` and `generate_lead`. `purchase` is sent once per booking code when the result page first shows a confirmed payment, deduplicated in `localStorage`, with the amount in VND. `generate_lead` is sent on inquiry success. No personal data goes into events (no names, emails or phone numbers, no booking codes in page paths sent to GA, since `page_location` is stripped of query strings).
-   - **Secure pages:** the nonce CSP pages load gtag.js with the request nonce.
-   - **Proof of cookie consent:** the cookie alone is not proof (Decree 13/2023 asks the controller to show consent was given). A new table `cookie_consents` holds `id` (a random UUID kept in the `consent` cookie), `choices` (analytics, marketing), `banner_version`, `locale` and `created_at`. It holds no IP, user agent or account link: it proves a choice without identifying a person. Rows are written by a rate-limited Server Action, never directly by anon, and kept for 5 years. A changed choice is a new row with the same `id`. `consent_records` stays for consents tied to an email address (terms, privacy, marketing email). To be confirmed by counsel (owner item 4).
+7. **Analytics, cookie consent and newsletter withdrawal** (Stream B; ADR-039):
+   - **GA4 through `gtag.js`, not GTM.** A tag manager can inject any script, which the CSP (ADR-027) would have to allow with `unsafe-eval`; gtag.js needs only `https://*.googletagmanager.com` in `script-src`, and `https://*.google-analytics.com`, `https://*.analytics.google.com` and `https://*.googletagmanager.com` in `connect-src` and `img-src`. `ARCHITECTURE.md` is amended in this spec PR.
+   - **Consent Mode v2, standard sequence:**
+     - Before any choice, nothing loads (the banner's promise; the E2E check stays).
+     - When "analytics" is granted, the loader (imported dynamically from `src/components/analytics/`) sets `gtag('consent', 'default', …)` with all four signals denied (`analytics_storage`, `ad_storage`, `ad_user_data`, `ad_personalization`) and `ads_data_redaction: true`, then `gtag('consent', 'update', …)` granting `analytics_storage`, and the `ad_*` signals only if "marketing" is granted. Only then does it call `gtag('config', id, { send_page_view: false })` and load the script.
+     - On withdrawal: `update` to denied, no further events, and the `_ga*` cookies deleted.
+   - **No secrets in what GA receives.** Payment-link tokens and booking codes are in paths (`/thanh-toan/link/[token]`, `/en/pay/[token]`, `/thanh-toan/[code]/…`, `/tai-khoan/booking/[code]`), and gtag sends `page_location` and `page_referrer` by default. So:
+     - `page_view` is sent manually. `page_location` is the site origin plus the route template from `src/i18n/pathnames.ts` (for example `/checkout/[code]/result`, via `currentRoute()`), never the real path or query string. `page_referrer` is reduced to its origin, or to the template when it is this site.
+     - GA is not loaded at all on `/pay/*`, the emailed-link redeem page, booking lookup or the account area (the loader checks the route template).
+     - A unit test walks every dynamic route in `pathnames` and asserts that the value sent contains no parameter. An E2E test on checkout and the result page asserts that the `dl` and `dr` parameters of the collect requests carry no booking code or token.
+   - **Events** (`ARCHITECTURE.md` "SEO"): `view_item_list`, `view_item`, `begin_checkout`, `purchase` and `generate_lead`, built in `src/components/analytics/events.ts`.
+     - `purchase` is sent once per booking when the result page first shows a confirmed payment (deduplicated in `localStorage`), with the amount in VND and a `transaction_id` that is a salted SHA-256 of the booking code (salt from the server, never the code itself).
+     - `generate_lead` is sent on inquiry success.
+     - No event carries names, emails, phone numbers, booking codes or the consent id. The result page lives under the secure root, so the `purchase` call there is the one cross-stream line Stream A accepts in `(secure)`.
+   - **Secure pages** that may load GA (book, checkout and result) load gtag.js with the request nonce.
+   - **Proof of cookie consent:** the cookie alone is not proof (Decree 13/2023 asks the controller to show consent was given).
+     - **Table:** a new table `cookie_consents` holds `id` (a random UUID kept in the `consent` cookie, a pseudonymous identifier), `action` (`accept_all`, `essential_only`, `custom`, `withdraw`), `choices` (analytics, marketing), `banner_version` (a hash of the banner and settings texts in that language, like ADR-035), `locale` and `created_at`. It holds no IP, user agent or account link, and the id is never sent to GA, Sentry or logs.
+     - **Writes:** rows are written by a rate-limited Server Action (`src/modules/consent/consent.actions.ts`) through a service-role function, never directly by anon. A changed choice is a new row with the same `id`.
+     - **Fail mode:** if the write fails, the choice still applies in the browser (the cookie is set), the failure is logged without the id, and the next page view retries once.
+     - **Retention:** rows older than 5 years are purged by a daily `pg_cron` job.
+     - `consent_records` stays for consents tied to an email address. Retention and wording are confirmed by counsel (owner item 4a).
+   - **Newsletter withdrawal** (ADR-029 assigned it to Phase 6; withdrawing consent must be as easy as giving it):
+     - Every newsletter email carries an unsubscribe link with a single-use token; only its SHA-256 is stored, as for confirmation.
+     - The page (`/ban-tin/huy`, `/en/newsletter/unsubscribe`) unsubscribes on a button press, never on a plain visit.
+     - A service-role function sets `subscribers.unsubscribed_at` and writes the withdrawal (`granted = false`) into `consent_records` in one transaction. pgTAP covers it.
+     - The campaign itself is sent from Resend's broadcast tool by the owner, from the exported list, and only after this ships. Launch rule: no campaign before the unsubscribe flow is live.
+   - **Privacy policy contents** (owner item 4; the team supplies the facts):
+     - every processor with its purpose and country: Supabase, Vercel, Resend, Sentry, Upstash, Cloudflare Turnstile, Google Analytics, VNPay, SePay or Casso;
+     - the cookies set (essential, consent, analytics) and how to change a choice;
+     - retention per table: bookings and payments 10 years; inquiries, email logs and audit logs as in ADR-037; cookie consents 5 years; `media.original_name` copied into audit logs;
+     - the person's rights and the deletion procedure;
+     - cross-border transfer.
 8. **PITR and a restore rehearsal** (Stream A with the owner):
    - **Before launch:** PITR is enabled on production, plus daily backups.
    - **The rehearsal, on staging:** create data, note the time, damage it (delete a booking and its payments), restore to the noted time into a new project, point a preview deployment at it, and check `/api/health`, the booking and the audit trail. Record the steps, the elapsed time (RTO) and the data window (RPO) in `README.md` "Runbooks" → "restore from backup".
@@ -117,7 +147,7 @@ Nothing in this list can be produced by the team. Each item names the step it un
 | Security review (decision 1) | RLS and definer-function tests, service-role audit, Security Advisor, permission E2E for the admin and actions, dependency and secrets scans, `docs/SECURITY_REVIEW.md` | header E2E for public pages, rate-limit checks for public forms (contact, newsletter, inquiries), CSP review of public pages with analytics |
 | Payments (decision 2, 9) | allow-lists, test vectors, Casso check, `VNPAY_STUB` guard, VNPay sign-off run | the public result page's `purchase` event (decision 7) |
 | Monitoring and housekeeping (decisions 3–4) | `cron_failures()`, `/api/cron/health-checks`, `/api/cron/housekeeping`, cleanup jobs, Sentry rules, runbooks | none |
-| Analytics and consent (decision 7) | review of the `cookie_consents` migration and its pgTAP (database owner) | `cookie_consents` migration (pgTAP ≥ 30), Server Action, gtag loader, Consent Mode, events, CSP hosts, ADR-039, `ARCHITECTURE.md` analytics row |
+| Analytics and consent (decision 7) | review of the `cookie_consents` and unsubscribe migrations and their pgTAP (database owner); the one `purchase` call on the result page in `(secure)` | `cookie_consents` migration (pgTAP ≥ 30), `src/modules/consent`, the analytics loader and events in `src/components/analytics/`, Consent Mode, CSP hosts, newsletter unsubscribe |
 | QA (decision 5) | admin and secure pages: Lighthouse, keyboard and screen reader | public pages: Lighthouse, keyboard and screen reader, responsive, real devices; `docs/QA_REPORT.md` |
 | Content, legal, SEO (decision 6) | Settings for booking rules and company details | legal footer, policy pages as published content, Search Console, Rich Results, old-site redirects |
 | PITR, deployment (decisions 8, 11) | rehearsal, protected migration workflow, production env checks, launch run | production smoke test of the public site, Search Console submission |
@@ -127,7 +157,7 @@ Nothing in this list can be produced by the team. Each item names the step it un
 
 - Migrations: timestamps later than main's newest when the branch merges (rename on rebase). Stream A's pgTAP files stay below 30, Stream B's at 30 and above.
 - ADRs: this spec records ADR-039. Further ADRs take the next free number; the branch that merges second renumbers.
-- Stream A does not edit `src/app/(public)`; Stream B does not edit `src/app/(secure)`, the admin or `src/modules/{identity,booking,payment,notification}`, except the one-line event calls agreed in the cross-stream table.
+- Stream A does not edit `src/app/(public)`; Stream B does not edit `src/app/(secure)`, the admin or `src/modules/{identity,booking,payment,notification}`, except the event calls agreed in the work split above (the `purchase` call on the result page).
 
 ## Steps
 
@@ -148,9 +178,10 @@ One pull request per group, one commit per step. Items that need the owner are m
 
 ### PR 6P — Analytics and cookie consent (Stream B)
 
-8. ADR-039 is recorded with this spec. Migration `*_cookie_consents.sql` (table, RLS with no API-role policies, service-role insert function, 5-year retention noted), pgTAP `3x_`.
-9. Consent Server Action (rate-limited, validated, writes a row per choice and keeps the `id` in the cookie); the banner and settings dialog call it.
-10. gtag loader after consent, Consent Mode v2 states, cookie removal on withdrawal, the five events, CSP hosts in the public and secure policies; unit tests for the consent state machine and event payloads (no personal data); E2E: no Google request before a choice, requests after "accept analytics", none after withdrawal, `purchase` once per booking. Off without `NEXT_PUBLIC_GA_MEASUREMENT_ID` [owner 10].
+8. ADR-039 is recorded with this spec. Migration `*_cookie_consents.sql`: the table, RLS with no API-role policies, a service-role insert function and the 5-year purge job; pgTAP `3x_`.
+9. Consent Server Action in `src/modules/consent` (rate-limited, validated, writes a row per choice with its action and keeps the `id` in the cookie; fail mode as in decision 7); the banner and settings dialog call it.
+10. The dynamically imported gtag loader with the Consent Mode v2 sequence, manual `page_view` with route templates, the routes without GA, cookie removal on withdrawal, the five events and the CSP hosts in the public and secure policies. Unit tests: the consent state machine, event payloads, and every dynamic route sent without its parameters. E2E: no Google request before a choice; requests after "accept analytics"; none after withdrawal; `dl` and `dr` without codes or tokens; none on `/pay/*`; `purchase` once per booking. Off without `NEXT_PUBLIC_GA_MEASUREMENT_ID` [owner 10].
+10a. Newsletter unsubscribe: the migration with the service-role function and pgTAP, the page and action, and the link in newsletter emails. E2E: the link unsubscribes once on the button press, and the withdrawal is recorded.
 
 ### PR 6Q — QA, content and SEO (Stream B)
 
@@ -174,6 +205,9 @@ Security
 - [ ] Webhook allow-lists configured in production; `VNPAY_STUB` refused there
 - [ ] HSTS with `includeSubDomains; preload` on the production domain, preload submitted
 - [ ] No high or critical dependency issue open; no secret in the git history
+- [ ] Supabase Auth settings verified on production (owner item 6a)
+- [ ] Previews never use production secrets (env guard and a check of every Vercel environment)
+- [ ] Branch protection on `main` requires the CI checks (ADR-020)
 
 Payments
 - [ ] VNPay sandbox test cases signed off by VNPay; one live VNPay payment and one live bank transfer confirmed by IPN or webhook and refunded or reconciled
@@ -181,17 +215,24 @@ Payments
 Data and operations
 - [ ] PITR on, restore rehearsed with recorded RTO and RPO
 - [ ] Failed and missed scheduled jobs alert the team; the uptime monitor pages the on-call person; Sentry alert rules live
-- [ ] Staged media and expired token cleanup running
+- [ ] Staged media and expired token cleanup running; trimmed webhook payloads never include unmatched or error events
+- [ ] `CRON_SECRET` set and Vercel Cron running, with its heartbeat
+- [ ] A test error reaches Sentry (`/api/monitoring/test-error`); `/api/health` answers on a preview and in production
+- [ ] SPF, DKIM and DMARC passing for the sending domain; `settings.contact.email` set
 
 Public site
 - [ ] Lighthouse targets met on the listed pages (or accepted); Core Web Vitals "Good" on staging
 - [ ] Keyboard and screen-reader passes done; no open serious accessibility issue
 - [ ] Real content in both languages; legal footer with licence and the Ministry notification
 - [ ] Terms, privacy, cancellation and payment policies published in both languages after counsel's review
-- [ ] Analytics loads only after consent, events verified in GA4 DebugView; cookie choices recorded
+- [ ] Analytics loads only after consent, events verified in GA4 DebugView, no code or token in what GA receives; cookie choices recorded
+- [ ] Newsletter unsubscribe live before any campaign; contact and newsletter forms enabled in production
+- [ ] Old-site URLs answer 301 to live pages (if an old site exists)
 - [ ] Search Console verified for both languages, sitemaps submitted, Rich Results Test passing
 
 Launch
+- [ ] Counsel's review of retention, deletion and the impact-assessment question done, with any dossier filed (owner item 4a)
+- [ ] Every decision 14 item closed with evidence
 - [ ] Staff UAT signed off: zero open critical issues
 - [ ] Production smoke test passed; two weeks of close monitoring with no critical bug open
 - [ ] Lint, typecheck, unit, pgTAP, E2E and the JS budget green in CI on the launch commit
@@ -200,10 +241,11 @@ Launch
 
 | Document | Change | PR |
 | --- | --- | --- |
-| `DECISIONS.md` | ADR-039 (analytics with gtag.js after consent, anonymous cookie-consent records) | this spec |
+| `DECISIONS.md` | ADR-039 (analytics with gtag.js after consent, pseudonymous cookie-consent records) | this spec |
+| `ARCHITECTURE.md` "Tech stack" (Analytics) | gtag.js after consent, `cookie_consents` | this spec |
 | `DEVELOPMENT_PLAN.md` | Phase 6 links this spec | this spec |
-| `ARCHITECTURE.md` "Tech stack" (Analytics), "Security", "Monitoring" | gtag.js and Consent Mode as built; allow-lists; health checks and housekeeping | 6P, 6A, 6B |
-| `DATABASE.md` | `cookie_consents`; `cron_failures()`; cleanup jobs | 6P, 6B |
+| `ARCHITECTURE.md` "Security", "Monitoring" | allow-lists; health checks, heartbeat and housekeeping | 6A, 6B |
+| `DATABASE.md` | `cookie_consents`, the unsubscribe function; `cron_failures()`, cleanup jobs | 6P, 6B |
 | `README.md` | runbooks, protected migration workflow, production env checklist, new env variables (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, allow-lists) | 6B, 6C, 6P |
 | `docs/SECURITY_REVIEW.md`, `docs/QA_REPORT.md`, `docs/UAT.md`, `docs/LAUNCH_CHECKLIST.md` | new | 6A, 6Q, 6L |
 
