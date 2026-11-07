@@ -28,9 +28,9 @@ test.describe("homepage", () => {
     const trust = page.getByRole("region", { name: "Vì sao chọn chúng tôi" });
     await expect(trust.getByText("Tư vấn Thứ Hai – Thứ Bảy, 8:30–18:00")).toBeVisible();
     await expect(trust.getByText(/^Hotline \+84/)).toBeVisible();
-    // No licence in the seed and no online payment yet: those items are left out.
+    // No licence in the seed: that item is left out. Online payment is on (features.booking).
     await expect(trust.getByText(/Giấy phép/)).toHaveCount(0);
-    await expect(trust.getByText(/VNPay/)).toHaveCount(0);
+    await expect(trust.getByText(/VNPay/)).toBeVisible();
 
     const featured = page.getByRole("region", { name: "Những chuyến đi được yêu thích" });
     await expect(featured.getByRole("heading", { level: 3 })).toHaveCount(3);

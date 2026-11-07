@@ -105,7 +105,9 @@
       "email": "Gửi email cho chúng tôi",
       "emailSubject": "Đặt chỗ tour {code}",
       "note": "Đặt cọc {deposit}%. Thanh toán trực tuyến sẽ có trên trang này trong thời gian tới.",
-      "unavailable": "Chưa tải được ngày khởi hành."
+      "unavailable": "Chưa tải được ngày khởi hành.",
+      "book": "Đặt tour này",
+      "noteOnline": "Đặt cọc {deposit}% khi thanh toán trực tuyến; phần còn lại trước ngày khởi hành. Giá được tính lại khi bạn đặt."
     },
     "related": {
       "eyebrow": "Có thể bạn quan tâm",
@@ -124,10 +126,76 @@
       "verified": "Đã đi tour"
     }
   },
-  "TourList": {
-    "eyebrow": "Tour",
+  "TourListing": {
+    "metaTitle": "Tất cả hành trình",
+    "metaTitlePage": "Tất cả hành trình – Trang {page}",
+    "metaDescription": "Tìm hành trình theo điểm đến, phong cách, tháng khởi hành, thời lượng và ngân sách.",
+    "breadcrumb": "Hành trình",
+    "eyebrow": "Hành trình",
     "title": "Tất cả hành trình",
     "intro": "Hành trình theo đoàn với lịch khởi hành cố định và hành trình riêng theo ngày bạn chọn.",
-    "empty": "Chưa có hành trình nào được đăng. Hãy quay lại sau."
+    "search": "Tìm hành trình",
+    "searchPlaceholder": "Tên hành trình hoặc mã tour",
+    "clearSearch": "Xoá ô tìm kiếm",
+    "sort": "Sắp xếp",
+    "sorts": {
+      "recommended": "Đề xuất",
+      "price_asc": "Giá thấp đến cao",
+      "price_desc": "Giá cao đến thấp",
+      "duration_asc": "Thời lượng ngắn trước",
+      "departure_asc": "Khởi hành sớm nhất"
+    },
+    "count": "{count, plural, =0 {Không có hành trình} other {# hành trình}}",
+    "filters": "Bộ lọc",
+    "filtersCount": "Bộ lọc ({count})",
+    "apply": "Áp dụng",
+    "reset": "Đặt lại",
+    "close": "Đóng bộ lọc",
+    "showResults": "Xem kết quả",
+    "scope": "Loại hành trình",
+    "scopes": {
+      "domestic": "Trong nước",
+      "international": "Nước ngoài"
+    },
+    "destination": "Điểm đến",
+    "destinationSearch": "Tìm điểm đến",
+    "includedInParent": "Đã gồm trong {name}",
+    "style": "Phong cách",
+    "price": "Ngân sách mỗi khách",
+    "priceAny": "Mọi mức giá",
+    "priceUnder": "Dưới {max}",
+    "priceBetween": "{min} – {max}",
+    "priceOver": "Trên {min}",
+    "priceMin": "Từ (₫)",
+    "priceMax": "Đến (₫)",
+    "month": "Tháng khởi hành",
+    "monthHint": "Hành trình riêng khởi hành theo ngày bạn chọn, nên luôn phù hợp.",
+    "duration": "Thời lượng",
+    "durations": {
+      "1-4": "1–4 ngày",
+      "5-8": "5–8 ngày",
+      "9-14": "9–14 ngày",
+      "15-plus": "Từ 15 ngày"
+    },
+    "activeFilters": "Bộ lọc đang chọn",
+    "removeFilter": "Bỏ lọc {label}",
+    "searchChip": "“{q}”",
+    "clearAll": "Xoá tất cả",
+    "results": "Kết quả",
+    "updating": "Đang cập nhật kết quả",
+    "pagination": "Phân trang",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "page": "Trang {page}",
+    "emptyTitle": "Chưa có hành trình phù hợp",
+    "emptyText": "Hãy bỏ bớt bộ lọc, hoặc để chúng tôi thiết kế một hành trình riêng theo mong muốn của bạn.",
+    "clearFilters": "Xoá bộ lọc",
+    "suggestions": "Có thể bạn sẽ thích",
+    "noToursTitle": "Hành trình đang được chuẩn bị",
+    "noToursText": "Chúng tôi chưa đăng hành trình nào bằng ngôn ngữ này. Hãy liên hệ để được tư vấn trực tiếp.",
+    "ctaTitle": "Chưa thấy hành trình mình muốn?",
+    "ctaText": "Kể cho chúng tôi về chuyến đi bạn hình dung; chúng tôi sẽ thiết kế lịch trình riêng.",
+    "ctaButton": "Liên hệ tư vấn",
+    "ctaButtonTailorMade": "Thiết kế hành trình riêng"
   }
 }

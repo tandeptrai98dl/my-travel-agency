@@ -13,6 +13,13 @@ async function openTours(page: Page) {
   await expect(page.getByRole("heading", { level: 1, name: "Tour" })).toBeVisible();
 }
 
+/** The seed holds more tours than one page of the list: narrow it to a code with the search. */
+async function searchTours(page: Page, term: string) {
+  await page.getByLabel("Tìm theo mã hoặc tên").fill(term);
+  await page.getByRole("button", { name: "Lọc" }).click();
+  await expect(page).toHaveURL(new RegExp(`q=${term}`));
+}
+
 test.describe("tours admin", () => {
   test.skip(!process.env.SEED_USER_PASSWORD, "needs the seeded staff accounts (CI)");
   test.describe.configure({ mode: "serial" });
@@ -22,8 +29,10 @@ test.describe("tours admin", () => {
     await signInAs(page, "editor");
     await openTours(page);
     const table = page.getByRole("table", { name: "Tour" });
+    await searchTours(page, "VN-HLB-03");
     await expect(table.getByText("VN-HLB-03")).toBeVisible();
     await expectNoSeriousViolations(page, "/admin/tours");
+    await page.getByLabel("Tìm theo mã hoặc tên").fill("");
     await page.getByLabel("Trạng thái", { exact: true }).selectOption("draft");
     await page.getByRole("button", { name: "Lọc" }).click();
     await expect(page).toHaveURL(/status=draft/);
@@ -68,6 +77,7 @@ test.describe("tours admin", () => {
   test("editor duplicates a published tour as a draft", async ({ page }) => {
     await signInAs(page, "editor");
     await openTours(page);
+    await searchTours(page, "VN-HLB-03");
     // Scoped to the seeded row: earlier runs may have left copies with the same title.
     await page
       .getByRole("row")
@@ -90,6 +100,7 @@ test.describe("tours admin", () => {
   test("operators read the tour list but cannot edit", async ({ page }) => {
     await signInAs(page, "operator");
     await openTours(page);
+    await searchTours(page, "VN-HLB-03");
     await expect(page.getByRole("table", { name: "Tour" }).getByText("VN-HLB-03")).toBeVisible();
     await expect(page.getByRole("link", { name: "Thêm tour" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Du thuyền vịnh Hạ Long" })).toHaveCount(0);

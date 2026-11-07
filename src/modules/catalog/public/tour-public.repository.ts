@@ -83,8 +83,14 @@ export async function findTourCards(locale: Locale, tourIds: string[]) {
 export type SearchToursArgs = {
   locale: Locale;
   q?: string;
+  scopes?: ("domestic" | "international")[];
   destinationIds?: string[];
   travelStyleIds?: string[];
+  priceMin?: number;
+  priceMax?: number;
+  /** First days of the selected months (`YYYY-MM-01`). */
+  months?: string[];
+  durations?: string[];
   featuredOnly?: boolean;
   excludeIds?: string[];
   sort?: string;
@@ -92,14 +98,22 @@ export type SearchToursArgs = {
   offset?: number;
 };
 
+/** An empty list means "no filter": `search_tours` reads null as no filter and `{}` as none match. */
+const list = <T>(values: T[] | undefined): T[] | undefined => (values && values.length ? values : undefined);
+
 export async function searchTours(args: SearchToursArgs) {
   return createPublicClient().rpc("search_tours", {
     p_locale: args.locale,
     p_q: args.q,
-    p_destination_ids: args.destinationIds,
-    p_travel_style_ids: args.travelStyleIds,
+    p_scopes: list(args.scopes),
+    p_destination_ids: list(args.destinationIds),
+    p_travel_style_ids: list(args.travelStyleIds),
+    p_price_min: args.priceMin,
+    p_price_max: args.priceMax,
+    p_months: list(args.months),
+    p_durations: list(args.durations),
     p_featured_only: args.featuredOnly,
-    p_exclude_ids: args.excludeIds,
+    p_exclude_ids: list(args.excludeIds),
     p_sort: args.sort,
     p_limit: args.limit,
     p_offset: args.offset,

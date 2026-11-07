@@ -105,7 +105,9 @@
       "email": "Email us",
       "emailSubject": "Booking tour {code}",
       "note": "{deposit}% deposit. Online payment arrives on this page soon.",
-      "unavailable": "The departures could not be loaded."
+      "unavailable": "The departures could not be loaded.",
+      "book": "Book this journey",
+      "noteOnline": "Pay a {deposit}% deposit online; the rest before departure. The price is confirmed when you book."
     },
     "related": {
       "eyebrow": "You may also like",
@@ -124,10 +126,76 @@
       "verified": "Verified trip"
     }
   },
-  "TourList": {
-    "eyebrow": "Tours",
+  "TourListing": {
+    "metaTitle": "All journeys",
+    "metaTitlePage": "All journeys – Page {page}",
+    "metaDescription": "Find a journey by destination, travel style, departure month, length and budget.",
+    "breadcrumb": "Journeys",
+    "eyebrow": "Journeys",
     "title": "All journeys",
-    "intro": "Small-group journeys on fixed dates and private journeys on the dates you choose.",
-    "empty": "No journeys are published yet. Please check back soon."
+    "intro": "Small-group journeys on set dates, and private journeys on the dates you choose.",
+    "search": "Search journeys",
+    "searchPlaceholder": "Journey name or tour code",
+    "clearSearch": "Clear search",
+    "sort": "Sort by",
+    "sorts": {
+      "recommended": "Recommended",
+      "price_asc": "Price, low to high",
+      "price_desc": "Price, high to low",
+      "duration_asc": "Shortest first",
+      "departure_asc": "Next departure"
+    },
+    "count": "{count, plural, =0 {No journeys} one {# journey} other {# journeys}}",
+    "filters": "Filters",
+    "filtersCount": "Filters ({count})",
+    "apply": "Apply",
+    "reset": "Reset",
+    "close": "Close filters",
+    "showResults": "Show results",
+    "scope": "Journey type",
+    "scopes": {
+      "domestic": "Within Vietnam",
+      "international": "Abroad"
+    },
+    "destination": "Destination",
+    "destinationSearch": "Find a destination",
+    "includedInParent": "Included in {name}",
+    "style": "Travel style",
+    "price": "Budget per guest",
+    "priceAny": "Any price",
+    "priceUnder": "Under {max}",
+    "priceBetween": "{min} – {max}",
+    "priceOver": "Over {min}",
+    "priceMin": "From (₫)",
+    "priceMax": "To (₫)",
+    "month": "Departure month",
+    "monthHint": "Private journeys leave on the dates you choose, so they always match.",
+    "duration": "Length",
+    "durations": {
+      "1-4": "1–4 days",
+      "5-8": "5–8 days",
+      "9-14": "9–14 days",
+      "15-plus": "15 days or more"
+    },
+    "activeFilters": "Selected filters",
+    "removeFilter": "Remove the {label} filter",
+    "searchChip": "“{q}”",
+    "clearAll": "Clear all",
+    "results": "Results",
+    "updating": "Updating results",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {page}",
+    "emptyTitle": "No matching journeys yet",
+    "emptyText": "Try removing a filter, or let us design a private journey around what you have in mind.",
+    "clearFilters": "Clear filters",
+    "suggestions": "You might also like",
+    "noToursTitle": "Journeys are on their way",
+    "noToursText": "We have not published any journeys in this language yet. Contact us and we will plan with you directly.",
+    "ctaTitle": "Not seeing the journey you want?",
+    "ctaText": "Tell us about the trip you have in mind and we will design an itinerary for you.",
+    "ctaButton": "Talk to us",
+    "ctaButtonTailorMade": "Design a private journey"
   }
 }

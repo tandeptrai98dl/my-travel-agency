@@ -20,7 +20,8 @@ const enforce = args.includes("--enforce");
 let pages = args.filter((arg) => !arg.startsWith("--"));
 
 if (pages.length === 0) {
-  pages = ["vi.html"];
+  // Home, the tour listing, site search and one tour page (Phase 3 PR L adds the listing and search).
+  pages = ["vi.html", join("vi", "tours.html"), join("vi", "search.html")];
   const tours = join(APP, "vi", "tours");
   const first = existsSync(tours) ? readdirSync(tours).find((file) => file.endsWith(".html") && !file.includes("[")) : undefined;
   if (first) pages.push(join("vi", "tours", first));

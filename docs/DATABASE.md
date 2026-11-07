@@ -647,6 +647,7 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | Function | Callable by | Purpose |
 | --- | --- | --- |
 | `search_tours(...)` | anon, authenticated (`security invoker`) | Filtered, sorted tour listing (`docs/specs/tour-listing.md`) |
+| `search_site(locale, q, limit)` | anon, authenticated (`security invoker`) | Site search: published destinations and journal articles matching a term (diacritic- and case-insensitive, LIKE wildcards literal), a limit per kind (Phase 3 PR L) |
 | `media_alt_complete(media_id)` | everyone (`security invoker`) | Both alt texts present (publish rules) |
 | `default_cancellation_policy_id()` | authenticated (`security definer`) | The default policy for new tours (price guard) |
 | `departure_has_open_bookings(target_id)` | authenticated (`security definer`; false unless the caller may read bookings: sales, sales_manager, operator, accountant, admin) | Whether a departure has `pending_payment` or `confirmed` bookings (departure rules) |

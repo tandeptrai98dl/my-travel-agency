@@ -87,10 +87,12 @@ test.describe("tour detail", () => {
     await expect(booking.getByRole("link", { name: /Gọi .* để được tư vấn/ })).toBeVisible();
   });
 
-  test("the interim tour list links every published tour", async ({ page }) => {
+  test("the listing links published tours and never drafts", async ({ page }) => {
     await page.goto("/tours");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tất cả hành trình");
     await expect(page.getByRole("link", { name: /Du thuyền vịnh Hạ Long/ })).toHaveAttribute("href", GROUP_VI);
+    await page.goto("/tours?q=phu%20quoc");
+    await expect(page.getByRole("heading", { name: "Chưa có hành trình phù hợp" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Nghỉ dưỡng Phú Quốc/ })).toHaveCount(0);
   });
 

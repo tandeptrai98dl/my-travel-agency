@@ -444,3 +444,118 @@ from (values
   ('VN-HLB-03', 'Pending Reviewer', null, 3, null, 'Not yet moderated.', 'en', 20, 'pending', false)
 ) as v(code, author, country, rating, title, content, locale, days_ago, status, featured)
 join public.tours t on t.code = v.code;
+
+-- ============================================================================================
+-- Phase 3 PR L: listing sample (docs/specs/tour-listing.md §3; development only)
+-- ============================================================================================
+-- 26 more published tours (31 in Vietnamese, 3 pages): Thailand and France, group and private,
+-- all duration buckets, 15–298 million dong, departures over 12 months with closed, within-cutoff
+-- and few-seats cases. None is featured and none uses Vietnam, Japan, honeymoon or
+-- wellness, so the homepage and destination E2E keep their numbers. FR-PAR-07 has no English.
+
+insert into public.destinations (key, type, status, latitude, longitude, sort_order) values
+  ('thailand', 'country', 'published', 15.870032, 100.992541, 4);
+insert into public.destinations (key, type, parent_id, status, latitude, longitude, sort_order)
+select v.key, v.type::public.destination_type, p.id, 'published'::public.publish_status, v.lat, v.lng, v.sort_order
+from (values
+  ('northern-thailand', 'region', 'thailand', 18.800000, 98.950000, 1),
+  ('central-thailand', 'region', 'thailand', 13.750000, 100.500000, 2)
+) as v(key, type, parent_key, lat, lng, sort_order)
+join public.destinations p on p.key = v.parent_key;
+insert into public.destinations (key, type, parent_id, status, latitude, longitude, sort_order)
+select v.key, 'city'::public.destination_type, p.id, 'published'::public.publish_status, v.lat, v.lng, v.sort_order
+from (values
+  ('chiang-mai', 'northern-thailand', 18.788344, 98.985300, 1),
+  ('bangkok', 'central-thailand', 13.756331, 100.501765, 1)
+) as v(key, parent_key, lat, lng, sort_order)
+join public.destinations p on p.key = v.parent_key;
+insert into public.destination_translations (destination_id, locale, slug, name, summary, best_time_to_visit, is_published)
+select d.id, v.locale::public.locale, v.slug, v.name, v.summary, v.best_time, true
+from (values
+  ('thailand', 'vi', 'thai-lan', 'Thái Lan', 'Chùa vàng, chợ nổi và rừng núi phương Bắc.', 'Tháng 11–3'),
+  ('thailand', 'en', 'thailand', 'Thailand', 'Golden temples, floating markets and northern hills.', 'November to March'),
+  ('northern-thailand', 'vi', 'bac-thai-lan', 'Bắc Thái Lan', 'Núi rừng và những ngôi chùa trên đỉnh.', 'Tháng 11–2'),
+  ('northern-thailand', 'en', 'northern-thailand', 'Northern Thailand', 'Hills, forests and mountain-top temples.', 'November to February'),
+  ('central-thailand', 'vi', 'mien-trung-thai-lan', 'Miền Trung Thái Lan', 'Bangkok và cố đô Ayutthaya.', 'Tháng 11–3'),
+  ('central-thailand', 'en', 'central-thailand', 'Central Thailand', 'Bangkok and old Ayutthaya.', 'November to March'),
+  ('chiang-mai', 'vi', 'chiang-mai', 'Chiang Mai', 'Phố cổ trong tường thành và chợ đêm.', 'Tháng 11–2'),
+  ('chiang-mai', 'en', 'chiang-mai', 'Chiang Mai', 'A walled old town and night markets.', 'November to February'),
+  ('bangkok', 'vi', 'bangkok', 'Bangkok', 'Đền chùa bên sông Chao Phraya.', 'Tháng 11–3'),
+  ('bangkok', 'en', 'bangkok', 'Bangkok', 'Temples on the Chao Phraya river.', 'November to March')
+) as v(key, locale, slug, name, summary, best_time)
+join public.destinations d on d.key = v.key;
+
+create temporary table listing_seed (code text, type text, days int, nights int, price bigint, dests text[], style text,
+  vi_title text, vi_slug text, en_title text, en_slug text, profile text);
+insert into listing_seed values
+  ('TH-BKK-03', 'group', 3, 2, 15900000::bigint, array['bangkok'], 'culture', 'Bangkok ba ngày', 'bangkok-ba-ngay', 'Three days in Bangkok', 'three-days-in-bangkok', 'normal'),
+  ('TH-BKK-04', 'private', 4, 3, 22500000::bigint, array['bangkok'], 'family', 'Bangkok cho cả nhà', 'bangkok-cho-ca-nha', 'Bangkok for the whole family', 'bangkok-for-the-whole-family', 'private'),
+  ('TH-CNX-05', 'group', 5, 4, 28900000::bigint, array['chiang-mai'], 'culture', 'Chiang Mai và những ngôi chùa trên núi', 'chiang-mai-va-nhung-ngoi-chua-tren-nui', 'Chiang Mai and its mountain temples', 'chiang-mai-and-its-mountain-temples', 'few'),
+  ('TH-CNX-06', 'group', 6, 5, 31500000::bigint, array['chiang-mai'], 'family', 'Voi và rừng Chiang Mai', 'voi-va-rung-chiang-mai', 'Elephants and forests of Chiang Mai', 'elephants-and-forests-of-chiang-mai', 'soldout'),
+  ('TH-NTH-07', 'group', 7, 6, 36900000::bigint, array['chiang-mai', 'bangkok'], 'culture', 'Bắc Thái Lan bảy ngày', 'bac-thai-lan-bay-ngay', 'Seven days in northern Thailand', 'seven-days-in-northern-thailand', 'normal'),
+  ('TH-BKK-08', 'private', 8, 7, 58000000::bigint, array['bangkok', 'chiang-mai'], 'family', 'Thái Lan riêng tư cho gia đình', 'thai-lan-rieng-tu-cho-gia-dinh', 'Private Thailand for families', 'private-thailand-for-families', 'private'),
+  ('TH-CNX-09', 'group', 9, 8, 45900000::bigint, array['chiang-mai'], 'culture', 'Đường mòn Doi Inthanon', 'duong-mon-doi-inthanon', 'The Doi Inthanon trails', 'the-doi-inthanon-trails', 'cutoff'),
+  ('TH-BKK-10', 'group', 10, 9, 52000000::bigint, array['bangkok'], 'culture', 'Bangkok và cố đô Ayutthaya', 'bangkok-va-co-do-ayutthaya', 'Bangkok and old Ayutthaya', 'bangkok-and-old-ayutthaya', 'closed'),
+  ('TH-TH-12', 'private', 12, 11, 96000000::bigint, array['thailand'], 'family', 'Thái Lan từ bắc vào nam', 'thai-lan-tu-bac-vao-nam', 'Thailand from north to south', 'thailand-from-north-to-south', 'private'),
+  ('TH-TH-15', 'group', 15, 14, 128000000::bigint, array['thailand'], 'culture', 'Thái Lan mười lăm ngày', 'thai-lan-muoi-lam-ngay', 'Fifteen days in Thailand', 'fifteen-days-in-thailand', 'normal'),
+  ('FR-PAR-03', 'group', 3, 2, 39900000::bigint, array['paris'], 'culture', 'Paris cuối tuần', 'paris-cuoi-tuan', 'A weekend in Paris', 'a-weekend-in-paris', 'normal'),
+  ('FR-PAR-04', 'private', 4, 3, 62000000::bigint, array['paris'], 'family', 'Paris cùng con trẻ', 'paris-cung-con-tre', 'Paris with children', 'paris-with-children', 'private'),
+  ('FR-PAR-05', 'group', 5, 4, 74500000::bigint, array['paris'], 'culture', 'Bảo tàng Paris', 'bao-tang-paris', 'The museums of Paris', 'the-museums-of-paris', 'few'),
+  ('FR-AVN-06', 'group', 6, 5, 81000000::bigint, array['avignon'], 'culture', 'Avignon và sông Rhône', 'avignon-va-song-rhone', 'Avignon and the Rhône', 'avignon-and-the-rhone', 'normal'),
+  ('FR-PRO-07', 'group', 7, 6, 92000000::bigint, array['provence'], 'family', 'Provence cho gia đình', 'provence-cho-gia-dinh', 'Provence for families', 'provence-for-families', 'normal'),
+  ('FR-PRO-08', 'private', 8, 7, 145000000::bigint, array['provence', 'avignon'], 'culture', 'Làng đá Provence riêng tư', 'lang-da-provence-rieng-tu', 'Private Provence hill villages', 'private-provence-hill-villages', 'private'),
+  ('FR-FR-09', 'group', 9, 8, 118000000::bigint, array['paris', 'avignon'], 'culture', 'Từ Paris đến Avignon', 'tu-paris-den-avignon', 'From Paris to Avignon', 'from-paris-to-avignon', 'soldout'),
+  ('FR-FR-10', 'group', 10, 9, 135000000::bigint, array['france'], 'culture', 'Nước Pháp mười ngày', 'nuoc-phap-muoi-ngay', 'Ten days in France', 'ten-days-in-france', 'normal'),
+  ('FR-FR-12', 'group', 12, 11, 168000000::bigint, array['france'], 'culture', 'Nước Pháp chậm rãi', 'nuoc-phap-cham-rai', 'France, slowly', 'france-slowly', 'normal'),
+  ('FR-FR-14', 'private', 14, 13, 245000000::bigint, array['france'], 'family', 'Nước Pháp riêng cho gia đình', 'nuoc-phap-rieng-cho-gia-dinh', 'A private France for families', 'a-private-france-for-families', 'private'),
+  ('FR-FR-16', 'group', 16, 15, 298000000::bigint, array['france'], 'culture', 'Đại hành trình nước Pháp', 'dai-hanh-trinh-nuoc-phap', 'The grand tour of France', 'the-grand-tour-of-france', 'normal'),
+  ('TH-BKK-02', 'group', 2, 1, 15000000::bigint, array['bangkok'], 'culture', 'Bangkok hai ngày', 'bangkok-hai-ngay', 'Two days in Bangkok', 'two-days-in-bangkok', 'normal'),
+  ('TH-CNX-04', 'group', 4, 3, 19900000::bigint, array['chiang-mai'], 'culture', 'Chợ đêm Chiang Mai', 'cho-dem-chiang-mai', 'Chiang Mai night markets', 'chiang-mai-night-markets', 'normal'),
+  ('FR-PAR-06', 'group', 6, 5, 86000000::bigint, array['paris'], 'culture', 'Paris và lâu đài Versailles', 'paris-va-lau-dai-versailles', 'Paris and Versailles', 'paris-and-versailles', 'normal'),
+  ('TH-TH-18', 'group', 18, 17, 175000000::bigint, array['thailand'], 'culture', 'Thái Lan mười tám ngày', 'thai-lan-muoi-tam-ngay', 'Eighteen days in Thailand', 'eighteen-days-in-thailand', 'normal'),
+  ('FR-PAR-07', 'group', 7, 6, 99000000::bigint, array['paris'], 'culture', 'Paris mùa xuân', 'paris-mua-xuan', 'Paris in spring', 'paris-in-spring', 'vi-only');
+
+insert into public.tours (code, type, scope, status, duration_days, duration_nights, min_pax, max_pax, min_pax_to_operate,
+  from_price, deposit_percent, balance_due_days, is_featured, cancellation_policy_id)
+select s.code, s.type::public.tour_type, 'international', 'draft', s.days, s.nights, case when s.type = 'private' then 2 else 1 end,
+       case when s.type = 'private' then 8 else 12 end, case when s.type = 'group' then 6 end,
+       s.price, 30, 30, false, (select id from public.cancellation_policies where is_default limit 1)
+from listing_seed s;
+
+insert into public.tour_translations (tour_id, locale, slug, title, summary, seo_description, is_published)
+select t.id, v.locale::public.locale, v.slug, v.title, v.title || '.', v.title || '.', true
+from listing_seed s
+join public.tours t on t.code = s.code
+cross join lateral (values ('vi', s.vi_slug, s.vi_title), ('en', s.en_slug, s.en_title)) as v(locale, slug, title)
+where v.locale = 'vi' or s.profile <> 'vi-only';
+
+insert into public.tour_destinations (tour_id, destination_id)
+select t.id, d.id from listing_seed s join public.tours t on t.code = s.code
+cross join lateral unnest(s.dests) as k(key) join public.destinations d on d.key = k.key;
+
+insert into public.tour_travel_styles (tour_id, travel_style_id)
+select t.id, st.id from listing_seed s join public.tours t on t.code = s.code join public.travel_styles st on st.key = s.style;
+
+-- Departures: one a month from day 20 for 12 months (group tours only).
+--   few: the first date has only 3 seats; soldout: the first date is closed (a full date needs
+--   bookings, and seats_reserved must always match them: check_seat_invariant()); closed: every
+--   date closed (no bookable date, "contact us for dates"); cutoff: an extra date 3 days out
+--   (inside the cutoff). Seats are never reserved here.
+insert into public.departures (tour_id, start_date, end_date, capacity, seats_reserved, status, price_adult, price_child, single_supplement)
+select t.id, (current_date + 20 + g * 30)::date, (current_date + 20 + g * 30 + s.days - 1)::date,
+       case when s.profile = 'few' and g = 0 then 3 else 12 end, 0,
+       case when s.profile = 'closed' or (s.profile = 'soldout' and g = 0) then 'closed' else 'open' end::public.departure_status,
+       s.price + (g % 3) * 1000000, (s.price + (g % 3) * 1000000) * 3 / 4, s.price / 5
+from listing_seed s join public.tours t on t.code = s.code
+cross join generate_series(0, 11) as g
+where s.type = 'group';
+insert into public.departures (tour_id, start_date, end_date, capacity, seats_reserved, status, price_adult)
+select t.id, current_date + 3, current_date + 3 + s.days - 1, 12, 0, 'open', s.price - 2000000
+from listing_seed s join public.tours t on t.code = s.code where s.profile = 'cutoff';
+
+insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit)
+select pg_temp.seed_uuid('seed-media-' || s.code), '2026/01/' || pg_temp.seed_uuid('seed-media-' || s.code) || '.jpg',
+       'image/jpeg', 2400, 1600, 800000, jsonb_build_object('vi', s.vi_title, 'en', s.en_title), 'Sample image'
+from listing_seed s;
+update public.tours t set hero_media_id = pg_temp.seed_uuid('seed-media-' || t.code) from listing_seed s where s.code = t.code;
+update public.tours t set status = 'published', published_at = now() - interval '1 day' from listing_seed s where s.code = t.code;

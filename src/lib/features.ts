@@ -4,8 +4,10 @@
  * ever leads to a route that does not exist.
  */
 export const features = {
-  /** Online booking and payment (Phase 4). */
-  booking: false,
+  /** Online booking and payment (Phase 4): group tours' booking box opens the book-now flow. */
+  booking: true,
+  /** Guest booking lookup by code and email (Phase 5): the footer links it. */
+  bookingLookup: false,
   /** Tailor-made wizard and tour inquiries (Phase 5). */
   inquiry: false,
   /** Journal list and article pages (Phase 3 PR K): the homepage journal teaser shows. */

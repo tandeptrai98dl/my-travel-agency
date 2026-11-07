@@ -8,7 +8,6 @@
     "eyebrow": "Where we take you",
     "intro": "From the limestone bays of the north to the Zen gardens of Kyoto: choose a place to see its journeys.",
     "tourCount": "{count, plural, =0 {No journeys yet} one {# journey} other {# journeys}}",
-    "tourCountCapped": "{shown} of {count} journeys",
     "bestTime": "Best time: {value}",
     "bestTimeLabel": "Best time to visit",
     "toursLabel": "Journeys",
@@ -23,7 +22,8 @@
     "noTours": "No journeys here yet. Tell us how you would like to travel and a travel designer will plan a private itinerary.",
     "call": "Call {phone}",
     "email": "Email us",
-    "aboutTitle": "About {name}"
+    "aboutTitle": "About {name}",
+    "seeAllTours": "See all {count, plural, one {# journey} other {# journeys}}"
   },
   "TravelStyles": {
     "eyebrow": "Travel style",
@@ -35,7 +35,8 @@
     "noTours": "No journeys in this style yet. A travel designer can plan one for you.",
     "call": "Call {phone}",
     "email": "Email us",
-    "others": "Other travel styles"
+    "others": "Other travel styles",
+    "seeAllTours": "See all {count, plural, one {# journey} other {# journeys}}"
   },
   "PageError": {
     "title": "This page could not be loaded",
@@ -134,5 +135,28 @@
       "failed": "Something went wrong. Please try again later or call our hotline."
     },
     "newTab": "(opens in a new tab)"
+  },
+  "SiteSearch": {
+    "metaTitle": "Search",
+    "metaTitleQuery": "Results for “{q}”",
+    "metaDescription": "Search journeys, destinations and articles.",
+    "breadcrumb": "Search",
+    "eyebrow": "Search",
+    "title": "Search journeys, destinations and articles",
+    "titleQuery": "Results for “{q}”",
+    "label": "Search term",
+    "placeholder": "For example: Ha Long, Kyoto, autumn",
+    "submit": "Search",
+    "hint": "Type at least two characters. Accents are optional: “ha long” also finds “Hạ Long”.",
+    "tours": "Journeys",
+    "toursCount": "{count, plural, one {# journey} other {# journeys}}",
+    "seeAllTours": "See all {count, plural, one {# journey} other {# journeys}} in the listing",
+    "destinations": "Destinations",
+    "journal": "Articles",
+    "none": "Nothing matched “{q}”.",
+    "noneText": "Try another word, browse every journey or contact us and we will help.",
+    "allTours": "Browse all journeys",
+    "contact": "Talk to us",
+    "loading": "Searching"
   }
 }

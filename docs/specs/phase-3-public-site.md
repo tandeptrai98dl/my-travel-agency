@@ -135,6 +135,7 @@ One pull request per group, one commit per step. Every page: Server Component, m
 
 17. `docs/specs/tour-listing.md` §7.2 steps 2–8 (the database step moved to PR H), with the `style` filter (decision 18) and the seed block.
 18. Site search `/tim-kiem`: tours (`search_tours` with `q`), destinations and journal articles through `search_site(q, locale)` (migration `20261108210000_site_search.sql`, security invoker, pgTAP), `noindex`; E2E.
+    As shipped (PR L): the migration is `20261109160000_site_search.sql` (merged migrations must sort after main's newest). `search_site(locale, q, limit)` returns published destinations and articles, a limit per kind, names and titles that start with the term first; the page shows up to six live tour cards with a link to the filtered listing. The listing follows `tour-listing.md` (see its "As shipped"); destination and travel style pages show nine cards and link to `/tours?dest=<key>` or `?style=<key>`, which replaces the "48 of N" count. The seed block adds Thailand and 26 France and Thailand tours (31 in Vietnamese, 29 in English). Booking hand-off (Phase 4 decision 13): `features.booking` is on; a group tour's booking box opens `bookingHref()` on its earliest bookable departure (the hotline stays as the quieter action), while private tours and group tours without a bookable date keep the contact page; the footer's booking lookup waits for its own flag (`features.bookingLookup`, Phase 5).
 
 ### PR M — SEO completion and hardening
 

@@ -302,7 +302,7 @@ function mapDepartures(rows: DepartureRow[]): Departure[] {
 }
 
 /** Cards for tours returned by `search_tours`, in that order. */
-async function cardsFor(locale: Locale, hits: SearchRow[]): Promise<TourCardItem[]> {
+export async function cardsFor(locale: Locale, hits: SearchRow[]): Promise<TourCardItem[]> {
   if (hits.length === 0) return [];
   const [rows, lookup] = await Promise.all([
     repo.findTourCards(
@@ -417,23 +417,6 @@ export async function getTourReviews(tourId: string): Promise<TourReviews> {
   }
 }
 
-/** Every published tour as cards, recommended order (interim listing until PR L; cached, no seats). */
-export async function getAllTourCards(locale: Locale): Promise<TourCardItem[]> {
-  "use cache";
-  cacheTag(TOURS_TAG, DESTINATIONS_TAG);
-  cacheLife("hours");
-  try {
-    const { data, error } = await repo.searchTours({ locale, limit: 48 });
-    if (error) fail("tour list", error);
-    return await cardsFor(locale, data ?? []);
-  } catch (error) {
-    console.error("getAllTourCards failed", error instanceof Error ? error.message : error);
-    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
-    return [];
-  }
-}
-
-
 /**
  * Featured tours for the homepage (`tours.is_featured`, recommended order; cached, so cards show no
  * seat badges, decision 3). An empty list on failure: the section is then left out (decision 12).
@@ -471,3 +454,14 @@ export async function getTourCards(
   return cardsFor(locale, data ?? []);
 }
 
+
+/**
+ * Tours matching a search term as live cards with the total (uncached: seats change with
+ * bookings; site search). Database errors throw.
+ */
+export async function searchTourCards(locale: Locale, filter: { q: string; limit: number }): Promise<{ items: TourCardItem[]; total: number }> {
+  const { data, error } = await repo.searchTours({ locale, q: filter.q, limit: filter.limit });
+  if (error) fail("tour search", error);
+  const rows = data ?? [];
+  return { items: await cardsFor(locale, rows), total: rows[0]?.total_count ?? 0 };
+}

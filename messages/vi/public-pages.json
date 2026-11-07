@@ -8,7 +8,6 @@
     "eyebrow": "Nơi chúng tôi đưa bạn đến",
     "intro": "Từ vịnh đá vôi phía Bắc đến những khu vườn thiền ở Kyoto: chọn một vùng đất để xem các hành trình ở đó.",
     "tourCount": "{count, plural, =0 {Chưa có hành trình} other {# hành trình}}",
-    "tourCountCapped": "{shown} trên {count} hành trình",
     "bestTime": "Thời điểm đẹp: {value}",
     "bestTimeLabel": "Thời điểm đẹp nhất",
     "toursLabel": "Hành trình",
@@ -23,7 +22,8 @@
     "noTours": "Chưa có hành trình nào ở đây. Hãy cho chúng tôi biết bạn muốn đi thế nào, chuyên viên tư vấn sẽ thiết kế một lịch trình riêng.",
     "call": "Gọi {phone}",
     "email": "Gửi email cho chúng tôi",
-    "aboutTitle": "Về {name}"
+    "aboutTitle": "Về {name}",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}}"
   },
   "TravelStyles": {
     "eyebrow": "Phong cách",
@@ -35,7 +35,8 @@
     "noTours": "Chưa có hành trình nào theo phong cách này. Chuyên viên tư vấn có thể thiết kế riêng cho bạn.",
     "call": "Gọi {phone}",
     "email": "Gửi email cho chúng tôi",
-    "others": "Phong cách khác"
+    "others": "Phong cách khác",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}}"
   },
   "PageError": {
     "title": "Chưa tải được trang này",
@@ -134,5 +135,28 @@
       "failed": "Chưa gửi được. Hãy thử lại sau hoặc gọi hotline."
     },
     "newTab": "(mở trong thẻ mới)"
+  },
+  "SiteSearch": {
+    "metaTitle": "Tìm kiếm",
+    "metaTitleQuery": "Kết quả cho “{q}”",
+    "metaDescription": "Tìm hành trình, điểm đến và bài viết.",
+    "breadcrumb": "Tìm kiếm",
+    "eyebrow": "Tìm kiếm",
+    "title": "Tìm hành trình, điểm đến và bài viết",
+    "titleQuery": "Kết quả cho “{q}”",
+    "label": "Từ khoá",
+    "placeholder": "Ví dụ: Hạ Long, Kyoto, mùa thu",
+    "submit": "Tìm",
+    "hint": "Gõ ít nhất hai ký tự. Tìm không cần dấu: “ha long” cũng tìm ra “Hạ Long”.",
+    "tours": "Hành trình",
+    "toursCount": "{count, plural, other {# hành trình}}",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}} trong danh sách",
+    "destinations": "Điểm đến",
+    "journal": "Bài viết",
+    "none": "Không tìm thấy kết quả nào cho “{q}”.",
+    "noneText": "Hãy thử một từ khác, xem tất cả hành trình hoặc liên hệ để chúng tôi tư vấn.",
+    "allTours": "Xem tất cả hành trình",
+    "contact": "Liên hệ tư vấn",
+    "loading": "Đang tìm"
   }
 }
