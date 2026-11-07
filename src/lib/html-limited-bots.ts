@@ -4,8 +4,8 @@
 // `searchParams` (`/tours`, `/tim-kiem`) that puts the canonical, hreflang and `noindex` in
 // <body>, where Google ignores a `rel=canonical`. Googlebot is not in Next's default list (it
 // is treated as a JavaScript-running "DOM" bot), so it is added here. The cost: a matching
-// request skips the prerendered shell and renders on the server (about 30 ms instead of about
-// 4 ms, measured locally). See ARCHITECTURE.md "SEO" and ADR-041.
+// request skips the prerendered shell and renders on the server (about 40 ms instead of about
+// 6 ms to the first byte on a local production build). See ARCHITECTURE.md "SEO" and ADR-041.
 
 /**
  * Next.js 16.4.5's default `HTML_LIMITED_BOT_UA_RE` source, copied verbatim from

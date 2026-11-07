@@ -97,7 +97,7 @@ For every Tab stop, the script checked three things:
 | Cookie banner and settings dialog (Escape returns focus) | Pass (existing E2E) |
 | Mobile menu sheet (Escape returns focus) | Pass at 375 px (existing E2E), 768 px (existing E2E) and 1024 px (checked) |
 | Listing filter sheet (native modal `<dialog>`) | Pass. Focus stays in the dialog; past its last control focus goes to the browser UI, as a native modal does; Escape returns focus to "Filters" |
-| Tour gallery lightbox | **Fixed** (Escape lost focus); now Enter opens it, focus is trapped, the arrows change photo, Escape returns focus. Checked with a local script only: the seed has no gallery photos and the tour page is cached, so an E2E test cannot add some |
+| Tour gallery lightbox | **Fixed** (Escape lost focus); now Enter opens it, focus is trapped, the arrows change photo, Escape returns focus. Checked with a local script, and by a unit test of the close sequence (`gallery-lightbox.test.tsx`: Escape closes, focus goes to the opener): the seed has no gallery photos and the tour page is cached, so an E2E test cannot add some |
 | FAQ (`<details>`) | Pass (Enter toggles) |
 | Tab walk on 13 pages (public and secure) at 1280 px, 7 at 375 px and 8 at 1024 px | Pass after the footer fix. Every stop shows a ring; nothing is covered; no traps |
 | Customer sign-in | Order is email → password → "Đăng nhập" → forgot password → create account. Signing in with Enter is in the new E2E (runs in CI) |
@@ -141,7 +141,7 @@ New E2E: `tests/e2e/responsive.spec.ts` covers:
 
 1. **Lighthouse with real content and Supabase transformations:** every page above. LCP comes mostly from 1600 px JPEGs, which staging will serve as resized WebP or AVIF. A 170 ms render-blocking CSS file and the main-thread JS (TBT 100–400 ms simulated) remain. Field data comes from Speed Insights.
 2. **Listing SEO 92: metadata streamed into `<body>`.** `/tours` (and `/tim-kiem`) read `searchParams`, so Next.js 16 streams their metadata after the shell for browsers. Googlebot was not in Next's `htmlLimitedBots` list (Bingbot and Lighthouse's own UA are), so the description, canonical, hreflang and the filtered pages' `noindex` sat in `<body>`, where Google ignores a `rel=canonical`.
-   - **Decided (option a, ADR-041):** `htmlLimitedBots` is Next's default pattern plus `Googlebot|Google-InspectionTool` (`src/lib/html-limited-bots.ts`). Googlebot now gets blocking metadata in `<head>`; each Googlebot request renders on the server (about 30 ms instead of about 4 ms locally).
+   - **Decided (option a, ADR-041):** `htmlLimitedBots` is Next's default pattern plus `Googlebot|Google-InspectionTool` (`src/lib/html-limited-bots.ts`). Googlebot now gets blocking metadata in `<head>`; each Googlebot request renders on the server (about 40 ms instead of about 6 ms to the first byte on a local build; checked locally: `/tours` and `/tours?page=2` for a Googlebot user agent have the canonical and hreflang in `<head>`, a Chrome user agent still gets them streamed; E2E in `tour-listing.spec.ts`).
    - **Re-check:** URL Inspection on staging shows the canonical in `<head>` for `/tours` (and for `/tours?page=2`).
 3. **Status codes after a content save** (the Next.js 16.4.5 issue in `docs/specs/phase-3-public-site.md` step 22): save a tour in the admin, then:
    - `curl -I` a URL in a language where it has no published translation (for example `/en/tours/<vi-only slug>`): expect `404` (the first request after the save may get the `noindex` 200 shell once; the second must be a 404);
@@ -156,8 +156,9 @@ New E2E: `tests/e2e/responsive.spec.ts` covers:
 - **Book page log:** each request to `/[locale]/book/[tourSlug]` logs "Next.js encountered the unstable value `new Date()` while prerendering" from `src/lib/dates.ts`.
 - **SEO 54 on secure pages:** expected (`noindex`, no meta description).
 
-### Known limitation (pre-existing, low priority)
+### Known limitations (low priority)
 
+- **Filters before hydration, in browsers without invoker commands:** below `lg` the "Filters" button opens the native sheet through `command="show-modal"` before React hydrates, where the browser supports invoker commands. In browsers that do not support them yet, the button stays inert until hydration, as before.
 - **Listing without JavaScript:** the listing's results never appear when JavaScript is off. React streams the Suspense content into a hidden `<div>`, and an inline script reveals it. The filter column's "works without JavaScript" holds for the form only.
 
 ### Manual items (owner or staff)
