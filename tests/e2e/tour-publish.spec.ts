@@ -120,6 +120,8 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
   await page.goto(`/en/tours/${slugEn}`);
   await expect(page.getByRole("heading", { level: 1, name: titleEn })).toBeVisible();
 
+  await expect.poll(async () => (await page.request.get("/sitemaps/tours.xml")).text(), { timeout: 15_000 }).toContain(`/en/tours/${slugEn}</loc>`);
+
   // Unpublishing the English version: after the save the cached page renders again and answers a
   // real 404 (the first request may still get the noindex shell while it re-renders; Phase 3
   // spec step 22).
@@ -130,4 +132,7 @@ test("an editor publishes a full VI/EN tour without a developer", async ({ page 
   await expect(page.getByRole("region", { name: /^Thông báo/ }).getByText("Đã lưu")).toBeVisible();
   await expect.poll(async () => (await page.request.get(`/en/tours/${slugEn}`, { maxRedirects: 0 })).status(), { timeout: 15_000 }).toBe(404);
   await expect((await page.request.get(`/tours/${slugVi}`, { maxRedirects: 0 })).status()).toBe(200);
+  // ...and leaves the sitemap, while the Vietnamese page stays (step 19).
+  await expect.poll(async () => (await page.request.get("/sitemaps/tours.xml")).text(), { timeout: 15_000 }).not.toContain(`/en/tours/${slugEn}</loc>`);
+  expect(await (await page.request.get("/sitemaps/tours.xml")).text()).toContain(`/tours/${slugVi}</loc>`);
 });
