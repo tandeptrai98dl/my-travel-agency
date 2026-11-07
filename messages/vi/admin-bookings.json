@@ -97,7 +97,11 @@
         "cancel_requested": "Yêu cầu huỷ",
         "balance_overdue": "Quá hạn trả phần còn lại",
         "departure_cancelled": "Lịch khởi hành đã huỷ",
-        "other": "Lý do khác"
+        "other": "Lý do khác",
+        "late_payment_underpaid": "Trả trễ và thiếu tiền",
+        "paid_draft": "Nhận tiền khi đặt tour còn nháp",
+        "paid_quoted": "Nhận tiền cho báo giá chưa giữ chỗ",
+        "paid_completed": "Nhận tiền sau khi chuyến đi kết thúc"
       },
       "events": {
         "created": "Tạo đặt tour",

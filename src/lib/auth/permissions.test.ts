@@ -31,6 +31,7 @@ describe("permission matrix (ARCHITECTURE.md)", () => {
     ["operator", "bookings.change_status", true],
     ["operator", "bookings.edit_travellers", true],
     ["accountant", "bookings.resolve_attention", true],
+    ["sales", "bookings.resolve_attention", false],
     ["editor", "bookings.resolve_attention", false],
     ["accountant", "payments.record", true],
     ["accountant", "payments.refund", true],

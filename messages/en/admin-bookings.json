@@ -97,7 +97,11 @@
         "cancel_requested": "Cancellation requested",
         "balance_overdue": "Balance overdue",
         "departure_cancelled": "Departure cancelled",
-        "other": "Other reason"
+        "other": "Other reason",
+        "late_payment_underpaid": "Late and underpaid",
+        "paid_draft": "Paid while still a draft",
+        "paid_quoted": "Paid a quote without a hold",
+        "paid_completed": "Paid after the trip ended"
       },
       "events": {
         "created": "Booking created",

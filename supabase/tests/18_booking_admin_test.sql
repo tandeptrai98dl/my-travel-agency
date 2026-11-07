@@ -1,6 +1,6 @@
 -- Admin actions on bookings and payments (*_booking_admin.sql, spec Phase 4 PR 4F).
 begin;
-select plan(26);
+select plan(39);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -175,6 +175,70 @@ select throws_ok(
   '42501', null, 'editors cannot work the queue'
 );
 reset role;
+
+-- Review of #29: who resolves which reason ---------------------------------------------------------
+select isnt(pg_temp.draft('f1'), null, 'a booking with a money flag');
+update public.bookings set needs_attention = true, attention_reason = 'overpaid' where id = (pg_temp.b('f1')).id;
+select pg_temp.claims('00000000-0000-4000-8000-000000001802', 'aal1');
+set local role authenticated;
+select throws_ok(
+  $$ select public.resolve_attention((pg_temp.b('f1')).id, 'sales cannot clear money') $$,
+  '42501', null, 'sales cannot clear a money flag'
+);
+select lives_ok(
+  $$ select public.request_cancellation((pg_temp.b('f1')).id, 'customer wants to cancel') $$,
+  'sales may still ask for a cancellation'
+);
+reset role;
+select is((pg_temp.b('f1')).attention_reason, 'overpaid', 'which keeps the money reason');
+select pg_temp.claims('00000000-0000-4000-8000-000000001803', 'aal1');
+set local role authenticated;
+select throws_ok(
+  $$ select public.resolve_attention((pg_temp.b('f1')).id, 'operators do not clear money') $$,
+  '42501', null, 'operators cannot clear a money flag'
+);
+reset role;
+select pg_temp.claims('00000000-0000-4000-8000-000000001801', 'aal1');
+set local role authenticated;
+select throws_ok(
+  $$ select public.resolve_attention((pg_temp.b('f1')).id, 'not without MFA') $$,
+  '42501', null, 'nor an accountant below aal2'
+);
+reset role;
+select pg_temp.claims('00000000-0000-4000-8000-000000001801', 'aal2');
+set local role authenticated;
+select lives_ok(
+  $$ select public.resolve_attention((pg_temp.b('f1')).id, 'extra refunded by transfer') $$,
+  'an MFA-verified accountant clears it'
+);
+reset role;
+select is((pg_temp.b('f1')).attention_reason, 'cancel_requested', 'and the pending cancellation request comes back for operators');
+select pg_temp.claims('00000000-0000-4000-8000-000000001801', 'aal2');
+set local role authenticated;
+select throws_ok(
+  $$ select public.resolve_attention((pg_temp.b('f1')).id, 'accountants do not cancel') $$,
+  '42501', null, 'an accountant cannot clear a cancellation request'
+);
+reset role;
+select pg_temp.claims('00000000-0000-4000-8000-000000001803', 'aal1');
+set local role authenticated;
+select lives_ok(
+  $$ select public.staff_cancel_booking((pg_temp.b('f1')).id, 'cancelled at the customer''s request') $$,
+  'the operator cancels'
+);
+reset role;
+select is(
+  (select changes ->> 'reason' from public.audit_logs where action = 'bookings.cancel' and entity_id = (pg_temp.b('f1')).id),
+  'cancelled at the customer''s request', 'a staff cancellation is in the audit log with its reason'
+);
+select pg_temp.claims('00000000-0000-4000-8000-000000001801', 'aal2');
+set local role authenticated;
+select is(
+  public.record_manual_payment((pg_temp.b('f1')).id, 500000, 'cash', 'paid at the office after cancelling') ->> 'attention_reason',
+  'paid_after_cancel', 'money recorded for a cancelled booking is flagged for a refund'
+);
+reset role;
+select is((pg_temp.b('f1')).status::text, 'cancelled', 'and never confirms it');
 
 select * from finish();
 rollback;

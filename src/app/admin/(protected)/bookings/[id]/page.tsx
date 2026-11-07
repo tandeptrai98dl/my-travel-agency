@@ -17,7 +17,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { type CurrentUser } from "@/lib/auth/get-user";
 import { can, rolesFor } from "@/lib/auth/permissions";
 import { formatVnd } from "@/lib/money";
-import { type BookingDetail } from "@/modules/booking/booking-admin.schemas";
+import { type BookingDetail, canResolveAttention } from "@/modules/booking/booking-admin.schemas";
 import { getBooking } from "@/modules/booking/booking-admin.service";
 import { canCancel } from "@/modules/booking/state-machine";
 
@@ -362,7 +362,7 @@ async function Actions({ booking, user }: { booking: BookingDetail; user: Curren
   const t = await getTranslations({ locale: "vi", namespace: "Admin" });
   const cancellable = canCancel(booking.status);
   const panels: React.ReactNode[] = [];
-  if (booking.needsAttention && booking.attentionReason && can(user.role, "bookings.resolve_attention")) {
+  if (booking.needsAttention && booking.attentionReason && canResolveAttention(user.role, booking.attentionReason)) {
     panels.push(
       <div key="attention" className="flex flex-col gap-4">
         <Alert variant="warning">

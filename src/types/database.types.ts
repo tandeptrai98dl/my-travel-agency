@@ -836,6 +836,9 @@ isOneToOne: false
             "assign_unmatched_transfer":
 { Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
                            },
+"attention_resolvers":
+{ Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
+                           },
 "booking_cutoff_days":
 { Args: Record<PropertyKey, never>; Returns: number
                            },

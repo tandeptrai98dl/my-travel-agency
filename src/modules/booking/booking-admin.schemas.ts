@@ -33,6 +33,10 @@ export const FLAGGED_REASONS = [
   "paid_after_expiry",
   "paid_after_cancel",
   "late_payment_no_seats",
+  "late_payment_underpaid",
+  "paid_draft",
+  "paid_quoted",
+  "paid_completed",
   "cancel_requested",
 ] as const;
 export const DERIVED_REASONS = ["balance_overdue", "departure_cancelled"] as const;
@@ -40,6 +44,21 @@ export type AttentionReason = (typeof FLAGGED_REASONS)[number] | (typeof DERIVED
 
 export function attentionReason(value: string | null): AttentionReason {
   return (FLAGGED_REASONS as readonly string[]).includes(value ?? "") ? (value as AttentionReason) : "other";
+}
+
+/**
+ * Who may clear a reason (review of PR #29), as `attention_resolvers()` in the database: a
+ * cancellation request is for operators, everything else is about money and needs an
+ * accountant or admin (at aal2, which requireRole() and the function check). Derived reasons are
+ * never resolved by hand.
+ */
+export function attentionResolvers(reason: AttentionReason): readonly ("operator" | "accountant" | "admin")[] {
+  if ((DERIVED_REASONS as readonly string[]).includes(reason)) return [];
+  return reason === "cancel_requested" ? ["operator", "admin"] : ["accountant", "admin"];
+}
+
+export function canResolveAttention(role: string | null | undefined, reason: AttentionReason): boolean {
+  return role != null && (attentionResolvers(reason) as readonly string[]).includes(role);
 }
 
 const note = z.string().trim().min(3, "noteRequired").max(500, "tooLong");
