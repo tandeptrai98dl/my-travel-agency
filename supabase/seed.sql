@@ -335,3 +335,105 @@ set hero_media_id = pg_temp.seed_uuid('seed-media-' || t.code);
 update public.tours
 set status = 'published', published_at = now()
 where code in ('VN-HLB-03', 'VN-NTH-06', 'VN-HER-05', 'JP-KYT-07', 'FR-PRV-09');
+
+-- ============================================================================================
+-- Phase 3 PR K: sample journal, pages and reviews (development only)
+-- ============================================================================================
+
+-- Journal covers (rows only, like the tour heroes).
+insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit)
+select pg_temp.seed_uuid('seed-post-' || v.key),
+       '2026/01/' || pg_temp.seed_uuid('seed-post-' || v.key) || '.jpg',
+       'image/jpeg', 2400, 1600, 700000,
+       jsonb_build_object('vi', v.alt_vi, 'en', v.alt_en),
+       'Sample image'
+from (values
+  ('ha-long', 'Thuyền gỗ giữa những đảo đá vôi lúc bình minh', 'A wooden boat among limestone islands at dawn'),
+  ('kyoto', 'Lá phong đỏ trên mái chùa ở Kyoto', 'Red maple leaves over a temple roof in Kyoto'),
+  ('provence', 'Cánh đồng oải hương xứ Provence', 'A lavender field in Provence')
+) as v(key, alt_vi, alt_en);
+
+insert into public.post_categories (id, sort_order) values
+  (pg_temp.seed_uuid('seed-topic-guides'), 1),
+  (pg_temp.seed_uuid('seed-topic-inspiration'), 2);
+
+insert into public.post_category_translations (category_id, locale, slug, name) values
+  (pg_temp.seed_uuid('seed-topic-guides'), 'vi', 'cam-nang', 'Cẩm nang'),
+  (pg_temp.seed_uuid('seed-topic-guides'), 'en', 'guides', 'Guides'),
+  (pg_temp.seed_uuid('seed-topic-inspiration'), 'vi', 'cam-hung', 'Cảm hứng'),
+  (pg_temp.seed_uuid('seed-topic-inspiration'), 'en', 'inspiration', 'Inspiration');
+
+insert into public.posts (id, status, category_id, cover_media_id, published_at) values
+  (pg_temp.seed_uuid('seed-post-ha-long'), 'draft', pg_temp.seed_uuid('seed-topic-guides'), pg_temp.seed_uuid('seed-post-ha-long'), null),
+  (pg_temp.seed_uuid('seed-post-kyoto'), 'draft', pg_temp.seed_uuid('seed-topic-inspiration'), pg_temp.seed_uuid('seed-post-kyoto'), null),
+  (pg_temp.seed_uuid('seed-post-provence'), 'draft', pg_temp.seed_uuid('seed-topic-inspiration'), pg_temp.seed_uuid('seed-post-provence'), null);
+
+insert into public.post_translations (post_id, locale, slug, title, excerpt, content, seo_description, is_published)
+select pg_temp.seed_uuid('seed-post-' || v.key), v.locale::public.locale, v.slug, v.title, v.excerpt,
+       jsonb_build_object('type', 'doc', 'content', jsonb_build_array(
+         jsonb_build_object('type', 'paragraph', 'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v.excerpt))),
+         jsonb_build_object('type', 'heading', 'attrs', jsonb_build_object('level', 2), 'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v.heading))),
+         jsonb_build_object('type', 'paragraph', 'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v.body)))
+       )),
+       v.excerpt, v.published
+from (values
+  ('ha-long', 'vi', 'mot-ngay-tren-vinh-lan-ha', 'Một ngày trên vịnh Lan Hạ', 'Từ bình minh trên boong đến bữa tối dưới trời sao: nhịp một ngày trên du thuyền nhỏ.', 'Buổi sáng', 'Thái cực quyền trên boong, rồi chèo kayak qua những hang đá khi mặt nước còn phẳng lặng.', true),
+  ('ha-long', 'en', 'a-day-on-lan-ha-bay', 'A day on Lan Ha Bay', 'From sunrise on deck to dinner under the stars: the rhythm of a day on a small ship.', 'Morning', 'Tai chi on deck, then kayaking through the caves while the water is still flat.', true),
+  ('kyoto', 'vi', 'kyoto-mua-la-do', 'Kyoto mùa lá đỏ', 'Những khu vườn nên đến sớm và những con phố nên đi bộ vào buổi chiều.', 'Đến sớm', 'Vườn rêu mở cửa lúc tám giờ; hãy đặt chỗ trước và đến trước khi đoàn khách tới.', true),
+  ('kyoto', 'en', 'kyoto-in-autumn', 'Kyoto in autumn', 'The gardens to visit early and the streets to walk in the afternoon.', 'Go early', 'The moss garden opens at eight; book ahead and arrive before the groups.', false),
+  ('provence', 'vi', 'provence-mua-oai-huong', 'Provence mùa oải hương', 'Khi nào hoa nở rộ, và những ngôi làng trên đồi đáng ghé qua.', 'Thời điểm', 'Hoa nở đẹp nhất từ cuối tháng Sáu đến giữa tháng Bảy.', true),
+  ('provence', 'en', 'provence-in-lavender-season', 'Provence in lavender season', 'When the fields are in full bloom, and the hilltop villages worth a stop.', 'When to go', 'The fields are at their best from late June to mid-July.', true)
+) as v(key, locale, slug, title, excerpt, heading, body, published);
+
+update public.posts set status = 'published', published_at = now() - (interval '1 day' * v.days_ago)
+from (values ('ha-long', 1), ('kyoto', 3), ('provence', 6)) as v(key, days_ago)
+where id = pg_temp.seed_uuid('seed-post-' || v.key);
+
+-- Static pages: about, FAQ and privacy in both languages; cancellation in Vietnamese only;
+-- payment stays a draft (left out of the footer). Terms has no row: the content admin E2E
+-- creates it.
+insert into public.pages (id, key, status) values
+  (pg_temp.seed_uuid('seed-page-about'), 'about', 'draft'),
+  (pg_temp.seed_uuid('seed-page-faq'), 'faq', 'draft'),
+  (pg_temp.seed_uuid('seed-page-privacy'), 'privacy', 'draft'),
+  (pg_temp.seed_uuid('seed-page-cancellation'), 'cancellation', 'draft'),
+  (pg_temp.seed_uuid('seed-page-payment'), 'payment', 'draft');
+
+insert into public.page_translations (page_id, locale, slug, title, content, seo_description, is_published)
+select pg_temp.seed_uuid('seed-page-' || v.key), v.locale::public.locale, v.slug, v.title, v.content::jsonb, v.description, v.published
+from (values
+  ('about', 'vi', 've-chung-toi', 'Về chúng tôi',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Chúng tôi thiết kế những hành trình riêng tư và nhóm nhỏ, chăm chút từng chi tiết. (Nội dung mẫu.)"}]}]}',
+   'Câu chuyện, đội ngũ và giấy phép của chúng tôi.', true),
+  ('about', 'en', 'about', 'About us',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"We design private and small-group journeys, down to the smallest detail. (Sample content.)"}]}]}',
+   'Our story, our team and our licences.', true),
+  ('faq', 'vi', 'cau-hoi-thuong-gap', 'Câu hỏi thường gặp',
+   '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Tôi cần đặt cọc bao nhiêu?"}]},{"type":"paragraph","content":[{"type":"text","text":"Đặt cọc 30% khi xác nhận, phần còn lại trước ngày khởi hành 30 ngày."}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Tôi có thể đổi ngày khởi hành không?"}]},{"type":"paragraph","content":[{"type":"text","text":"Có, nếu còn chỗ ở ngày mới; hãy liên hệ chuyên viên tư vấn."}]}]}',
+   'Đặt cọc, đổi ngày và những câu hỏi khác.', true),
+  ('faq', 'en', 'faq', 'Frequently asked questions',
+   '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"How much is the deposit?"}]},{"type":"paragraph","content":[{"type":"text","text":"A 30% deposit on confirmation, the balance 30 days before departure."}]},{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Can I change my departure date?"}]},{"type":"paragraph","content":[{"type":"text","text":"Yes, if the new date has seats; please contact a travel designer."}]}]}',
+   'Deposits, date changes and other questions.', true),
+  ('privacy', 'vi', 'chinh-sach-bao-mat', 'Chính sách bảo mật',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Chính sách mẫu, chờ nội dung pháp lý chính thức."}]}]}', 'Cách chúng tôi thu thập và bảo vệ dữ liệu cá nhân.', true),
+  ('privacy', 'en', 'privacy-policy', 'Privacy policy',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Sample policy, awaiting the final legal text."}]}]}', 'How we collect and protect personal data.', true),
+  ('cancellation', 'vi', 'chinh-sach-huy', 'Chính sách hủy',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hủy trước 30 ngày: hoàn 80%. (Mẫu.)"}]}]}', 'Mức hoàn tiền theo thời điểm hủy.', true),
+  ('payment', 'vi', 'thanh-toan', 'Thanh toán',
+   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Nội dung mẫu."}]}]}', 'Phương thức thanh toán.', false)
+) as v(key, locale, slug, title, content, description, published);
+
+update public.pages set status = 'published' where key in ('about', 'faq', 'privacy', 'cancellation');
+
+-- Reviews written in by staff: approved ones are public, featured ones appear on the homepage.
+insert into public.reviews (tour_id, author_name, author_country, rating, title, content, locale, travel_date, status, is_featured)
+select t.id, v.author, v.country, v.rating, v.title, v.content, v.locale::public.locale, (current_date - v.days_ago)::date,
+       v.status::public.review_status, v.featured
+from (values
+  ('VN-HLB-03', 'Minh Anh', 'Việt Nam', 5, 'Một đêm yên tĩnh trên vịnh', 'Thuyền nhỏ, phòng sạch và bữa tối trên boong rất ngon.', 'vi', 40, 'approved', true),
+  ('VN-HER-05', 'Anna', 'United Kingdom', 5, null, 'Every detail was thought through, from the private boat to dinner in a family home.', 'en', 60, 'approved', true),
+  ('JP-KYT-07', 'Hoàng', 'Việt Nam', 4, 'Kyoto mùa thu', 'Lịch trình hợp lý, hướng dẫn viên am hiểu.', 'vi', 80, 'approved', false),
+  ('VN-HLB-03', 'Pending Reviewer', null, 3, null, 'Not yet moderated.', 'en', 20, 'pending', false)
+) as v(code, author, country, rating, title, content, locale, days_ago, status, featured)
+join public.tours t on t.code = v.code;

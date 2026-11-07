@@ -863,6 +863,9 @@ isOneToOne: false
 "confirm_newsletter_subscription":
 { Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
                            },
+"create_contact_inquiry":
+{ Args: { "p_email": string,"p_ip"?: unknown,"p_locale": Database["public"]['Enums']["locale"],"p_message": string,"p_name": string,"p_phone": string,"p_preferred_contact": string,"p_privacy_version": string,"p_tour_code": string,"p_user_agent"?: string }; Returns: string
+                           },
 "create_draft_booking":
 { Args: { "payload": Json }; Returns: string
                            },
@@ -930,6 +933,9 @@ isOneToOne: false
 { Args: { "target_id": string }; Returns: boolean
                            },
 "next_booking_code":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"next_inquiry_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "raise_on_seat_mismatch":

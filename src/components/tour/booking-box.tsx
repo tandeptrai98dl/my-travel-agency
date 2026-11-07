@@ -3,7 +3,9 @@ import { getTranslations } from "next-intl/server";
 
 import { Price } from "@/components/typography/price";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { formatDate } from "@/lib/dates";
+import { features } from "@/lib/features";
 import type { Locale } from "@/modules/catalog/public/types";
 
 type Props = {
@@ -16,7 +18,8 @@ type Props = {
 
 /**
  * Price and the one primary action of the tour page. Until online booking ships (Phase 4,
- * decision 9) the action calls the hotline; email is the quieter alternative.
+ * decision 9) the action opens the contact page with the tour code and the next date, and the
+ * hotline is the quieter alternative (before the contact page existed: hotline, then email).
  */
 export async function BookingBox({ locale, tour, bookable, contact }: Props) {
   const t = await getTranslations({ locale, namespace: "TourDetail.booking" });
@@ -28,7 +31,8 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
       : tour.fromPrice;
   const next = bookable[0];
   const tel = contact.phone ? `tel:${contact.phone.replace(/[^+\d]/g, "")}` : null;
-  const mail = contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent(t("emailSubject", { code: tour.code }))}` : null;
+  const contactPage = features.contactPage;
+  const mail = !contactPage && contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent(t("emailSubject", { code: tour.code }))}` : null;
 
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-6 md:p-8">
@@ -49,8 +53,15 @@ export async function BookingBox({ locale, tour, bookable, contact }: Props) {
         </p>
       )}
       <div className="flex flex-col gap-3">
-        {tel && (
+        {contactPage && (
           <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+            <Link href={{ pathname: "/contact", query: { tour: tour.code, ...(next && !isPrivate ? { date: next.startDate } : {}) } }}>
+              {isPrivate ? t("contactPrivate") : t("contact")}
+            </Link>
+          </Button>
+        )}
+        {tel && (
+          <Button asChild variant={contactPage ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <a href={tel}>
               <Phone aria-hidden="true" strokeWidth={1.5} />
               {isPrivate ? t("callPrivate", { phone: contact.phone! }) : t("call", { phone: contact.phone! })}

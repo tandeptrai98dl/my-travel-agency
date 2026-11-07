@@ -7,6 +7,8 @@ import { Container } from "@/components/layout/container";
 import { ConfirmNewsletterForm } from "@/components/marketing/confirm-newsletter-form";
 import { getPathname } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
+import type { Locale } from "@/modules/catalog/public/types";
+import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
 
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -28,7 +30,7 @@ export default async function NewsletterConfirmPage({ params, searchParams }: Pr
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "NewsletterConfirm" });
+  const [t, privacy] = await Promise.all([getTranslations({ locale, namespace: "NewsletterConfirm" }), getPrivacyConsent(locale)]);
   const labels = {
     title: t("title"),
     text: t("text"),
@@ -39,18 +41,22 @@ export default async function NewsletterConfirmPage({ params, searchParams }: Pr
     invalidText: t("invalidText"),
     unavailable: t("unavailable"),
     backHome: t("backHome"),
+    consent: t("consent", { policy: "{policy}" }),
+    privacyLink: t("privacyLink"),
   };
   return (
     <Container className="py-32 md:py-40">
       <Suspense fallback={<h1 className="font-serif text-h1 font-medium md:text-h1-lg">{labels.title}</h1>}>
-        <TokenForm searchParams={searchParams} labels={labels} />
+        <TokenForm searchParams={searchParams} locale={locale} privacyHref={privacy?.href ?? null} labels={labels} />
       </Suspense>
     </Container>
   );
 }
 
-async function TokenForm({ searchParams, labels }: Pick<Props, "searchParams"> & { labels: Parameters<typeof ConfirmNewsletterForm>[0]["labels"] }) {
+type FormProps = Omit<Parameters<typeof ConfirmNewsletterForm>[0], "token" | "locale"> & { locale: Locale };
+
+async function TokenForm({ searchParams, ...props }: Pick<Props, "searchParams"> & FormProps) {
   const value = (await searchParams).token;
   const token = typeof value === "string" && value.length <= 200 ? value : null;
-  return <ConfirmNewsletterForm token={token} labels={labels} />;
+  return <ConfirmNewsletterForm token={token} {...props} />;
 }

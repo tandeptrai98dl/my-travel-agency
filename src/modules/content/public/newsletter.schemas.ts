@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-/** Version of the newsletter consent text recorded in `consent_records` (Decree 13/2023 proof). */
-export const NEWSLETTER_CONSENT_VERSION = "newsletter-2026-11";
 /** How long a confirmation link stays valid. */
 export const CONFIRM_TOKEN_DAYS = 7;
 
@@ -15,6 +13,8 @@ export const subscribeSchema = z.object({
 
 export const confirmSchema = z.object({
   token: z.string().min(20).max(200).regex(/^[0-9a-z]+\.[A-Za-z0-9_-]+$/),
+  // The confirmation page's language: the privacy policy shown there is the one agreed to.
+  locale: z.enum(["vi", "en"]),
 });
 
 export type SubscribeStatus = "idle" | "sent" | "invalidEmail" | "verification" | "rateLimited" | "unavailable" | "failed";

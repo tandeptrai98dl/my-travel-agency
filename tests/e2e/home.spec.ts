@@ -4,8 +4,9 @@ import { expectNoSeriousViolations } from "./support/axe";
 
 // Seeded homepage (supabase/seed.sql): the `homepage` setting has the hero text, featured
 // destinations vietnam, japan, france and no hero image; featured tours VN-HLB-03, VN-NTH-06 and
-// JP-KYT-07 (no published English translation); four travel styles; no reviews; no journal
-// routes yet. CI has no Turnstile, Upstash or Resend keys, so the newsletter form is disabled.
+// JP-KYT-07 (no published English translation); four travel styles; featured reviews by Minh Anh
+// (vi) and Anna (en); three articles (two in English). CI has no Turnstile, Upstash or Resend
+// keys, so the newsletter form is disabled.
 
 async function dismissConsent(page: Page) {
   const url = test.info().project.use.baseURL;
@@ -44,12 +45,16 @@ test.describe("homepage", () => {
     await expect(styles.getByRole("heading", { level: 3 })).toHaveCount(4);
     await expect(styles.getByRole("link", { name: /Trăng mật/ })).toHaveAttribute("href", "/phong-cach/trang-mat");
 
-    // Sections without data are left out: no reviews, no journal routes yet.
-    await expect(page.getByText("Khách hàng kể lại")).toHaveCount(0);
-    await expect(page.getByText("Cảm hứng cho chuyến đi tới")).toHaveCount(0);
+    // A featured review in this language, and the latest articles.
+    const testimonial = page.getByRole("region", { name: "Khách hàng kể lại" });
+    await expect(testimonial.getByText("Minh Anh")).toBeVisible();
+    const journal = page.getByRole("region", { name: "Cảm hứng cho chuyến đi tới" });
+    await expect(journal.getByRole("heading", { level: 3 })).toHaveCount(3);
+    await expect(journal.getByRole("link", { name: /Một ngày trên vịnh Lan Hạ/ })).toHaveAttribute("href", "/journal/mot-ngay-tren-vinh-lan-ha");
 
-    // Tailor-made: the hotline and email until the inquiry wizard and the contact page exist.
+    // Tailor-made: the contact page until the inquiry wizard exists (Phase 5), then the hotline and email.
     const tailorMade = page.getByRole("region", { name: "Một hành trình chỉ dành cho bạn" });
+    await expect(tailorMade.getByRole("link", { name: "Liên hệ tư vấn" })).toHaveAttribute("href", "/lien-he");
     await expect(tailorMade.getByRole("link", { name: /^Gọi \+84/ })).toHaveAttribute("href", /^tel:\+84/);
     await expect(tailorMade.getByRole("link", { name: "Gửi email cho chúng tôi" })).toHaveAttribute("href", /^mailto:/);
   });

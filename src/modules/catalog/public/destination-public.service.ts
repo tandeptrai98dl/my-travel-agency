@@ -3,14 +3,14 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { getPathname } from "@/i18n/navigation";
-import { mediaUrl, type ImageData } from "@/lib/images";
-import { richTextIsEmpty, richTextMediaIds } from "@/lib/rich-text";
+import type { ImageData } from "@/lib/images";
+import { richTextIsEmpty } from "@/lib/rich-text";
+import { type ContentMedia, contentMediaMap } from "@/modules/content/public/rich-media";
 
 import { DESTINATIONS_TAG, TOURS_TAG, TRAVEL_STYLES_TAG } from "../cache-tags";
 import { buildDestinationIndex, type DestinationRowData, type DestinationSummary, findInIndex, subtreeIds } from "./destination-public.mapping";
 import * as repo from "./destination-public.repository";
 import { toImage } from "./tour-public.mapping";
-import { findMediaByIds } from "./tour-public.repository";
 import { getTourCards } from "./tour-public.service";
 import type { Locale, LocaleLinks, TourCardItem } from "./types";
 
@@ -18,8 +18,6 @@ import type { Locale, LocaleLinks, TourCardItem } from "./types";
 
 const LOCALES: Locale[] = ["vi", "en"];
 
-/** An image inside rich content, as the `RichText` renderer takes it. */
-export type ContentMedia = { url: string; alt: { vi: string; en: string }; width: number | null; height: number | null };
 const FAILED = { stale: 30, revalidate: 30, expire: 300 } as const;
 
 function fail(what: string, error: { message: string }): never {
@@ -84,19 +82,6 @@ export type DestinationPage = {
   alternates: LocaleLinks;
 };
 
-async function mediaMap(content: unknown): Promise<Record<string, ContentMedia>> {
-  const ids = richTextMediaIds(content);
-  if (ids.length === 0) return {};
-  const { data, error } = await findMediaByIds(ids);
-  if (error) fail("content images", error);
-  return Object.fromEntries(
-    (data ?? []).map((row) => {
-      const alt = (row.alt ?? {}) as Partial<Record<Locale, string>>;
-      return [row.id, { url: mediaUrl(row.path), alt: { vi: alt.vi ?? "", en: alt.en ?? "" }, width: row.width, height: row.height }];
-    }),
-  );
-}
-
 /**
  * One destination in one language (cached, tags `destinations`, `tours`, `travel-styles`): its
  * page fields, parents, children with counts, rich content with its images, and its tours (the
@@ -121,16 +106,27 @@ export async function getDestinationPage(locale: Locale, slug: string): Promise<
   }
 
   const destination = data.destinations;
-  const [index, slugs] = await Promise.all([loadIndex(locale), repo.findDestinationSlugs(destination.id)]);
+  const [indexes, slugs] = await Promise.all([
+    Promise.all(LOCALES.map(async (l) => [l, await loadIndex(l)] as const)),
+    repo.findDestinationSlugs(destination.id),
+  ]);
   if (slugs.error) fail("destination slugs", slugs.error);
+  const indexOf = new Map(indexes);
+  const index = indexOf.get(locale)!;
   const found = findInIndex(index, destination.id);
+  // A language is available only where the destination is reachable in that language's tree (a
+  // hidden parent there would make its page a 404), not merely where its translation is published.
+  const visibleSlugs = (slugs.data ?? []).filter((row) => {
+    const tree = indexOf.get(row.locale as Locale);
+    return tree ? findInIndex(tree, destination.id) !== null : false;
+  });
   // Published and translated, but under a hidden parent: not reachable from the tree, so not shown.
   if (!found) return { kind: "missing" };
 
   const content = richTextIsEmpty(data.content) ? null : data.content;
   const [tours, contentMedia] = await Promise.all([
     getTourCards(locale, { destinationIds: subtreeIds(found.node) }),
-    content ? mediaMap(content) : Promise.resolve({}),
+    content ? contentMediaMap(content) : Promise.resolve({}),
   ]);
 
   return {
@@ -151,7 +147,7 @@ export async function getDestinationPage(locale: Locale, slug: string): Promise<
       children: found.node.children,
       tourCount: found.node.tourCount,
       tours,
-      alternates: localeLinks("/destinations/[slug]", slugs.data ?? [], "/destinations"),
+      alternates: localeLinks("/destinations/[slug]", visibleSlugs, "/destinations"),
     },
   };
 }

@@ -98,6 +98,8 @@
       "next": "Next departure: {date}",
       "noDate": "No upcoming departure yet",
       "seeDepartures": "See departures",
+      "contact": "Contact us to book",
+      "contactPrivate": "Ask for a private quote",
       "call": "Call {phone} to book",
       "callPrivate": "Call {phone} to plan it",
       "email": "Email us",

@@ -12,9 +12,10 @@ import type { Locale } from "@/modules/catalog/public/types";
 import { isEmailConfigured, sendEmail } from "@/modules/notification/email.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
+import { getPrivacyConsent } from "./content-public.service";
 import { confirmationEmail } from "./newsletter.email";
 import * as repo from "./newsletter.repository";
-import { type ConfirmStatus, NEWSLETTER_CONSENT_VERSION, type SubscribeStatus } from "./newsletter.schemas";
+import { type ConfirmStatus, type SubscribeStatus } from "./newsletter.schemas";
 import { createConfirmToken, hashToken, isTokenFresh } from "./newsletter.token";
 
 /** Sign-ups per IP per 10 minutes, and per address per day. */
@@ -46,6 +47,11 @@ export async function subscribe(input: SubscribeInput): Promise<SubscribeStatus>
       });
       reportedDisabled = true;
     }
+    return "unavailable";
+  }
+  // The form asks for agreement to the privacy policy: without a published one, no sign-ups.
+  if (!(await getPrivacyConsent(input.locale))) {
+    logger.warn("newsletter.no_privacy_page", { locale: input.locale });
     return "unavailable";
   }
 
@@ -94,16 +100,20 @@ export async function subscribe(input: SubscribeInput): Promise<SubscribeStatus>
   return sent === "sent" ? "sent" : "failed";
 }
 
-type ConfirmInput = { token: string; ip: string | null; userAgent: string | null };
+type ConfirmInput = { token: string; locale: Locale; ip: string | null; userAgent: string | null };
 
 /**
  * Double opt-in, step 2, from a button on the confirmation page (a POST, so mail scanners that
  * open links cannot confirm on the reader's behalf). Tokens carry 192 random bits, so no rate
- * limit is needed against guessing.
+ * limit is needed against guessing. The marketing consent is recorded with the version of the
+ * privacy policy shown on the page (`getPrivacyConsent`); without a published one it waits.
  */
 export async function confirm(input: ConfirmInput): Promise<ConfirmStatus> {
   if (!isTokenFresh(input.token)) return "invalid";
-  const { data, error } = await repo.confirmSubscription(hashToken(input.token), NEWSLETTER_CONSENT_VERSION, input.ip, input.userAgent);
+  // The consent recorded is to the privacy policy the confirmation page links, by its version.
+  const consent = await getPrivacyConsent(input.locale);
+  if (!consent) return "unavailable";
+  const { data, error } = await repo.confirmSubscription(hashToken(input.token), consent.version, input.ip, input.userAgent);
   if (error) {
     logger.error("newsletter.confirm_failed", { message: error.message });
     return "unavailable";
