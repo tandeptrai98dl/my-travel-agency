@@ -80,12 +80,20 @@ let listening = false;
 let documentAllowed: boolean | null = null;
 
 /**
- * Whether this document may use GA at all, by the route it was loaded on. A document opened on a
- * route without analytics (the payment link, booking lookup, the account, sign-in, the newsletter's
- * single-use pages) keeps GA off for its whole life, also after a client-side navigation into
- * checkout (the payment link's button, the account's "pay the balance"): the secure root's nonce
- * policy lists Google's hosts only on book and checkout (#55 review m4), so in such a document
- * Google's requests would be blocked anyway.
+ * Whether this document may use GA at all, by the route it was first loaded on. A document opened
+ * on a route without analytics (the payment link, booking lookup, the account, sign-in, the
+ * newsletter's single-use pages) keeps GA off for its whole life, also after a client-side
+ * navigation to a page that has analytics (the payment link's button into checkout, the account's
+ * "pay the balance", a newsletter page's links to the public site). The rule is deliberate, not a
+ * CSP workaround: the newsletter pages are public, prerendered pages whose policy does list
+ * Google's hosts, and GA still stays off after them, so a visit that started from a single-use
+ * link or a signed-in page is never measured. (On the secure root the nonce policy lists Google's
+ * hosts only for book and checkout, #55 review m4, so there it would be blocked as well.)
+ *
+ * One deliberate exception: the landing check ignores the query. A document opened on the emailed
+ * checkout link (`/thanh-toan/[code]?access=…`, ADR-038) sends nothing on that page, because
+ * `analyticsAllowed()` refuses any page with `access`, but may start GA once the "open" button has
+ * replaced the URL with the checkout without the token; checkout's policy allows Google.
  */
 function documentAllowsAnalytics(): boolean {
   let landing = window.location.pathname;

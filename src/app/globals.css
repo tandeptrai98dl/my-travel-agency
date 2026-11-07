@@ -118,6 +118,14 @@ html[data-consent-open] {
     display: none;
   }
 }
+/* Where the browser reports scripting, the column is hidden from the first paint, not only after
+   hydration: on a slow phone it showed first and the results then jumped up by the column's
+   height (CLS 0.37, Phase 6 QA). `[data-js]` above covers browsers without the media feature. */
+@media (max-width: 1023.98px) and (scripting: enabled) {
+  .filter-column {
+    display: none;
+  }
+}
 /* With JavaScript the column's changes apply at once: no Apply button. */
 [data-js] .filter-column .filter-apply {
   display: none;

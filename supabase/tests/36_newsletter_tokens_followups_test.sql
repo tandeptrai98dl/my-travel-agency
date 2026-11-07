@@ -48,12 +48,13 @@ insert into public.subscribers (id, email, locale, confirmed_at, unsubscribed_at
 
 -- Issue: returns the ids that got a token -------------------------------------------------------
 select is(
-  public.issue_newsletter_unsubscribe_tokens(
-    array['b0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000002']::uuid[],
-    array[repeat('a', 64), repeat('b', 64), repeat('c', 64)]
-  )::text[] @> array['b0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002'],
-  true,
-  'the active subscribers are returned'
+  (select array_agg(issued order by issued)
+     from unnest(public.issue_newsletter_unsubscribe_tokens(
+       array['b0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000002']::uuid[],
+       array[repeat('a', 64), repeat('b', 64), repeat('c', 64)]
+     )) as issued),
+  array['b0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002']::uuid[],
+  'exactly the active subscribers are returned (the one who left is not)'
 );
 select is(
   (select count(*)::int from public.newsletter_unsubscribe_tokens where subscriber_id = 'b0000000-0000-4000-8000-000000000003'),

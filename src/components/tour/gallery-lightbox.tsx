@@ -13,13 +13,15 @@ import type { GalleryLabels } from "./gallery-button";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Puts focus back on the button that opened the lightbox (it is not a Radix trigger). */
+  returnFocus: () => void;
   images: ImageData[];
   title: string;
   labels: GalleryLabels;
 };
 
 /** Full-size photos with previous/next buttons and arrow keys while the dialog has focus. */
-export default function GalleryLightbox({ open, onOpenChange, images, title, labels }: Props) {
+export default function GalleryLightbox({ open, onOpenChange, returnFocus, images, title, labels }: Props) {
   const [index, setIndex] = useState(0);
   const count = images.length;
   const go = (step: number) => setIndex((current) => (current + step + count) % count);
@@ -31,6 +33,13 @@ export default function GalleryLightbox({ open, onOpenChange, images, title, lab
       <DialogContent
         closeLabel={labels.close}
         className="max-w-5xl gap-4"
+        // Radix returns focus to its trigger, and there is none, so focus fell to the body when the
+        // lightbox closed (Phase 6 keyboard pass); focusing the opener here, after the focus trap
+        // is gone, works where a focus call in onOpenChange is pulled back into the dialog.
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocus();
+        }}
         onKeyDown={(event) => {
           if (event.key === "ArrowRight") go(1);
           if (event.key === "ArrowLeft") go(-1);

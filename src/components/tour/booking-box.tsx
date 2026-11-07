@@ -84,7 +84,8 @@ export async function BookingBox({ locale, tour, bookable, contact, onlineBookin
           <Button asChild variant={contactPage || book ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
             <a href={tel}>
               <Phone aria-hidden="true" strokeWidth={1.5} />
-              {isPrivate ? t("callPrivate", { phone: contact.phone! }) : t("call", { phone: contact.phone! })}
+              {/* Non-breaking spaces keep the number on one line in the narrow box (QA at 360 px). */}
+              {isPrivate ? t("callPrivate", { phone: contact.phone!.replace(/ /g, "\u00a0") }) : t("call", { phone: contact.phone!.replace(/ /g, "\u00a0") })}
             </a>
           </Button>
         )}
