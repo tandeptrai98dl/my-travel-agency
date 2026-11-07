@@ -63,14 +63,16 @@ jobs:
       # npm audit reads package-lock.json; no install needed.
       - name: npm audit (production dependencies)
         run: node scripts/check-audit.mjs
-      - name: Install gitleaks (pinned, checksum-verified)
+      - name: Install gitleaks (pinned version and SHA-256)
+        # The digest is pinned here rather than read from the release's own checksums file, so a
+        # replaced release asset fails the job. It matched gitleaks_8.28.0_checksums.txt when pinned
+        # (PR 6A, CI run of e23823b); update both values together.
+        env:
+          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
         run: |
-          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
           file="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -sSfL -o "$RUNNER_TEMP/$file" "$base/$file"
-          curl -sSfL -o "$RUNNER_TEMP/checksums.txt" "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
-          (cd "$RUNNER_TEMP" && grep " $file\$" checksums.txt | sha256sum -c -)
-          sha256sum "$RUNNER_TEMP/$file"
+          curl -sSfL -o "$RUNNER_TEMP/$file" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$file"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$file" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/$file" -C "$RUNNER_TEMP" gitleaks
       - name: gitleaks (full git history)
         run: |
