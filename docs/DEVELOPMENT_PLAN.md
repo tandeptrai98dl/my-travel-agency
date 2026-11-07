@@ -57,11 +57,13 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [x] Admin: bookings, payments, manual recording, refunds, "needs attention" queue
 - [ ] Acceptance: E2E booking + sandbox payment passes; two customers booking the last seat → only one succeeds; repeated IPN creates no duplicates; late IPN handled on both branches; seat invariant holds after the full test run (in CI with the signed VNPay stub: booking flow, last-seat race, ten identical IPNs, late payment on both branches in pgTAP, nightly seat check; open until the real VNPay sandbox runs on staging with the owner's merchant account)
 
-## Phase 5: Accounts, inquiries and operations (2 weeks)
+## Phase 5: Accounts, inquiries and operations (2 weeks) — spec: `docs/specs/phase-5-accounts-inquiries-operations.md`
 
 - [ ] Localized sign-in/sign-up pages (replace the starter `/auth` pages for customers), `/auth/callback` for Google, account area, booking lookup
-- [ ] Tailor-made wizard + Turnstile; contact form; full inquiry inbox
-- [ ] Balance reminders (Vercel Cron), minimum-traveller alerts, double opt-in newsletter, dashboard, passenger CSV export
+- [x] Contact form (shipped in Phase 3 PR K, #31)
+- [x] Double opt-in newsletter (shipped in Phase 3 PR I, #24)
+- [ ] Tailor-made wizard + Turnstile; full inquiry inbox
+- [ ] Balance reminders (Vercel Cron), minimum-traveller alerts, dashboard, passenger CSV export
 - [ ] Acceptance: sales completes inquiry → quote → customer payment → confirmed booking on staging
 
 ## Phase 6: Hardening and launch (2.5 weeks)
