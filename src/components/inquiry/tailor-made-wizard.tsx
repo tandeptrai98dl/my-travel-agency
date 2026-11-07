@@ -152,7 +152,10 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
   if (done) return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} source="tailor_made" />;
 
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
-  const panelClass = (index: number) => cx("flex flex-col gap-6", ready && index !== step && "hidden");
+  // Before hydration, browsers that report scripting already show only the first step, so the page
+  // does not collapse when the script arrives; without JavaScript every step shows.
+  const panelClass = (index: number) =>
+    cx("flex flex-col gap-6", ready ? index !== step && "hidden" : index !== 0 && "[@media(scripting:enabled)]:hidden");
 
   return (
     <form
@@ -175,18 +178,18 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
       ))}
       <Honeypot />
 
-      {ready && (
-        <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-small" aria-label={labels.stepOf.replace("{step}", String(step + 1)).replace("{count}", String(last + 1))}>
-          {labels.steps.map((name, index) => (
-            <li key={name} aria-current={index === step ? "step" : undefined} className={cx("flex items-center gap-2", index === step ? "font-semibold text-foreground" : "text-muted-foreground")}>
-              <span aria-hidden="true" className={cx("flex h-6 w-6 items-center justify-center rounded-full border text-eyebrow", index <= step ? "border-primary bg-primary text-primary-foreground" : "border-input")}>
-                {index + 1}
-              </span>
-              {name}
-            </li>
-          ))}
-        </ol>
-      )}
+      {/* Rendered on the server too, so hydration does not push the form down (CLS, Phase 6 QA);
+          without JavaScript every step shows and the list is an outline, with no current step. */}
+      <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-small" aria-label={labels.stepOf.replace("{step}", String(step + 1)).replace("{count}", String(last + 1))}>
+        {labels.steps.map((name, index) => (
+          <li key={name} aria-current={ready && index === step ? "step" : undefined} className={cx("flex items-center gap-2", index === step ? "font-semibold text-foreground" : "text-muted-foreground")}>
+            <span aria-hidden="true" className={cx("flex h-6 w-6 items-center justify-center rounded-full border text-eyebrow", index <= step ? "border-primary bg-primary text-primary-foreground" : "border-input")}>
+              {index + 1}
+            </span>
+            {name}
+          </li>
+        ))}
+      </ol>
       {restored && ready && <p className="text-small text-muted-foreground">{labels.draftRestored}</p>}
 
       <fieldset disabled={disabled} className="flex flex-col gap-10 disabled:opacity-80">
