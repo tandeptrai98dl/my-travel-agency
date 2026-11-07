@@ -23,12 +23,16 @@ test("the wizard shows one step at a time and is disabled until its services exi
 
 test("before hydration only step 1 shows and its buttons stay invisible", async ({ page }) => {
   // The app's chunks never arrive, so React never hydrates (JavaScript itself runs).
-  await page.route("**/_next/static/chunks/**", (route) => route.abort());
+  // Scripts only: Turbopack serves the stylesheets from the same folder.
+  await page.route("**/_next/static/chunks/**", (route) => (route.request().resourceType() === "script" ? route.abort() : route.fallback()));
   await page.goto("/thiet-ke-rieng");
   await expect(page.getByRole("heading", { level: 2, name: "Bạn muốn đi đâu?" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Chúng tôi liên hệ bạn thế nào?" })).toBeHidden();
   // A native submit from here would stop at required fields in the hidden steps.
   await expect(page.getByRole("button", { name: "Gửi yêu cầu" })).toBeHidden();
+  // Still the server's markup: no "Next" button and no "Step 1 of 5" name yet.
+  await expect(page.getByRole("button", { name: "Tiếp tục" })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Bước 1 trên 5" })).toHaveCount(0);
 });
 
 test("without JavaScript every step shows, none is marked current, and the submit is there", async ({ browser }) => {

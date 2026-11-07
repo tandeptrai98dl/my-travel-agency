@@ -8,8 +8,9 @@ import { dismissConsent } from "./support/consent";
 // keyboard only, no mouse. The menus, the cookie banner and its dialog, the filter sheet and the
 // mobile menu already have keyboard tests (shell.spec.ts, a11y.spec.ts, tour-listing.spec.ts);
 // this file adds a Tab walk over the main public pages, customer sign-in and the booking form. The
-// tour gallery's lightbox is checked locally only (QA_REPORT.md): the seed has no gallery photos
-// and the tour page is cached, so a test cannot add some. Screen-reader passes need people.
+// tour gallery's lightbox is checked locally (QA_REPORT.md) and by a unit test of its close
+// sequence (gallery-lightbox.test.tsx): the seed has no gallery photos and the tour page is
+// cached, so an E2E test cannot add some. Screen-reader passes need people.
 
 test.afterAll(closeTestDepartures);
 

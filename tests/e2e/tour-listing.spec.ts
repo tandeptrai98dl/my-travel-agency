@@ -83,10 +83,20 @@ test.describe("tour listing", () => {
     await expect(cards(page)).toHaveCount(2);
   });
 
+  test("Googlebot gets the listing's canonical and hreflang in <head> (htmlLimitedBots, ADR-041)", async ({ request }) => {
+    const googlebot =
+      "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+    const html = await (await request.get("/tours", { headers: { "user-agent": googlebot } })).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    expect(head).toMatch(/<link rel="canonical" href="[^"]*\/tours"/);
+    expect(head).toMatch(/<link rel="alternate" hrefLang="en" href="[^"]*\/en\/tours"/);
+  });
+
   test("mobile: before hydration, Filters still opens and closes the sheet (invoker commands)", async ({ page }) => {
     // JavaScript runs (React's inline scripts reveal the streamed results) but the app's chunks
     // never arrive, so React never hydrates: the buttons work only through command/commandfor.
-    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+    // Scripts only: Turbopack serves the stylesheets from the same folder.
+    await page.route("**/_next/static/chunks/**", (route) => (route.request().resourceType() === "script" ? route.abort() : route.fallback()));
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/tours");
     const open = page.getByRole("button", { name: "Bộ lọc", exact: true });
