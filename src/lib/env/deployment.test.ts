@@ -76,6 +76,12 @@ describe("deployment guards (Phase 6 decision 11)", () => {
       ]);
     });
 
+    it("sees a host written with a final dot as the same host", () => {
+      expect(paths({ ...production, NEXT_PUBLIC_SUPABASE_URL: `https://${STAGING_REF}.supabase.co.` })).toContain("NEXT_PUBLIC_SUPABASE_URL");
+      expect(paths({ ...production, UPSTASH_REDIS_REST_URL: "https://prod-db.upstash.io./" })).toEqual([]);
+      expect(paths({ ...production, PRODUCTION_HOSTS: `${PROD_REF}.supabase.co.,prod-db.upstash.io` })).toEqual([]);
+    });
+
     it("needs Supabase and Upstash hosts listed in PRODUCTION_HOSTS", () => {
       expect(paths({ ...production, NEXT_PUBLIC_SUPABASE_URL: "https://otherprojectrefabcde.supabase.co" })).toEqual(["NEXT_PUBLIC_SUPABASE_URL"]);
       expect(paths({ ...production, UPSTASH_REDIS_REST_URL: "https://someone-else.upstash.io" })).toEqual(["UPSTASH_REDIS_REST_URL"]);

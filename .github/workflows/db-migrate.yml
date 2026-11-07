@@ -4,17 +4,27 @@ name: Database migrations
 # decision 11, ADR-040; runbook "Deploy to production" in README.md). Never `supabase db push` from
 # a developer machine.
 #
-# - Manual only, from `main`, for one target at a time. The secrets live in the GitHub environment
-#   of the target (`staging`, `production`); the owner gives `production` required reviewers and a
-#   deployment-branch rule allowing only `main`, so a production run waits for an admin's approval.
+# - Manual only, for one target at a time. The secrets live in the GitHub environment of the target
+#   (`staging`, `production`). The real guards are the owner's environment settings, not this file:
+#   BOTH environments allow only the `main` branch (a workflow edited on another branch, with the
+#   `if:` and the ancestor check below removed, still cannot read their secrets), and `production`
+#   has required reviewers, so a production run waits for an admin's approval.
+# - Each environment's token is scoped to that one Supabase project, and the workflow refuses a
+#   project whose name is not the environment's `EXPECTED_PROJECT_NAME`, so staging can never
+#   reach production (a swapped ref fails twice).
 # - Backup first: production refuses to run without point-in-time recovery (the restore point is
-#   the time printed in the run summary). The workflow keeps a schema-only dump as a short-lived
-#   artifact; no table data (personal data) is ever stored in GitHub.
+#   the time printed in the run summary). Nothing is uploaded: the repository is public, so run
+#   logs are readable by anyone; the summary holds only the migration list, never schema bodies or
+#   table data.
+# - The approval is given before the dry run exists: approvers read the staging run's dry run of
+#   the same commit (README.md "Deploy to production").
 # - Then a dry run, the push (no seed: production starts with migrations plus `settings` only), and
-#   a check that the migrated schema gives exactly the committed `src/types/database.types.ts`.
+#   a check that the migrated `public` schema gives exactly the committed
+#   `src/types/database.types.ts` (types only: policies and function bodies are not compared).
 #
 # Secrets are passed only to the steps that need them, never echoed, and npm runs without install
-# scripts. Actions are pinned to commit SHAs (the tag is in the comment).
+# scripts. No database password is stored: with `--remote=<ref>` the CLI connects with the scoped
+# token. Actions are pinned to commit SHAs (the tag is in the comment).
 
 on:
   workflow_dispatch:
@@ -38,7 +48,8 @@ concurrency:
 jobs:
   migrate:
     name: Migrate ${{ inputs.target }}
-    # A run started from any other branch is skipped before it can ask for approval.
+    # A run started from any other branch is skipped before it can ask for approval. This line can
+    # be edited out on another branch: the environments' `main`-only rule is what really refuses it.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -62,25 +73,53 @@ jobs:
           }
           echo "Commit $GITHUB_SHA is on main."
 
-      - name: Check the environment's secrets
+      - name: Check the environment's secrets and variables
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          EXPECTED_PROJECT_NAME: ${{ vars.EXPECTED_PROJECT_NAME }}
         run: |
           missing=""
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
-          [ -n "$SUPABASE_DB_PASSWORD" ] || missing="$missing SUPABASE_DB_PASSWORD"
           [ -n "$SUPABASE_PROJECT_REF" ] || missing="$missing SUPABASE_PROJECT_REF"
+          [ -n "$EXPECTED_PROJECT_NAME" ] || missing="$missing EXPECTED_PROJECT_NAME (variable)"
           if [ -n "$missing" ]; then
-            echo "::error::Missing secrets in the '$TARGET' environment:$missing (README.md \"Deployment\")." >&2
+            echo "::error::Missing in the '$TARGET' environment:$missing (README.md \"Deployment\")." >&2
             exit 1
           fi
+          # The expected name must name its own target, so the two environments cannot share one.
+          case "$EXPECTED_PROJECT_NAME" in
+            *"$TARGET"*) ;;
+            *) echo "::error::EXPECTED_PROJECT_NAME of the '$TARGET' environment must contain '$TARGET'." >&2; exit 1 ;;
+          esac
           # A project ref is 20 lower-case letters; anything else is a pasted URL or a typo.
           if ! printf '%s' "$SUPABASE_PROJECT_REF" | grep -Eq '^[a-z]{20}$'; then
             echo "::error::SUPABASE_PROJECT_REF must be the 20-letter project ref, not a URL." >&2
             exit 1
           fi
+
+      # The ref must be the project this environment is for: a swapped or mistyped ref is refused
+      # before anything else touches a database (the scoped token would also refuse another project).
+      - name: Verify the project belongs to this environment
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          EXPECTED_PROJECT_NAME: ${{ vars.EXPECTED_PROJECT_NAME }}
+        run: |
+          if ! curl -sS --fail --max-time 30 \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -o "$RUNNER_TEMP/project.json" \
+                "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF"; then
+            echo "::error::Could not read the project (check SUPABASE_ACCESS_TOKEN, its projects_read scope and that it is scoped to this project)." >&2
+            exit 1
+          fi
+          name="$(jq -r '.name // empty' "$RUNNER_TEMP/project.json")"
+          rm -f "$RUNNER_TEMP/project.json"
+          if [ "$name" != "$EXPECTED_PROJECT_NAME" ]; then
+            echo "::error::SUPABASE_PROJECT_REF of the '$TARGET' environment is project '${name:-unknown}', not '$EXPECTED_PROJECT_NAME'. Refusing." >&2
+            exit 1
+          fi
+          echo "Project '$name' confirmed for $TARGET."
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -102,7 +141,7 @@ jobs:
         run: |
           restore_point="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "restore_point=$restore_point" >> "$GITHUB_OUTPUT"
-          # Management API "list all backups" (scope: backups_read / database:read).
+          # Management API "list all backups" (scope: backups_read).
           if ! curl -sS --fail --max-time 30 \
                 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
                 -o "$RUNNER_TEMP/backups.json" \
@@ -133,34 +172,31 @@ jobs:
             exit 1
           fi
           if [ "$pitr" != "true" ]; then
-            echo "::warning::PITR is off on $TARGET: only its daily backup can undo this run."
+            echo "::warning::PITR is off on $TARGET: only its daily backup (if any) can undo this run."
           fi
 
-      # Schema only (DDL, policies, functions): enough to see what changed and to rebuild the
-      # structure; the data stays in Supabase's backups. No table data, so no personal data.
-      - name: Dump the schema before the push
+      # The migration list (versions and file names, already public in the repository) before the
+      # push. No schema dump and no artifact: the repository is public, and so are its run logs.
+      - name: Record the migrations before the push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
-          mkdir -p "$RUNNER_TEMP/before"
-          npx supabase db dump --remote="$SUPABASE_PROJECT_REF" -f "$RUNNER_TEMP/before/schema.sql"
-          npx supabase migration list --remote="$SUPABASE_PROJECT_REF" > "$RUNNER_TEMP/before/migration-list.txt"
-          cat "$RUNNER_TEMP/before/migration-list.txt"
-
-      - name: Keep the schema dump (7 days)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: schema-before-${{ inputs.target }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/before
-          retention-days: 7
-          if-no-files-found: error
+          npx supabase migration list --remote="$SUPABASE_PROJECT_REF" > "$RUNNER_TEMP/migration-list.txt"
+          cat "$RUNNER_TEMP/migration-list.txt"
+          {
+            echo
+            echo "<details><summary>Migrations before the push (local | remote)</summary>"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/migration-list.txt"
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Dry run
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --skip-vault --dry-run
 
@@ -169,14 +205,12 @@ jobs:
       - name: Apply the migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --skip-vault --yes
 
       - name: Check that the remote schema matches the committed types
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
           npx supabase gen types typescript --remote="$SUPABASE_PROJECT_REF" --schema public > "$RUNNER_TEMP/remote.types.ts"

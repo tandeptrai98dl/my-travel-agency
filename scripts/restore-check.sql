@@ -7,7 +7,9 @@
 --   psql "<restored project's connection string>" -v code=PTA-2611-0042 -f scripts/restore-check.sql
 --
 -- In the Supabase SQL editor, paste the script and replace each :'code' with the booking code in
--- single quotes ('PTA-2611-0042'). Every row should say ok = true; "newest write" is information.
+-- single quotes ('PTA-2611-0042'). Every row should say ok = true; "newest write" is information
+-- only: in a restored copy pg_cron jobs write as soon as it starts, so the RPO is measured on the
+-- booking's own "updated" time (row 1), as the runbook explains.
 -- The result holds a booking code, statuses, amounts and times only: no names or contact details.
 
 begin transaction isolation level repeatable read read only;
@@ -75,7 +77,7 @@ select 6, 'departure seats = held and confirmed travellers', coalesce(bool_and(s
        coalesce(string_agg('seats_reserved ' || seats_reserved || ', counted ' || counted, ''), 'no departure')
   from seats
 union all
-select 7, 'newest write (information, for the RPO)', true,
+select 7, 'newest write (information; a restored copy''s pg_cron writes at once, so measure the RPO on row 1)', true,
        coalesce(to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'none')
   from newest
 order by n;

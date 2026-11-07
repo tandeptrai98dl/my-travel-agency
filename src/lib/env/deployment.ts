@@ -33,7 +33,8 @@ function value(env: Env, name: string): string | undefined {
 function hostOf(url: string | undefined): string | null {
   if (!url) return null;
   try {
-    return new URL(url).hostname.toLowerCase();
+    // A fully qualified name ("host.example.") is the same host: compare without the final dot.
+    return new URL(url).hostname.toLowerCase().replace(/\.$/, "");
   } catch {
     return null;
   }
@@ -44,7 +45,7 @@ function hostList(env: Env, name: string, issues: DeploymentIssue[]): Set<string
   const bad: number[] = [];
   (value(env, name) ?? "")
     .split(",")
-    .map((entry) => entry.trim().toLowerCase())
+    .map((entry) => entry.trim().toLowerCase().replace(/\.$/, ""))
     .filter(Boolean)
     .forEach((entry, index) => (HOSTNAME.test(entry) ? hosts.add(entry) : bad.push(index + 1)));
   if (bad.length) {

@@ -46,6 +46,8 @@ describe("protected migration workflow (Phase 6 decision 11, ADR-040)", () => {
     expect(code).not.toMatch(/^\s+(push|pull_request|pull_request_target|schedule|workflow_run):/m);
     expect(workflow).toMatch(/options:\n\s+- staging\n\s+- production\n/);
     expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    // The header says plainly that the environments' branch rules are the real guard.
+    expect(workflow).toMatch(/BOTH environments allow only the `main` branch/);
     expect(workflow).toContain('git merge-base --is-ancestor "$GITHUB_SHA" origin/main');
   });
 
@@ -63,22 +65,34 @@ describe("protected migration workflow (Phase 6 decision 11, ADR-040)", () => {
 
   it("pins every action to a full commit SHA", () => {
     const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((m) => m[1]);
-    expect(uses.length).toBeGreaterThanOrEqual(3);
+    expect(uses.length).toBeGreaterThanOrEqual(2);
     for (const ref of uses) expect(ref).toMatch(/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
   });
 
-  it("checks the backup before anything is pushed, and refuses production without PITR", () => {
-    const order = ["Backup check", "Dump the schema", "Dry run", "Apply the migrations", "remote schema matches"];
+  it("confirms the project, then the backup, before anything is pushed; production needs PITR", () => {
+    const order = [
+      "Verify the project belongs to this environment",
+      "Backup check",
+      "Record the migrations before the push",
+      "Dry run",
+      "Apply the migrations",
+      "remote schema matches",
+    ];
     const positions = order.map((name) => workflow.indexOf(name));
     expect(positions.every((p) => p > 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     expect(workflow).toContain('[ "$TARGET" = "production" ] && [ "$pitr" != "true" ]');
   });
 
-  it("keeps only a schema dump, for at most 7 days", () => {
-    expect(code).not.toMatch(/--data-only|--use-copy/);
-    expect(workflow).toMatch(/retention-days: 7\n/);
-    expect([...workflow.matchAll(/retention-days:\s*(\d+)/g)].every((m) => Number(m[1]) <= 7)).toBe(true);
+  it("refuses a project whose name is not the environment's expected one", () => {
+    expect(workflow).toContain("https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF\"");
+    expect(workflow).toContain('if [ "$name" != "$EXPECTED_PROJECT_NAME" ]; then');
+    expect(workflow).toContain('*"$TARGET"*) ;;');
+    expect(workflow).toContain("EXPECTED_PROJECT_NAME: ${{ vars.EXPECTED_PROJECT_NAME }}");
+  });
+
+  it("uploads nothing and dumps no schema or data (public repository, public run logs)", () => {
+    expect(code).not.toMatch(/upload-artifact|db dump|--data-only|--use-copy|retention-days/);
   });
 
   it("never seeds, never applies migrations out of order, and dry-runs first", () => {
@@ -93,14 +107,16 @@ describe("protected migration workflow (Phase 6 decision 11, ADR-040)", () => {
     for (const script of runBlocks(workflow)) {
       expect(script).not.toMatch(/\$\{\{\s*secrets\./);
       expect(script).not.toMatch(/set\s+-[a-z]*x|bash\s+-x/);
-      expect(script).not.toMatch(/(echo|printf)[^\n|]*\$\{?(SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD)/);
+      expect(script).not.toMatch(/(echo|printf)[^\n|]*\$\{?SUPABASE_ACCESS_TOKEN/);
     }
     // Secrets reach only step-level env blocks, never the job or workflow env.
     const jobEnv = /\n {4}env:\n((?: {6}.*\n)+)/.exec(workflow)?.[1] ?? "";
     expect(jobEnv).not.toContain("secrets.");
     expect(workflow).not.toMatch(/^env:/m);
     const secretNames = new Set([...workflow.matchAll(/secrets\.(\w+)/g)].map((m) => m[1]));
-    expect([...secretNames].sort()).toEqual(["SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD", "SUPABASE_PROJECT_REF"]);
+    // No database password: with --remote=<ref> the CLI connects with the project-scoped token.
+    expect([...secretNames].sort()).toEqual(["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"]);
+    expect(code).not.toMatch(/--password|-p\s+"\$/);
   });
 
   it("installs dependencies without lifecycle scripts", () => {
