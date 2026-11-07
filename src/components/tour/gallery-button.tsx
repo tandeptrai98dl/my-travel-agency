@@ -33,10 +33,8 @@ export function GalleryButton({ images, title, labels }: { images: ImageData[]; 
         <Suspense fallback={null}>
           <GalleryLightbox
             open={open}
-            onOpenChange={(next) => {
-              setOpen(next);
-              if (!next) trigger.current?.focus();
-            }}
+            onOpenChange={setOpen}
+            returnFocus={() => trigger.current?.focus()}
             images={images}
             title={title}
             labels={labels}

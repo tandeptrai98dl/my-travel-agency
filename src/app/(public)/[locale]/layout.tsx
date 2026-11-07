@@ -87,7 +87,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <SiteHeader
             brandName={brandName}
             destinations={destinations}
-            desktopNav={<DesktopNav locale={locale} destinations={destinations} className="hidden lg:block" />}
+            desktopNav={<DesktopNav locale={locale} destinations={destinations} />}
           />
           <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}

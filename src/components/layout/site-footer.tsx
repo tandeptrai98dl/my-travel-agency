@@ -157,7 +157,10 @@ export async function SiteFooter({ settings, brandName, locale, policyLinks }: P
         </div>
       </Container>
       <div className="border-t border-border">
-        <Container className="flex flex-col gap-4 py-6 text-small text-muted-foreground md:flex-row md:items-center md:justify-between">
+        {/* From md the floating contact buttons sit in the bottom-right corner (72 px from the
+            edge), so the row ends 96 px from it and the language links stay visible and
+            clickable when the page is scrolled to the end (WCAG 2.2 2.4.11). */}
+        <Container className="flex flex-col gap-4 py-6 text-small text-muted-foreground md:flex-row md:items-center md:justify-between md:pr-24">
           <p>{t("rights", { year, name: company?.legal_name ?? brandName })}</p>
           <LanguageSwitcher landmark={false} />
         </Container>

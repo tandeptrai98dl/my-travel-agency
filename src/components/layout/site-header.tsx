@@ -58,12 +58,15 @@ export function SiteHeader({ brandName, destinations, desktopNav }: Props) {
         >
           {brandName}
         </Link>
-        {desktopNav}
+        {/* The desktop navigation needs about 1 170 px with the Vietnamese labels and a long brand
+            name (Phase 6 QA: at 1024 px every label wrapped onto two lines), so it starts at xl;
+            below that the menu sheet holds it. The breakpoint lives here, for both root layouts. */}
+        <div className="hidden xl:block">{desktopNav}</div>
         <div className="flex items-center gap-2">
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>
-          <MobileNav destinations={destinations} className="lg:hidden" />
+          <MobileNav destinations={destinations} className="xl:hidden" />
         </div>
       </div>
     </header>
