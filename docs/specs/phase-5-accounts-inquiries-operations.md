@@ -147,6 +147,13 @@ Each PR updates the docs for what it ships, so `main` never documents something 
   - The account service passes the published privacy policy's version to the marketing write; the function refuses anything but `privacy-(vi|en)-<16 hex>`.
   - A traveller birth date that does not exist is `invalid_traveller`.
   - An unreadable GoTrue settings answer is cached for 30 seconds, not five minutes.
+- **PR 5D, operations:**
+  - One migration (`20261111100000_operations.sql`) for both steps; it lands with step 10 because the departure-checks job reads `departures_below_minimum()`. Guaranteed departures are not alerted (the operator already decided); open and closed ones are.
+  - Team alerts: the overdue balance reuses the staff booking email (template `balance_overdue`); the minimum-traveller alert is a new staff email (template `min_pax`, no booking). Without `settings.contact.email` neither is claimed, so a later run sends it once the address exists.
+  - Dashboard definitions: "new bookings" leave drafts out; "payments about to expire" are pending payments within 30 minutes; "money attention" counts flagged money reasons and overdue balances; "missing translations" counts published tours, articles, destinations, travel styles and pages with fewer than two published languages. The Phase 4 "Việc cần làm" counts stay above the figures.
+  - Passenger list: a confirmed booking without traveller rows is listed with its contact as the lead, and every row carries the party size, so operators see missing details. The export is one definer function that writes the audit row in the same transaction before returning rows.
+  - Deletion: `admin_anonymise_customer()` and `finishDeletionAsAdmin()` refuse while a blocker remains (`blocked`); a retry after the SQL step skips that check and runs the Auth step left. `customer_deletion_blockers()` is the read-only half of `request_customer_deletion()`. The ban now sends every `user_metadata` key as null: GoTrue merges metadata, so 5B's `{}` kept the name. The E2E reads `auth.users` with psql (5B's REST read of the `auth` schema always came back empty).
+  - Customers admin: notes are written by sales roles and admin and read by operators (the `internal_notes` policies); the consent history comes from `customer_consents()` (no IP or user agent) for every role that reads customers, while the export (admin only) includes them. Code lives in `src/modules/account/customers-admin.*` (next to the deletion service) and `src/modules/operations/*`.
 
 ## Cross-stream items
 
