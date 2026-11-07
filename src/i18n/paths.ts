@@ -59,9 +59,13 @@ export function splitLocale(pathname: string): { locale: Locale; path: string } 
  * `localizedPath`); an unknown path is returned as is, with no params.
  */
 export function internalRoute(locale: Locale, path: string): { pathname: string; params: Record<string, string> } {
+  return matchRoute(path, (internal) => template(internal, locale));
+}
+
+function matchRoute(path: string, toTemplate: (internal: string) => string): { pathname: string; params: Record<string, string> } {
   for (const internal of Object.keys(pathnames)) {
     const names: string[] = [];
-    const pattern = template(internal, locale)
+    const pattern = toTemplate(internal)
       .split(/(\[[^\]]+\])/)
       .map((part) => {
         const match = /^\[([^\]]+)\]$/.exec(part);
@@ -86,8 +90,19 @@ export function internalRoute(locale: Locale, path: string): { pathname: string;
   return { pathname: path, params: {} };
 }
 
+/**
+ * The language and internal route of a browser pathname. While a Vietnamese page is prerendered,
+ * `usePathname()` gives the proxy's internal path (`/vi/contact`, `/vi/tours/<slug>`), whose
+ * segments are the internal route names; no public Vietnamese path starts with `/vi`.
+ */
+export function currentRoute(pathname: string): { locale: Locale; pathname: string; params: Record<string, string> } {
+  if (pathname === "/vi" || pathname.startsWith("/vi/")) return { locale: "vi", ...matchRoute(pathname.slice(3) || "/", (internal) => internal) };
+  const { locale, path } = splitLocale(pathname);
+  return { locale, ...internalRoute(locale, path) };
+}
+
 /** The same page in another language, for a browser pathname (language switcher fallback). */
 export function switchLocalePath(pathname: string, target: Locale): string {
-  const { locale, path } = splitLocale(pathname);
-  return localizedPath(target, internalRoute(locale, path));
+  const { pathname: route, params } = currentRoute(pathname);
+  return localizedPath(target, { pathname: route, params });
 }

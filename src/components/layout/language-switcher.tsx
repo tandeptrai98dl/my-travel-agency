@@ -1,6 +1,5 @@
 "use client";
 
-import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 
 import { switchLocalePath } from "@/i18n/paths";
@@ -24,6 +23,11 @@ type Props = {
  * with per-language slugs publish their paths through `LocaleAlternates`; a language without a
  * published translation links to its parent page (Phase 3 spec decision 6). Used in the header, the
  * mobile menu and the footer; colours follow the surrounding theme.
+ *
+ * Plain links, so switching loads the other language's page in full. With `next/link` the router
+ * prefetched Vietnamese paths from an English page through its own route guess: unprefixed
+ * Vietnamese paths are proxy rewrites, so `/lien-he` looked like the home page of a locale called
+ * "lien-he" and every prefetch answered 404 (and taught later prefetches the same guess).
  */
 export function LanguageSwitcher({ className, landmark = true }: Props) {
   const t = useLabels("LanguageSwitcher");
@@ -49,7 +53,7 @@ export function LanguageSwitcher({ className, landmark = true }: Props) {
         const alternate = alternates?.[locale];
         if (alternate) {
           return (
-            <NextLink
+            <a
               key={locale}
               href={alternate.href}
               hrefLang={locale}
@@ -58,11 +62,11 @@ export function LanguageSwitcher({ className, landmark = true }: Props) {
               className={className}
             >
               {name}
-            </NextLink>
+            </a>
           );
         }
         return (
-          <NextLink
+          <a
             key={locale}
             href={switchLocalePath(pathname, locale)}
             hrefLang={locale}
@@ -70,7 +74,7 @@ export function LanguageSwitcher({ className, landmark = true }: Props) {
             className={className}
           >
             {name}
-          </NextLink>
+          </a>
         );
       })}
     </Wrapper>
