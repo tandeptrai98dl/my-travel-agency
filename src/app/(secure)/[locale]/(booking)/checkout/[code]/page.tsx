@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
 import { formatVnd } from "@/lib/money";
-import { emailLinkValid, loadCheckout } from "@/modules/booking/checkout.service";
+import { type EmailLinkState, emailLinkState, loadCheckout } from "@/modules/booking/checkout.service";
 
 type Props = {
   params: Promise<{ locale: string; code: string }>;
@@ -53,7 +53,8 @@ async function Summary({ params, searchParams }: Props) {
   if (!view) {
     const access = (await searchParams).access;
     const token = typeof access === "string" ? access : undefined;
-    if (token && (await emailLinkValid(code, token))) return <OpenFromEmail locale={locale} code={code} token={token} />;
+    const state = token ? await emailLinkState(code, token) : "invalid";
+    if (token && state !== "invalid") return <OpenFromEmail locale={locale} code={code} token={token} state={state} />;
     notFound();
   }
   const t = await getTranslations({ locale, namespace: "Checkout" });
@@ -79,11 +80,24 @@ async function Summary({ params, searchParams }: Props) {
   );
 }
 
-async function OpenFromEmail({ locale, code, token }: { locale: Locale; code: string; token: string }) {
+async function OpenFromEmail({ locale, code, token, state }: { locale: Locale; code: string; token: string; state: Exclude<EmailLinkState, "invalid"> }) {
   const t = await getTranslations({ locale, namespace: "CheckoutLink" });
   const messages = await getMessages({ locale });
+  if (state !== "valid") {
+    // Used or expired. The browser that opened the link holds the access cookie and never gets
+    // here (the summary loads instead); anywhere else, the customer asks for a new link.
+    return (
+      <section className="flex flex-col gap-6" data-testid="checkout-email-link" data-state={state}>
+        <Heading level={1} size="h1">
+          {t(state === "used" ? "usedTitle" : "expiredTitle")}
+        </Heading>
+        <div aria-hidden="true" className="h-px w-16 bg-gold" />
+        <p className="max-w-[680px] text-body-lg text-muted-foreground">{t(state === "used" ? "usedBody" : "expiredBody")}</p>
+      </section>
+    );
+  }
   return (
-    <section className="flex flex-col gap-6" data-testid="checkout-email-link">
+    <section className="flex flex-col gap-6" data-testid="checkout-email-link" data-state="valid">
       <Heading level={1} size="h1">
         {t("title")}
       </Heading>

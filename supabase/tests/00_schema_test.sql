@@ -12,14 +12,14 @@ select tables_are(
     'cancellation_policies', 'tours', 'tour_translations', 'tour_media', 'tour_destinations',
     'tour_travel_styles', 'price_tiers', 'departures',
     'inquiries',
-    'bookings', 'booking_items', 'travellers', 'booking_events',
+    'bookings', 'booking_items', 'travellers', 'booking_events', 'booking_access_tokens',
     'payments', 'payment_links', 'webhook_events',
     'internal_notes',
     'reviews', 'post_categories', 'post_category_translations', 'posts', 'post_translations',
     'pages', 'page_translations', 'redirects', 'subscribers',
     'settings', 'consent_records', 'email_logs', 'audit_logs'
   ],
-  'the 36 approved tables exist'
+  'the 37 approved tables exist'
 );
 
 select is(

@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { adminApi } from "./support/admin-api";
 import { expectNoSeriousViolations } from "./support/axe";
 import { closeTestDepartures, testDeparture } from "./support/booking";
-import { signAccess } from "../../src/modules/booking/booking-access";
+import { createHash, randomBytes } from "node:crypto";
 
 // Phase 4 PR 4B (docs/specs/phase-4-booking-payments.md steps 6–9): book a group tour as a guest,
 // pay through the CI VNPay stub (its IPN is signed with the CI-only secret) and see the result,
@@ -141,22 +141,33 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   expect(await emails()).toHaveLength(3);
 });
 
-test("an emailed checkout link opens the booking only after a click", async ({ browser }) => {
-  const secret = process.env.BOOKING_ACCESS_SECRET;
-  test.skip(!secret, "needs BOOKING_ACCESS_SECRET (CI)");
+test("an emailed checkout link opens the booking once, only after a click", async ({ browser }) => {
+  // CI sends no email (Resend off), so the test issues the single-use token as the email would.
+  const token = randomBytes(32).toString("base64url");
   const { data: booking } = await adminApi().from("bookings").select("id").eq("code", code).single();
+  const { error } = await adminApi().rpc("issue_booking_access_token", {
+    target_id: booking!.id,
+    purpose: "email",
+    token_hash: createHash("sha256").update(token).digest("hex"),
+    valid_minutes: 60,
+  });
+  expect(error).toBeNull();
   const context = await browser.newContext();
   const page = await context.newPage();
-  await page.goto(`/thanh-toan/${code}?access=${encodeURIComponent(signAccess(secret!, booking!.id).value)}`);
-  await expect(page.getByTestId("checkout-email-link")).toBeVisible();
+  await page.goto(`/thanh-toan/${code}?access=${token}`);
+  await expect(page.getByTestId("checkout-email-link")).toHaveAttribute("data-state", "valid");
   await expect(page.getByText(/@example\.test/)).toHaveCount(0);
   await page.getByRole("button", { name: "Mở đặt chỗ" }).click();
   await expect(page).toHaveURL(new RegExp(`/thanh-toan/${code}$`));
   await expect(page.getByText(code).first()).toBeVisible();
-  // A token for another booking opens nothing.
+  // Used up: another browser gets the "used" page and no booking details.
   const other = await browser.newContext();
   const stranger = await other.newPage();
-  await stranger.goto(`/thanh-toan/${code}?access=${encodeURIComponent(signAccess(secret!, "00000000-0000-4000-8000-000000000000").value)}`);
+  await stranger.goto(`/thanh-toan/${code}?access=${token}`);
+  await expect(stranger.getByTestId("checkout-email-link")).toHaveAttribute("data-state", "used");
+  await expect(stranger.getByText(/@example\.test/)).toHaveCount(0);
+  // A made-up token opens nothing.
+  await stranger.goto(`/thanh-toan/${code}?access=${"x".repeat(43)}`);
   await expect(stranger.getByTestId("checkout-email-link")).toHaveCount(0);
   await expect(stranger.getByText(code)).toHaveCount(0);
   await context.close();

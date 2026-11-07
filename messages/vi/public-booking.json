@@ -181,6 +181,10 @@
     "body": "Liên kết trong email cho phép trình duyệt này mở đặt chỗ {code}.",
     "open": "Mở đặt chỗ",
     "opening": "Đang mở…",
-    "failed": "Liên kết này không còn hiệu lực. Vui lòng liên hệ chúng tôi."
+    "failed": "Liên kết này không còn hiệu lực. Vui lòng liên hệ chúng tôi.",
+    "usedTitle": "Liên kết đã được sử dụng",
+    "usedBody": "Liên kết trong email chỉ mở đặt chỗ được một lần. Nếu cần mở lại trên thiết bị khác, vui lòng liên hệ chúng tôi để nhận liên kết mới.",
+    "expiredTitle": "Liên kết đã hết hạn",
+    "expiredBody": "Liên kết trong email đã hết hạn. Vui lòng liên hệ chúng tôi để nhận liên kết mới."
   }
 }

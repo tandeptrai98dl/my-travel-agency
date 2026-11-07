@@ -84,7 +84,7 @@ Sentry is off whenever no DSN is set, so local development sends nothing (CI bui
 
 Owner setup, once (ADR-018):
 
-1. **Supabase**: create the staging project (Singapore). Link it with `npx supabase link --project-ref <ref>` and apply migrations with `npx supabase db push`. In Auth settings: enable email confirmations and TOTP MFA, set the site URL, add the redirect URLs `https://<host>/auth/confirm` and `https://<host>/auth/callback` for each fixed host, add a wildcard for Vercel previews (for example `https://*-<team-slug>.vercel.app/**`, since preview hosts change on every deployment), and configure Resend as SMTP. Under Authentication > Email Templates > Invite user, paste `supabase/templates/invite.html` (staff invitations link to `/auth/confirm` with a token hash, ADR-032); without SMTP and this template, inviting staff from `/admin/staff` fails.
+1. **Supabase**: create the staging project (Singapore). Link it with `npx supabase link --project-ref <ref>` and apply migrations with `npx supabase db push`. In Auth settings: enable email confirmations and TOTP MFA, set the site URL, add the redirect URLs `https://<host>/auth/confirm` and `https://<host>/auth/callback` for each fixed host, add a wildcard for Vercel previews (for example `https://*-<team-slug>.vercel.app/**`, since preview hosts change on every deployment), and configure Resend as SMTP. Transactional emails (ADR-036) are written to `email_logs` as `skipped` until `RESEND_API_KEY` and `EMAIL_FROM` are set; those emails are never sent later on their own, because their exactly-once keys are already spent. After configuring Resend, resend any that still matter from the booking page. Under Authentication > Email Templates > Invite user, paste `supabase/templates/invite.html` (staff invitations link to `/auth/confirm` with a token hash, ADR-032); without SMTP and this template, inviting staff from `/admin/staff` fails.
 2. **Sentry**: create a Next.js project; note the DSN, org and project slugs; create an auth token for source maps.
 3. **Vercel**: import the GitHub repository (framework preset Next.js, region `sin1`). Add the variables above for Preview and Production. Every pull request then gets a preview URL; `main` deploys to production once a production Supabase project exists.
 4. **GitHub**: enable branch protection on `main`, requiring the CI checks (`Lint, typecheck, unit tests`, `Database (migrations, pgTAP, lint, types)`, `Build and E2E`).
@@ -108,6 +108,17 @@ Money is confirmed only by a verified gateway result or recorded by an MFA-verif
   - Departure cancelled: contact the customer, then cancel with a full refund or move them.
   - Paid a quote (`paid_quoted`) or a draft: money recorded for a booking with no hold never confirms it. Send the customer a payment link (Phase 4 PR 4D) or start a hold first, then refund or move the money.
   - When done, write what was done in "Đánh dấu đã xử lý". Money reasons are cleared by an MFA-verified accountant or admin, a cancellation request by an operator or admin. A cancellation requested while a money reason was open comes back to the operators once the money is resolved. Derived items (overdue balance, cancelled departure) clear on their own.
+- **Emails stuck or failed** (the `email-problems-alert` pg_cron job fails when an email stays `queued` for over 10 minutes or one `failed` in the last 15). Find them in the SQL editor:
+
+  ```sql
+  select created_at, template, status, error, booking_id, dedupe_key
+    from email_logs
+   where (status = 'queued' and created_at < now() - interval '10 minutes')
+      or (status = 'failed' and created_at > now() - interval '1 day')
+   order by created_at desc;
+  ```
+
+  `error` holds only an HTTP status or an error class (`HTTP 401`: wrong `RESEND_API_KEY`; `HTTP 403`: the sending domain is not verified; `HTTP 422`: a bad address; `TimeoutError` or `TypeError`: Resend unreachable). A `queued` row means the sender stopped between claiming the email and Resend's answer: check Resend's dashboard for the message before sending again. Fix the cause, then open the booking and press "Gửi lại" next to the email (sales roles and admin). A resend gets a fresh key and appears in the timeline; payment links are never resent (their token is not stored), so create a new link instead.
 - **Refund:** pay the customer first, by bank transfer or cash, or refund in the VNPay portal. Then record it on the booking. The form refuses more than the amount received, net of earlier refunds.
 
 ## Workflow

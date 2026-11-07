@@ -117,7 +117,8 @@
         "transfer_assigned": "Gán chuyển khoản",
         "other": "Sự kiện",
         "payment_link_created": "Tạo liên kết thanh toán",
-        "payment_link_opened": "Khách mở liên kết thanh toán"
+        "payment_link_opened": "Khách mở liên kết thanh toán",
+        "email_resent": "Gửi lại email"
       },
       "system": "Hệ thống",
       "errors": {
@@ -259,7 +260,33 @@
       "requestHelp": "Điều hành sẽ huỷ và tính tiền hoàn theo chính sách.",
       "requestSubmit": "Gửi yêu cầu",
       "requested": "Đã gửi yêu cầu huỷ",
-      "saving": "Đang lưu…"
+      "saving": "Đang lưu…",
+      "emailsTitle": "Email đã gửi",
+      "noEmails": "Chưa có email nào cho đặt tour này.",
+      "emailsHint": "Email không gửi được hoặc gửi khi chưa cấu hình Resend không tự gửi lại; dùng “Gửi lại” sau khi đã kiểm tra địa chỉ.",
+      "emailResend": "Gửi lại",
+      "emailResending": "Đang gửi…",
+      "emailResent": "Đã gửi lại email.",
+      "emailResendSkipped": "Đã ghi nhận, nhưng email chưa được cấu hình nên chưa gửi.",
+      "emailResendFailed": "Không gửi lại được email này.",
+      "emailIsResend": "gửi lại",
+      "emailTemplates": {
+        "booking_received": "Đã nhận đặt chỗ",
+        "payment_received": "Đã nhận thanh toán",
+        "booking_confirmed": "Xác nhận đặt chỗ",
+        "booking_cancelled": "Đã huỷ",
+        "balance_reminder": "Nhắc phần còn lại",
+        "payment_link": "Liên kết thanh toán",
+        "staff_booking_confirmed": "Báo nhóm: đã xác nhận",
+        "staff_attention": "Báo nhóm: cần xử lý",
+        "other": "Email khác"
+      },
+      "emailStatuses": {
+        "queued": "Đang chờ",
+        "sent": "Đã gửi",
+        "failed": "Lỗi",
+        "skipped": "Chưa cấu hình"
+      }
     },
     "Attention": {
       "title": "Cần xử lý",
@@ -336,9 +363,8 @@
       "copy": "Sao chép liên kết",
       "copied": "Đã sao chép",
       "email": {
-        "sent": "Đã gửi liên kết tới email của khách.",
-        "skipped": "Chưa cấu hình gửi email: hãy sao chép và gửi liên kết cho khách.",
-        "failed": "Không gửi được email: hãy sao chép và gửi liên kết cho khách."
+        "queued": "Liên kết đang được gửi tới email của khách; kết quả hiện trong mục Email bên dưới.",
+        "skipped": "Chưa cấu hình gửi email: hãy sao chép và gửi liên kết cho khách."
       }
     }
   }

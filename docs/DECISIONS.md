@@ -397,3 +397,11 @@ Template:
   - Without Resend the row is written as `skipped`. Only the HTTP status or the error class is stored or logged, never Resend's message text (it can echo the address). The payment-link token and the checkout access token appear only in email bodies.
   - Emailed checkout links carry the booking's 7-day access token (`?access=`); the checkout page shows an "open" button and sets the access cookie only on that click, so mail scanners neither see the booking nor use the link.
 - **Consequences:** One small runtime dependency (with `html-to-text` and `prettier` as its own dependencies). Sending needs the owner's Resend account and a sending domain with SPF, DKIM and DMARC. An email that failed (or was skipped before Resend existed) stays recorded and is not sent later on its own.
+
+## ADR-038: Single-use emailed checkout links
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted. Amends ADR-036 (emailed checkout links)
+- **Context:** ADR-036 put the booking's 7-day access-cookie token in emailed checkout links. The #36 review noted that such a link opens the booking for anyone holding it, as often as they like, for 7 days, and that Vercel request logs keep query strings.
+- **Decision:** Emailed links carry a single-use random token (32 bytes, base64url); only its SHA-256 is stored, in `booking_access_tokens` (purpose `email`, 7 days; Phase 5's guest lookup reuses the table with purpose `lookup`). Tokens are issued only when the email can actually be sent. The checkout page reads the token's state without side effects and shows an "open" button; the click redeems it once (`redeem_booking_access_token`) and sets a fresh signed cookie, so the emailed token never becomes the cookie. A used or expired token shows a page without booking details. Payment links (4D) were already single use.
+- **Consequences:** One table and three service-role functions. A customer who opens the link on a second device after using it on the first needs a new link (from staff now, from the Phase 5 lookup later). Until the click, the token sits in request logs like any emailed link.

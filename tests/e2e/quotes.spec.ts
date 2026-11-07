@@ -49,10 +49,18 @@ test("sales create a quote and a payment link", async ({ page }) => {
   // 4E: the link is emailed to the customer (Resend is off in CI: a `skipped` row), and the
   // token is in no column of the log.
   await expect(page.getByTestId("payment-link-email")).toHaveAttribute("data-state", "skipped");
-  const { data: logged } = await adminApi().from("email_logs").select("*").eq("booking_id", bookingId);
+  // Sent after the action answered (#36 review): poll for the row.
   const { data: quoted } = await adminApi().from("bookings").select("contact_email").eq("id", bookingId).single();
-  expect(logged?.map((row) => `${row.template}:${row.status}:${row.to_email}`)).toEqual([`payment_link:skipped:${quoted!.contact_email}`]);
-  expect(JSON.stringify(logged)).not.toContain(linkPath.split("/").pop());
+  const logged = async () => (await adminApi().from("email_logs").select("*").eq("booking_id", bookingId)).data ?? [];
+  await expect
+    .poll(async () => (await logged()).map((row) => `${row.template}:${row.status}:${row.to_email}`), { timeout: 15_000 })
+    .toEqual([`payment_link:skipped:${quoted!.contact_email}`]);
+  expect(JSON.stringify(await logged())).not.toContain(linkPath.split("/").pop());
+  // The booking page lists it; a payment link is never offered for resend (its token is not stored).
+  await page.reload();
+  const row = page.getByTestId("booking-emails").locator('li[data-template="payment_link"]');
+  await expect(row).toHaveAttribute("data-status", "skipped");
+  await expect(row.getByRole("button", { name: /Gửi lại/ })).toHaveCount(0);
 });
 
 test("the customer pays the quote from the link, which then works no more", async ({ browser }) => {
@@ -85,4 +93,24 @@ test("the customer pays the quote from the link, which then works no more", asyn
   await expect(page).toHaveURL(/\/thanh-toan\/PTA-\d{4}-\d{4,}$/);
   await context.close();
   await other.close();
+});
+
+test("sales resend the confirmation from the booking page with a fresh key", async ({ page }) => {
+  test.setTimeout(60_000);
+  await signInAs(page, "sales");
+  await page.goto(`/admin/bookings/${bookingId}`);
+  const row = page.getByTestId("booking-emails").locator('li[data-template="booking_confirmed"]').first();
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await row.getByRole("button", { name: "Gửi lại: Xác nhận đặt chỗ" }).click();
+  await expect
+    .poll(
+      async () =>
+        ((await adminApi().from("email_logs").select("dedupe_key, status").eq("booking_id", bookingId).like("dedupe_key", "booking_confirmed:%:resend:%")).data ?? []).map(
+          (item) => item.status,
+        ),
+      { timeout: 15_000 },
+    )
+    .toEqual(["skipped"]);
+  await page.reload();
+  await expect(page.getByText("Gửi lại email").first()).toBeVisible();
 });

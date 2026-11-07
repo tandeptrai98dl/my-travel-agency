@@ -13,7 +13,6 @@ import type { EmailBrand } from "../../../emails/components/layout";
 import { PaymentLinkEmail } from "../../../emails/payment-link";
 import { PaymentReceivedEmail } from "../../../emails/payment-received";
 import { StaffBookingEmail } from "../../../emails/staff-booking";
-import { signAccess } from "./booking-access";
 import { attentionReason } from "./booking-admin.schemas";
 
 /**
@@ -137,21 +136,19 @@ export function dueNow(booking: Pick<EmailBooking, "payment_plan" | "deposit_amo
 }
 
 /**
- * The checkout page of a booking, signed for guest access (decision 7): `?access=<token>`, the
- * same 7-day token as the `booking_access_<code>` cookie (`signAccess()`), which the checkout
- * page checks and turns into the cookie on the customer's click. Without the secret the link is
- * unsigned (it then opens only where the cookie exists, or for the signed-in owner).
+ * The checkout page of a booking (decision 7). With a token (`?access=<token>`, a single-use
+ * random token from `booking_access_tokens`, ADR-038), the customer's click on the page opens the
+ * booking once and sets a fresh access cookie. Without one the link opens only where the cookie
+ * exists, or for the signed-in owner.
  */
-export function checkoutUrl(
-  booking: Pick<EmailBooking, "id" | "code" | "locale">,
-  siteUrl: URL,
-  secret: string | undefined,
-  now = Date.now(),
-): string {
+export function checkoutUrl(booking: Pick<EmailBooking, "code" | "locale">, siteUrl: URL, token: string | null): string {
   const url = new URL(localizedPath(booking.locale, { pathname: "/checkout/[code]", params: { code: booking.code } }), siteUrl);
-  if (secret) url.searchParams.set("access", signAccess(secret, booking.id, now).value);
+  if (token) url.searchParams.set("access", token);
   return url.toString();
 }
+
+/** Customer emails whose body links to the checkout (they get a fresh single-use token each). */
+export const LINKED_TEMPLATES = new Set(["booking_received", "booking_confirmed", "balance_reminder"]);
 
 export function adminBookingUrl(bookingId: string, siteUrl: URL): string {
   return new URL(`/admin/bookings/${encodeURIComponent(bookingId)}`, siteUrl).toString();
@@ -181,7 +178,6 @@ function reasonLabel(messages: Messages, reason: string): string {
 export type BuildContext = {
   brand: EmailBrand;
   siteUrl: URL;
-  accessSecret: string | undefined;
   /** Merged message trees per locale (`loadMessages`). */
   messages: Record<EmailLocale, Messages>;
 };
@@ -194,7 +190,7 @@ export type BuiltEmail = {
 };
 
 /** The element and subject of one planned email. Staff alerts are always Vietnamese (ADR-006). */
-export function buildBookingEmail(planned: PlannedEmail, booking: EmailBooking, context: BuildContext): BuiltEmail {
+export function buildBookingEmail(planned: PlannedEmail, booking: EmailBooking, context: BuildContext, checkoutToken: string | null = null): BuiltEmail {
   const facts = bookingFacts(booking);
   if (planned.template === "staff_booking_confirmed" || planned.template === "staff_attention") {
     const t = emailTranslator("vi", context.messages.vi);
@@ -212,7 +208,7 @@ export function buildBookingEmail(planned: PlannedEmail, booking: EmailBooking, 
   const locale = booking.locale;
   const t = emailTranslator(locale, context.messages[locale]);
   const base = { locale, t, brand: context.brand, booking: facts, name: booking.contact_name };
-  const link = checkoutUrl(booking, context.siteUrl, context.accessSecret);
+  const link = checkoutUrl(booking, context.siteUrl, checkoutToken);
   switch (planned.template) {
     case "booking_received":
       return {
@@ -268,7 +264,7 @@ export function buildPaymentLinkEmail(
 }
 
 /** The balance reminder (scheduling arrives in Phase 5). */
-export function buildBalanceReminderEmail(booking: EmailBooking, context: BuildContext): BuiltEmail {
+export function buildBalanceReminderEmail(booking: EmailBooking, context: BuildContext, checkoutToken: string | null = null): BuiltEmail {
   const t = emailTranslator(booking.locale, context.messages[booking.locale]);
   return {
     to: "customer",
@@ -280,7 +276,7 @@ export function buildBalanceReminderEmail(booking: EmailBooking, context: BuildC
       brand: context.brand,
       booking: bookingFacts(booking),
       name: booking.contact_name,
-      checkoutUrl: checkoutUrl(booking, context.siteUrl, context.accessSecret),
+      checkoutUrl: checkoutUrl(booking, context.siteUrl, checkoutToken),
     }),
   };
 }
