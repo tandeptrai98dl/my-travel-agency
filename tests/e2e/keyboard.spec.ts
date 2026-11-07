@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, test } from "./support/test";
 
 import { seedPassword } from "./support/auth";
 import { closeTestDepartures, testDeparture } from "./support/booking";
+import { dismissConsent } from "./support/consent";
 
 // Phase 6 keyboard pass (docs/specs/phase-6-hardening-launch.md decision 5, docs/QA_REPORT.md):
 // keyboard only, no mouse. The menus, the cookie banner and its dialog, the filter sheet and the
@@ -11,12 +12,6 @@ import { closeTestDepartures, testDeparture } from "./support/booking";
 // and the tour page is cached, so a test cannot add some. Screen-reader passes need people.
 
 test.afterAll(closeTestDepartures);
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 /** Presses Tab until one of `target`'s elements has focus (at most `max` times); fails if none does. */
 async function tabTo(page: Page, target: Locator, max = 80) {
@@ -35,8 +30,26 @@ function readStop(): Stop | null {
   if (!element || element === document.body) return null;
   const style = getComputedStyle(element);
   const box = element.getBoundingClientRect();
+  // A colour with alpha 0 draws nothing (`outline-none` is a 2px transparent outline in Tailwind 3).
+  const opaque = (color: string) => {
+    if (color === "transparent") return false;
+    const alpha = /rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/.exec(color) ?? /\/\s*([\d.]+%?)\s*\)/.exec(color);
+    return !alpha || parseFloat(alpha[1]) > 0;
+  };
+  // Box shadows as Chromium computes them ("rgb(…) 0px 0px 0px 4px, …"): the ring is the widest
+  // spread (Tailwind's offset shadow, in the page colour, is narrower), so that one must be visible.
+  const ringShadow = (value: string) => {
+    if (!value || value === "none") return false;
+    const shadows = value.split(/,(?![^(]*\))/).map((shadow) => {
+      const color = /(rgba?\([^)]*\)|color\([^)]*\)|oklch\([^)]*\)|transparent)/.exec(shadow)?.[1] ?? "currentcolor";
+      const lengths = (shadow.replace(color, "").match(/-?[\d.]+px/g) ?? []).map(parseFloat);
+      return { color, spread: lengths[3] ?? 0 };
+    });
+    const widest = shadows.reduce((a, b) => (b.spread > a.spread ? b : a));
+    return widest.spread > 0 && opaque(widest.color);
+  };
   const shows = (css: CSSStyleDeclaration) =>
-    (css.outlineStyle !== "none" && parseFloat(css.outlineWidth) > 0) || (css.boxShadow !== "" && css.boxShadow !== "none");
+    (css.outlineStyle !== "none" && parseFloat(css.outlineWidth) > 0 && opaque(css.outlineColor)) || ringShadow(css.boxShadow);
   // Radio and checkbox cards draw the ring on their label (`has-[:focus-visible]:ring-2`).
   const card = element.closest("label");
   const ring = shows(style) || (card !== null && shows(getComputedStyle(card)));
@@ -68,7 +81,11 @@ for (const width of [1280, 1024]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       const stops: Stop[] = [];
-      for (let i = 0; i < 200; i += 1) {
+      // A safety cap, not the expected length: the walk normally ends when focus leaves the
+      // document after the footer, or wraps. Real content (12 listing cards, long articles, every
+      // destination in the filter column) can pass 200 stops, so the cap only has to stop a trap,
+      // which the footer assertion below then reports.
+      for (let i = 0; i < 1000; i += 1) {
         await page.keyboard.press("Tab");
         const stop = await page.evaluate(readStop);
         if (!stop) {

@@ -1,16 +1,11 @@
 import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded catalog (supabase/seed.sql): 31 tours published in Vietnamese and 29 in English. Việt Nam
 // has 3 (VN-HLB-03, VN-NTH-06, VN-HER-05); Thái Lan 13 (the "Phase 3 PR L" block), two of them 15
 // days or longer; Pháp 14 in Vietnamese and 13 in English (FR-PAR-07 has no English text).
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 const results = (page: Page) => page.getByRole("region", { name: "Kết quả" });
 const cards = (page: Page) => results(page).getByRole("list").first().getByRole("heading", { level: 3 });

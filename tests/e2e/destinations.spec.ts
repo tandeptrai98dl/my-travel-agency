@@ -1,17 +1,12 @@
-import { expect, type Page, test } from "./support/test";
+import { expect, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded destinations and styles (supabase/seed.sql): Việt Nam → Miền Bắc → Vịnh Hạ Long, Hà Nội…;
 // published tours VN-HLB-03 (Hạ Long), VN-NTH-06 (Hà Nội, Sa Pa, Hạ Long), VN-HER-05 (Hội An,
 // Huế), JP-KYT-07 (Kyoto…, Vietnamese only), FR-PRV-09 (Paris, Avignon); VN-PQC-04 (Phú Quốc,
 // wellness) is a draft. Honeymoon: VN-HLB-03 and FR-PRV-09.
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 test.describe("destinations and travel styles", () => {
   test.beforeEach(async ({ page }) => {

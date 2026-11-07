@@ -178,12 +178,17 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
       ))}
       <Honeypot />
 
-      {/* Rendered on the server too, so hydration does not push the form down (CLS, Phase 6 QA);
-          without JavaScript every step shows and the list is an outline, with no current step. */}
-      <ol className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-small" aria-label={labels.stepOf.replace("{step}", String(step + 1)).replace("{count}", String(last + 1))}>
+      {/* Rendered on the server too, so hydration does not push the form down (CLS, Phase 6 QA).
+          Without JavaScript every step shows, so the list is an outline: no current step, no
+          "Step 1 of N" name. Before hydration, browsers that report scripting already mark step 1
+          (only it is shown), by CSS alone. */}
+      <ol
+        className="flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-small"
+        aria-label={ready ? labels.stepOf.replace("{step}", String(step + 1)).replace("{count}", String(last + 1)) : undefined}
+      >
         {labels.steps.map((name, index) => (
-          <li key={name} aria-current={ready && index === step ? "step" : undefined} className={cx("flex items-center gap-2", index === step ? "font-semibold text-foreground" : "text-muted-foreground")}>
-            <span aria-hidden="true" className={cx("flex h-6 w-6 items-center justify-center rounded-full border text-eyebrow", index <= step ? "border-primary bg-primary text-primary-foreground" : "border-input")}>
+          <li key={name} aria-current={ready && index === step ? "step" : undefined} className={cx("flex items-center gap-2", stepItemClass(index, step, ready))}>
+            <span aria-hidden="true" className={cx("flex h-6 w-6 items-center justify-center rounded-full border text-eyebrow", stepNumberClass(index, step, ready))}>
               {index + 1}
             </span>
             {name}
@@ -336,6 +341,24 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
       </p>
     </form>
   );
+}
+
+const CURRENT_ITEM = "font-semibold text-foreground";
+const OTHER_ITEM = "text-muted-foreground";
+const DONE_NUMBER = "border-primary bg-primary text-primary-foreground";
+const OPEN_NUMBER = "border-input";
+
+/** Step list item: the current step after hydration; before it, step 1 only where scripting runs. */
+function stepItemClass(index: number, step: number, ready: boolean) {
+  if (ready) return index === step ? CURRENT_ITEM : OTHER_ITEM;
+  return index === 0 ? "text-muted-foreground [@media(scripting:enabled)]:font-semibold [@media(scripting:enabled)]:text-foreground" : OTHER_ITEM;
+}
+
+function stepNumberClass(index: number, step: number, ready: boolean) {
+  if (ready) return index <= step ? DONE_NUMBER : OPEN_NUMBER;
+  return index === 0
+    ? "border-input [@media(scripting:enabled)]:border-primary [@media(scripting:enabled)]:bg-primary [@media(scripting:enabled)]:text-primary-foreground"
+    : OPEN_NUMBER;
 }
 
 function StepHeading({ index, labels, refs }: { index: number; labels: TailorMadeLabels; refs: React.RefObject<(HTMLHeadingElement | null)[]> }) {

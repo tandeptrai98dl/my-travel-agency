@@ -1,16 +1,12 @@
-import { expect, type Page, test } from "./support/test";
+import { expect, test } from "./support/test";
+
+import { dismissConsent } from "./support/consent";
 
 // Phase 6 responsive pass (docs/specs/phase-6-hardening-launch.md decision 5, docs/QA_REPORT.md):
 // no main public page scrolls sideways at the narrowest phone width we support, in either
 // language, and the header switches to the menu sheet below 1280 px, where the desktop
 // navigation no longer fits on one line. Tour pages at 375 and 1280 px are also checked in
 // tour-detail.spec.ts, the booking page at 375 px in booking-flow.spec.ts.
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 const PUBLIC_PAGES = [
   "/",

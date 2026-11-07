@@ -1,18 +1,13 @@
-import { expect, type Page, test } from "./support/test";
+import { expect, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded homepage (supabase/seed.sql): the `homepage` setting has the hero text, featured
 // destinations vietnam, japan, france and no hero image; featured tours VN-HLB-03, VN-NTH-06 and
 // JP-KYT-07 (no published English translation); four travel styles; featured reviews by Minh Anh
 // (vi) and Anna (en); three articles (two in English). CI has no Turnstile, Upstash or Resend
 // keys, so the newsletter form is disabled.
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 test.describe("homepage", () => {
   test.beforeEach(async ({ page }) => {
