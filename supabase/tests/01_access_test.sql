@@ -154,12 +154,10 @@ reset role;
 select pg_temp.claims('00000000-0000-4000-8000-000000000001');
 set local role authenticated;
 
-select is(
-  (select array_agg(code order by code) from public.bookings),
-  array['PTA-TEST-0001'],
-  'a customer reads only their own bookings'
-);
-select is((select count(*)::int from public.payments), 1, 'a customer reads payments of their own bookings');
+-- Since *_customer_reads.sql customers read bookings and payments only through the customer
+-- functions (24_customer_reads_test.sql), never the tables.
+select is((select count(*)::int from public.bookings), 0, 'a customer reads no booking rows directly');
+select is((select count(*)::int from public.payments), 0, 'a customer reads no payment rows directly');
 select is((select count(*)::int from public.profiles), 1, 'a customer reads only their own profile');
 select is((select count(*)::int from public.inquiries), 0, 'a customer cannot read inquiries');
 select is((select count(*)::int from public.booking_events), 0, 'a customer cannot read the booking event timeline');
@@ -195,7 +193,7 @@ with u as (
   where booking_id = '30000000-0000-4000-8000-000000000001'
   returning 1
 )
-select is(count(*)::int, 1, 'a customer can edit travellers on their own upcoming booking') from u;
+select is(count(*)::int, 0, 'a customer cannot edit traveller rows directly, even on their own booking') from u;
 select throws_ok(
   $$ insert into public.travellers (booking_id, full_name)
      values ('30000000-0000-4000-8000-000000000002', 'Intruder') $$,

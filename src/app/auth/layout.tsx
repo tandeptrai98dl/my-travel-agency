@@ -7,18 +7,23 @@ import "../globals.css";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
-  title: { default: "Sign in", template: "%s | Premium Travel Agency" },
+  title: { default: "Đăng nhập nhân viên", template: "%s | Quản trị" },
   robots: { index: false, follow: false },
 };
 
 /**
- * Root layout for the starter /auth pages (English), used by staff until the localized customer
- * auth pages arrive in Phase 5 (ARCHITECTURE.md).
+ * Root layout of the staff `/auth` pages (Vietnamese, the admin language; docs/specs/
+ * phase-5-accounts-inquiries-operations.md decision 1). They keep the public nonce-free CSP
+ * (ADR-027): static forms that post to Server Actions and show no booking or customer data.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={fontVariables}>
-      <body>{children}</body>
+    <html lang="vi" className={fontVariables}>
+      <body className="min-h-svh bg-background">
+        <main id="main" className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+          <div className="w-full max-w-[28rem]">{children}</div>
+        </main>
+      </body>
     </html>
   );
 }

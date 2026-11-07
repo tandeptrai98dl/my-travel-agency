@@ -7,11 +7,11 @@ export function seedPassword(): string {
   return password;
 }
 
-/** Signs in through the starter /auth/login page as `<role>@example.test`. */
+/** Signs in through the staff /auth/login page (Vietnamese since Phase 5 PR 5A) as `<role>@example.test`. */
 export async function signInAs(page: Page, role: string): Promise<void> {
   await page.goto("/auth/login");
   await page.getByLabel("Email").fill(`${role.replace("_", "-")}@example.test`);
-  await page.getByLabel("Password").fill(seedPassword());
-  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(seedPassword());
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).not.toHaveURL(/\/auth\/login/);
 }

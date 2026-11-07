@@ -1,51 +1,39 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
-async function ErrorContent({
-  searchParams,
-}: {
-  searchParams: Promise<{ error: string }>;
-}) {
-  const params = await searchParams;
+import { StaffCard } from "../staff-card";
 
+export const metadata: Metadata = { title: "Không mở được liên kết" };
+
+type Props = { searchParams: Promise<{ error?: string }> };
+
+const KNOWN = new Set(["link", "oauth", "inactive"]);
+
+/** Email-link and OAuth errors: a fixed message per code (never text from the URL). */
+export default function AuthErrorPage({ searchParams }: Props) {
   return (
-    <>
-      {params?.error ? (
-        <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
-        </p>
-      )}
-    </>
+    <Suspense>
+      <ErrorContent searchParams={searchParams} />
+    </Suspense>
   );
 }
 
-export default function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ error: string }>;
-}) {
+async function ErrorContent({ searchParams }: Props) {
+  const { error } = await searchParams;
+  const t = await getTranslations({ locale: "vi", namespace: "StaffAuth" });
+  const key = error && KNOWN.has(error) ? error : "default";
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                Sorry, something went wrong.
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Suspense>
-                <ErrorContent searchParams={searchParams} />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
+    <StaffCard title={t("errorTitle")} intro={t(`errors.${key}` as "errors.default")}>
+      <div className="flex flex-col gap-2 text-small">
+        <Link href="/dang-nhap" className="self-start underline decoration-gold underline-offset-4">
+          {t("customerLink")}
+        </Link>
+        <Link href="/auth/login" className="self-start text-muted-foreground underline underline-offset-4">
+          {t("back")}
+        </Link>
       </div>
-    </div>
+    </StaffCard>
   );
 }

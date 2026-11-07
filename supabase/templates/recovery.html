@@ -1,0 +1,15 @@
+<!-- Password reset (Phase 5 spec decisions 1 and 15). /auth/confirm verifies the token hash on the
+     server, marks the session for the set-password page and opens it (the customer page in the
+     account's language, or the staff page). Set the same template on hosted projects
+     (Authentication > Email Templates > Reset password). -->
+{{ if eq .Data.locale "en" }}
+<h2>Reset your password</h2>
+<p>We received a request to reset the password of your account.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery">Choose a new password</a></p>
+<p>The link works once, for a short time. If you did not ask for this, ignore this email; your password stays the same.</p>
+{{ else }}
+<h2>Đặt lại mật khẩu</h2>
+<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery">Chọn mật khẩu mới</a></p>
+<p>Liên kết chỉ dùng được một lần trong thời gian ngắn. Nếu bạn không yêu cầu, hãy bỏ qua email này; mật khẩu của bạn không thay đổi.</p>
+{{ end }}

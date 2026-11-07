@@ -149,4 +149,9 @@ describe("available methods", () => {
     configState.vnpay = null;
     expect(await availableMethods()).toEqual(["bank_transfer"]);
   });
+
+  it("throws when the bank account setting cannot be read (no long-cached 'no account')", async () => {
+    repo.bankAccountSetting.mockResolvedValueOnce({ data: null, error: { code: "57014", message: "timeout" } } as never);
+    await expect(availableMethods()).rejects.toThrow(/bank account setting read failed/);
+  });
 });

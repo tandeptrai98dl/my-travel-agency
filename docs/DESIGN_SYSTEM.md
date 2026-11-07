@@ -124,6 +124,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/booking` (Phase 4 PR 4B): BookingForm (three steps: date and guests with steppers, contact, plan, VAT invoice and terms; the server's price in a sticky summary), PriceSummary, HoldCountdown, PaymentMethodForm, VietQrPanel (server-rendered QR with copy buttons), BookingSummaryCard, ResultStatus (polls until the IPN or webhook is recorded); pages under `src/app/(secure)/[locale]` with their own root layout and nonce CSP
 - Phase 4 PR 4D: QuoteForm and PaymentLinkForm (`src/components/admin/bookings`), RedeemLinkButton and the payment-link page (`src/components/booking`, `(secure)/[locale]/(booking)/pay/[token]`)
 - `emails/` (Phase 4 PR 4E, ADR-036): EmailLayout (600 px table layout, ivory page, white card, gold rule, serif brand name with Georgia fallback), Eyebrow, Heading, Text, ButtonLink (one navy action per email), Details (label/value rows), SignOff; CustomerEmail frame; templates BookingReceived, PaymentReceived, BookingConfirmed (with the cancellation policy summary), PaymentLink, BalanceReminder, BookingCancelled and StaffBooking (confirmed or needs attention, Vietnamese). `src/components/booking/open-checkout-button.tsx` opens a checkout from an emailed link on click
+- `src/components/account` (Phase 5 PR 5A): AuthForm (one form for every auth and account step: server field errors linked to their fields, a focused status line, Turnstile on first interaction when needed), AuthShell (480 px card column), GoogleButton (only when configured), AccountFrame (title and account navigation with the current page marked), BookingList, TravellersForm (rows up to the party, one lead, never a passport number), ProfileForm and MarketingForm; plain `buttonVariants` and `cx()`, no next-intl client provider
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -138,7 +139,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Tour | TourCard, TourGrid, tour listing set (see `docs/specs/tour-listing.md`), TourHero, TourFactsBar, TourHighlights, ItineraryTimeline, InclusionsList, DepartureTable, PriceFromBox + sticky BookingWidget, FAQAccordion, RelatedTours, ReviewSummary |
 | Booking | BookingStepper, PaxSelector, DepartureCalendar, PriceBreakdown, ContactForm, TravellerForm, PaymentPlanSelector, PaymentMethodSelector, VietQRPanel, HoldCountdown, PaymentResult, BookingSummaryCard, InvoiceInfoForm, CancellationPolicySummary, TermsConsent |
 | Consultation | TailorMadeWizard (destination → timing → travellers → budget & style → contact), InquirySuccess |
-| Account | AuthForm, GoogleButton, AccountNav, BookingListItem, BookingDetail, PaymentHistory, ProfileForm, DeleteAccountDialog |
+| Account | DeleteAccountDialog (PR 5B) |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
 | Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
 | Email (React Email) | InquiryReceived, NewInquiryAlert, PasswordReset, VerifyEmail (Phase 5) |

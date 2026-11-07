@@ -20,7 +20,7 @@ Every integration has an off mode; nothing fails open in a way that exposes data
 | Service | Without it | Blocked until the owner provides |
 | --- | --- | --- |
 | SMTP for Supabase Auth (Resend) | Locally and in CI, Auth emails go to Mailpit. On a hosted project without SMTP, Supabase's built-in sender is rate-limited to a few emails per hour: sign-up and password reset work only for testing. | Resend account, sending domain (SPF, DKIM, DMARC), SMTP settings and the email templates in the Supabase dashboard. |
-| Google OAuth | The Google button is not rendered and `/auth/callback` refuses a `google` flow. | Google Cloud OAuth client (ID and secret) set in Supabase; `AUTH_GOOGLE_ENABLED=true`. |
+| Google OAuth | The Google button is not rendered and `/auth/callback` refuses a `google` flow. | Google Cloud OAuth client (ID and secret) set in Supabase; `GOOGLE_OAUTH_ENABLED=true`. |
 | Vercel Cron | `/api/cron/*` works when called with the secret (CI and local call it directly); nothing runs on a schedule. | Vercel Pro project with `vercel.json` crons deployed and `CRON_SECRET` set (ADR-018). |
 | Resend (transactional) | Emails are `skipped` rows in `email_logs` (ADR-036). | Same account as above. |
 | Turnstile, Upstash | As in Phase 4: Turnstile skipped outside production, required there; rate limits per decision 2. | Keys (already needed for the contact form and booking). |
@@ -49,7 +49,7 @@ Every integration has an off mode; nothing fails open in a way that exposes data
    | Change password, deletion request | 5 per user per hour | closed | no (signed in; current password required) |
 
    - **GoTrue sees the server, not the customer.** Every Auth call comes from a Vercel function, so Supabase's per-IP limits count all customers on that function's IP together. `supabase/config.toml` `[auth.rate_limit]` is therefore set deliberately and the owner sets the same values in the hosted dashboard: `sign_in_sign_ups = 300` and `token_refresh = 1800` per 5 minutes (so one busy function IP cannot lock everyone out), `token_verifications = 300`, `email_sent` as the SMTP plan allows (local and CI: high enough for the E2E run). The app's **per-email** limits above (keyed on the normalised address, hashed in Redis) are the real guard against guessing a password; the per-IP limits use the client IP from Vercel's `x-forwarded-for`. The sign-in limit fails open, so during an Upstash outage only GoTrue's shared limit stands; the outage is logged (`rate_limit.fail_open`).
-3. **Google sign-in** only when configured: `AUTH_GOOGLE_ENABLED=true` (server env, validated) and the provider set in Supabase. `/auth/callback` exchanges the PKCE code on the server, refuses missing or failed codes with the auth error page, applies `safeRedirectPath()` to `next`, and runs decision 6. Google accounts are always customers (role changes stay admin-only). If the account behind the callback has a staff profile (GoTrue links a Google identity to an existing account with the same verified address), the callback signs it out and redirects to `/auth/login`: staff sign in with a password (and TOTP for admin and accountant) only.
+3. **Google sign-in** only when configured: `GOOGLE_OAUTH_ENABLED=true` (server env, validated) and the provider set in Supabase. `/auth/callback` exchanges the PKCE code on the server, refuses missing or failed codes with the auth error page, applies `safeRedirectPath()` to `next`, and runs decision 6. Google accounts are always customers (role changes stay admin-only). If the account behind the callback has a staff profile (GoTrue links a Google identity to an existing account with the same verified address), the callback signs it out and redirects to `/auth/login`: staff sign in with a password (and TOTP for admin and accountant) only.
 4. **Account area** (`/tai-khoan`, `/en/account`), in `(secure)/[locale]/account/`, fully dynamic, signed-in customers only (others go to sign-in with `next`; staff go to `/admin`):
    - Overview: upcoming and past bookings, balance due, profile summary.
    - Bookings list and booking detail (`/tai-khoan/booking/[code]`): price lines, payments (amount, method, date, status), balance with a "pay the balance" link into the checkout (the owner's session already opens it, decision 7 of Phase 4), the cancellation policy snapshot, travellers.
@@ -134,9 +134,19 @@ Each PR updates the docs for what it ships, so `main` never documents something 
 | `DATABASE.md` | `issue_booking_lookup()`, `anonymise_customer()` and its wrapper | 5B |
 | `DATABASE.md` | inquiry functions, widened `sales_manager` policy, revoked `UPDATE`, amended `create_quote()` | 5C |
 | `DATABASE.md` | dashboard read functions | 5D |
-| `README.md`, `.env.example` | `AUTH_GOOGLE_ENABLED`, Auth templates, `[auth.rate_limit]` values, "Confirm email" | 5A |
+| `README.md`, `.env.example` | `GOOGLE_OAUTH_ENABLED`, Auth templates, `[auth.rate_limit]` values, "Confirm email" | 5A |
 | `README.md`, `.env.example` | `CRON_SECRET` (32+ characters), `vercel.json` schedules | 5D |
 | `DESIGN_SYSTEM.md` | Account, auth and inbox components as built | each PR |
+
+## As shipped (notes against the decisions above)
+
+- **PR 5A, Google flag:** the server variable is `GOOGLE_OAUTH_ENABLED`, which existed since Phase 0 (`.env.example`, `README.md`). ADR-037 names it `AUTH_GOOGLE_ENABLED`; read that as `GOOGLE_OAUTH_ENABLED`.
+- **PR 5A, rate limits and Turnstile off Vercel:** without `VERCEL_ENV` (local and CI), a service that is not configured is skipped with one warning. On every Vercel environment both are enforced as in decision 2.
+- **PR 5A, after the #42 review:**
+  - `attach_customer_bookings(target_id)` and `set_marketing_consent(target_id, granted, document_version)` are service-role only (`*_customer_reads_review.sql`). A session could call the first through PostgREST and skip the confirmation guard of decision 6, so the identity service calls it with the admin client, for the user `getUser()` returns, only after `confirmationGuard()` reported confirmations on.
+  - The account service passes the published privacy policy's version to the marketing write; the function refuses anything but `privacy-(vi|en)-<16 hex>`.
+  - A traveller birth date that does not exist is `invalid_traveller`.
+  - An unreadable GoTrue settings answer is cached for 30 seconds, not five minutes.
 
 ## Cross-stream items
 

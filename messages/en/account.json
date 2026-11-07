@@ -1,0 +1,164 @@
+{
+  "Account": {
+    "eyebrow": "Your account",
+    "nav": {
+      "label": "Account",
+      "overview": "Overview",
+      "bookings": "My bookings",
+      "profile": "Profile",
+      "signOut": "Sign out"
+    },
+    "overview": {
+      "metaTitle": "Account",
+      "greeting": "Hello, {name}",
+      "greetingNoName": "Hello",
+      "intro": "Every journey booked with {email} appears here.",
+      "upcoming": "Upcoming journeys",
+      "noUpcoming": "You have no upcoming journeys yet.",
+      "explore": "Explore our tours",
+      "allBookings": "See all bookings",
+      "profile": "Your details"
+    },
+    "bookings": {
+      "metaTitle": "My bookings",
+      "title": "My bookings",
+      "upcoming": "Upcoming",
+      "past": "Past and cancelled",
+      "empty": "No bookings are linked to this account yet. Bookings made with the same email appear here once the email is confirmed.",
+      "travellers": "{count, plural, one {# traveller} other {# travellers}}",
+      "total": "Total",
+      "paid": "Paid",
+      "balanceDue": "{amount} due by {date}",
+      "open": "View booking {code}"
+    },
+    "booking": {
+      "metaTitle": "Booking {code}",
+      "back": "All bookings",
+      "status": "Status",
+      "payment": "Payment",
+      "dates": "Dates",
+      "party": "Party",
+      "partyValue": "{adults} adults, {children} children, {infants} infants",
+      "singleRooms": "{count} single rooms",
+      "contact": "Contact",
+      "lines": "Price details",
+      "lineQuantity": "{quantity} × {price}",
+      "total": "Total",
+      "paid": "Paid",
+      "balance": "Balance",
+      "balanceDue": "Balance due by {date}",
+      "pay": "Pay the balance",
+      "continue": "Continue to payment",
+      "payments": "Payment history",
+      "noPayments": "No payments yet.",
+      "paymentDate": "Date",
+      "paymentKind": "Type",
+      "paymentMethod": "Method",
+      "paymentAmount": "Amount",
+      "paymentStatus": "Status",
+      "kinds": {
+        "deposit": "Deposit",
+        "balance": "Balance",
+        "full": "Full",
+        "refund": "Refund"
+      },
+      "providers": {
+        "vnpay": "VNPay",
+        "bank_transfer": "Bank transfer",
+        "cash": "Cash",
+        "manual": "Recorded by staff",
+        "momo": "MoMo",
+        "onepay": "OnePay",
+        "paypal": "PayPal"
+      },
+      "transactionStatuses": {
+        "pending": "Pending",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      },
+      "paymentStates": {
+        "unpaid": "Unpaid",
+        "deposit_paid": "Deposit paid",
+        "paid": "Paid in full",
+        "partially_refunded": "Partly refunded",
+        "refunded": "Refunded"
+      },
+      "policy": "Cancellation policy",
+      "noPolicy": "The cancellation policy is in your booking confirmation.",
+      "travellers": "Travellers",
+      "travellersIntro": "Add traveller details before the departure date. We never collect passport numbers on the website.",
+      "travellersLocked": "Traveller details can no longer be changed online. Contact us if something needs to change.",
+      "noTravellers": "No traveller details yet."
+    },
+    "travellers": {
+      "row": "Traveller {number}",
+      "fullName": "Full name",
+      "dateOfBirth": "Date of birth",
+      "nationality": "Nationality",
+      "dietaryNotes": "Diet and allergies",
+      "lead": "Lead traveller",
+      "leadLegend": "Lead traveller of the party",
+      "add": "Add a traveller",
+      "remove": "Remove traveller {number}",
+      "save": "Save travellers",
+      "saving": "Saving…",
+      "status": {
+        "saved": "Traveller details saved.",
+        "invalid": "Please check the highlighted fields.",
+        "locked": "The travellers of this booking can no longer be changed.",
+        "too_many": "There are more travellers than people in the booking.",
+        "lead_required": "Choose a lead traveller among the filled-in travellers.",
+        "not_found": "Booking not found.",
+        "expired": "Your session has ended. Please sign in again.",
+        "failed": "Something went wrong. Please try again."
+      },
+      "errors": {
+        "required": "Please enter the full name.",
+        "tooLong": "Too long.",
+        "invalidDate": "This date is not valid.",
+        "invalid": "This value is not valid."
+      }
+    },
+    "profile": {
+      "metaTitle": "Profile",
+      "title": "Profile",
+      "details": "Personal details",
+      "fullName": "Full name",
+      "phone": "Phone",
+      "country": "Country",
+      "language": "Email language",
+      "languages": {
+        "vi": "Tiếng Việt",
+        "en": "English"
+      },
+      "save": "Save details",
+      "saving": "Saving…",
+      "marketingTitle": "Journey letters",
+      "marketing": "Send me letters about new journeys.",
+      "marketingSave": "Save choice",
+      "emailTitle": "Sign-in email",
+      "emailCurrent": "Current email: {email}",
+      "emailIntro": "We send a confirmation link to both the old and the new email.",
+      "emailSubmit": "Change email",
+      "passwordTitle": "Password",
+      "passwordIntro": "Once changed, other devices that are signed in will be signed out.",
+      "passwordSubmit": "Change password",
+      "pending": "Saving…",
+      "status": {
+        "saved": "Saved.",
+        "invalid": "Please check the highlighted fields.",
+        "unavailable": "This choice cannot be saved yet: the privacy policy is not published.",
+        "expired": "Your session has ended. Please sign in again.",
+        "failed": "Something went wrong. Please try again."
+      },
+      "errors": {
+        "required": "Please fill in this field.",
+        "tooLong": "Too long.",
+        "invalidPhone": "This phone number is not valid.",
+        "invalid": "This value is not valid."
+      }
+    }
+  }
+}

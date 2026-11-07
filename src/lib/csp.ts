@@ -12,9 +12,12 @@
 /**
  * Localized paths the secure root serves (src/i18n/pathnames.ts), in both languages. Only these:
  * a prefix the root does not serve yet would be answered by the public root, whose prerendered
- * scripts have no nonce. The account (`/tai-khoan`, `/en/account`) is added with its pages.
+ * scripts have no nonce. Checkout (Phase 4), then the customer sign-in pages (exact paths) and the
+ * account (the page and everything below it) from Phase 5 PR 5A. PUBLIC_CSP_SOURCE excludes the
+ * same paths; a unit test keeps the two in step.
  */
-const SECURE_PATH = /^\/(?:dat-tour\/|thanh-toan\/|en\/book\/|en\/checkout\/|en\/pay\/)/;
+const SECURE_PATH =
+  /^\/(?:dat-tour\/|thanh-toan\/|en\/book\/|en\/checkout\/|en\/pay\/|(?:dang-nhap|dang-ky|quen-mat-khau|dat-lai-mat-khau|en\/login|en\/register|en\/forgot-password|en\/reset-password)$|(?:tai-khoan|en\/account)(?:\/|$))/;
 
 export function isSecurePath(pathname: string): boolean {
   return SECURE_PATH.test(pathname);
@@ -30,7 +33,8 @@ export function isAdminPath(pathname: string): boolean {
  * everything except the admin, the API and the secure paths above, which the proxy covers or
  * which serve no pages. Kept in step with SECURE_PATH by a unit test.
  */
-export const PUBLIC_CSP_SOURCE = "/((?!admin/|admin$|api/|dat-tour/|thanh-toan/|en/book/|en/checkout/|en/pay/).*)";
+export const PUBLIC_CSP_SOURCE =
+  "/((?!admin/|admin$|api/|dat-tour/|thanh-toan/|en/book/|en/checkout/|en/pay/|dang-nhap$|dang-ky$|quen-mat-khau$|dat-lai-mat-khau$|en/login$|en/register$|en/forgot-password$|en/reset-password$|tai-khoan$|tai-khoan/|en/account$|en/account/).*)";
 
 export function createNonce(): string {
   const bytes = new Uint8Array(16);
