@@ -6,6 +6,7 @@ import {
   isFilteredSearch,
   normalizeQuery,
   parseTourSearchParams,
+  presetValue,
   serializeTourSearchParams,
   withChange,
 } from "./tour-search-params";
@@ -77,6 +78,22 @@ describe("parseTourSearchParams", () => {
       priceMax: 10_000_000_000,
     });
     expect(parseTourSearchParams({ price_max: "10000000001" }).priceMax).toBeNull();
+  });
+
+  it("accepts thousands separators and the form's preset value; typed amounts win", () => {
+    expect(parseTourSearchParams({ price_min: "30.000.000", price_max: "60,000,000" })).toMatchObject({
+      priceMin: 30_000_000,
+      priceMax: 60_000_000,
+    });
+    expect(parseTourSearchParams({ price: "30000000-60000000" })).toMatchObject({ priceMin: 30_000_000, priceMax: 60_000_000 });
+    expect(parseTourSearchParams({ price: "-30000000" })).toMatchObject({ priceMin: null, priceMax: 30_000_000 });
+    expect(parseTourSearchParams({ price: "120000000-" })).toMatchObject({ priceMin: 120_000_000, priceMax: null });
+    expect(parseTourSearchParams({ price: "30000000-60000000", price_max: "50000000" })).toMatchObject({
+      priceMin: null,
+      priceMax: 50_000_000,
+    });
+    expect(parseTourSearchParams({ price: "cheap" })).toMatchObject({ priceMin: null, priceMax: null });
+    expect(presetValue({ min: null, max: 30_000_000 })).toBe("-30000000");
   });
 
   it("limits keys and months", () => {

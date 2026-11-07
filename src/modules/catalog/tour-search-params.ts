@@ -103,16 +103,33 @@ export function normalizeQuery(raw: string | null | undefined): string | null {
   return value.length >= TOUR_QUERY_MIN && value.length <= TOUR_QUERY_MAX ? value : null;
 }
 
+/** A whole number of dong; thousands separators typed into the filter's inputs are accepted. */
+function amount(raw: string | undefined): number | null {
+  const value = raw?.trim().replace(/[.,\s]/g, "");
+  if (!value || !INTEGER.test(value)) return null;
+  const number = Number(value);
+  return number <= TOUR_PRICE_LIMIT ? number : null;
+}
+
 function price(input: SearchParamsInput, name: string): number | null {
-  const raw = valuesOf(input, name)[0]?.trim();
-  if (!raw || !INTEGER.test(raw)) return null;
-  const value = Number(raw);
-  return value <= TOUR_PRICE_LIMIT ? value : null;
+  return amount(valuesOf(input, name)[0]);
+}
+
+/** A preset sent by the filter form without JavaScript (`price=30000000-60000000`, open ends empty). */
+export function presetValue(preset: { min: number | null; max: number | null }): string {
+  return `${preset.min ?? ""}-${preset.max ?? ""}`;
 }
 
 export function parseTourSearchParams(input: SearchParamsInput, options: ParseOptions = {}): TourSearchCriteria {
   let priceMin = price(input, "price_min");
   let priceMax = price(input, "price_max");
+  // The preset radio counts only when no custom amount was typed (the custom inputs win).
+  const preset = valuesOf(input, "price")[0];
+  if (priceMin === null && priceMax === null && preset && /^\d*-\d*$/.test(preset)) {
+    const [min, max] = preset.split("-");
+    priceMin = amount(min);
+    priceMax = amount(max);
+  }
   if (priceMin !== null && priceMax !== null && priceMin > priceMax) [priceMin, priceMax] = [priceMax, priceMin];
   if (priceMin === 0) priceMin = null;
 
