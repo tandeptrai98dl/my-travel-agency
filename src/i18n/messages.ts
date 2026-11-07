@@ -11,6 +11,7 @@ export const MESSAGE_FILES = [
   "public-tours",
   "public-pages",
   "public-booking",
+  "public-inquiry",
   "admin",
   "admin-media",
   "admin-taxonomy",

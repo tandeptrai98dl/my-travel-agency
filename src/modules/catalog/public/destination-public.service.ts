@@ -242,3 +242,19 @@ export async function getPublishedTravelStyleSlugs(locale: Locale): Promise<stri
     return [];
   }
 }
+
+/** Published travel styles of one language (key and name, in order), for the tailor-made wizard. */
+export async function getTravelStyleOptions(locale: Locale): Promise<{ key: string; name: string }[]> {
+  "use cache";
+  cacheTag(TRAVEL_STYLES_TAG);
+  cacheLife("hours");
+  try {
+    const { data, error } = await repo.findTravelStyleRows(locale);
+    if (error) fail("travel styles", error);
+    return (data ?? []).flatMap((row) => (row.travel_style_translations[0] ? [{ key: row.key, name: row.travel_style_translations[0].name }] : []));
+  } catch (error) {
+    console.error("getTravelStyleOptions failed", error instanceof Error ? error.message : error);
+    cacheLife(FAILED);
+    return [];
+  }
+}

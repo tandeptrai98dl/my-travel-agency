@@ -1,0 +1,80 @@
+{
+  "Inquiry": {
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone (optional)",
+    "preferred": "How should we reach you?",
+    "channels": { "email": "Email", "phone": "Phone", "zalo": "Zalo", "whatsapp": "WhatsApp" },
+    "adults": "Adults",
+    "children": "Children (under 12)",
+    "month": "Month you hope to travel",
+    "monthHint": "No need to be sure yet.",
+    "monthUndecided": "Not decided",
+    "message": "Message",
+    "messagePlaceholder": "A special occasion, the pace you like, dietary needs…",
+    "consent": "I agree that the company stores and uses these details to plan my trip, under the",
+    "privacyLink": "privacy policy",
+    "newTab": "(opens in a new tab)",
+    "sending": "Sending…",
+    "unavailable": "This form is not taking requests at the moment. Please call or email us.",
+    "errors": {
+      "required": "Please fill this in.",
+      "tooLong": "This is too long.",
+      "invalidEmail": "Please enter a valid email address.",
+      "invalidPhone": "Please enter a valid phone number.",
+      "consentRequired": "Please accept the privacy policy to send your request.",
+      "invalid": "Please check this value.",
+      "verification": "We could not verify you are not a bot. Please try again.",
+      "rateLimited": "You have sent several requests. Please try again in a few minutes.",
+      "unavailable": "This form is not taking requests at the moment. Please call or email us.",
+      "failed": "Your request could not be sent. Please try again."
+    },
+    "success": {
+      "title": "We have received your request",
+      "text": "Your request code is {code}. A confirmation email is on its way.",
+      "textNoCode": "We have received your request.",
+      "next": "A travel designer will be in touch within one working day to sketch the journey with you.",
+      "tours": "Browse journeys",
+      "home": "Back to the home page"
+    }
+  },
+  "TailorMade": {
+    "metaTitle": "Design a private journey",
+    "metaDescription": "Tell us about the trip you have in mind and we will design an itinerary around you.",
+    "eyebrow": "Tailor-made",
+    "title": "A journey of your own",
+    "intro": "Five short steps so we understand the trip you want. A travel designer will send you a first sketch, with no commitment.",
+    "steps": ["Destination", "Timing", "Travellers", "Budget & style", "Contact"],
+    "stepTitles": ["Where would you like to go?", "When, and for how long?", "Who is travelling?", "Budget and style", "How should we reach you?"],
+    "stepOf": "Step {step} of {count}",
+    "destinationsHint": "Choose one or more places, or leave them empty for our suggestions.",
+    "destinationsOther": "Somewhere else (optional)",
+    "flexible": "My dates are flexible",
+    "duration": "Number of days (optional)",
+    "durationHint": "From 1 to 60 days.",
+    "budget": "Budget per guest",
+    "budgets": {
+      "under_30m": "Under 30 million VND",
+      "30_60m": "30–60 million VND",
+      "60_100m": "60–100 million VND",
+      "100_200m": "100–200 million VND",
+      "over_200m": "Over 200 million VND",
+      "not_sure": "Not sure yet, please advise"
+    },
+    "style": "Travel style",
+    "styleNone": "No preference",
+    "country": "Country (optional)",
+    "company": "Company name (optional)",
+    "companyHint": "For corporate groups.",
+    "messageHint": "A special occasion, the pace you like, dietary needs…",
+    "next": "Continue",
+    "back": "Back",
+    "submit": "Send request",
+    "draftRestored": "We kept what you entered last time in this browser."
+  },
+  "TourInquiry": {
+    "title": "Ask about this journey",
+    "intro": "Private journeys are shaped around your dates and group. Send a request and a travel designer will reply with a quote.",
+    "submit": "Send request"
+  }
+}
