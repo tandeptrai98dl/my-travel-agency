@@ -298,7 +298,9 @@ async function Actions({ inquiry, user, t }: { inquiry: InquiryDetail; user: Cur
       {panels.length > 0 && (
         <AdminMessages namespaces={["Inquiries"]}>
           {panels.map((panel, index) => (
-            <div key={index} className={index > 0 ? "border-t border-border pt-6" : undefined}>
+            // Keyed by the panel, not its position: after "take" the assign panel goes, and an
+            // index key would remount the note and status forms during the refresh (losing input).
+            <div key={(panel as React.ReactElement).key ?? index} className={index > 0 ? "border-t border-border pt-6" : undefined}>
               {panel}
             </div>
           ))}
