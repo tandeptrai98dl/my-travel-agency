@@ -33,7 +33,7 @@ vi.mock("@/lib/site-url", () => ({ siteUrl: new URL("https://travel.example") })
 vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
-const { notifyBooking, queuePaymentLinkEmail, resendBookingEmail, sendBookingEmails, sendPaymentLinkEmail } = await import("./booking-emails.service");
+const { notifyBooking, queuePaymentLinkEmail, resendBookingEmail, sendBalanceOverdueAlert, sendBookingEmails, sendPaymentLinkEmail } = await import("./booking-emails.service");
 const { logger } = await import("@/lib/logger");
 
 const booking = {
@@ -189,5 +189,21 @@ describe("resendBookingEmail", () => {
     mocks.findEmailLogForStaff.mockResolvedValue({ data: null, error: null });
     expect(await resendBookingEmail("l-4")).toEqual({ ok: false, error: "not_found" });
     expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe("sendBalanceOverdueAlert", () => {
+  it("without a team address claims nothing and counts as no_address, like the minimum-traveller alert", async () => {
+    mocks.findBookingForEmail.mockResolvedValue({ data: booking, error: null });
+    mocks.getPublicSettings.mockResolvedValue({ company: null, contact: null, social: {} });
+    expect(await sendBalanceOverdueAlert("b-1", "balance_overdue:b-1")).toBe("no_address");
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("with the address sends once under its key", async () => {
+    mocks.findBookingForEmail.mockResolvedValue({ data: booking, error: null });
+    mocks.sendEmail.mockResolvedValue("sent");
+    expect(await sendBalanceOverdueAlert("b-1", "balance_overdue:b-1")).toBe("sent");
+    expect(mocks.sendEmail.mock.calls[0][0]).toMatchObject({ to: "team@travel.example", dedupeKey: "balance_overdue:b-1" });
   });
 });

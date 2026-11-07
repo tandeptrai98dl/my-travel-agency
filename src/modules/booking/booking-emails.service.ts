@@ -180,12 +180,20 @@ export async function sendBalanceReminder(bookingId: string, dedupeKey: string):
   }
 }
 
-/** The one-time team alert for an overdue balance (Phase 5 daily job); `dedupeKey` is `balance_overdue:<booking id>`. */
-export async function sendBalanceOverdueAlert(bookingId: string, dedupeKey: string): Promise<SendResult | "not_found"> {
+/**
+ * The one-time team alert for an overdue balance (Phase 5 daily job); `dedupeKey` is
+ * `balance_overdue:<booking id>`. Without a team address nothing is claimed (`no_address`, like the
+ * minimum-traveller alert), so a later run sends it once the address is set.
+ */
+export async function sendBalanceOverdueAlert(bookingId: string, dedupeKey: string): Promise<SendResult | "not_found" | "no_address"> {
   try {
     const { data: booking, error } = await repo.findBookingForEmail(bookingId);
     if (error || !booking) return "not_found";
     const context = await buildContext();
+    if (!context.staffEmail) {
+      logger.warn("booking.email_no_staff_address", { template: "balance_overdue" });
+      return "no_address";
+    }
     return (await deliver(buildBalanceOverdueEmail(booking as EmailBooking, context), booking as EmailBooking, dedupeKey, context.staffEmail)) ?? "failed";
   } catch (caught) {
     logger.error("booking.email_failed", { template: "balance_overdue", error: caught instanceof Error ? caught.name : "Error" });

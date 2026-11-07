@@ -143,6 +143,82 @@ test("a customer deletes their account: anonymised, unlinked, signed out for goo
   await expect(page.getByTestId("login-form").getByRole("status")).toHaveText("Email hoặc mật khẩu chưa đúng.");
 });
 
+/** The newest Auth confirmation link to an address, as a path on the app under test (Mailpit). */
+async function confirmationPath(to: string): Promise<string> {
+  const mail = process.env.E2E_MAIL_URL!;
+  let html = "";
+  await expect
+    .poll(
+      async () => {
+        const found = (await (await fetch(`${mail}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)).json()) as { messages?: { ID: string }[] };
+        const id = found.messages?.[0]?.ID;
+        if (!id) return false;
+        html = ((await (await fetch(`${mail}/api/v1/message/${id}`)).json()) as { HTML: string }).HTML;
+        return true;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(true);
+  const href = /href="([^"]*\/auth\/confirm\?[^"]+)"/.exec(html)?.[1];
+  if (!href) throw new Error("no confirmation link in the email");
+  const url = new URL(href.replaceAll("&amp;", "&"));
+  return `${url.pathname}${url.search}`;
+}
+
+/** Auth's identity rows of a user, as text (auth.identities is not exposed over REST). */
+function identities(userId: string): string {
+  const row = spawnSync(
+    "psql",
+    [process.env.E2E_DB_URL!, "-qXtA", "-v", "ON_ERROR_STOP=1", "-c", `select coalesce(json_agg(json_build_object('data', identity_data, 'email', email, 'provider_id', provider_id)), '[]') from auth.identities where user_id = '${userId}'`],
+    { encoding: "utf8" },
+  );
+  expect(row.status).toBe(0);
+  return row.stdout.trim();
+}
+
+// Phase 5 review minor (#53), closed in Phase 6 PR 6B: Auth keeps a copy of the person's details in
+// auth.identities.identity_data, which neither the ban nor anonymise_customer() touches. GoTrue's
+// soft delete (the deletion's last step) empties it and replaces the provider id; this proves it
+// for an account made through /dang-ky.
+test("deleting an account made through /dang-ky also clears Auth's identity data", async ({ page }) => {
+  test.skip(!process.env.E2E_DB_URL || !process.env.E2E_MAIL_URL, "needs the local stack (CI)");
+  test.setTimeout(120_000);
+  const email = `identity-${stamp}@example.test`;
+  const password = `e2e-identity-${stamp}-Aa1!`;
+  const name = "Khách Danh Tính";
+  await page.goto("/dang-ky");
+  const form = page.getByTestId("register-form");
+  await form.getByLabel("Họ và tên").fill(name);
+  await form.getByLabel("Email").fill(email);
+  await form.getByLabel("Mật khẩu").fill(password);
+  await form.getByLabel(/Tôi đồng ý với/).check();
+  await form.getByRole("button", { name: "Tạo tài khoản" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "chúng tôi đã gửi liên kết xác nhận" })).toBeVisible();
+  await page.goto(await confirmationPath(email));
+  await expect(page).toHaveURL(/\/tai-khoan$/);
+  const { data: profile } = await adminApi().from("profiles").select("id").eq("email", email).single();
+  const userId = profile!.id as string;
+
+  // Before: the identity row holds the address (so the check after the deletion means something).
+  const before = identities(userId);
+  expect(before).toContain(email);
+
+  await page.goto("/tai-khoan/ho-so");
+  const deletion = page.getByTestId("deletion-form");
+  await deletion.getByLabel("Mật khẩu hiện tại").fill(password);
+  await deletion.getByRole("button", { name: "Xoá tài khoản" }).click();
+  await expect(page).toHaveURL(/\/dang-nhap\?deleted=1$/);
+
+  const after = JSON.parse(identities(userId)) as { data: Record<string, unknown>; email: string | null; provider_id: string }[];
+  const text = JSON.stringify(after);
+  expect(text).not.toContain(email);
+  expect(text).not.toContain(name);
+  for (const identity of after) {
+    expect(identity.email).toBeNull();
+    expect(identity.data).toEqual({});
+  }
+});
+
 test("a customer with a payment in progress is told the deletion waits", async ({ page }) => {
   test.setTimeout(90_000);
   const person = await customer("wait");

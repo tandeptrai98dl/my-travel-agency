@@ -184,7 +184,7 @@ RLS is the source of truth; `requireRole()` is the first check in every Server A
 | Redirects, newsletter | — | — | — | Edit | Full |
 | Settings, staff, audit log | — | — | — | — | Full |
 
-`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037); inquiry status, owner and first response change only through the role-checked inquiry functions (`DATABASE.md`); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
+`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037); everyone who reads customers (sales roles, operator, accountant, admin) also reads a customer's consent history through `customer_consents()` (purpose, granted, version, time; no IP or user agent), while `consent_records` itself stays admin-only (Phase 5 PR 5D); inquiry status, owner and first response change only through the role-checked inquiry functions (`DATABASE.md`); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
 
 ## Routes
 
@@ -252,7 +252,14 @@ Comfortably serves tens of thousands of visits per day and a few thousand bookin
 
 ## Monitoring
 
-Sentry for errors and IPN failures; alerts on failed `pg_cron` runs (`cron.job_run_details`); uptime check on `/api/health`; structured logs with the booking code and never card data, passwords or tokens; runbooks for gateway outages, unconfirmed payments, the "needs attention" queue and refunds.
+Phase 6 PR 6B (`docs/specs/phase-6-hardening-launch.md` decisions 3 and 4; runbooks in `README.md`):
+
+- **Errors**: Sentry, with each event tagged with its release (the commit SHA of the Vercel build; source maps uploaded with it). IPN and webhook problems are sent as events tagged `payment.webhook` (provider) and `payment.event`, without references, amounts or payloads. The alert rules (new issue, spike, payments, scheduled jobs, Cron Monitors) are created by the owner in Sentry, as listed in `README.md` "Deployment".
+- **Scheduled database jobs**: `/api/cron/health-checks` (Vercel Cron, every 15 minutes) reads `cron_failures()`: every failed `pg_cron` run of the last day and every job overdue by the missed-run rule (3 intervals for jobs every few minutes or hourly, 26 hours for daily ones). Each is emailed once to `settings.contact.email` (key `cron_failure:<job>:<start>` or `cron_missed:<job>:<last success>`, ADR-036; not claimed while the address is empty) and sent to Sentry with tags `cron.job` and `cron.kind`. The alert jobs (`booking-seat-invariant-alert`, `email-problems-alert`) fail on purpose, so their failed run is the signal. The same check refreshes the `tours` cache tag when held seats lapsed in `pg_cron`.
+- **Vercel Cron itself**: every `/api/cron/*` run checks in with Sentry Cron Monitors (`cron-<job>`, with its schedule from `src/modules/operations/cron-jobs.ts`, kept equal to `vercel.json` by a unit test) and, on success, pings `CRON_HEARTBEAT_URL` (the uptime monitor's heartbeat); a late check-in or ping alerts.
+- **Uptime**: the owner's monitor calls `/api/health` every minute; two consecutive failures page the on-call person.
+- **Housekeeping**: daily `pg_cron` jobs remove access tokens 30 days after use or expiry, trim webhook payloads after 400 days only where they are copied into `payments.raw_response` (never `unmatched` or error rows), and purge `cron.job_run_details` after 30 days; `/api/cron/housekeeping` removes staged uploads older than 24 hours from `media-uploads` through the Storage API. Nothing else is deleted on a timer.
+- **Logs**: structured JSON lines with the booking code, never card data, passwords, tokens, payloads or addresses; cron answers and logs carry counts only.
 
 ## Environments
 

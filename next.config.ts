@@ -33,6 +33,12 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
   sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  // Release tracking: one release per Vercel build, named after its commit (the same value
+  // sentryOptions() reads at run time); created, with its source maps, only when a token is set.
+  release: {
+    name: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || undefined,
+    create: Boolean(process.env.SENTRY_AUTH_TOKEN),
+  },
   silent: !process.env.CI,
   telemetry: false,
   widenClientFileUpload: true,

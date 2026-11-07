@@ -86,10 +86,23 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   return breadcrumb;
 }
 
+/**
+ * Release tracking (docs/specs/phase-6-hardening-launch.md decision 3): the deployment's commit
+ * SHA, so each event and each uploaded source map belong to one Vercel build. Vercel sets
+ * `VERCEL_GIT_COMMIT_SHA` on the server and, with system variables exposed, the NEXT_PUBLIC_ copy
+ * that Next.js inlines into browser code; `SENTRY_RELEASE` overrides both. Without any of them the
+ * SDK keeps the release the build plugin injected (none locally).
+ */
+export function sentryRelease(): string | undefined {
+  return process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || undefined;
+}
+
 export function sentryOptions(dsn: string | undefined) {
+  const release = sentryRelease();
   return {
     dsn,
     enabled: Boolean(dsn),
+    ...(release ? { release } : {}),
     environment: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
     dataCollection,
     // Errors only, on the server and in the browser: `tracesSampleRate` is left unset, which is
