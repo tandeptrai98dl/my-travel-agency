@@ -4,45 +4,55 @@ import { expect, test } from "./support/test";
 // decision 1, Stream B's share of PR 6A step 2; ARCHITECTURE.md "Security"). The secure (checkout,
 // account) and admin page types are covered by Stream A's header E2E. All of these pages are
 // prerendered or static, so they get the nonce-free policy from next.config.ts (ADR-027), never a
-// nonce, and never `unsafe-eval` (ADR-039: no tag manager).
+// nonce, and never `unsafe-eval` (ADR-039: no tag manager). Each path asserts its exact status, so
+// this file runs in the "status-codes" project on the fresh build (playwright.config.ts): after
+// another spec refreshes a tag, Next.js 16.4 answers a re-rendered 404 or 308 with its 200 shell
+// once (status-codes.spec.ts).
 
-const PUBLIC_PAGES = [
+/** Each path with the status it must answer: the headers must be there on every outcome. */
+const PUBLIC_PAGES: ReadonlyArray<readonly [string, number]> = [
   // Home, both languages.
-  "/",
-  "/en",
+  ["/", 200],
+  ["/en", 200],
   // Tour listing and detail, site search (a query, so the listing's dynamic hole renders too).
-  "/tours",
-  "/en/tours?scope=international",
-  "/tours/du-thuyen-vinh-ha-long",
-  "/en/tours/ha-long-bay-cruise",
-  "/tim-kiem?q=ha%20long",
+  ["/tours", 200],
+  ["/en/tours?scope=international", 200],
+  ["/tours/du-thuyen-vinh-ha-long", 200],
+  ["/en/tours/ha-long-bay-cruise", 200],
+  ["/tim-kiem?q=ha%20long", 200],
   // Destinations, travel styles.
-  "/diem-den",
-  "/diem-den/viet-nam",
-  "/en/destinations/vietnam",
-  "/phong-cach/trang-mat",
+  ["/diem-den", 200],
+  ["/diem-den/viet-nam", 200],
+  ["/en/destinations/vietnam", 200],
+  ["/phong-cach/trang-mat", 200],
   // Journal list, article, topic.
-  "/journal",
-  "/journal/mot-ngay-tren-vinh-lan-ha",
-  "/journal/chu-de/cam-hung",
+  ["/journal", 200],
+  ["/journal/mot-ngay-tren-vinh-lan-ha", 200],
+  ["/journal/chu-de/cam-hung", 200],
   // Static pages, policies, reviews, contact, the tailor-made wizard.
-  "/ve-chung-toi",
-  "/cau-hoi-thuong-gap",
-  "/chinh-sach/chinh-sach-bao-mat",
-  "/en/policies/privacy-policy",
-  "/danh-gia",
-  "/lien-he",
-  "/en/contact",
-  "/thiet-ke-rieng",
+  ["/ve-chung-toi", 200],
+  ["/cau-hoi-thuong-gap", 200],
+  ["/chinh-sach/chinh-sach-bao-mat", 200],
+  ["/en/policies/privacy-policy", 200],
+  ["/danh-gia", 200],
+  ["/lien-he", 200],
+  ["/en/contact", 200],
+  ["/thiet-ke-rieng", 200],
   // The newsletter's single-use pages (no token: their "invalid link" state).
-  "/ban-tin/xac-nhan",
-  "/en/newsletter/unsubscribe",
+  ["/ban-tin/xac-nhan", 200],
+  ["/en/newsletter/unsubscribe", 200],
   // A real 404 and a real 308 (the other language's slug) carry the headers too.
-  "/en/does-not-exist",
-  "/tours/ha-long-bay-cruise",
+  ["/en/does-not-exist", 404],
+  ["/tours/ha-long-bay-cruise", 308],
 ];
 
-const STAFF_AUTH_PAGES = ["/auth/login", "/auth/forgot-password", "/auth/update-password", "/auth/sign-up"];
+const STAFF_AUTH_PAGES: ReadonlyArray<readonly [string, number]> = [
+  ["/auth/login", 200],
+  ["/auth/forgot-password", 200],
+  ["/auth/update-password", 200],
+  // Staff self sign-up is gone: a real 308 to the customer sign-up page (Phase 5 PR 5A).
+  ["/auth/sign-up", 308],
+];
 
 /** At least one year, as browsers and the HSTS preload list require. */
 const ONE_YEAR = 31_536_000;
@@ -58,9 +68,10 @@ for (const [kind, paths] of [
   ["staff sign-in pages", STAFF_AUTH_PAGES],
 ] as const) {
   test(`${kind} carry the full header set with the nonce-free policy`, async ({ request }) => {
-    for (const path of paths) {
+    for (const [path, status] of paths) {
       const response = await request.get(path, { maxRedirects: 0 });
-      expect(response.status(), path).toBeLessThan(500);
+      expect(response.status(), path).toBe(status);
+      if (status === 308) expect(response.headers()["location"], `${path} Location`).toBeTruthy();
       const all = response.headersArray();
       const policies = all.filter((header) => header.name.toLowerCase() === "content-security-policy");
       // Exactly one policy: next.config.ts sends it, the proxy adds none on these paths.

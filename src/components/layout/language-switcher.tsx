@@ -19,6 +19,16 @@ type Props = {
 };
 
 /**
+ * The fallback link keeps the query string (a filtered listing stays filtered in the other
+ * language; filter values are language-independent keys). Prerendered HTML cannot know the query,
+ * so the link takes the current one just before it is used: pointer, focus or click.
+ */
+function keepQuery(event: { currentTarget: HTMLAnchorElement }) {
+  const link = event.currentTarget;
+  link.setAttribute("href", (link.getAttribute("href") ?? "").split("?")[0] + window.location.search);
+}
+
+/**
  * Links to the current page in each language, keeping the path (localized slugs included). Pages
  * with per-language slugs publish their paths through `LocaleAlternates`; a language without a
  * published translation links to its parent page (Phase 3 spec decision 6). Used in the header, the
@@ -29,16 +39,6 @@ type Props = {
  * Vietnamese paths are proxy rewrites, so `/lien-he` looked like the home page of a locale called
  * "lien-he" and every prefetch answered 404 (and taught later prefetches the same guess).
  */
-/**
- * The fallback link keeps the query string (a filtered listing stays filtered in the other
- * language; filter values are language-independent keys). Prerendered HTML cannot know the query,
- * so the link takes the current one just before it is used: pointer, focus or click.
- */
-function keepQuery(event: { currentTarget: HTMLAnchorElement }) {
-  const link = event.currentTarget;
-  link.setAttribute("href", (link.getAttribute("href") ?? "").split("?")[0] + window.location.search);
-}
-
 export function LanguageSwitcher({ className, landmark = true }: Props) {
   const t = useLabels("LanguageSwitcher");
   const currentLocale = useShellLocale();

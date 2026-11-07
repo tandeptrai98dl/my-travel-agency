@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.PORT ?? 3000);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
+const FRESH_BUILD_SPECS = /(status-codes|public-headers)\.spec\.ts/;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -14,9 +15,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    // Status codes on the fresh build, before other specs save content (status-codes.spec.ts).
-    { name: "status-codes", testMatch: /status-codes\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
-    { name: "chromium", testIgnore: /status-codes\.spec\.ts/, dependencies: ["status-codes"], use: { ...devices["Desktop Chrome"] } },
+    // Status codes on the fresh build, before other specs save content (status-codes.spec.ts, and
+    // public-headers.spec.ts, which asserts each page's exact status next to its headers).
+    { name: "status-codes", testMatch: FRESH_BUILD_SPECS, use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: FRESH_BUILD_SPECS, dependencies: ["status-codes"], use: { ...devices["Desktop Chrome"] } },
   ],
   // Runs against a production build. Set PLAYWRIGHT_BASE_URL to test a deployed preview instead.
   webServer: process.env.PLAYWRIGHT_BASE_URL

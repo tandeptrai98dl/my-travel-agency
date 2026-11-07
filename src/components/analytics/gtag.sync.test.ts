@@ -116,4 +116,26 @@ describe("a document opened on a route without GA", () => {
     expect(fromBook.scripts).toHaveLength(1);
     expect(fromBook.pageViews()).toBe(1);
   });
+
+  it("stays off after the public newsletter pages too, whose policy allows Google (deliberate)", async () => {
+    const browser = await browserOpenedOn("/en/newsletter/unsubscribe");
+    browser.go("/en/newsletter/unsubscribe");
+    browser.go("/en/tours");
+    expect(browser.scripts).toHaveLength(0);
+    expect(browser.commands()).toEqual([]);
+  });
+
+  it("ignores the landing query: the emailed checkout link may start GA once its token is gone", async () => {
+    // The redeem page itself (`?access=`) sends nothing; the "open" button replaces the URL with
+    // the checkout, whose policy allows Google, and that page is measured (template only).
+    const browser = await browserOpenedOn("/en/checkout/PTA-2611-0042?access=tok");
+    browser.go("/en/checkout/PTA-2611-0042", "?access=tok");
+    expect(browser.scripts).toHaveLength(0);
+    expect(browser.pageViews()).toBe(0);
+    browser.go("/en/checkout/PTA-2611-0042");
+    expect(browser.scripts).toHaveLength(1);
+    expect(browser.pageViews()).toBe(1);
+    expect(browser.locations().at(-1)).toBe(`${ORIGIN}/checkout/[code]`);
+    expect(JSON.stringify(browser.commands())).not.toContain("tok");
+  });
 });
