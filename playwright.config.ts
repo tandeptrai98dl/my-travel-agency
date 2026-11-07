@@ -13,7 +13,11 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Status codes on the fresh build, before other specs save content (status-codes.spec.ts).
+    { name: "status-codes", testMatch: /status-codes\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: /status-codes\.spec\.ts/, dependencies: ["status-codes"], use: { ...devices["Desktop Chrome"] } },
+  ],
   // Runs against a production build. Set PLAYWRIGHT_BASE_URL to test a deployed preview instead.
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined

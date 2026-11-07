@@ -73,25 +73,10 @@ test.describe("tour detail", () => {
     await expect(page.getByRole("banner").getByRole("link", { name: "English" })).toHaveAttribute("href", "/en/tours");
   });
 
-  test("a slug of the other language is a real 308 to this language's slug", async ({ page }) => {
-    for (const [from, to] of [
-      ["/en/tours/du-thuyen-vinh-ha-long", GROUP_EN],
-      ["/tours/ha-long-bay-cruise", GROUP_VI],
-      ["/en/destinations/viet-nam", "/en/destinations/vietnam"],
-    ]) {
-      const response = await page.request.get(from, { maxRedirects: 0 });
-      expect(response.status(), from).toBe(308);
-      expect(new URL(response.headers().location!, "http://x").pathname, from).toBe(to);
-    }
+  test("a slug of the other language redirects to this language's slug", async ({ page }) => {
+    // The status codes are checked on the fresh build in status-codes.spec.ts.
     await page.goto("/en/tours/du-thuyen-vinh-ha-long");
     await expect(page).toHaveURL(new RegExp(`${GROUP_EN}$`));
-  });
-
-  test("the other language's slug without a published translation here is a real 404", async ({ page }) => {
-    // JP-KYT-07 is published in Vietnamese only.
-    const response = await page.goto("/en/tours/kyoto-tokyo-mua-thu");
-    expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
   });
 
   test("drafts and unpublished translations are not found", async ({ page }) => {
