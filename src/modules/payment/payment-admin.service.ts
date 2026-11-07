@@ -4,6 +4,7 @@ import { pageRange, type ListParams } from "@/lib/admin/list-params";
 import { can } from "@/lib/auth/permissions";
 import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
+import { notifyBooking } from "@/modules/booking/booking-emails.service";
 import { refreshTour } from "@/modules/booking/booking.service";
 
 import * as repo from "./payment-admin.repository";
@@ -112,6 +113,7 @@ export async function recordManualPayment(values: ManualPaymentValues): Promise<
   const { data, error } = await repo.recordManualPayment(values.bookingId, values.amount, values.method, values.note);
   if (error) return failure("manual_payment", error);
   await refreshFor(values.bookingId);
+  notifyBooking(values.bookingId);
   const result = (data ?? {}) as { status?: string; reference?: string };
   return { ok: true, status: result.status, reference: result.reference };
 }
@@ -133,6 +135,7 @@ export async function assignTransfer(values: AssignTransferValues): Promise<Paym
   const { data, error } = await repo.assignUnmatchedTransfer(values.eventId, booking.id, values.note);
   if (error) return failure("assign_transfer", error);
   refreshTour(booking.tour_id);
+  notifyBooking(booking.id);
   const result = (data ?? {}) as { status?: string; reference?: string };
   return { ok: true, status: result.status, reference: result.reference };
 }

@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { TOURS_TAG, tourTag } from "@/modules/catalog/cache-tags";
 import type { Json } from "@/types/database.types";
 
+import { notifyBooking } from "./booking-emails.service";
 import * as repo from "./booking.repository";
 import type { DraftValues, StartPaymentValues } from "./booking.schemas";
 import { type PartyError, priceBooking, type Quote } from "./pricing";
@@ -220,6 +221,8 @@ export async function startPayment(input: StartPaymentValues): Promise<StartPaym
   if (before.status !== "pending_payment" && before.departure_id && payment.bookingStatus === "pending_payment") {
     refreshTour(before.tour_id);
   }
+  // After the commit: "booking received" on the first hold (once per booking event, 4E).
+  notifyBooking(input.bookingId);
   return { ok: true, payment };
 }
 
@@ -232,6 +235,7 @@ export async function cancelBooking(bookingId: string, actorId: string | null, r
   const { data, error } = await repo.cancel(bookingId, actorId, reason);
   if (error) return { ok: false, error: mapBookingError(error) };
   if (before.departure_id && ["pending_payment", "confirmed"].includes(before.status)) refreshTour(before.tour_id);
+  notifyBooking(bookingId);
   const row = (data ?? {}) as Record<string, unknown>;
   return { ok: true, refundPercent: Number(row.refund_percent ?? 0), refundAmount: Number(row.refund_amount ?? 0) };
 }

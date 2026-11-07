@@ -1,0 +1,105 @@
+{
+  "Emails": {
+    "common": {
+      "greeting": "Kính gửi {name},",
+      "code": "Mã đặt chỗ",
+      "journey": "Hành trình",
+      "dates": "Thời gian",
+      "travellers": "Số khách",
+      "adults": "{count, plural, other {# người lớn}}",
+      "children": "{count, plural, other {# trẻ em}}",
+      "infants": "{count, plural, other {# em bé}}",
+      "total": "Tổng giá trị",
+      "paid": "Đã thanh toán",
+      "balance": "Còn lại",
+      "balanceDue": "{amount}, hạn thanh toán {date}",
+      "helpBoth": "Nếu cần hỗ trợ, vui lòng liên hệ {email} hoặc gọi {phone}.",
+      "helpEmail": "Nếu cần hỗ trợ, vui lòng liên hệ {email}.",
+      "helpPhone": "Nếu cần hỗ trợ, vui lòng gọi {phone}.",
+      "closing": "Trân trọng,",
+      "team": "Đội ngũ {brand}",
+      "reason": "Bạn nhận được email này vì đã đặt chỗ với {brand}.",
+      "staffReason": "Email nội bộ gửi tới địa chỉ liên hệ của công ty.",
+      "openAdmin": "Mở trong trang quản trị"
+    },
+    "bookingReceived": {
+      "subject": "Chúng tôi đã giữ chỗ cho bạn · {code}",
+      "preview": "Đặt chỗ {code} đang chờ thanh toán.",
+      "eyebrow": "Đã nhận đặt chỗ",
+      "heading": "Chỗ của bạn đang được giữ",
+      "intro": "Cảm ơn bạn đã chọn hành trình {tour}. Chúng tôi đã giữ chỗ cho đoàn của bạn.",
+      "hold": "Chỗ được giữ đến {time} (giờ Việt Nam). Vui lòng hoàn tất khoản thanh toán {amount} trước thời điểm đó để xác nhận chuyến đi.",
+      "holdNoTime": "Vui lòng hoàn tất khoản thanh toán {amount} để xác nhận chuyến đi.",
+      "button": "Tiếp tục thanh toán",
+      "lapse": "Nếu thời gian giữ chỗ kết thúc trước khi chúng tôi nhận được thanh toán, chỗ sẽ được mở lại cho khách khác. Bạn có thể đặt lại bất cứ lúc nào."
+    },
+    "paymentReceived": {
+      "subject": "Đã nhận thanh toán · {code}",
+      "preview": "Chúng tôi đã nhận được khoản thanh toán cho {code}.",
+      "eyebrow": "Đã nhận thanh toán",
+      "heading": "Cảm ơn bạn đã thanh toán",
+      "intro": "Chúng tôi đã nhận được {amount} cho đặt chỗ {code}.",
+      "introNoAmount": "Chúng tôi đã nhận được khoản thanh toán cho đặt chỗ {code}.",
+      "flagged": "Đội ngũ của chúng tôi sẽ kiểm tra khoản thanh toán này và liên hệ với bạn trong thời gian sớm nhất."
+    },
+    "bookingConfirmed": {
+      "subject": "Chuyến đi của bạn đã được xác nhận · {code}",
+      "preview": "Đặt chỗ {code} đã được xác nhận.",
+      "eyebrow": "Đã xác nhận",
+      "heading": "Chuyến đi của bạn đã được xác nhận",
+      "intro": "Đặt chỗ {code} cho hành trình {tour} đã được xác nhận. Chúng tôi rất mong được đón bạn.",
+      "balance": "Phần còn lại {amount} cần được thanh toán trước {date}. Chúng tôi sẽ gửi lời nhắc trước hạn.",
+      "next": "Trước ngày khởi hành, chúng tôi sẽ liên hệ để hoàn tất thông tin hành khách và gửi lịch trình chi tiết.",
+      "button": "Xem đặt chỗ",
+      "policy": "Chính sách hủy"
+    },
+    "paymentLink": {
+      "subject": "Liên kết thanh toán cho hành trình của bạn · {code}",
+      "preview": "Liên kết thanh toán cho đặt chỗ {code}.",
+      "eyebrow": "Liên kết thanh toán",
+      "heading": "Hành trình của bạn đã sẵn sàng",
+      "intro": "Hành trình {tour} (mã {code}) đã được chuẩn bị theo trao đổi của chúng ta.",
+      "kind": {
+        "deposit": "Khoản đặt cọc {amount} sẽ giữ chỗ và xác nhận chuyến đi.",
+        "full": "Khoản thanh toán toàn bộ {amount} sẽ giữ chỗ và xác nhận chuyến đi.",
+        "balance": "Đây là phần còn lại {amount} của chuyến đi."
+      },
+      "button": "Thanh toán {amount}",
+      "expiry": "Liên kết chỉ dùng được một lần và hết hạn lúc {time} (giờ Việt Nam).",
+      "private": "Liên kết này dành riêng cho bạn. Vui lòng không chuyển tiếp email này."
+    },
+    "balanceReminder": {
+      "subject": "Nhắc thanh toán phần còn lại · {code}",
+      "preview": "Phần còn lại của đặt chỗ {code} sắp đến hạn.",
+      "eyebrow": "Nhắc thanh toán",
+      "heading": "Hành trình của bạn đang đến gần",
+      "intro": "Phần còn lại {amount} của đặt chỗ {code} cần được thanh toán trước {date}.",
+      "introNoDate": "Phần còn lại {amount} của đặt chỗ {code} đang chờ thanh toán.",
+      "button": "Thanh toán phần còn lại",
+      "ignore": "Nếu bạn vừa thanh toán, vui lòng bỏ qua email này."
+    },
+    "bookingCancelled": {
+      "subject": "Đặt chỗ đã được hủy · {code}",
+      "preview": "Đặt chỗ {code} đã được hủy.",
+      "eyebrow": "Đã hủy",
+      "heading": "Đặt chỗ của bạn đã được hủy",
+      "intro": "Đặt chỗ {code} cho hành trình {tour} đã được hủy.",
+      "refund": "Với khoản bạn đã thanh toán, chúng tôi sẽ liên hệ về việc hoàn tiền theo chính sách hủy áp dụng khi đặt chỗ.",
+      "farewell": "Rất mong được đồng hành cùng bạn trong một hành trình khác."
+    },
+    "staffConfirmed": {
+      "subject": "Đặt chỗ đã xác nhận · {code}",
+      "preview": "{code} vừa được xác nhận.",
+      "eyebrow": "Đặt chỗ mới",
+      "heading": "{code} đã được xác nhận",
+      "intro": "Đã nhận {paid}."
+    },
+    "staffAttention": {
+      "subject": "Cần xử lý · {code}",
+      "preview": "{code} cần được kiểm tra.",
+      "eyebrow": "Cần xử lý",
+      "heading": "{code} cần được kiểm tra",
+      "reason": "Lý do: {reason}"
+    }
+  }
+}

@@ -106,6 +106,13 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   return status;
 }
 
+/** Dedupe keys already claimed for a booking (sent, failed, skipped or in flight). */
+export async function claimedEmailKeys(bookingId: string): Promise<{ keys: Set<string> } | { error: string }> {
+  const { data, error } = await repo.claimedKeysForBooking(bookingId);
+  if (error) return { error: error.code ?? "unknown" };
+  return { keys: new Set((data ?? []).map((row) => row.dedupe_key).filter((key): key is string => typeof key === "string")) };
+}
+
 /** Escapes text for HTML email bodies. */
 export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);

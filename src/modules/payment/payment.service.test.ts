@@ -29,6 +29,8 @@ const repo = {
   bookingTour: fn({ tour_id: "t-1" }),
 };
 vi.mock("./payment.repository", () => repo);
+const notifyBooking = vi.hoisted(() => vi.fn());
+vi.mock("@/modules/booking/booking-emails.service", () => ({ notifyBooking }));
 
 const { availableMethods, handleBankWebhook, handleVnpayIpn } = await import("./payment.service");
 
@@ -60,6 +62,7 @@ describe("VNPay IPN", () => {
       expect.objectContaining({ provider: "vnpay", reference: "PTA2611004201", amount: 12_900_000, succeeded: true, eventKey: "PTA2611004201:14012345" }),
     );
     expect(revalidateTag).toHaveBeenCalledWith("tour:t-1", "max");
+    expect(notifyBooking).toHaveBeenCalledWith("b-1");
   });
 
   it("answers 97 for a bad signature, another merchant or missing keys, and records nothing", async () => {
@@ -89,6 +92,8 @@ describe("VNPay IPN", () => {
   it("answers 02 for a repeat and for money on an attempt that is no longer pending", async () => {
     repo.recordPaymentEvent.mockResolvedValueOnce({ data: { result: "duplicate" }, error: null });
     expect(await handleVnpayIpn(ipn())).toEqual({ RspCode: "02", Message: "Order already confirmed" });
+    // A replayed IPN sends no email.
+    expect(notifyBooking).not.toHaveBeenCalled();
     repo.findPaymentByReference.mockResolvedValueOnce({ data: { ...payment, status: "cancelled" }, error: null });
     repo.recordPaymentEvent.mockResolvedValueOnce({
       data: { result: "recorded", status: "pending_payment", needs_attention: true, attention_reason: "paid_after_switch" },
