@@ -9,6 +9,7 @@ import { slugify } from "@/lib/slug";
 import { readAlt } from "@/modules/media/media.schemas";
 import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
+import { scheduleLanguageRedirects } from "@/modules/content/language-redirects.service";
 
 import * as repo from "./tours.repository";
 import {
@@ -28,6 +29,7 @@ export { TOURS_TAG, tourTag };
 function refresh(id: string) {
   updateTag(TOURS_TAG);
   updateTag(tourTag(id));
+  scheduleLanguageRedirects();
 }
 
 export type TourSaveError =

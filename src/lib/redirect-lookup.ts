@@ -1,8 +1,9 @@
 import { isSitePath } from "./site-path";
 
 /**
- * Redirects from Upstash Redis for the proxy (Phase 3 spec decision 14, ADR-031): the hash
- * `redirects` maps a source path to `{"to": "/target", "status": 301}`. Values are untrusted: the
+ * Redirects from Upstash Redis for the proxy (Phase 3 spec decision 14, ADR-031): the hashes
+ * `redirects` (saved in the admin) and `redirects:languages` (other-language slugs) map a source
+ * path to `{"to": "/target", "status": 301}`. Values are untrusted: the
  * target must be a site path (the admin's rules, plus no control characters), it is used exactly
  * as stored (never percent-decoded), and only 301 and 302 are honoured. Each lookup waits at most
  * 50 ms and fails open; hits and misses are cached per instance for 60 s.
@@ -26,6 +27,13 @@ type Options = {
 };
 
 export const REDIS_REDIRECTS_HASH = "redirects";
+/**
+ * The other language's slug of each published page → this language's slug (301), rebuilt on
+ * content saves (`src/modules/content/language-redirects.service.ts`). Next.js 16.4 stores a
+ * re-rendered redirect without its Location header, so the proxy answers these first. Admin
+ * redirects win when both have the path.
+ */
+export const REDIS_LANGUAGE_REDIRECTS_HASH = "redirects:languages";
 
 /** A stored value as a redirect, or null when it is missing or breaks a rule (then logged). */
 export function parseStoredRedirect(raw: unknown, log?: Log): StoredRedirect | null {
@@ -91,17 +99,23 @@ export function createRedirectLookup(options: Options) {
     if (now() < skipUntil) return null;
 
     try {
-      const response = await fetchImpl(endpoint, {
+      const keys = lookupKeys(pathname);
+      const response = await fetchImpl(`${endpoint}/pipeline`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(["HMGET", REDIS_REDIRECTS_HASH, ...lookupKeys(pathname)]),
+        body: JSON.stringify([
+          ["HMGET", REDIS_REDIRECTS_HASH, ...keys],
+          ["HMGET", REDIS_LANGUAGE_REDIRECTS_HASH, ...keys],
+        ]),
         cache: "no-store",
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (!response.ok) throw new Error(`status ${response.status}`);
-      const body = (await response.json()) as { result?: unknown; error?: string };
-      if (body.error || !Array.isArray(body.result)) throw new Error(body.error ?? "unexpected reply");
-      const raw = body.result.find((item) => item !== null && item !== undefined) ?? null;
+      const body = (await response.json()) as { result?: unknown; error?: string }[];
+      if (!Array.isArray(body) || body.some((item) => item.error || !Array.isArray(item.result))) {
+        throw new Error(body.find?.((item) => item.error)?.error ?? "unexpected reply");
+      }
+      const raw = body.flatMap((item) => item.result as unknown[]).find((item) => item !== null && item !== undefined) ?? null;
       const value = parseStoredRedirect(raw, log);
       remember(pathname, value);
       return value;

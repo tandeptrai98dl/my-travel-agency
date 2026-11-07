@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { adminCsp, createNonce, isAdminPath, isSecurePath, PUBLIC_CSP_SOURCE, publicCsp, secureCsp } from "./csp";
+import { adminCsp, createNonce, isAdminPath, isSecurePath, PUBLIC_CSP_SOURCE, publicCsp, SECURE_ROUTES, secureAlternatives, secureCsp } from "./csp";
 
 const SUPABASE = "https://x.supabase.co";
 const DSN = "https://publickey@o123.ingest.de.sentry.io/456";
@@ -20,7 +20,7 @@ describe("secure CSP", () => {
       expect(isSecurePath(path), path).toBe(true);
     }
     // Public pages, including look-alikes of the secure paths.
-    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/book/x", "/tai-khoanx", "/dang-nhap/x", "/en/loginx", "/en/accounts", "/login", "/auth/login"]) {
+    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/book/x", "/tai-khoanx", "/en/loginx", "/en/accounts", "/login", "/auth/login"]) {
       expect(isSecurePath(path), path).toBe(false);
     }
   });
@@ -84,8 +84,19 @@ describe("public CSP", () => {
     expect(directive(local, "connect-src")).toBe("connect-src 'self' http://127.0.0.1:54321 https://challenges.cloudflare.com");
   });
 
+  it("is generated from the secure route list, like isSecurePath", () => {
+    expect(PUBLIC_CSP_SOURCE).toBe(
+      "/((?!admin/|admin$|api/|dat-tour/|en/book/|thanh-toan/|en/checkout/|thanh-toan/link/|en/pay/|dang-nhap$|dang-nhap/|en/login$|en/login/|dang-ky$|dang-ky/|en/register$|en/register/|quen-mat-khau$|quen-mat-khau/|en/forgot-password$|en/forgot-password/|dat-lai-mat-khau$|dat-lai-mat-khau/|en/reset-password$|en/reset-password/|tai-khoan$|tai-khoan/|en/account$|en/account/).*)",
+    );
+    expect(SECURE_ROUTES).toEqual(["/book/[tourSlug]", "/checkout/[code]", "/pay/[token]", "/login", "/register", "/forgot-password", "/reset-password", "/account"]);
+  });
+
+  it("covers a route without parameters and the paths below it, in both languages (Phase 5 routes)", () => {
+    expect(secureAlternatives(["/account", "/login"])).toEqual(["tai-khoan$", "tai-khoan/", "en/account$", "en/account/", "dang-nhap$", "dang-nhap/", "en/login$", "en/login/"]);
+  });
+
   it("applies to public pages and /auth, never to the admin, the API or the secure paths", () => {
-    for (const path of ["/", "/en", "/tours", "/tours/ha-long", "/en/tours/x", "/diem-den/viet-nam", "/auth/login", "/auth/update-password", "/robots.txt", "/administrator", "/tai-khoanx", "/en/accounts", "/dang-nhap/x"]) {
+    for (const path of ["/", "/en", "/tours", "/tours/ha-long", "/en/tours/x", "/diem-den/viet-nam", "/auth/login", "/auth/update-password", "/robots.txt", "/administrator", "/tai-khoanx", "/en/accounts", "/dang-nhapx"]) {
       expect(publicSource.test(path), path).toBe(true);
       expect(isSecurePath(path) || isAdminPath(path), path).toBe(false);
     }
@@ -93,6 +104,8 @@ describe("public CSP", () => {
       "/admin", "/admin/tours", "/api/health", "/dat-tour/x", "/thanh-toan/PTA-1", "/thanh-toan/link/abc", "/en/book/x", "/en/checkout/PTA-1/result", "/en/pay/abc",
       "/dang-nhap", "/dang-ky", "/quen-mat-khau", "/dat-lai-mat-khau", "/en/login", "/en/register", "/en/forgot-password", "/en/reset-password",
       "/tai-khoan", "/tai-khoan/booking/PTA-2611-0042", "/tai-khoan/ho-so", "/en/account", "/en/account/bookings", "/en/account/profile",
+      // Below a route without parameters: the secure root answers it (its 404), so it needs the nonce policy.
+      "/dang-nhap/x", "/en/login/x",
     ]) {
       expect(publicSource.test(path), path).toBe(false);
       expect(isSecurePath(path) || isAdminPath(path) || path.startsWith("/api/"), path).toBe(true);

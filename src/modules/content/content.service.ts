@@ -9,6 +9,7 @@ import { logger } from "@/lib/logger";
 import { emptyRichText, richTextMediaIds } from "@/lib/rich-text";
 import { readAlt } from "@/modules/media/media.schemas";
 import { getMediaUrl } from "@/modules/media/media.service";
+import { scheduleLanguageRedirects } from "@/modules/content/language-redirects.service";
 
 import * as repo from "./content.repository";
 import { syncSlugRedirect } from "./redirects.service";
@@ -340,6 +341,7 @@ export async function savePost(values: PostValues): Promise<SaveResult> {
 function refreshPost(id: string) {
   updateTag(POSTS_TAG);
   updateTag(postTag(id));
+  scheduleLanguageRedirects();
 }
 
 /** Drafts and archived articles only: a published one is unpublished first (its URL would break). */
@@ -415,6 +417,7 @@ export async function saveCategory(values: CategoryValues): Promise<SaveResult> 
     if (t.name) await redirectIfSlugChanged("category", locale, before, t.slug);
   }
   updateTag(POSTS_TAG);
+  scheduleLanguageRedirects();
   return { ok: true, id };
 }
 
@@ -513,6 +516,7 @@ export async function savePage(values: PageValues): Promise<SaveResult> {
   const refresh = () => {
     updateTag(PAGES_TAG);
     updateTag(pageTag(values.key));
+    scheduleLanguageRedirects();
   };
 
   for (const locale of saveOrder(values.translations)) {

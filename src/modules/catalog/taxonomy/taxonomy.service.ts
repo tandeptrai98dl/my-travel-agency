@@ -9,6 +9,7 @@ import { getPathname } from "@/i18n/navigation";
 import { readAlt } from "@/modules/media/media.schemas";
 import { syncSlugRedirect } from "@/modules/content/redirects.service";
 import { getMediaUrl } from "@/modules/media/media.service";
+import { scheduleLanguageRedirects } from "@/modules/content/language-redirects.service";
 
 import { CANCELLATION_POLICIES_TAG, TRAVEL_STYLES_TAG } from "../cache-tags";
 import { DESTINATIONS_TAG } from "../destinations.service";
@@ -280,7 +281,10 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
   // A new destination whose translation fails is removed again, so a retry is not "key taken".
   // An existing one keeps what was saved, so the public tree is refreshed either way.
   const fail = async (result: SaveResult) => {
-    if (existing) updateTag(DESTINATIONS_TAG);
+    if (existing) {
+      updateTag(DESTINATIONS_TAG);
+      scheduleLanguageRedirects();
+    }
     else await repo.deleteDestinationRow(id);
     return result;
   };
@@ -310,6 +314,7 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
     if (existing) await redirectIfSlugChanged("destination", locale, existing.destination_translations, t.slug);
   }
   updateTag(DESTINATIONS_TAG);
+  scheduleLanguageRedirects();
   return { ok: true, id };
 }
 
@@ -321,6 +326,7 @@ export async function deleteDestination(id: string): Promise<DeleteResult> {
   const { error } = await repo.deleteDestinationRow(id);
   if (error) return { ok: false, error: error.code === "23503" ? "in_use" : "failed" };
   updateTag(DESTINATIONS_TAG);
+  scheduleLanguageRedirects();
   return { ok: true };
 }
 
@@ -420,7 +426,10 @@ export async function saveTravelStyle(values: TravelStyleValues): Promise<SaveRe
   if (saved.error || !saved.data) return mapWriteError(saved.error);
   const id = saved.data.id;
   const fail = async (result: SaveResult) => {
-    if (existing) updateTag(TRAVEL_STYLES_TAG);
+    if (existing) {
+      updateTag(TRAVEL_STYLES_TAG);
+      scheduleLanguageRedirects();
+    }
     else await repo.deleteTravelStyleRow(id);
     return result;
   };
@@ -446,6 +455,7 @@ export async function saveTravelStyle(values: TravelStyleValues): Promise<SaveRe
     if (existing) await redirectIfSlugChanged("travelStyle", locale, existing.travel_style_translations, t.slug);
   }
   updateTag(TRAVEL_STYLES_TAG);
+  scheduleLanguageRedirects();
   return { ok: true, id };
 }
 
@@ -457,6 +467,7 @@ export async function deleteTravelStyle(id: string): Promise<DeleteResult> {
   const { error } = await repo.deleteTravelStyleRow(id);
   if (error) return { ok: false, error: error.code === "23503" ? "in_use" : "failed" };
   updateTag(TRAVEL_STYLES_TAG);
+  scheduleLanguageRedirects();
   return { ok: true };
 }
 
