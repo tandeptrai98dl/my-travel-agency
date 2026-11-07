@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { type SubscribeState, subscribeToNewsletter } from "@/modules/content/public/newsletter.actions";
@@ -41,6 +42,8 @@ export function NewsletterForm({ locale, siteKey, privacyHref, labels }: Props) 
   const privacyId = useId();
   const disabled = !siteKey;
   const { reset } = turnstile;
+  // Keeps what was typed when the server answers with an error (React resets form actions).
+  const onSubmit = useSubmitWithoutReset(action, turnstile.onSubmit);
 
   // A used token cannot be submitted twice: get a fresh one after every answer.
   useEffect(() => {
@@ -57,7 +60,7 @@ export function NewsletterForm({ locale, siteKey, privacyHref, labels }: Props) 
       action={action}
       onFocus={turnstile.start}
       onPointerDown={turnstile.start}
-      onSubmit={turnstile.onSubmit}
+      onSubmit={onSubmit}
       className="flex w-full max-w-xl flex-col gap-3"
     >
       <input type="hidden" name="locale" value={locale} />

@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { isRedisConfigured, type RedisCommand, redisPipeline, redisTransaction } from "@/lib/redis";
 
+import { rebuildLanguageRedirects } from "./language-redirects.service";
 import * as repo from "./redirects.repository";
 import { REDIRECTS_PAGE_SIZE, type RedirectValues } from "./redirects.schemas";
 
@@ -112,6 +113,8 @@ export async function resyncRedirects(): Promise<{ ok: true; count: number; sync
   commands.push(rows.length ? ["RENAME", REDIS_STAGING_KEY, REDIS_REDIRECTS_KEY] : ["DEL", REDIS_REDIRECTS_KEY]);
   // All or nothing: the proxy never reads a half-built hash.
   const synced = await sync(commands, "resync", true);
+  // The other-language slug redirects live in their own hash; rebuild them too (#40 review).
+  await rebuildLanguageRedirects();
   return synced ? { ok: true, count: rows.length, synced } : { ok: false, error: "syncFailed" };
 }
 

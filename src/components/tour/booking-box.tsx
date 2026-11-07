@@ -65,12 +65,20 @@ export async function BookingBox({ locale, tour, bookable, contact, onlineBookin
             <a href={book}>{t("book")}</a>
           </Button>
         )}
-        {contactPage && !book && (
+        {isPrivate && features.inquiry ? (
+          // The inquiry form at the end of the page (Phase 5 PR 5W).
           <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
-            <Link href={{ pathname: "/contact", query: { tour: tour.code, ...(next && !isPrivate ? { date: next.startDate } : {}) } }}>
-              {isPrivate ? t("contactPrivate") : t("contact")}
-            </Link>
+            <a href="#tour-inquiry">{t("contactPrivate")}</a>
           </Button>
+        ) : (
+          contactPage &&
+          !book && (
+            <Button asChild size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">
+              <Link href={{ pathname: "/contact", query: { tour: tour.code, ...(next && !isPrivate ? { date: next.startDate } : {}) } }}>
+                {isPrivate ? t("contactPrivate") : t("contact")}
+              </Link>
+            </Button>
+          )
         )}
         {tel && (
           <Button asChild variant={contactPage || book ? "secondary" : "default"} size="lg" className="h-auto min-h-12 whitespace-normal py-3 text-center">

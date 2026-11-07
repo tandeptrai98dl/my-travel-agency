@@ -38,7 +38,7 @@ export async function TailorMadeCta({ locale, contact, image }: Props) {
           <p className="max-w-prose text-body-lg text-muted-foreground">{t("text")}</p>
           <div className="flex flex-wrap gap-3">
             {features.contactPage && (
-              <Link href="/contact" className={buttonVariants({ variant: "gold", size: "lg" })}>
+              <Link href={features.inquiry ? "/tailor-made" : "/contact"} className={buttonVariants({ variant: "gold", size: "lg" })}>
                 {t("contact")}
               </Link>
             )}

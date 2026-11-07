@@ -24,6 +24,7 @@ vi.mock("@/lib/redis", () => ({
   redisTransaction: redis.redisTransaction,
 }));
 vi.mock("@/lib/auth/require-role", () => ({ requirePermission: vi.fn(async () => ({ id: "u1", role: "editor" })) }));
+vi.mock("./language-redirects.service", () => ({ rebuildLanguageRedirects: vi.fn(async () => ({ synced: true, count: 0 })), scheduleLanguageRedirects: vi.fn() }));
 
 const { requirePermission } = await import("@/lib/auth/require-role");
 const service = await import("./redirects.service");

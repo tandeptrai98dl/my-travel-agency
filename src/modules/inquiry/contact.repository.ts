@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createPublicClient } from "@/lib/supabase/public";
 
 import type { ContactInput } from "./contact.schemas";
 
@@ -20,9 +19,4 @@ export async function createContactInquiry(input: ContactInput, consentVersion: 
     p_ip: ip ?? undefined,
     p_user_agent: userAgent ?? undefined,
   });
-}
-
-/** Whether a tour code names a published tour (anon read, RLS: published tours only). */
-export async function findPublishedTourByCode(code: string) {
-  return createPublicClient().from("tours").select("id").eq("code", code).eq("status", "published").maybeSingle();
 }

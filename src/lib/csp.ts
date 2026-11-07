@@ -9,15 +9,54 @@
  * Hosts come from the validated public env (Supabase, Sentry ingest), never hard-coded.
  */
 
+import { localizedPath, type Locale } from "../i18n/paths";
+import type { pathnames } from "../i18n/pathnames";
+
 /**
- * Localized paths the secure root serves (src/i18n/pathnames.ts), in both languages. Only these:
- * a prefix the root does not serve yet would be answered by the public root, whose prerendered
- * scripts have no nonce. Checkout (Phase 4), then the customer sign-in pages (exact paths) and the
- * account (the page and everything below it) from Phase 5 PR 5A. PUBLIC_CSP_SOURCE excludes the
- * same paths; a unit test keeps the two in step.
+ * Routes the secure root serves (`src/app/(secure)/[locale]`, keys of src/i18n/pathnames.ts). This
+ * one list gives both the proxy's nonce paths (`isSecurePath`) and the paths excluded from the
+ * public nonce-free policy (`PUBLIC_CSP_SOURCE`), in both languages, so they cannot drift. Only
+ * routes the secure root really serves: any other path is answered by the public root, whose
+ * prerendered scripts have no nonce.
  */
-const SECURE_PATH =
-  /^\/(?:dat-tour\/|thanh-toan\/|en\/book\/|en\/checkout\/|en\/pay\/|(?:dang-nhap|dang-ky|quen-mat-khau|dat-lai-mat-khau|en\/login|en\/register|en\/forgot-password|en\/reset-password)$|(?:tai-khoan|en\/account)(?:\/|$))/;
+export const SECURE_ROUTES = [
+  "/book/[tourSlug]",
+  "/checkout/[code]",
+  "/pay/[token]",
+  // Phase 5 PR 5A: the customer sign-in pages and the account (the page and everything below it).
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/account",
+] as const satisfies readonly (keyof typeof pathnames)[];
+
+const LOCALES: Locale[] = ["vi", "en"];
+
+/**
+ * Each secure route as regex alternatives without the leading "/": a route with parameters covers
+ * everything under its static prefix (`dat-tour/`), one without covers itself and below
+ * (`tai-khoan$`, `tai-khoan/`). Plain alternatives, so path-to-regexp accepts them too.
+ */
+export function secureAlternatives(routes: readonly (keyof typeof pathnames)[] = SECURE_ROUTES): string[] {
+  const parts = new Set<string>();
+  for (const route of routes) {
+    for (const locale of LOCALES) {
+      const path = localizedPath(locale, { pathname: route, params: {} } as Parameters<typeof localizedPath>[1]).slice(1);
+      const bracket = path.indexOf("[");
+      if (bracket >= 0) parts.add(path.slice(0, bracket).replace(/[.*+?^${}()|\\]/g, "\\$&"));
+      else {
+        const escaped = path.replace(/[.*+?^${}()|\\]/g, "\\$&");
+        parts.add(`${escaped}$`);
+        parts.add(`${escaped}/`);
+      }
+    }
+  }
+  return [...parts];
+}
+
+const SECURE_ALTERNATIVES = secureAlternatives();
+const SECURE_PATH = new RegExp(`^/(?:${SECURE_ALTERNATIVES.join("|")})`);
 
 export function isSecurePath(pathname: string): boolean {
   return SECURE_PATH.test(pathname);
@@ -30,11 +69,10 @@ export function isAdminPath(pathname: string): boolean {
 
 /**
  * Paths that get the public nonce-free policy from next.config.ts (a path-to-regexp source):
- * everything except the admin, the API and the secure paths above, which the proxy covers or
- * which serve no pages. Kept in step with SECURE_PATH by a unit test.
+ * everything except the admin, the API and the secure routes, which the proxy covers or which
+ * serve no pages.
  */
-export const PUBLIC_CSP_SOURCE =
-  "/((?!admin/|admin$|api/|dat-tour/|thanh-toan/|en/book/|en/checkout/|en/pay/|dang-nhap$|dang-ky$|quen-mat-khau$|dat-lai-mat-khau$|en/login$|en/register$|en/forgot-password$|en/reset-password$|tai-khoan$|tai-khoan/|en/account$|en/account/).*)";
+export const PUBLIC_CSP_SOURCE = `/((?!${["admin/", "admin$", "api/", ...SECURE_ALTERNATIVES].join("|")}).*)`;
 
 export function createNonce(): string {
   const bytes = new Uint8Array(16);

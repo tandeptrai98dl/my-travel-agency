@@ -2,20 +2,23 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createRedirectLookup, lookupKeys, parseStoredRedirect } from "./redirect-lookup";
 
-/** A fake Upstash REST endpoint over an in-memory hash, counting calls. */
-function fakeRedis(hash: Record<string, string>, behaviour: "ok" | "error" | "hang" | "http500" = "ok") {
+/** A fake Upstash REST pipeline over in-memory hashes, counting calls. */
+function fakeRedis(hash: Record<string, string>, behaviour: "ok" | "error" | "hang" | "http500" = "ok", languages: Record<string, string> = {}) {
   const calls: unknown[][] = [];
   const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
-    const command = JSON.parse(String(init?.body)) as string[];
-    calls.push(command);
+    const commands = JSON.parse(String(init?.body)) as string[][];
+    calls.push(commands[0]);
     if (behaviour === "error") throw new TypeError("fetch failed");
     if (behaviour === "http500") return new Response("{}", { status: 500 });
     if (behaviour === "hang") {
       return new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal!.reason)));
     }
-    const [name, key, ...fields] = command;
-    expect([name, key]).toEqual(["HMGET", "redirects"]);
-    return Response.json({ result: fields.map((field) => hash[field] ?? null) });
+    expect(commands.map(([name, key]) => [name, key])).toEqual([
+      ["HMGET", "redirects"],
+      ["HMGET", "redirects:languages"],
+    ]);
+    const [, ...fields] = commands[0].slice(1);
+    return Response.json([{ result: fields.map((field) => hash[field] ?? null) }, { result: fields.map((field) => languages[field] ?? null) }]);
   });
   return { fetchImpl: fetchImpl as unknown as typeof fetch, calls };
 }
@@ -63,7 +66,17 @@ describe("createRedirectLookup", () => {
       ["HMGET", "redirects", "/tour-c%C5%A9", "/tour-cũ"],
       ["HMGET", "redirects", "/khong-co"],
     ]);
-    expect(vi.mocked(fetchImpl).mock.calls[0][0]).toBe("https://redis.example");
+    expect(vi.mocked(fetchImpl).mock.calls[0][0]).toBe("https://redis.example/pipeline");
+  });
+
+  it("also answers other-language slugs, after the admin's redirects", async () => {
+    const { fetchImpl } = fakeRedis({ "/en/tours/a": entry("/admin-wins", 302) }, "ok", {
+      "/en/tours/a": entry("/en/tours/x"),
+      "/tours/b": entry("/tours/y"),
+    });
+    const lookup = createRedirectLookup({ url: "https://r", token: "t", fetch: fetchImpl });
+    expect(await lookup("/en/tours/a")).toEqual({ to: "/admin-wins", status: 302 });
+    expect(await lookup("/tours/b")).toEqual({ to: "/tours/y", status: 301 });
   });
 
   it("caches hits and misses for 60 s per instance", async () => {

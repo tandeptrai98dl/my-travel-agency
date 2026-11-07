@@ -1,0 +1,80 @@
+{
+  "Inquiry": {
+    "name": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại (không bắt buộc)",
+    "preferred": "Bạn muốn chúng tôi liên hệ qua",
+    "channels": { "email": "Email", "phone": "Điện thoại", "zalo": "Zalo", "whatsapp": "WhatsApp" },
+    "adults": "Người lớn",
+    "children": "Trẻ em (dưới 12 tuổi)",
+    "month": "Tháng dự định khởi hành",
+    "monthHint": "Chưa chắc chắn cũng không sao.",
+    "monthUndecided": "Chưa quyết định",
+    "message": "Lời nhắn",
+    "messagePlaceholder": "Dịp đặc biệt, nhịp độ mong muốn, yêu cầu ăn uống…",
+    "consent": "Tôi đồng ý để công ty lưu và dùng thông tin này để tư vấn chuyến đi, theo",
+    "privacyLink": "chính sách bảo mật",
+    "newTab": "(mở trong thẻ mới)",
+    "sending": "Đang gửi…",
+    "unavailable": "Biểu mẫu tạm thời chưa nhận yêu cầu. Vui lòng gọi hotline hoặc gửi email cho chúng tôi.",
+    "errors": {
+      "required": "Vui lòng điền thông tin này.",
+      "tooLong": "Nội dung quá dài.",
+      "invalidEmail": "Email chưa đúng định dạng.",
+      "invalidPhone": "Số điện thoại chưa đúng định dạng.",
+      "consentRequired": "Vui lòng đồng ý với chính sách bảo mật để gửi yêu cầu.",
+      "invalid": "Giá trị chưa hợp lệ.",
+      "verification": "Chưa xác minh được bạn không phải máy. Vui lòng thử lại.",
+      "rateLimited": "Bạn đã gửi nhiều yêu cầu. Vui lòng thử lại sau ít phút.",
+      "unavailable": "Biểu mẫu tạm thời chưa nhận yêu cầu. Vui lòng gọi hotline hoặc gửi email cho chúng tôi.",
+      "failed": "Chưa gửi được yêu cầu. Vui lòng thử lại."
+    },
+    "success": {
+      "title": "Chúng tôi đã nhận yêu cầu của bạn",
+      "text": "Mã yêu cầu của bạn là {code}. Một email xác nhận sẽ được gửi tới bạn.",
+      "textNoCode": "Chúng tôi đã nhận yêu cầu của bạn.",
+      "next": "Chuyên viên tư vấn sẽ liên hệ trong vòng một ngày làm việc để cùng bạn phác thảo hành trình.",
+      "tours": "Xem các hành trình",
+      "home": "Về trang chủ"
+    }
+  },
+  "TailorMade": {
+    "metaTitle": "Thiết kế hành trình riêng",
+    "metaDescription": "Kể cho chúng tôi về chuyến đi bạn hình dung, chúng tôi sẽ thiết kế lịch trình riêng cho bạn.",
+    "eyebrow": "Thiết kế riêng",
+    "title": "Hành trình của riêng bạn",
+    "intro": "Năm bước ngắn để chúng tôi hiểu chuyến đi bạn mong muốn. Chuyên viên tư vấn sẽ gửi bạn bản phác thảo đầu tiên, không ràng buộc.",
+    "steps": ["Điểm đến", "Thời gian", "Đoàn khách", "Ngân sách & phong cách", "Liên hệ"],
+    "stepTitles": ["Bạn muốn đi đâu?", "Khi nào và bao lâu?", "Ai sẽ cùng đi?", "Ngân sách và phong cách", "Chúng tôi liên hệ bạn thế nào?"],
+    "stepOf": "Bước {step} trên {count}",
+    "destinationsHint": "Chọn một hoặc nhiều nơi, hoặc để trống nếu bạn muốn được gợi ý.",
+    "destinationsOther": "Nơi khác (không bắt buộc)",
+    "flexible": "Ngày đi của tôi linh hoạt",
+    "duration": "Số ngày (không bắt buộc)",
+    "durationHint": "Từ 1 đến 60 ngày.",
+    "budget": "Ngân sách mỗi khách",
+    "budgets": {
+      "under_30m": "Dưới 30 triệu đồng",
+      "30_60m": "30–60 triệu đồng",
+      "60_100m": "60–100 triệu đồng",
+      "100_200m": "100–200 triệu đồng",
+      "over_200m": "Trên 200 triệu đồng",
+      "not_sure": "Chưa rõ, cần tư vấn"
+    },
+    "style": "Phong cách chuyến đi",
+    "styleNone": "Chưa chọn",
+    "country": "Quốc gia (không bắt buộc)",
+    "company": "Tên công ty (không bắt buộc)",
+    "companyHint": "Dành cho đoàn doanh nghiệp.",
+    "messageHint": "Dịp đặc biệt, nhịp độ mong muốn, yêu cầu ăn uống…",
+    "next": "Tiếp tục",
+    "back": "Quay lại",
+    "submit": "Gửi yêu cầu",
+    "draftRestored": "Chúng tôi đã giữ lại những gì bạn điền lần trước trên trình duyệt này."
+  },
+  "TourInquiry": {
+    "title": "Yêu cầu tư vấn hành trình này",
+    "intro": "Hành trình riêng được điều chỉnh theo ngày và đoàn của bạn. Gửi yêu cầu, chuyên viên tư vấn sẽ gửi báo giá.",
+    "submit": "Gửi yêu cầu tư vấn"
+  }
+}

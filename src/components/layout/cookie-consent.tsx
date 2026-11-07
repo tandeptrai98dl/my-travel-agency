@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CONSENT_OPEN_EVENT, readConsentCookie } from "@/lib/consent";
 
@@ -15,18 +15,13 @@ type Opening = { settingsFrom: HTMLElement | null | false };
 /** Mounts the cookie consent banner when it is needed (see `CookieConsentBanner`). */
 export function CookieConsent({ privacyHref }: { privacyHref: string }) {
   const [opening, setOpening] = useState<Opening | null>(null);
-  const loaded = useRef(false);
 
   useEffect(() => {
-    if (readConsentCookie(document.cookie) === null) {
-      loaded.current = true;
-      setOpening({ settingsFrom: false });
-    }
-    // Before the banner is loaded, a "Cookie settings" request loads it with its settings open;
-    // afterwards the banner listens itself.
+    if (readConsentCookie(document.cookie) === null) setOpening({ settingsFrom: false });
+    // A "Cookie settings" request loads the banner with its settings open, also while its chunk is
+    // still loading (the latest request wins). Once mounted, the banner listens itself and reads
+    // `openSettingsFrom` only on mount, so later updates here change nothing.
     const open = (event: Event) => {
-      if (loaded.current) return;
-      loaded.current = true;
       const detail = event instanceof CustomEvent ? event.detail : null;
       setOpening({ settingsFrom: detail instanceof HTMLElement ? detail : null });
     };

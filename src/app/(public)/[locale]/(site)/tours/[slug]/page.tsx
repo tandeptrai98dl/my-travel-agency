@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { tourInquiryLabels } from "@/components/inquiry/inquiry-labels";
 import { TourDetailView } from "@/components/tour/tour-detail-view";
 import { getPathname } from "@/i18n/navigation";
 import { slugParams } from "@/i18n/static-params";
 import { isLocale, routing } from "@/i18n/routing";
+import { features } from "@/lib/features";
 import { openGraphImageUrl } from "@/lib/images";
 import {
   getPublishedTourSlugs,
@@ -17,6 +19,9 @@ import {
 } from "@/modules/catalog/public/tour-public.service";
 import type { Locale } from "@/modules/catalog/public/types";
 import { onlineBookingAvailable } from "@/modules/catalog/public/online-booking.service";
+import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
+import { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
+import { inquiryAvailability } from "@/modules/inquiry/tailor-made.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -75,6 +80,14 @@ export default async function TourDetailPage({ params }: Props) {
     getPublicSettings(),
     onlineBookingAvailable(),
   ]);
+  // Private tours take an inquiry on the page (Phase 5 PR 5W).
+  const inquiry =
+    tour.type === "private" && features.inquiry
+      ? await (async () => {
+          const [privacy, labels, ti] = await Promise.all([getPrivacyConsent(locale), tourInquiryLabels(locale), getTranslations({ locale, namespace: "TourInquiry" })]);
+          return { siteKey: privacy ? inquiryAvailability().siteKey : null, privacyHref: privacy?.href ?? null, labels, title: ti("title"), intro: ti("intro"), sendInquiry };
+        })()
+      : null;
   return (
     <TourDetailView
       locale={locale}
@@ -84,6 +97,7 @@ export default async function TourDetailPage({ params }: Props) {
       contact={{ phone: settings.contact?.phone ?? null, email: settings.contact?.email ?? null }}
       onlineBooking={onlineBooking}
       loadDepartures={getTourDepartures}
+      inquiry={inquiry}
     />
   );
 }

@@ -4,6 +4,7 @@ import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
 import { adminCsp, createNonce, isAdminPath, isSecurePath, secureCsp } from "@/lib/csp";
 import { createRedirectLookup } from "@/lib/redirect-lookup";
+import { isSitePath } from "@/lib/site-path";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
@@ -43,13 +44,16 @@ const lookupRedirect = (() => {
 export async function proxy(request: NextRequest) {
   if (METADATA_IMAGE.test(request.nextUrl.pathname)) return NextResponse.next();
 
-  // 0. A redirect saved in the admin, for public page requests only. The target is used exactly
+  // 0. A redirect saved in the admin, or the other language's slug of a page (written on content
+  // saves), for public page requests only. The target is used exactly
   // as stored (already checked by the lookup) and must stay on this site.
   const { pathname } = request.nextUrl;
   if (
     lookupRedirect &&
     (request.method === "GET" || request.method === "HEAD") &&
-    pathname !== "/" &&
+    // Only paths that could be a saved source, so arbitrary request paths neither fill the cache
+    // nor cost Upstash commands (#40 review).
+    isSitePath(pathname, { source: true }) &&
     !NON_LOCALIZED.test(pathname) &&
     !isSecurePath(pathname)
   ) {

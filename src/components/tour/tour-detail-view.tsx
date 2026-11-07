@@ -27,6 +27,10 @@ import { RelatedTours } from "./related-tours";
 import { ReviewSummary } from "./review-summary";
 import { tourJsonLd } from "./tour-json-ld";
 import { TourFactsBar } from "./tour-facts-bar";
+import { LazyTourInquiryForm } from "@/components/inquiry/tour-inquiry-lazy";
+import type { TourInquiryLabels } from "@/components/inquiry/tour-inquiry-form";
+import type { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
+
 import { TourGallery } from "./tour-gallery";
 import { TourHeader } from "./tour-header";
 import { TourHighlights } from "./tour-highlights";
@@ -43,13 +47,15 @@ type Props = {
   loadDepartures: (tourId: string) => Promise<Departure[]>;
   /** Staff preview: no structured data, alternates or breadcrumbs JSON-LD. */
   preview?: boolean;
+  /** Private tours (Phase 5 PR 5W): the inquiry form at the end of the page, while `features.inquiry` is on. */
+  inquiry?: { siteKey: string | null; privacyHref: string | null; labels: TourInquiryLabels; title: string; intro: string; sendInquiry: typeof sendInquiry } | null;
 };
 
 /**
  * The public tour page body (Phase 3 spec PR H): cached content around two live sections,
  * departures and the booking box, each in Suspense behind its own error boundary.
  */
-export async function TourDetailView({ locale, tour, related, reviews, contact, onlineBooking, loadDepartures, preview = false }: Props) {
+export async function TourDetailView({ locale, tour, related, reviews, contact, onlineBooking, loadDepartures, preview = false, inquiry = null }: Props) {
   // One departures read per render for the table and the booking box.
   const departuresOnce = cache(loadDepartures);
   const [t, tCard] = await Promise.all([
@@ -228,6 +234,14 @@ export async function TourDetailView({ locale, tour, related, reviews, contact, 
               <section aria-labelledby="faq" className={sectionClass}>
                 <Heading level={2} id="faq">{t("faq")}</Heading>
                 <FaqList items={tour.faqs} />
+              </section>
+            )}
+
+            {isPrivate && inquiry && (
+              <section id="tour-inquiry" aria-labelledby="tour-inquiry-title" className={sectionClass}>
+                <Heading level={2} id="tour-inquiry-title">{inquiry.title}</Heading>
+                <p className="max-w-prose text-body text-muted-foreground">{inquiry.intro}</p>
+                <LazyTourInquiryForm locale={locale} tourCode={tour.code} siteKey={inquiry.siteKey} privacyHref={inquiry.privacyHref} labels={inquiry.labels} sendInquiry={inquiry.sendInquiry} />
               </section>
             )}
           </div>

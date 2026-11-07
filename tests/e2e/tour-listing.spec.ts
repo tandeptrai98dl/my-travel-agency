@@ -120,7 +120,7 @@ test.describe("tour listing", () => {
   test("no matching tours: suggestions, a contact link and Clear filters", async ({ page }) => {
     await page.goto("/tours?q=khong-co-hanh-trinh-nay&scope=domestic");
     await expect(page.getByRole("heading", { name: "Chưa có hành trình phù hợp" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Liên hệ tư vấn" }).first()).toHaveAttribute("href", "/lien-he");
+    await expect(page.getByRole("link", { name: "Thiết kế hành trình riêng" }).first()).toHaveAttribute("href", "/thiet-ke-rieng");
     await page.getByRole("link", { name: "Xoá bộ lọc" }).click();
     await expect(page).toHaveURL(/\/tours$/);
     await expect(count(page)).toHaveText("31 hành trình");
