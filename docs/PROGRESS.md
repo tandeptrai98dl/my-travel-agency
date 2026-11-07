@@ -4,22 +4,88 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; Phase 3 in progress (Stream B); Phase 4 in progress (Stream A); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 4 PR 4A (#25, deadlock fix in progress), then 4C, 4F, 4E; 4B and 4D after the route-group move. Stream B: the route-group move (`src/app/(public)/[locale]`), then PRs J–M per `docs/specs/phase-3-public-site.md`. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; Phase 3 in progress (Stream B: PRs H–K merged, L and M left); Phase 4 in progress (Stream A: 4A, 4C, 4F merged; 4B in review; 4D and 4E left); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: 4B (#32, in review), then 4D (quotes and payment links) and 4E (emails). Stream B: PR L (tour listing, booking box links to 4B), then PR M (SEO, CSP, redirects, real 404/308). Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
 Open items:
 - Publishing a language in the journal, page and taxonomy editors does not yet remove a redirect from that path (tours do, #22).
-- Shared rate limiter fails closed; `failOpen` option comes in Stream B's PR J, bookings use it (ADR-033).
 - Email client (`email.service.ts`): `skipped` rows in `email_logs` and status-code-only error logs, in Phase 4 PR 4E.
-- Hero lead text contrast over light photos (PR J).
 - Phase 3 (PR 15 and PR 18 reviews): PR M must serve real 404s for unpublished tours and real 308s for other-language slugs (E2E on status codes); name the `/auth/*` CSP; Turbopack proof in PR M; the proxy re-checks Redis redirect targets with the site-path rules.
 - Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
 - Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
+- Migrations: a branch's migration timestamps must be later than the newest migration on main when it merges; rename on rebase (the stream ranges only prevent name clashes). ADR numbers: the branch that merges second renumbers.
+- Before go-live (Phase 4 spec): VNPay sandbox vectors for cancelled and failed IPNs, SePay/Casso/VNPay source-IP allow-lists, Casso signature check, `VNPAY_STUB` never on staging with real-looking data.
+- Contact form and newsletter stay disabled until the owner's Turnstile, Upstash and Resend keys exist and a privacy policy is published.
+
 ## Log
+
+### 2026-11-07 (Phase 3: PR K, pages, journal, reviews, contact)
+
+PR #31, branch `feat/p3-pages` (spec steps 15–16; PR #30 review minors).
+
+- Done:
+  - About, FAQ (`FAQPage`) and policy pages by per-language slugs.
+  - Journal list, topics and articles (`Article`).
+  - Reviews page (approved only).
+  - Contact page with the form saved as an inquiry (`create_contact_inquiry()`, team email; Zod, fail-closed rate limit, Turnstile; disabled without keys or a published privacy policy).
+  - Consent is recorded with the version of the published privacy text, for the newsletter too (ADR-035). The Turnstile re-submit fix is shared by both forms.
+  - Footer and banner policy links use real slugs. The booking box and tailor-made links open the contact page. Sample content added to the seed.
+  - #30 minors: hreflang only where the destination is reachable; "48 of N".
+- Verified locally: lint, typecheck, 611 unit tests, pgTAP (31: 12), production build, axe at 375/1280 px. CI: E2E.
+- Known issue closed: footer and banner policy links built from page keys.
+- Owner-blocked: Turnstile, Upstash and Resend for the contact form.
+- Independent review: approved; minors fixed before merge (migration order, Turnstile token, consent version from the privacy page, ADR-035).
+
+### 2026-11-07 (Phase 3 — PR J: destinations and travel styles)
+
+PR #30, branch `feat/p3-destinations` (spec steps 13–14; PR #24 review minors).
+
+- Done:
+  - `/diem-den` with countries, regions, places and tour counts; destination pages (summary, best time, places below, rich content, tours of the destination and below); travel style pages (tours, other styles); metadata, hreflang, BreadcrumbList and ItemList JSON-LD, error states; the homepage cards and menus open them.
+  - `rateLimit({ failOpen })` (default closed, newsletter closed, Phase 4 open and logged; ADR-029); hero text at 4.5:1 over photos; newsletter pgTAP moved to the 3x range.
+  - Docs name the moved public tree.
+- Verified locally: lint, typecheck, 566 unit tests, pgTAP, production build, axe at 375/1280 px; CI: E2E.
+- Deviations: counts from anon reads (no migration); pages list up to 48 tours.
+- Independent review: approved; two minors fixed in #31.
+
+### 2026-11-07 (Phase 4 — 4F: admin bookings and payments)
+
+PR #29, branch `feat/p4-admin-bookings` (migrations `20261109130000`, `20261109131000`).
+
+- Role-checked definer functions: `record_manual_payment`, `record_refund` (capped, note required, accountant or admin at aal2), `assign_unmatched_transfer` (webhook amount, assigned once), `staff_cancel_booking` (audited), `request_cancellation`, `resolve_attention` with `attention_resolvers()` (money reasons: accountant or admin at aal2; cancellation requests: operator or admin).
+- `/admin/bookings` (filters, detail with lines, travellers, payments, timeline, role-gated actions), `/admin/bookings/attention`, `/admin/payments` (ledger, unmatched transfers), dashboard counts; README runbooks.
+- Verified: pgTAP 18 (39), concurrent refunds probed (second refused), E2E for sales, operator and aal2 accountant; CI green.
+- Independent review: changes requested (sales could clear money flags), fixed with `attention_resolvers()`; re-review approved.
+
+### 2026-11-07 (Phase 3: public route group)
+
+PR #28, branch `chore/p3-public-route-group`.
+
+- Done: moved `src/app/[locale]` to `src/app/(public)/[locale]` (`git mv`; one import path), ready for Phase 4's `(secure)/[locale]` root.
+- Verified: lint, typecheck, unit tests, production build with an unchanged route table; CI.
+- Independent review: approved (mechanical move).
+
+### 2026-11-07 (Phase 4 — 4C: payment gateways)
+
+PR #26, branch `feat/p4-gateways`.
+
+- `PaymentProvider` interface; VNPay sandbox adapter (HMAC-SHA512 checked against an independent vector, `vnp_TmnCode` and amount checks, success from both result codes, responses 97/01/04/02/00/99, return page display only); VietQR payload; SePay/Casso webhook (constant-time key check, incoming credits only, reference tokens including spaced or dashed ones).
+- Off modes never record money; `VNPAY_STUB` is refused in production and signs its IPN with the configured secret.
+- Verified: unit tests and E2E in CI.
+- Independent review: approved; cheap backlog fixed before merge; go-live checks listed in the spec.
+
+### 2026-11-07 (Phase 4 — 4A: booking core)
+
+PR #25, branch `feat/p4-booking-core` (migrations `20261109110000`, `20261109120000`).
+
+- `pricing.ts` (integer dong, deposit rounding) and `state-machine.ts`.
+- Service-role definer functions: drafts (prices rechecked against the departure, party rules), `reserve_and_create_payment` (conditional seat update, `price_changed`, `sold_out`, method switch), `record_payment_event` (idempotent via `webhook_events`; extra rows flagged for attempts that are no longer pending; late payments; never confirms a cancelled booking), `expire_holds` (`skip locked`), cancellation, completion, `check_seat_invariant` with a failing alert job; `pg_cron` schedules.
+- Verified: pgTAP 16 (80) and 17; E2E for the last-seat race (one hold, one `sold_out`) and ten identical IPNs (one payment); two-session deadlock regression in CI.
+- Independent review: changes requested (deadlock between `expire_holds()` and a concurrent payment, reproduced), fixed with `skip locked` and a retry mapping; re-review approved.
 
 ### 2026-11-07 (Phase 3 — PR I: homepage)
 
@@ -399,7 +465,6 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
-- Phase 3: footer and banner policy links use page keys (`/chinh-sach/privacy`); resolve the per-language slugs from `page_translations` when the policy pages are built.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
 - Phase 4: when the `/pay/[token]` routes land, extend the Sentry unit test to check the envelope header (`trace.transaction`) for tokens too.
 - Phase 3: the CSP needs `connect-src` for the Sentry ingest host (or a Sentry `tunnelRoute`). Phase 6 legal pages: the privacy policy must name Sentry as a processor.
