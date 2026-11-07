@@ -76,7 +76,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   │   ├── (booking)/        # book/[tourSlug], checkout/[code] (payment, result),
     │   │   │                     # pay/[token], booking-lookup
     │   │   ├── (auth)/           # login, register, forgot-password, reset-password
-    │   │   └── account/          # overview, bookings, profile
+    │   │   └── account/          # overview, bookings, bookings/[code], profile
     │   ├── auth/                 # confirm (existing), callback (OAuth), error
     │   ├── admin/                # Vietnamese-only admin, role + MFA checked in layout
     │   ├── api/                  # payments/vnpay/ipn, webhooks/bank-transfer,
@@ -98,7 +98,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     └── proxy.ts
 ```
 
-The starter's `/auth/*` pages stay usable for staff until the localized customer auth pages land in Phase 5. The starter tutorial content (`src/components/tutorial/`, `src/app/protected/`) is removed in Phase 0.
+Since Phase 5 PR 5A customers sign in on the localized pages of the secure root; staff keep the Vietnamese `/auth/login`, `/auth/forgot-password` and `/auth/update-password` (Server Actions, nonce-free public CSP), `/auth/sign-up` and `/auth/sign-up-success` redirect (308) to `/dang-ky`, and `/auth/confirm` and `/auth/callback` finish email links and Google sign-in on the server. The starter tutorial content (`src/components/tutorial/`, `src/app/protected/`) is removed in Phase 0.
 
 **Dependency rules**: `app` → `modules` → `lib`. Components receive props and never import repositories or Supabase clients. Modules call each other through services. `lib/supabase/admin.ts` has `import 'server-only'` and is imported only in server-side `modules/*`.
 
@@ -106,7 +106,8 @@ The starter's `/auth/*` pages stay usable for staff until the localized customer
 
 | Module | Responsibility | Depends on |
 | --- | --- | --- |
-| identity | Supabase Auth, profiles, roles, staff MFA | — |
+| identity | Supabase Auth on the server (customer and staff sign-in, sign-up, reset, Google), profiles, roles, staff MFA | content (privacy version) |
+| account | The customer account area: bookings through the customer-safe functions, travellers, profile and marketing choice | identity, content |
 | catalog | Tours, departures, prices, destinations, travel styles, search | media |
 | booking | Pricing, seat holds, booking lifecycle, travellers | catalog, payment, notification |
 | payment | Payment creation, IPN/webhooks, reconciliation, refunds | booking (via callback) |
@@ -203,7 +204,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Booking lookup | `/tra-cuu-booking` | `/en/booking-lookup` |
 | Newsletter confirmation (noindex) | `/ban-tin/xac-nhan` | `/en/newsletter/confirm` |
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
-| Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/profile` |
+| Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |
 
 Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries`, `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 

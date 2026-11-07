@@ -36,5 +36,6 @@ export const pathnames = {
   "/reset-password": { vi: "/dat-lai-mat-khau", en: "/reset-password" },
   "/account": { vi: "/tai-khoan", en: "/account" },
   "/account/bookings": { vi: "/tai-khoan/booking", en: "/account/bookings" },
+  "/account/bookings/[code]": { vi: "/tai-khoan/booking/[code]", en: "/account/bookings/[code]" },
   "/account/profile": { vi: "/tai-khoan/ho-so", en: "/account/profile" },
 } as const;
