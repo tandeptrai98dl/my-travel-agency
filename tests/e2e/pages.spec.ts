@@ -44,7 +44,8 @@ test.describe("static pages, journal, reviews and contact", () => {
     await expect(footer.getByRole("link", { name: "Chính sách bảo mật" })).toHaveAttribute("href", "/chinh-sach/chinh-sach-bao-mat");
     await expect(footer.getByRole("link", { name: "Chính sách hủy" })).toHaveAttribute("href", "/chinh-sach/chinh-sach-huy");
     await expect(footer.getByRole("link", { name: "Thanh toán" })).toHaveCount(0);
-    await expect(footer.getByRole("link", { name: "Tra cứu booking" })).toHaveCount(0);
+    // Guest booking lookup since #46 (features.bookingLookup).
+    await expect(footer.getByRole("link", { name: "Tra cứu booking" })).toHaveAttribute("href", "/tra-cuu-booking");
     await page.goto("/en/policies/privacy-policy");
     await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy policy" })).toBeVisible();
     await expect(page.locator('link[rel="alternate"][hreflang="vi"]')).toHaveAttribute("href", /\/chinh-sach\/chinh-sach-bao-mat$/);
