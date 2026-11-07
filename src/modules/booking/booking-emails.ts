@@ -14,6 +14,7 @@ import type { EmailBrand } from "../../../emails/components/layout";
 import { PaymentLinkEmail } from "../../../emails/payment-link";
 import { PaymentReceivedEmail } from "../../../emails/payment-received";
 import { StaffBookingEmail } from "../../../emails/staff-booking";
+import { type MinPaxFacts, StaffDepartureEmail } from "../../../emails/staff-departure";
 import { attentionReason } from "./booking-admin.schemas";
 
 /**
@@ -298,5 +299,33 @@ export function buildBookingLookupEmail(booking: EmailBooking, link: { token: st
       checkoutUrl: checkoutUrl(booking, context.siteUrl, link.token),
       expiresAt: link.expiresAt,
     }),
+  };
+}
+
+/**
+ * The one-time team alert for an overdue balance (Phase 5 daily job, keyed
+ * `balance_overdue:<booking id>`). Vietnamese, like every staff alert (ADR-006).
+ */
+export function buildBalanceOverdueEmail(booking: EmailBooking, context: BuildContext): BuiltEmail {
+  const t = emailTranslator("vi", context.messages.vi);
+  return {
+    to: "staff",
+    template: "balance_overdue",
+    subject: t("staffOverdue.subject", { code: booking.code }),
+    element: StaffBookingEmail({ locale: "vi", t, brand: context.brand, booking: bookingFacts(booking), kind: "overdue", adminUrl: adminBookingUrl(booking.id, context.siteUrl) }),
+  };
+}
+
+export function adminDepartureUrl(departureId: string, siteUrl: URL): string {
+  return new URL(`/admin/departures/${encodeURIComponent(departureId)}`, siteUrl).toString();
+}
+
+/** The minimum-traveller alert for a departure (Phase 5 daily job). */
+export function buildMinPaxEmail(departureId: string, departure: MinPaxFacts, context: BuildContext): Omit<BuiltEmail, "to"> {
+  const t = emailTranslator("vi", context.messages.vi);
+  return {
+    template: "min_pax",
+    subject: t("staffMinPax.subject", { code: departure.tourCode, date: departure.startDate }),
+    element: StaffDepartureEmail({ locale: "vi", t, brand: context.brand, departure, adminUrl: adminDepartureUrl(departureId, context.siteUrl) }),
   };
 }

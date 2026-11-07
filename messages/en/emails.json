@@ -169,6 +169,27 @@
       "button": "Open the booking",
       "expiry": "The link works once, until {time} (Vietnam time).",
       "ignore": "If you did not ask for this, you can ignore this email; your booking stays safe."
+    },
+    "staffMinPax": {
+      "subject": "Below minimum · {code} on {date}",
+      "preview": "{code} departing {date} is below its minimum number of travellers.",
+      "eyebrow": "Below minimum",
+      "heading": "{code} on {date} is below its minimum",
+      "intro": "{count, plural, one {# day} other {# days}} before departure, the confirmed travellers are still below the minimum to operate.",
+      "tour": "Tour",
+      "date": "Departure",
+      "daysLeft": "Days left",
+      "days": "{count, plural, one {# day} other {# days}}",
+      "confirmed": "Confirmed travellers",
+      "ofMinimum": "{confirmed} of a minimum of {min}",
+      "decide": "Operations decide whether the departure runs; nothing is cancelled automatically."
+    },
+    "staffOverdue": {
+      "subject": "Balance overdue · {code}",
+      "preview": "The balance of {code} is overdue.",
+      "eyebrow": "Balance overdue",
+      "heading": "The balance of {code} is overdue",
+      "intro": "The balance due date has passed. The booking stays as it is and in the attention queue until the balance is paid."
     }
   }
 }

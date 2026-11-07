@@ -80,10 +80,10 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── auth/                 # confirm (existing), callback (OAuth), error
     │   ├── admin/                # Vietnamese-only admin, role + MFA checked in layout
     │   ├── api/                  # payments/vnpay/ipn, webhooks/bank-transfer,
-    │   │                         # cron/balance-reminders, tours/[id]/departures, health
+    │   │                         # cron/balance-reminders, cron/departure-checks, health
     │   ├── sitemap.ts · robots.ts · not-found.tsx
     ├── modules/                  # catalog, booking, payment, inquiry, content, media,
-    │                             # notification, identity, settings, audit
+    │                             # notification, identity, account, operations, settings, audit
     ├── components/
     │   ├── ui/                   # shadcn/ui primitives
     │   └── layout/ · marketing/ · tour/ · booking/ · account/ · admin/
@@ -107,11 +107,12 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Module | Responsibility | Depends on |
 | --- | --- | --- |
 | identity | Supabase Auth on the server (customer and staff sign-in, sign-up, reset, Google), profiles, roles, staff MFA | content (privacy version) |
-| account | The customer account area: bookings through the customer-safe functions, travellers, profile and marketing choice | identity, content |
+| account | The customer account area: bookings through the customer-safe functions, travellers, profile and marketing choice; data deletion; the admin customers area (`customers-admin.*`: list, detail, notes, data export, finishing deletion requests) | identity, content |
 | catalog | Tours, departures, prices, destinations, travel styles, search | media |
 | booking | Pricing, seat holds, booking lifecycle, travellers | catalog, payment, notification |
 | payment | Payment creation, IPN/webhooks, reconciliation, refunds | booking (via callback) |
 | inquiry | Consultation requests, assignment, notes, quotes | booking, notification |
+| operations | Daily jobs behind `/api/cron/*` (balance reminders, overdue and minimum-traveller alerts), the role dashboards, the passenger list export (Phase 5 PR 5D) | booking (emails) |
 | content | Journal, static pages, reviews, redirects | media |
 | media | Upload, image metadata, alt text | Supabase Storage |
 | notification | Transactional email, send log | Resend |
@@ -131,7 +132,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B) | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -206,9 +207,9 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |
 
-Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote, prefilled from an inquiry with `?inquiry=<code>`), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries` (the inbox, with `/admin/inquiries/[id]`), `/admin/customers`, `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
+Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote, prefilled from an inquiry with `?inquiry=<code>`), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries` (the inbox, with `/admin/inquiries/[id]`), `/admin/customers` (with `/admin/customers/[id]`: notes, consent history, data export and deletion requests), `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
-Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tours, destinations, travel styles, journal), `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/*` (secret-protected), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
+Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tours, destinations, travel styles, journal), `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/balance-reminders` and `/api/cron/departure-checks` (GET, `Authorization: Bearer <CRON_SECRET>` compared as SHA-256 digests in constant time, 401 otherwise and 503 without the secret; scheduled in `vercel.json` daily at 01:43 and 01:17 UTC, 08:43 and 08:17 in Vietnam; idempotent through exactly-once email keys), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 
 ## Security
 

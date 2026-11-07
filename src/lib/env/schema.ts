@@ -66,9 +66,11 @@ export const serverEnvSchema = z
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,
   SENTRY_DSN: z.preprocess((value) => (value === "" ? undefined : value), z.url().optional()),
+  // Vercel Cron's bearer secret for /api/cron/* (spec Phase 5 decision 12). Without it the routes
+  // answer 503 and nothing runs; required in production.
   CRON_SECRET: z.preprocess(
     (value) => (value === "" ? undefined : value),
-    z.string().min(16, "must be at least 16 characters").optional(),
+    z.string().min(32, "must be at least 32 characters").optional(),
   ),
   // Upstash Redis REST (redirects, decision 5; rate limits later). Optional until the account
   // exists: without both, redirect sync and lookups are logged no-ops. Required in production.
@@ -129,6 +131,9 @@ export const serverEnvSchema = z
       : null;
   if (missing) {
     ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both Upstash variables or neither)` });
+  }
+  if (env.VERCEL_ENV === "production" && !env.CRON_SECRET) {
+    ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "CRON_SECRET is required in production (Vercel Cron)" });
   }
   // Production serves the admin's redirects and rate limits from Upstash (ADR-031, Phase 3 PR M).
   if (env.VERCEL_ENV === "production" && !env.UPSTASH_REDIS_REST_URL) {

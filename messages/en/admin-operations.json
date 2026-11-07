@@ -1,0 +1,161 @@
+{
+  "Admin": {
+    "Nav": {
+      "customers": "Customers"
+    },
+    "Dashboard": {
+      "links": {
+        "customers": "Customer profiles, bookings, notes, data export and deletion requests"
+      }
+    },
+    "Operations": {
+      "Dashboard": {
+        "title": "Today's figures",
+        "noData": "No data yet",
+        "minutes": "{minutes} min",
+        "hoursMinutes": "{hours} h {minutes} min",
+        "sales": {
+          "title": "Sales",
+          "own": "Yours",
+          "team": "Whole team",
+          "newBookings": "New bookings (7 days)",
+          "openInquiries": "Open inquiries",
+          "unassigned": "Unassigned inquiries",
+          "quotes": "Quotes awaiting payment",
+          "firstResponse": "First response (30-day median)"
+        },
+        "operations": {
+          "title": "Operations",
+          "belowMinimum": "Departures below minimum (next 21 days)",
+          "missingTravellers": "Bookings missing traveller details",
+          "noDepartures": "No departures in the next 14 days.",
+          "upcoming": "Departing in the next 14 days",
+          "tour": "Tour",
+          "date": "Date",
+          "seats": "Seats held",
+          "confirmed": "Confirmed travellers",
+          "travellers": "Traveller details",
+          "seatsValue": "{reserved} / {capacity}",
+          "confirmedValue": "{confirmed} of a minimum of {min}",
+          "travellersValue": "{filled} / {party}"
+        },
+        "finance": {
+          "title": "Finance",
+          "revenue": "Collected this month (net of refunds)",
+          "expiring": "Payments about to expire (30 min)",
+          "unmatched": "Unmatched transfers",
+          "moneyAttention": "Bookings needing money attention"
+        },
+        "content": {
+          "title": "Content",
+          "drafts": "Drafts",
+          "missingTranslations": "Published items missing a language",
+          "missingAlt": "Images without alt text"
+        },
+        "admin": {
+          "title": "Administration",
+          "deletionRequests": "Open data deletion requests"
+        }
+      },
+      "Passengers": {
+        "export": "Download passenger list (CSV)",
+        "exported": "Downloaded {count, plural, one {# row} other {# rows}}. The download is in the audit log.",
+        "errors": {
+          "forbidden": "You may not download the passenger list.",
+          "not_found": "Departure not found.",
+          "failed": "The list could not be downloaded. Please try again."
+        }
+      },
+      "Customers": {
+        "title": "Customers",
+        "description": "Customer accounts: bookings, inquiries, notes, consent history and data deletion requests.",
+        "search": "Search by name or email",
+        "name": "Name",
+        "noName": "(no name)",
+        "email": "Email",
+        "phone": "Phone",
+        "state": "State",
+        "allStates": "Any state",
+        "createdAt": "Created",
+        "states": {
+          "active": "Active",
+          "requested": "Deletion requested",
+          "deleted": "Deleted"
+        },
+        "blockers": {
+          "open_payment": "a payment in progress",
+          "balance_due": "a balance due",
+          "upcoming_trip": "a trip ahead",
+          "attention": "money needing attention"
+        },
+        "purposes": {
+          "terms": "Terms",
+          "privacy": "Privacy policy",
+          "marketing": "Marketing",
+          "analytics": "Analytics"
+        },
+        "errors": {
+          "forbidden": "You may not do this.",
+          "invalid": "Please check the details.",
+          "not_found": "Customer not found.",
+          "not_requested": "This customer has not asked for deletion.",
+          "blocked": "Cannot delete yet because of:",
+          "failed": "That did not work. Please try again.",
+          "noteRequired": "Write a note of at least 3 characters.",
+          "tooLong": "Notes are at most 2,000 characters."
+        },
+        "Detail": {
+          "description": "The customer's profile, bookings, inquiries, notes and consent history.",
+          "breadcrumb": "Breadcrumb",
+          "profile": "Profile",
+          "country": "Country",
+          "language": "Language",
+          "languages": {
+            "vi": "Vietnamese",
+            "en": "English"
+          },
+          "marketing": "Marketing emails",
+          "yes": "Yes",
+          "no": "No",
+          "bookings": "Bookings",
+          "noBookings": "No bookings linked to the account.",
+          "inquiries": "Inquiries",
+          "noInquiries": "No inquiries with this email.",
+          "notes": "Internal notes",
+          "noNotes": "No notes yet.",
+          "noteTitle": "Add a note",
+          "noteBody": "Note",
+          "noteSave": "Save note",
+          "noteSaved": "Note saved.",
+          "saving": "Saving…",
+          "consents": "Consent history",
+          "noConsents": "No consent records.",
+          "granted": "Granted",
+          "withdrawn": "Withdrawn",
+          "export": "Download personal data (JSON)",
+          "exported": "Data downloaded. The download is in the audit log."
+        },
+        "Deletion": {
+          "title": "Data deletion request",
+          "openTitle": "Open data deletion requests",
+          "none": "No open requests.",
+          "requestedAt": "Requested {date}",
+          "authPending": "Data anonymised; the sign-in account still has to be deleted.",
+          "blockedBy": "Waiting for: {reasons}",
+          "ready": "Nothing blocks it any more: it can be finished.",
+          "notRequested": "The customer has not asked for deletion.",
+          "completed": "Deleted.",
+          "adminOnly": "An MFA-verified admin finishes the request once nothing blocks it.",
+          "finishTitle": "Finish the data deletion",
+          "retryTitle": "Run the remaining step again",
+          "note": "Note (required)",
+          "noteHelp": "Say why the request can be finished now. The note goes to the audit log, never to the customer.",
+          "finish": "Delete data",
+          "retry": "Run again",
+          "running": "Deleting…",
+          "done": "The customer's data is deleted."
+        }
+      }
+    }
+  }
+}

@@ -1,12 +1,12 @@
 import type { Permission } from "@/lib/auth/permissions";
 
 /** Icons are named, not imported, so this list stays importable from server and client code. */
-export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments" | "inquiries";
+export type AdminNavIcon = "dashboard" | "audit" | "design" | "media" | "destinations" | "styles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments" | "inquiries" | "customers";
 
 export type AdminNavItem = {
   href: string;
   /** Key in the `Admin.Nav` messages. */
-  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments" | "inquiries";
+  labelKey: "dashboard" | "auditLog" | "designSystem" | "media" | "destinations" | "travelStyles" | "policies" | "tours" | "departures" | "journal" | "pages" | "reviews" | "redirects" | "subscribers" | "settings" | "staff" | "bookings" | "payments" | "inquiries" | "customers";
   icon: AdminNavIcon;
   /** Shown only to roles holding it; the page and its actions check it again on the server. */
   permission: Permission;
@@ -32,6 +32,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: "/admin/inquiries", labelKey: "inquiries", icon: "inquiries", permission: "inquiries.read" },
       { href: "/admin/bookings", labelKey: "bookings", icon: "bookings", permission: "bookings.read" },
       { href: "/admin/payments", labelKey: "payments", icon: "payments", permission: "payments.read" },
+      { href: "/admin/customers", labelKey: "customers", icon: "customers", permission: "customers.read" },
     ],
   },
   {
