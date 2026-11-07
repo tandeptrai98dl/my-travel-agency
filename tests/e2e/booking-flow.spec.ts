@@ -27,7 +27,9 @@ async function watchCsp(page: Page) {
   await page.addInitScript(() => {
     const store = window as unknown as { __csp: string[] };
     store.__csp = [];
-    document.addEventListener("securitypolicyviolation", (event) => store.__csp.push(`${event.violatedDirective} ${event.blockedURI}`));
+    document.addEventListener("securitypolicyviolation", (event) =>
+      store.__csp.push(`${event.violatedDirective} ${event.blockedURI} at ${event.sourceFile}:${event.lineNumber}:${event.columnNumber} ${event.sample}`),
+    );
   });
 }
 // The Sentry ingest host is not in connect-src yet: a known issue PR M closes with the public
