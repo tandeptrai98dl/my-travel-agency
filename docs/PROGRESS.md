@@ -4,17 +4,15 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 in progress (5A, 5B, 5C, 5W merged; 5D and the booking-lookup flag left); Phase 6 spec merged (#50); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 5 PR 5D (reminders, alerts, dashboard, passenger CSV, `/admin/customers` with export and admin deletion), then Phase 6 PRs 6A–6C. Stream B: the one-line PR that turns on `features.bookingLookup`, then Phase 6 PRs 6P–6Q; both streams then 6L (`docs/specs/phase-6-hardening-launch.md`). The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 code-complete (acceptance waits for staging); 6 in progress (spec #50, 6P #55 and 6B #54 merged; 6A, the public security PR, 6C, 6Q and 6L left); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 6 PR 6A (security review, payment hardening, CI scans), then 6C (restore rehearsal, protected migrations). Stream B: public security checks and the public backlog, then 6Q (needs staging and the owner's content); both streams then 6L (`docs/specs/phase-6-hardening-launch.md`). pgTAP numbers: Stream A 50–59, Stream B 36–49. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** the 14 numbered items in `docs/specs/phase-6-hardening-launch.md` "What the owner must provide" (accounts: Supabase, Vercel, Sentry, Resend with DNS, Upstash, Turnstile, VNPay, SePay or Casso, Google; Supabase Auth production settings; legal review; brand and content; branch protection on `main`)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
 Open items:
-- Publishing a language in the journal, page and taxonomy editors does not yet remove a redirect from that path (tours do, #22).
 - Email client (`email.service.ts`): `skipped` rows in `email_logs` and status-code-only error logs, in Phase 4 PR 4E.
 - Phases 4–5 (PR 15 review): account and checkout sit under the shared `[locale]` root layout, so ADR-027's dynamic-with-nonce approach needs their own root layout or a new spike.
-- Phase 4: booking functions must refresh the `tours` tag (cached cards show next dates).
 
 - Migrations: a branch's migration timestamps must be later than the newest migration on main when it merges; rename on rebase (the stream ranges only prevent name clashes). ADR numbers: the branch that merges second renumbers.
 - Before go-live (Phase 4 spec): VNPay sandbox vectors for cancelled and failed IPNs, SePay/Casso/VNPay source-IP allow-lists, Casso signature check, `VNPAY_STUB` never on staging with real-looking data.
@@ -23,14 +21,51 @@ Open items:
 - Emails (PR 4E review): alert or runbook for `email_logs` rows stuck in `queued` and for `failed` sends, plus a staff "resend"; `skipped` keys are spent for good (README); the emailed access token is reusable for 7 days (record or make single use); payment-link email through `after()`.
 
 - Phase 3 (staging only): measure the 50 ms redirect timeout on cold starts; with real Upstash, save a tour and `curl -I` its other-language slug (expect a 301 with `Location`). The other PR M items were done in #43 and #49.
-- Emails (PR 4 polish review): window failed emails on a `failed_at` time, not the claim time; nothing reads failed pg_cron runs yet (Phase 6 alerting); expired access-token cleanup (Phase 6 housekeeping).
 
-- Phase 5 (#46 review): the deletion E2E's Auth-metadata check can pass without proving anything; 5D checks it properly. Nit (#48): type the inquiry `panels` as `React.ReactElement[]`.
-- Public (#49 review): a topic's language pair should need a published article in both languages; the switcher's fallback drops the query string; an E2E should check the server HTML of `/lien-he` for `href="/en/contact"`.
-- Phase 6 spec (#50 re-review, fix in 6P/6C): how each recipient's single-use unsubscribe token reaches a Resend broadcast (or Resend's unsubscribe written back through the same function), plus a `List-Unsubscribe` header; state the emailed-link exclusion as "checkout with an `access` query"; unknown paths send a fixed `/404` template to GA; write the webhook-trim SQL predicate out (assigned transfers carry `error = 'assigned'`).
+- Nit (#48): type the inquiry `panels` as `React.ReactElement[]`.
+- Phase 6 (#55 review, in Stream B's public security PR): scope the Google CSP hosts to book and checkout; purge `newsletter_unsubscribe_tokens`; no dead link for a subscriber who leaves mid-export; pgTAP 34 privilege assertion for update and delete; a unit test for the `ga-disable` switch. Later: a Resend unsubscribe write-back (`List-Unsubscribe` from broadcasts leaves the subscriber active in our list).
+- Flaky E2E: `tour-publish.spec.ts:47` timed out once waiting for the media dialog's alt field (#55 CI); watch it.
+- Stream A should acknowledge the `begin_checkout` line #55 added to the book page (stream rules).
+- Public (#49 review, in Stream B's public security PR): a topic's language pair should need a published article in both languages; the switcher's fallback drops the query string; an E2E should check the server HTML of `/lien-he` for `href="/en/contact"`.
 - Owner (before staging): Supabase "Confirm email" and "Secure email change" ON, the new Auth email templates, minimum password length 10, leaked-password protection; `settings.contact.email` for team alerts.
 
 ## Log
+
+### 2026-11-07 (Phase 6 — 6B: monitoring and housekeeping)
+
+PR #54, branch `feat/p6-monitoring` (migrations `20261113100000`, `20261113110000`).
+
+- `cron_failures(since)` (failed and overdue pg_cron runs); daily `booking-tokens-cleanup`, `webhook-payload-trim` (only payloads already in `payments.raw_response`, never unmatched or error rows) and `cron-history-purge`.
+- `/api/cron/health-checks` (every 15 min): one email per job per check for failed or missed runs (exactly-once keys, nothing spent without `settings.contact.email`), Sentry only for new alerts, `tours` refreshed after lapsed holds. `/api/cron/housekeeping` (daily): staged uploads older than 24 h. Sentry Cron Monitors and an optional `CRON_HEARTBEAT_URL`.
+- Sentry releases from the commit SHA; webhook rejections as sampled warnings; README runbooks.
+- Backlog closed: `email_logs.failed_at`, redirects cleared when a language is published in the journal, page and taxonomy editors, the Phase 5 minors (dashboard count, `no_address`, `auth.identities` emptied on deletion, consent readers documented).
+- Verified: pgTAP 28 (46) and 29 (12), 961 unit tests, JS budget; CI green.
+- Independent review: approved; quota minors fixed after the rebase onto #55.
+
+### 2026-11-07 (Phase 6 — 6P: analytics, cookie consents, newsletter unsubscribe)
+
+PR #55, branch `feat/p6-analytics-consent` (migrations `20261112100000`, `20261112110000`).
+
+- `cookie_consents` (pseudonymous id in the `consent` cookie, no IP, user agent or account; service-role insert; 5-year purge) and `recordConsentChoice` (Zod, fail-closed limit, server-side banner hash, retry on the next page view, error log when unavailable).
+- GA4 through gtag.js only after "analytics": Consent Mode v2, manual `page_view` with route templates (`/404` for unknown paths), referrers reduced; no GA on payment links, lookup, account, sign-in, newsletter or `?access=` pages (and switched off after a client-side navigation there); withdrawal deletes `_ga*` and `_gcl*`; five scrubbed events, HMAC `transaction_id`; CSP hosts only with a measurement ID.
+- Newsletter unsubscribe: single-use hashed tokens from the audited export (`unsubscribe_url` column), `/ban-tin/huy` on a button press, withdrawal in `consent_records`.
+- Verified: pgTAP 34 (16) and 35 (17), unit tests, JS budget (`/tours` 148.9 KB), E2E with a local Google fixture; CI green.
+- Independent review: one major (stale types), fixed; minors fixed or in the backlog.
+
+### 2026-11-07 (Phase 5 — booking lookup link)
+
+PR #52, branch `fix/p5-enable-booking-lookup`: `features.bookingLookup` on (footer link only; the page stays gated by Turnstile and, on Vercel, Resend). E2E in both languages. Independent review: approved.
+
+### 2026-11-07 (Phase 5 — 5D: operations)
+
+PR #53, branch `feat/p5-operations` (migration `20261111100000`).
+
+- `/api/cron/balance-reminders` and `/api/cron/departure-checks` (`vercel.json`, `CRON_SECRET`, digest comparison): reminders for the smallest window (7 or 2 days, Vietnam dates, catch-up), one alert for overdue balances (never cancelled), minimum-traveller alerts at 21, 14 and 7 days.
+- `/admin` dashboards per role (`admin_dashboard()`); passenger CSV per departure (audited in the same transaction, no passport field).
+- `/admin/customers`: notes, consents, JSON export (audit first) and open deletion requests with blockers, finished or retried by an MFA admin.
+- Fixed a 5B bug: the deletion ban left the name in Auth metadata (GoTrue merges `user_metadata`); E2E now proves it from `auth.users`.
+- Verified: pgTAP 27 (47) and 26 (57), 861 unit tests, E2E per role; CI green.
+- Independent review: approved; minors fixed in #54.
 
 ### 2026-11-07 (Phase 6 — spec)
 
@@ -601,7 +636,6 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 
 ## Known issues
 
-- Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).

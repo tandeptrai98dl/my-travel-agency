@@ -59,11 +59,11 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 
 ## Phase 5: Accounts, inquiries and operations (2 weeks) — spec: `docs/specs/phase-5-accounts-inquiries-operations.md`
 
-- [ ] Localized sign-in/sign-up pages (replace the starter `/auth` pages for customers), `/auth/callback` for Google, account area (#42), booking lookup (5B)
+- [x] Localized sign-in/sign-up pages (replace the starter `/auth` pages for customers), `/auth/callback` for Google, account area (#42), booking lookup (#46, #52)
 - [x] Contact form (shipped in Phase 3 PR K, #31)
 - [x] Double opt-in newsletter (shipped in Phase 3 PR I, #24)
 - [x] Tailor-made wizard + Turnstile; full inquiry inbox (#43, #45)
-- [ ] Balance reminders (Vercel Cron), minimum-traveller alerts, dashboard, passenger CSV export
+- [x] Balance reminders (Vercel Cron), minimum-traveller alerts, dashboard, passenger CSV export (#53; schedules run once the owner's Vercel Pro project has `CRON_SECRET`)
 - [ ] Acceptance: sales completes inquiry → quote → customer payment → confirmed booking on staging
 
 ## Phase 6: Hardening and launch (2.5 weeks) — spec: `docs/specs/phase-6-hardening-launch.md`
