@@ -183,14 +183,14 @@ isOneToOne: false
                   ]
                 },"cookie_consents": {
                   Row: {
-                    "action": string,"banner_version": string,"choices": Json,"created_at": string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id": number
+                    "action": string,"banner_version": string,"choices": NonNullable<Json>,"created_at": string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "action": string,"banner_version": string,"choices": Json,"created_at"?: string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id"?: never
+                    "action": string,"banner_version": string,"choices": NonNullable<Json>,"created_at"?: string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id"?: never
                   }
                   Update: {
-                    "action"?: string,"banner_version"?: string,"choices"?: Json,"created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale"],"record_id"?: never
+                    "action"?: string,"banner_version"?: string,"choices"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale"],"record_id"?: never
                   }
                   Relationships: [
                     
