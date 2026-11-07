@@ -90,9 +90,16 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   const { data: booking } = await adminApi().from("bookings").select("id, status, total, terms_version").eq("code", code).single();
   expect(booking?.status).toBe("draft");
   expect(booking?.total).toBe(25_800_000);
-  expect(booking?.terms_version).toMatch(/^terms@/);
-  const { count } = await adminApi().from("consent_records").select("id", { count: "exact", head: true }).eq("booking_id", booking!.id);
-  expect(count).toBe(2);
+  // Consent for published pages only: the seeded privacy policy, and the terms when another test
+  // has published a terms page (content.spec.ts may run first).
+  const { data: consents } = await adminApi().from("consent_records").select("purpose, document_version").eq("booking_id", booking!.id);
+  expect(consents?.find((row) => row.purpose === "privacy")?.document_version).toMatch(/^privacy-vi-[0-9a-f]{16}$/);
+  if (booking?.terms_version) {
+    expect(booking.terms_version).toMatch(/^terms-vi-[0-9a-f]{16}$/);
+    expect(consents).toHaveLength(2);
+  } else {
+    expect(consents).toHaveLength(1);
+  }
   await expectNoSeriousViolations(page, "/thanh-toan/[code]/phuong-thuc");
 
   // VNPay is the method CI offers (no receiving account is seeded). Choosing it holds the seats.
