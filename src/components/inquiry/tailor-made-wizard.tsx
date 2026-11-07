@@ -149,7 +149,7 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
     turnstile.onSubmit(event);
   });
 
-  if (done) return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
+  if (done) return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} source="tailor_made" />;
 
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
   const panelClass = (index: number) => cx("flex flex-col gap-6", ready && index !== step && "hidden");

@@ -103,14 +103,15 @@ describe("buildCards", () => {
         { tour_id: "a", display_price: 12900000, price_source: "departure", next_departure_date: "2026-11-21", other_departure_count: 11, seats_left_next: 16 },
       ],
       [
-        { id: "a", type: "group", duration_days: 3, duration_nights: 2, hero: media, tour_translations: [{ slug: "du-thuyen", title: "Du thuyền" }], tour_destinations: [{ destination_id: "d1" }, { destination_id: "hidden" }] },
-        { id: "b", type: "private", duration_days: 5, duration_nights: 4, hero: null, tour_translations: [{ slug: "hoi-an", title: "Hội An" }], tour_destinations: [] },
+        { id: "a", code: "VN-A-01", type: "group", duration_days: 3, duration_nights: 2, hero: media, tour_translations: [{ slug: "du-thuyen", title: "Du thuyền" }], tour_destinations: [{ destination_id: "d1" }, { destination_id: "hidden" }] },
+        { id: "b", code: "VN-B-01", type: "private", duration_days: 5, duration_nights: 4, hero: null, tour_translations: [{ slug: "hoi-an", title: "Hội An" }], tour_destinations: [] },
       ],
       (id) => (id === "d1" ? { key: "ha-long-bay", name: "Vịnh Hạ Long" } : null),
       "vi",
     );
     expect(cards.map((card) => card.id)).toEqual(["b", "a"]);
     expect(cards[1]).toMatchObject({
+      code: "VN-A-01",
       slug: "du-thuyen",
       priceSource: "departure",
       nextDepartureDate: "2026-11-21",

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { Analytics } from "@/components/analytics/analytics";
 import { CONSENT_OPEN_EVENT, CONSENT_RETRY_KEY, readConsentCookie } from "@/lib/consent";
 
 // The banner and its settings load only for a visitor who has not chosen yet, or when the footer's
@@ -13,7 +14,7 @@ const CookieConsentBanner = dynamic(() => import("./cookie-consent-banner").then
 
 type Opening = { settingsFrom: HTMLElement | null | false };
 
-/** Mounts the cookie consent banner when it is needed (see `CookieConsentBanner`). */
+/** Mounts the cookie consent banner when it is needed (see `CookieConsentBanner`), and analytics. */
 export function CookieConsent({ privacyHref }: { privacyHref: string }) {
   const [opening, setOpening] = useState<Opening | null>(null);
   const pathname = usePathname();
@@ -42,5 +43,11 @@ export function CookieConsent({ privacyHref }: { privacyHref: string }) {
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, open);
   }, []);
 
-  return opening ? <CookieConsentBanner privacyHref={privacyHref} openSettingsFrom={opening.settingsFrom} /> : null;
+  return (
+    <>
+      {opening ? <CookieConsentBanner privacyHref={privacyHref} openSettingsFrom={opening.settingsFrom} /> : null}
+      {/* Google Analytics follows the choice (ADR-039): mounted wherever the banner is. */}
+      <Analytics />
+    </>
+  );
 }

@@ -2,15 +2,19 @@
 
 import { useEffect, useRef } from "react";
 
+import { generateLead, type LeadSource } from "@/components/analytics/events";
+import { track } from "@/components/analytics/track";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { localizedPath } from "@/i18n/paths";
 
 export type InquirySuccessLabels = { title: string; text: string; textNoCode: string; next: string; tours: string; home: string };
 
 /** After an inquiry is sent: its code, what happens next, and the way back (DESIGN_SYSTEM "Consultation"). */
-export function InquirySuccess({ code, labels, locale }: { code: string | null; labels: InquirySuccessLabels; locale: "vi" | "en" }) {
+export function InquirySuccess({ code, labels, locale, source }: { code: string | null; labels: InquirySuccessLabels; locale: "vi" | "en"; source: LeadSource }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
+  // GA4 (ADR-039): a lead, by its source only (never the inquiry code or the person).
+  useEffect(() => track(generateLead(source)), [source]);
   return (
     <div role="status" className="flex max-w-2xl flex-col gap-5 border-y border-border py-10">
       <h2 ref={heading} tabIndex={-1} className="font-serif text-h3 font-semibold focus:outline-none md:text-h3-lg">

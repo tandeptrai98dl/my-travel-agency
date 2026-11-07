@@ -128,6 +128,7 @@ export type SearchRow = {
 
 export type CardRow = {
   id: string;
+  code: string;
   type: "group" | "private";
   duration_days: number;
   duration_nights: number;
@@ -151,6 +152,7 @@ export function buildCards(
     return [
       {
         id: row.id,
+        code: row.code,
         slug: translation.slug,
         title: translation.title,
         type: row.type,

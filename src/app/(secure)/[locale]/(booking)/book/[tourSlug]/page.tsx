@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
 
+import { AnalyticsEvent } from "@/components/analytics/analytics-event";
+import { beginCheckout } from "@/components/analytics/events";
 import { BookingForm } from "@/components/booking/booking-form";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/typography/eyebrow";
@@ -111,6 +113,8 @@ async function Book({ params, searchParams }: Props) {
   return (
     <>
       {header}
+      {/* GA4 (ADR-039, Stream B): the tour only, sent after consent. */}
+      <AnalyticsEvent event={beginCheckout({ code: form.tour.code, title: form.tour.title, price: departure.priceAdult })} />
       <BookingMessages locale={locale}>
         <BookingForm
           locale={locale}

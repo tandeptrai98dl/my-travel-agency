@@ -65,6 +65,39 @@ describe("admin CSP", () => {
   });
 });
 
+describe("Google Analytics hosts (ADR-039)", () => {
+  const GA = ["https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"].join(" ");
+
+  it("are allowed in the public and secure policies only with a measurement ID", () => {
+    const publicPolicy = publicCsp({ supabaseUrl: SUPABASE, sentryDsn: DSN, gaMeasurementId: "G-TEST1234" });
+    expect(directive(publicPolicy, "script-src")).toBe("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://*.googletagmanager.com");
+    expect(directive(publicPolicy, "connect-src")).toBe(`connect-src 'self' https://x.supabase.co https://o123.ingest.de.sentry.io https://challenges.cloudflare.com ${GA}`);
+    expect(directive(publicPolicy, "img-src")).toBe(`img-src 'self' data: blob: https://x.supabase.co ${GA}`);
+
+    const secure = secureCsp({ nonce: "n1", supabaseUrl: SUPABASE, gaMeasurementId: "G-TEST1234" });
+    expect(directive(secure, "script-src")).toBe("script-src 'self' 'nonce-n1' 'strict-dynamic' https://*.googletagmanager.com");
+    expect(directive(secure, "connect-src")).toBe(`connect-src 'self' https://x.supabase.co https://challenges.cloudflare.com ${GA}`);
+    expect(directive(secure, "img-src")).toBe(`img-src 'self' data: blob: https://x.supabase.co ${GA}`);
+
+    // GTM's tag manager is never needed: no unsafe-eval and no frames for Google.
+    for (const policy of [publicPolicy, secure]) {
+      expect(policy).not.toContain("unsafe-eval");
+      expect(directive(policy, "frame-src")).not.toContain("google");
+    }
+  });
+
+  it("are absent without a measurement ID, and never in the admin", () => {
+    for (const policy of [
+      publicCsp({ supabaseUrl: SUPABASE }),
+      publicCsp({ supabaseUrl: SUPABASE, gaMeasurementId: "" }),
+      secureCsp({ nonce: "n", supabaseUrl: SUPABASE }),
+      adminCsp({ nonce: "n", supabaseUrl: SUPABASE, gaMeasurementId: "G-TEST1234" }),
+    ]) {
+      expect(policy).not.toContain("google");
+    }
+  });
+});
+
 describe("public CSP", () => {
   it("is nonce-free with the hosts public pages use", () => {
     const policy = publicCsp({ supabaseUrl: SUPABASE, sentryDsn: DSN });

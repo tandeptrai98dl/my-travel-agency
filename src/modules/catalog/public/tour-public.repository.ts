@@ -71,7 +71,7 @@ export async function findTourCards(locale: Locale, tourIds: string[]) {
   return createPublicClient()
     .from("tours")
     .select(
-      `id, type, duration_days, duration_nights,
+      `id, code, type, duration_days, duration_nights,
        hero:media!tours_hero_media_id_fkey(${MEDIA_COLUMNS}),
        tour_translations!inner(slug, title, locale),
        tour_destinations(destination_id)`,

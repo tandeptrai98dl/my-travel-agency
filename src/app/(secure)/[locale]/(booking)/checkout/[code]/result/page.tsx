@@ -10,6 +10,7 @@ import { Eyebrow } from "@/components/typography/eyebrow";
 import { Heading } from "@/components/typography/heading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPathname } from "@/i18n/navigation";
+import { analyticsTransactionId } from "@/lib/analytics-transaction";
 import { isLocale, type Locale } from "@/i18n/routing";
 import { loadCheckout } from "@/modules/booking/checkout.service";
 
@@ -56,6 +57,9 @@ async function Result({ params }: Props) {
         initial={{ status: view.status, paymentState: view.paymentState }}
         email={view.contactEmail}
         payHref={getPathname({ locale, href: { pathname: "/checkout/[code]/payment", params: { code: view.code } } })}
+        // GA4 `purchase` (Phase 6 spec decision 7, the agreed Stream B line): a salted hash of the
+        // code, never the code; sent once per booking, only after consent.
+        purchase={{ transactionId: analyticsTransactionId(view.code), value: view.total, tour: { code: view.tourCode, title: view.tourTitle } }}
       />
       <BookingSummaryCard view={view} />
     </BookingMessages>
