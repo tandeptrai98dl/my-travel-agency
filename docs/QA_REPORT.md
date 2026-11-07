@@ -140,11 +140,9 @@ New E2E: `tests/e2e/responsive.spec.ts` covers:
 ### Re-check on staging
 
 1. **Lighthouse with real content and Supabase transformations:** every page above. LCP comes mostly from 1600 px JPEGs, which staging will serve as resized WebP or AVIF. A 170 ms render-blocking CSS file and the main-thread JS (TBT 100–400 ms simulated) remain. Field data comes from Speed Insights.
-2. **Listing SEO 92: metadata streamed into `<body>`.** `/tours` (and `/tim-kiem`) read `searchParams`, so Next.js 16 streams their metadata after the shell for browsers. That includes Googlebot, which is not in Next's `htmlLimitedBots` list (Bingbot and Lighthouse's own UA are). The description, canonical, hreflang and the filtered pages' `noindex` sit in `<body>`, and Google documents that it ignores a `rel=canonical` outside `<head>`. This is not fixed here, because each option is a trade-off for the coordinator:
-   - **(a) Googlebot in `htmlLimitedBots`:** add `Googlebot` to `htmlLimitedBots` in `next.config.ts`. Googlebot then gets blocking metadata in `<head>`, but every Googlebot request renders on the server, because limited bots skip the static shell. Measured with Bingbot locally: about 30 ms instead of about 4 ms per request.
-   - **(b) Leave it:** filtered listings are already disallowed in `robots.txt`, and `/tours` is also in the sitemap.
-
-   To decide, check URL Inspection in Search Console for `/tours` and `/tours?page=2` on staging.
+2. **Listing SEO 92: metadata streamed into `<body>`.** `/tours` (and `/tim-kiem`) read `searchParams`, so Next.js 16 streams their metadata after the shell for browsers. Googlebot was not in Next's `htmlLimitedBots` list (Bingbot and Lighthouse's own UA are), so the description, canonical, hreflang and the filtered pages' `noindex` sat in `<body>`, where Google ignores a `rel=canonical`.
+   - **Decided (option a, ADR-041):** `htmlLimitedBots` is Next's default pattern plus `Googlebot|Google-InspectionTool` (`src/lib/html-limited-bots.ts`). Googlebot now gets blocking metadata in `<head>`; each Googlebot request renders on the server (about 30 ms instead of about 4 ms locally).
+   - **Re-check:** URL Inspection on staging shows the canonical in `<head>` for `/tours` (and for `/tours?page=2`).
 3. **Fonts and diacritics with the real Google-hosted fonts** at every size, on staging.
 4. **Images on 360 px phones:** the floating contact buttons overlap the right 32 px of content while scrolling. That is normal for floating buttons, and the Tab walk found no focused element hidden. Check on real devices.
 
