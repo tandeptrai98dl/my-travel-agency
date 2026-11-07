@@ -100,6 +100,65 @@
       "eyebrow": "Cần xử lý",
       "heading": "{code} cần được kiểm tra",
       "reason": "Lý do: {reason}"
+    },
+    "inquiryReceived": {
+      "subject": "Chúng tôi đã nhận yêu cầu của bạn · {code}",
+      "preview": "Yêu cầu {code} đã đến tay đội ngũ tư vấn.",
+      "eyebrow": "Đã nhận yêu cầu",
+      "heading": "Cảm ơn bạn đã viết cho chúng tôi",
+      "intro": {
+        "tailor_made": "Chúng tôi đã nhận yêu cầu thiết kế hành trình riêng của bạn. Một chuyên viên tư vấn sẽ đọc kỹ từng chi tiết và trả lời bạn trực tiếp.",
+        "tour_inquiry": "Cảm ơn bạn đã quan tâm đến {tour}. Một chuyên viên tư vấn sẽ trả lời bạn trực tiếp về lịch trình và báo giá riêng cho đoàn của bạn.",
+        "contact": "Cảm ơn bạn đã gửi lời nhắn. Một thành viên trong đội ngũ của chúng tôi sẽ trả lời bạn trực tiếp."
+      },
+      "keepCode": "Vui lòng giữ mã yêu cầu {code} và nhắc đến mã này khi bạn liên hệ lại.",
+      "code": "Mã yêu cầu",
+      "request": "Yêu cầu",
+      "sources": {
+        "tailor_made": "Hành trình thiết kế riêng",
+        "tour_inquiry": "Chuyến đi riêng",
+        "contact": "Lời nhắn"
+      },
+      "journey": "Hành trình",
+      "month": "Thời gian dự kiến",
+      "flexible": "{month} (linh hoạt)",
+      "duration": "Độ dài",
+      "durationValue": "{count, plural, other {# ngày}}",
+      "travellers": "Số khách",
+      "reason": "Bạn nhận được email này vì đã gửi yêu cầu tới {brand}."
+    },
+    "staffInquiry": {
+      "subject": "Yêu cầu mới {code} · {source}",
+      "preview": "{name} vừa gửi yêu cầu {code}.",
+      "eyebrow": "Yêu cầu tư vấn mới",
+      "heading": "Yêu cầu {code}",
+      "intro": "{name} vừa gửi một yêu cầu: {source}.",
+      "contactHint": "Email, số điện thoại và lời nhắn của khách có trong trang quản trị.",
+      "name": "Khách",
+      "channel": "Liên hệ qua",
+      "channels": {
+        "email": "Email",
+        "phone": "Điện thoại",
+        "zalo": "Zalo",
+        "whatsapp": "WhatsApp"
+      },
+      "company": "Doanh nghiệp",
+      "destinations": "Điểm đến",
+      "style": "Phong cách",
+      "budget": "Ngân sách mỗi khách",
+      "budgets": {
+        "under_30m": "Dưới 30 triệu đồng",
+        "30_60m": "30–60 triệu đồng",
+        "60_100m": "60–100 triệu đồng",
+        "100_200m": "100–200 triệu đồng",
+        "over_200m": "Trên 200 triệu đồng",
+        "not_sure": "Chưa rõ, cần tư vấn"
+      },
+      "language": "Ngôn ngữ của khách",
+      "languages": {
+        "vi": "Tiếng Việt",
+        "en": "Tiếng Anh"
+      }
     }
   }
 }

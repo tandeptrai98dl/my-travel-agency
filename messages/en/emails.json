@@ -100,6 +100,65 @@
       "eyebrow": "Needs attention",
       "heading": "{code} needs a check",
       "reason": "Reason: {reason}"
+    },
+    "inquiryReceived": {
+      "subject": "We have your request · {code}",
+      "preview": "Request {code} is with our travel designers.",
+      "eyebrow": "Request received",
+      "heading": "Thank you for writing to us",
+      "intro": {
+        "tailor_made": "We have received your request for a journey designed around you. A travel designer will read every detail and reply to you personally.",
+        "tour_inquiry": "Thank you for your interest in {tour}. A travel designer will reply to you personally with dates and a quote made for your party.",
+        "contact": "Thank you for your message. A member of our team will reply to you personally."
+      },
+      "keepCode": "Please keep your request code {code} and mention it if you write to us again.",
+      "code": "Request code",
+      "request": "Request",
+      "sources": {
+        "tailor_made": "A tailor-made journey",
+        "tour_inquiry": "A private journey",
+        "contact": "A message"
+      },
+      "journey": "Journey",
+      "month": "Planned for",
+      "flexible": "{month} (flexible)",
+      "duration": "Length",
+      "durationValue": "{count, plural, one {# day} other {# days}}",
+      "travellers": "Travellers",
+      "reason": "You are receiving this email because you sent a request to {brand}."
+    },
+    "staffInquiry": {
+      "subject": "New request {code} · {source}",
+      "preview": "{name} has sent request {code}.",
+      "eyebrow": "New request",
+      "heading": "Request {code}",
+      "intro": "{name} has sent a request: {source}.",
+      "contactHint": "The customer's email, phone number and message are in the admin.",
+      "name": "Customer",
+      "channel": "Prefers",
+      "channels": {
+        "email": "Email",
+        "phone": "Phone",
+        "zalo": "Zalo",
+        "whatsapp": "WhatsApp"
+      },
+      "company": "Company",
+      "destinations": "Destinations",
+      "style": "Style",
+      "budget": "Budget per person",
+      "budgets": {
+        "under_30m": "Under 30 million dong",
+        "30_60m": "30–60 million dong",
+        "60_100m": "60–100 million dong",
+        "100_200m": "100–200 million dong",
+        "over_200m": "Over 200 million dong",
+        "not_sure": "Not sure yet"
+      },
+      "language": "Customer's language",
+      "languages": {
+        "vi": "Vietnamese",
+        "en": "English"
+      }
     }
   }
 }
