@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -39,6 +39,7 @@ export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels
   const statusRef = useRef<HTMLParagraphElement>(null);
   const turnstile = useTurnstile({ siteKey, locale, action: "inquiry", formRef });
   const { reset } = turnstile;
+  const onSubmit = useSubmitWithoutReset(action, turnstile.onSubmit);
   const [months, setMonths] = useState<string[]>([]);
   const disabled = !siteKey;
 
@@ -57,10 +58,7 @@ export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
 
   return (
-    <form ref={formRef} action={action} noValidate onFocus={turnstile.start} onPointerDown={turnstile.start} onSubmit={(event) => {
-        turnstile.onSubmit(event);
-        submitKeepingValues(event, action);
-      }} className="flex flex-col gap-5">
+    <form ref={formRef} action={action} noValidate onFocus={turnstile.start} onPointerDown={turnstile.start} onSubmit={onSubmit} className="flex flex-col gap-5">
       <input type="hidden" name="source" value="tour_inquiry" />
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="tourCode" value={tourCode} />

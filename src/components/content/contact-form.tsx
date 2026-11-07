@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
-import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -58,6 +58,8 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
   const formRef = useRef<HTMLFormElement>(null);
   const turnstile = useTurnstile({ siteKey, locale, action: "contact", formRef });
   const { reset } = turnstile;
+  // Keeps what was typed when the server answers with an error (React resets form actions).
+  const onSubmit = useSubmitWithoutReset(action, turnstile.onSubmit);
   const statusRef = useRef<HTMLParagraphElement>(null);
   const ids = { name: useId(), email: useId(), phone: useId(), message: useId(), consent: useId(), status: useId() };
   const disabled = !siteKey;
@@ -100,11 +102,7 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
       noValidate
       onFocus={turnstile.start}
       onPointerDown={turnstile.start}
-      onSubmit={(event) => {
-        turnstile.onSubmit(event);
-        // Keep what was typed when the server answers with an error (React resets form actions).
-        submitKeepingValues(event, action);
-      }}
+      onSubmit={onSubmit}
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="locale" value={locale} />

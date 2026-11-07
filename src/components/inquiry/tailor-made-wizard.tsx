@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -138,6 +138,16 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
     go(step + 1);
   };
 
+  // Enter on an earlier step moves on instead of sending; the last step waits for Turnstile.
+  const onSubmit = useSubmitWithoutReset(action, (event) => {
+    if (step !== last) {
+      event.preventDefault();
+      next();
+      return;
+    }
+    turnstile.onSubmit(event);
+  });
+
   if (done) return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
 
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
@@ -150,15 +160,7 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
       noValidate
       onFocus={turnstile.start}
       onPointerDown={turnstile.start}
-      onSubmit={(event) => {
-        if (step !== last) {
-          event.preventDefault();
-          next();
-          return;
-        }
-        turnstile.onSubmit(event);
-        submitKeepingValues(event, action);
-      }}
+      onSubmit={onSubmit}
       onChange={(event) => {
         const form = event.currentTarget;
         void loadDraft().then(({ writeDraft }) => writeDraft(form));
