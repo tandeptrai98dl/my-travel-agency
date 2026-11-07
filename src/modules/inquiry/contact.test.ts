@@ -2,20 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   createContactInquiry: vi.fn(),
-  findPublishedTourByCode: vi.fn(),
+  sendInquiryEmails: vi.fn(),
   privacyVersion: "privacy-vi-0123456789abcdef" as string | null,
   rateLimit: vi.fn(),
   verifyTurnstile: vi.fn(),
-  sendEmail: vi.fn(),
   configured: { turnstile: true, redis: true, email: true },
   headers: new Map<string, string>(),
-  staffEmail: "team@example.com" as string | null,
 }));
 
-vi.mock("./contact.repository", () => ({
-  createContactInquiry: mocks.createContactInquiry,
-  findPublishedTourByCode: mocks.findPublishedTourByCode,
-}));
+vi.mock("./contact.repository", () => ({ createContactInquiry: mocks.createContactInquiry }));
+vi.mock("./inquiry-emails.service", () => ({ sendInquiryEmails: mocks.sendInquiryEmails }));
 vi.mock("@/modules/content/public/content-public.service", () => ({
   getPrivacyConsent: async (locale: string) =>
     mocks.privacyVersion ? { href: `/${locale}/chinh-sach/bao-mat`, version: mocks.privacyVersion } : null,
@@ -27,20 +23,12 @@ vi.mock("@/lib/turnstile", () => ({
   turnstileSiteKey: () => (mocks.configured.turnstile ? "site-key" : null),
   verifyTurnstile: mocks.verifyTurnstile,
 }));
-vi.mock("@/modules/notification/email.repository", () => ({ insertEmailLog: vi.fn() }));
-vi.mock("@/modules/notification/email.service", async (original) => ({
-  ...(await original<typeof import("@/modules/notification/email.service")>()),
-  isEmailConfigured: () => mocks.configured.email,
-  sendEmail: mocks.sendEmail,
-}));
-vi.mock("@/modules/settings/settings.service", () => ({
-  getPublicSettings: async () => ({ company: null, contact: mocks.staffEmail ? { email: mocks.staffEmail } : null, social: {} }),
-}));
+vi.mock("@/modules/notification/email.service", () => ({ isEmailConfigured: () => mocks.configured.email }));
 vi.mock("next/headers", () => ({ headers: async () => mocks.headers }));
 
 import { sendContactMessage } from "./contact.actions";
 import { contactSchema } from "./contact.schemas";
-import { contactAvailability, headerText, staffNotification, submitContact } from "./contact.service";
+import { contactAvailability, submitContact } from "./contact.service";
 
 const valid = {
   name: "Lan",
@@ -63,13 +51,10 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   Object.assign(mocks.configured, { turnstile: true, redis: true, email: true });
-  mocks.staffEmail = "team@example.com";
   mocks.rateLimit.mockResolvedValue("ok");
   mocks.verifyTurnstile.mockResolvedValue(true);
   mocks.createContactInquiry.mockResolvedValue({ data: "INQ-2611-0001", error: null });
-  mocks.findPublishedTourByCode.mockResolvedValue({ data: { id: "t1" }, error: null });
   mocks.privacyVersion = "privacy-vi-0123456789abcdef";
-  mocks.sendEmail.mockResolvedValue("sent");
   mocks.headers.clear();
 });
 
@@ -126,40 +111,19 @@ describe("submitContact", () => {
     expect(mocks.createContactInquiry).not.toHaveBeenCalled();
   });
 
-  it("saves the inquiry with the published privacy policy's version and notifies the team", async () => {
+  it("saves the inquiry with the published privacy policy's version, then sends the inquiry emails by code", async () => {
     expect(await submitContact(input, meta)).toEqual({ status: "sent", code: "INQ-2611-0001" });
     expect(mocks.createContactInquiry).toHaveBeenCalledWith(input, "privacy-vi-0123456789abcdef", "203.0.113.7", "UA");
-    const message = mocks.sendEmail.mock.calls[0][0] as { to: string; template: string; subject: string; text: string };
-    expect(message).toMatchObject({ to: "team@example.com", template: "contact_staff", subject: "Liên hệ mới INQ-2611-0001 từ Lan" });
-    expect(mocks.findPublishedTourByCode).toHaveBeenCalledWith("VN-HLB-03");
-    expect(message.text).toContain("Tour: VN-HLB-03\n");
+    // One call covers the customer's acknowledgement and the team alert (no separate staff email).
+    expect(mocks.sendInquiryEmails).toHaveBeenCalledTimes(1);
+    expect(mocks.sendInquiryEmails).toHaveBeenCalledWith("INQ-2611-0001");
+    expect(mocks.createContactInquiry.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendInquiryEmails.mock.invocationCallOrder[0]);
   });
 
-  it("marks a tour code that names no published tour as not matched", async () => {
-    mocks.findPublishedTourByCode.mockResolvedValue({ data: null, error: null });
-    await submitContact(input, meta);
-    const message = mocks.sendEmail.mock.calls[0][0] as { text: string; html: string };
-    expect(message.text).toContain("Tour: VN-HLB-03 (không khớp tour nào đang mở bán)");
-  });
-
-  it("keeps the name on one line in the subject", () => {
-    const email = staffNotification("INQ-1", contactSchema.parse({ ...valid, name: "Lan\r\nBcc: x@y.z\u0007" }));
-    expect(email.subject).toBe("Liên hệ mới INQ-1 từ Lan Bcc: x@y.z");
-    expect(headerText("a\u2028b\tc")).toBe("a b c");
-  });
-
-  it("keeps a saved message when the notification cannot be sent, and reports write failures", async () => {
-    mocks.staffEmail = null;
-    expect(await submitContact(input, meta)).toEqual({ status: "sent", code: "INQ-2611-0001" });
-    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  it("sends no email when the write fails", async () => {
     mocks.createContactInquiry.mockResolvedValue({ data: null, error: { code: "22023", message: "invalid message" } });
     expect(await submitContact(input, meta)).toEqual({ status: "failed" });
-  });
-
-  it("escapes the visitor's text in the staff email", () => {
-    const email = staffNotification("INQ-1", contactSchema.parse({ ...valid, name: "<b>Lan</b>", message: "<script>x</script> hello there" }));
-    expect(email.html).not.toContain("<script>");
-    expect(email.html).toContain("&lt;b&gt;Lan&lt;/b&gt;");
+    expect(mocks.sendInquiryEmails).not.toHaveBeenCalled();
   });
 });
 

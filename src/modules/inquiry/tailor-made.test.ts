@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
+  sendInquiryEmails: vi.fn(),
   privacyVersion: "privacy-en-0123456789abcdef" as string | null,
   rateLimit: vi.fn(),
   verifyTurnstile: vi.fn(),
@@ -10,7 +11,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./tailor-made.repository", () => ({ createTailorMadeInquiry: mocks.create }));
-vi.mock("./contact.repository", () => ({ createContactInquiry: vi.fn(), findPublishedTourByCode: vi.fn() }));
+vi.mock("./contact.repository", () => ({ createContactInquiry: vi.fn() }));
+vi.mock("./inquiry-emails.service", () => ({ sendInquiryEmails: mocks.sendInquiryEmails }));
 vi.mock("@/modules/content/public/content-public.service", () => ({
   getPrivacyConsent: async (locale: string) => (mocks.privacyVersion ? { href: `/${locale}/policies/privacy`, version: mocks.privacyVersion } : null),
 }));
@@ -65,6 +67,7 @@ const without = (name: string) => wizard.filter(([key]) => key !== name);
 const replace = (name: string, value: string): [string, string][] => [...without(name), [name, value]];
 
 beforeEach(() => {
+  mocks.sendInquiryEmails.mockReset();
   mocks.create.mockReset().mockResolvedValue({ data: { id: "11111111-1111-4111-8111-111111111111", code: "INQ-2611-0007" }, error: null });
   mocks.rateLimit.mockReset().mockResolvedValue("ok");
   mocks.verifyTurnstile.mockReset().mockResolvedValue(true);
@@ -123,6 +126,9 @@ describe("sendInquiry", () => {
     expect([version, ip, ua]).toEqual(["privacy-en-0123456789abcdef", "203.0.113.9", "UA"]);
     expect(mocks.rateLimit.mock.calls.map(([keys]) => keys[0])).toEqual(["rl:inquiry-ip:203.0.113.9", "rl:inquiry-email:anna@example.com"]);
     expect(mocks.verifyTurnstile).toHaveBeenCalledWith("token", { action: "inquiry", ip: "203.0.113.9" });
+    // After the write: the acknowledgement and the team alert, by inquiry id.
+    expect(mocks.sendInquiryEmails).toHaveBeenCalledTimes(1);
+    expect(mocks.sendInquiryEmails).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111");
   });
 
   it("returns field errors without saving", async () => {
@@ -137,6 +143,7 @@ describe("sendInquiry", () => {
   it("answers a filled honeypot as sent and saves nothing", async () => {
     expect(await sendInquiry({ status: "idle" }, form([...wizard, ["website", "spam"]]))).toEqual({ status: "sent" });
     expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.sendInquiryEmails).not.toHaveBeenCalled();
   });
 
   it("refuses without its services, without a privacy policy, over a limit or without Turnstile", async () => {
@@ -153,10 +160,12 @@ describe("sendInquiry", () => {
     mocks.verifyTurnstile.mockResolvedValueOnce(false);
     expect((await sendInquiry({ status: "idle" }, form(wizard))).status).toBe("verification");
     expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.sendInquiryEmails).not.toHaveBeenCalled();
   });
 
-  it("reports a failed write", async () => {
+  it("reports a failed write and sends no email", async () => {
     mocks.create.mockResolvedValueOnce({ data: null, error: { code: "22023", message: "tour not found" } });
     expect((await sendInquiry({ status: "idle" }, form(wizard))).status).toBe("failed");
+    expect(mocks.sendInquiryEmails).not.toHaveBeenCalled();
   });
 });

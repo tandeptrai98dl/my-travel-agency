@@ -6,6 +6,7 @@ import { verifyTurnstile } from "@/lib/turnstile";
 import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
 
 import { contactAvailability } from "./contact.service";
+import { sendInquiryEmails } from "./inquiry-emails.service";
 import * as repo from "./tailor-made.repository";
 import type { InquiryInput, InquiryStatus } from "./tailor-made.schemas";
 
@@ -23,7 +24,7 @@ type SubmitMeta = { turnstileToken: string; ip: string | null; userAgent: string
 /**
  * Saves a tailor-made or tour inquiry. Order per ARCHITECTURE "Guest writes" (as the contact form):
  * Zod in the action, the per-IP limit, Turnstile, the per-address limit, then the service-role
- * write with the published privacy policy's version (ADR-035).
+ * write with the published privacy policy's version (ADR-035), then the inquiry emails.
  */
 export async function submitInquiry(input: InquiryInput, meta: SubmitMeta): Promise<{ status: InquiryStatus; code?: string; id?: string }> {
   if (!inquiryAvailability().enabled) {
@@ -55,5 +56,7 @@ export async function submitInquiry(input: InquiryInput, meta: SubmitMeta): Prom
     logger.error("inquiry.write_failed", { code: error?.code ?? null, source: input.source });
     return { status: "failed" };
   }
+  // Committed: the acknowledgement and the team alert go out after the response (never throws).
+  sendInquiryEmails(saved.id);
   return { status: "sent", code: saved.code, id: saved.id };
 }
