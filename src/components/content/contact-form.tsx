@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -99,7 +100,11 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
       noValidate
       onFocus={turnstile.start}
       onPointerDown={turnstile.start}
-      onSubmit={turnstile.onSubmit}
+      onSubmit={(event) => {
+        turnstile.onSubmit(event);
+        // Keep what was typed when the server answers with an error (React resets form actions).
+        submitKeepingValues(event, action);
+      }}
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="locale" value={locale} />

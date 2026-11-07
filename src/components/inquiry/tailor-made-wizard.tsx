@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
+import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -10,7 +11,7 @@ import type { InquiryField, InquiryState } from "@/modules/inquiry/tailor-made.s
 
 import type { InquirySuccessLabels } from "./inquiry-success";
 import { LazyInquirySuccess, preloadInquirySuccess } from "./inquiry-success-lazy";
-import { choiceClass, ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, submitKeepingValues, upcomingMonths } from "./inquiry-fields";
+import { choiceClass, ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, upcomingMonths } from "./inquiry-fields";
 
 export type WizardDestination = { key: string; name: string; children: { key: string; name: string }[] };
 

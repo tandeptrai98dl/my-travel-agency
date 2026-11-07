@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
+import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -10,7 +11,7 @@ import type { InquiryState } from "@/modules/inquiry/tailor-made.schemas";
 
 import type { InquirySuccessLabels } from "./inquiry-success";
 import { LazyInquirySuccess, preloadInquirySuccess } from "./inquiry-success-lazy";
-import { ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, submitKeepingValues, upcomingMonths } from "./inquiry-fields";
+import { ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, upcomingMonths } from "./inquiry-fields";
 
 export type TourInquiryLabels = InquiryContactLabels & { monthUndecided: string; messagePlaceholder: string; submit: string; success: InquirySuccessLabels };
 

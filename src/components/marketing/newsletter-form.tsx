@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { submitKeepingValues } from "@/components/forms/submit-keeping-values";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { type SubscribeState, subscribeToNewsletter } from "@/modules/content/public/newsletter.actions";
@@ -57,7 +58,11 @@ export function NewsletterForm({ locale, siteKey, privacyHref, labels }: Props) 
       action={action}
       onFocus={turnstile.start}
       onPointerDown={turnstile.start}
-      onSubmit={turnstile.onSubmit}
+      onSubmit={(event) => {
+        turnstile.onSubmit(event);
+        // Keep what was typed when the server answers with an error (React resets form actions).
+        submitKeepingValues(event, action);
+      }}
       className="flex w-full max-w-xl flex-col gap-3"
     >
       <input type="hidden" name="locale" value={locale} />
