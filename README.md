@@ -121,6 +121,11 @@ Money is confirmed only by a verified gateway result or recorded by an MFA-verif
 
   `error` holds only an HTTP status or an error class (`HTTP 401`: wrong `RESEND_API_KEY`; `HTTP 403`: the sending domain is not verified; `HTTP 422`: a bad address; `TimeoutError` or `TypeError`: Resend unreachable). A `queued` row means the sender stopped between claiming the email and Resend's answer: check Resend's dashboard for the message before sending again. Fix the cause, then open the booking and press "Gửi lại" next to the email (sales roles and admin). A resend gets a fresh key and appears in the timeline; payment links are never resent (their token is not stored), so create a new link instead.
 - **Refund:** pay the customer first, by bank transfer or cash, or refund in the VNPay portal. Then record it on the booking. The form refuses more than the amount received, net of earlier refunds.
+- **Sending a newsletter campaign** (Resend broadcasts; Phase 6 PR 6P). Launch rule: no campaign before the unsubscribe page (`/ban-tin/huy`) is live in production. For each campaign:
+  1. In `/admin/subscribers`, press "Xuất CSV" just before sending. The file lists active subscribers only and, per subscriber, a fresh single-use `unsubscribe_url` in their language; only the SHA-256 of each token is stored, so the link cannot be produced again. The export is in the audit log. Treat the file as personal data: delete it once imported.
+  2. Import the file into the same Resend audience each time (create it once), with `unsubscribe_url` as a contact property. Keep Resend's "update existing contacts" from re-subscribing anyone Resend already lists as unsubscribed.
+  3. In the broadcast, put `{{{contact.unsubscribe_url}}}` (the property's merge tag in Resend's editor) behind a visible "Unsubscribe" / "Hủy nhận bản tin" link in the footer. Every older campaign's link keeps working until it is used.
+  4. Resend adds its own `List-Unsubscribe` header to broadcasts and handles it in the audience: a person who uses the mail client's unsubscribe button is unsubscribed in Resend (and receives no further campaign) but not yet in the site's database. Their row stays active in `/admin/subscribers` until a write-back exists (backlog), so always import into the same audience, where Resend keeps them excluded; never into a fresh audience.
 
 ## Workflow
 

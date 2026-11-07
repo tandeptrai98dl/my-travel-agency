@@ -31,7 +31,7 @@ export async function listSubscriberRows(params: { q: string; state?: Subscriber
 export async function activeSubscriberRows(from: number, to: number) {
   const query = (await db())
     .from("subscribers")
-    .select("email, locale, source, confirmed_at, created_at")
+    .select("id, email, locale, source, confirmed_at, created_at")
     .order("created_at")
     .order("id")
     .range(from, to);
@@ -45,4 +45,13 @@ export async function activeSubscriberRows(from: number, to: number) {
  */
 export async function writeAuditRow(row: Database["public"]["Tables"]["audit_logs"]["Insert"]) {
   return createAdminClient().from("audit_logs").insert(row);
+}
+
+/**
+ * Stores the hashes of the export's fresh unsubscribe tokens (Phase 6 step 10a), active
+ * subscribers only, through the service-role function after the permission check and the audit
+ * row; the plaintext tokens exist only in the exported file.
+ */
+export async function issueUnsubscribeTokens(subscriberIds: string[], tokenHashes: string[]) {
+  return createAdminClient().rpc("issue_newsletter_unsubscribe_tokens", { p_subscriber_ids: subscriberIds, p_token_hashes: tokenHashes });
 }

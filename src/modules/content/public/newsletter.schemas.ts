@@ -17,5 +17,10 @@ export const confirmSchema = z.object({
   locale: z.enum(["vi", "en"]),
 });
 
+/** The unsubscribe page's button (step 10a): the token from the newsletter's link. */
+export const unsubscribeSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) });
+
+export type UnsubscribeStatus = "idle" | "unsubscribed" | "already" | "invalid" | "unavailable";
+
 export type SubscribeStatus = "idle" | "sent" | "invalidEmail" | "verification" | "rateLimited" | "unavailable" | "failed";
 export type ConfirmStatus = "idle" | "confirmed" | "invalid" | "unavailable";

@@ -2,9 +2,13 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
+import { localizedPath } from "@/i18n/paths";
 import { requirePermission } from "@/lib/auth/require-role";
 import { toCsv } from "@/lib/csv";
 import { logger } from "@/lib/logger";
+import { siteUrl } from "@/lib/site-url";
+
+import { createUnsubscribeToken } from "./public/newsletter.token";
 
 import * as repo from "./subscribers.repository";
 import { type SubscriberState, SUBSCRIBERS_PAGE_SIZE } from "./subscribers.schemas";
@@ -55,11 +59,14 @@ export type ExportResult = { ok: true; csv: string; filename: string; count: num
 
 /**
  * CSV of the active (confirmed, not unsubscribed) subscribers, the only ones a newsletter may go
- * to. The export is recorded in the audit log first; without that row there is no file.
+ * to. The export is recorded in the audit log first; without that row there is no file. Each row
+ * gets a fresh single-use unsubscribe link (`unsubscribe_url`, in the subscriber's language),
+ * which the campaign uses as a merge field (Phase 6 step 10a); only the token hashes are stored,
+ * and without them there is no file either.
  */
 export async function exportSubscribers(): Promise<ExportResult> {
   const user = await requirePermission("newsletter.manage");
-  const rows: { email: string; locale: string; source: string | null; confirmed_at: string | null; created_at: string }[] = [];
+  const rows: { id: string; email: string; locale: "vi" | "en"; source: string | null; confirmed_at: string | null; created_at: string }[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await repo.activeSubscriberRows(from, from + 999);
     if (error) throw new Error(`subscribers query failed: ${error.message}`);
@@ -71,15 +78,30 @@ export async function exportSubscribers(): Promise<ExportResult> {
     action: "subscribers.export",
     entity_type: "subscribers",
     entity_id: randomUUID(),
-    changes: { count: rows.length, scope: "active" },
+    changes: { count: rows.length, scope: "active", unsubscribe_links: true },
   });
   if (error) {
     logger.error("subscribers.export_audit_failed", { message: error.message });
     return { ok: false, error: "failed" };
   }
+  const links = new Map<string, string>();
+  for (let from = 0; from < rows.length; from += 1000) {
+    const chunk = rows.slice(from, from + 1000).map((row) => ({ row, ...createUnsubscribeToken() }));
+    const { error: issueError } = await repo.issueUnsubscribeTokens(
+      chunk.map((entry) => entry.row.id),
+      chunk.map((entry) => entry.hash),
+    );
+    if (issueError) {
+      logger.error("subscribers.export_tokens_failed", { code: issueError.code ?? null });
+      return { ok: false, error: "failed" };
+    }
+    for (const { row, token } of chunk) {
+      links.set(row.id, new URL(localizedPath(row.locale, { pathname: "/newsletter/unsubscribe", query: { token } }), siteUrl).toString());
+    }
+  }
   const csv = toCsv(
-    ["email", "locale", "source", "confirmed_at", "created_at"],
-    rows.map((row) => [row.email, row.locale, row.source, row.confirmed_at, row.created_at]),
+    ["email", "locale", "source", "confirmed_at", "created_at", "unsubscribe_url"],
+    rows.map((row) => [row.email, row.locale, row.source, row.confirmed_at, row.created_at, links.get(row.id) ?? ""]),
   );
   return { ok: true, csv, filename: `subscribers-${new Date().toISOString().slice(0, 10)}.csv`, count: rows.length };
 }

@@ -2,8 +2,15 @@
 
 import { headers } from "next/headers";
 
-import { confirmSchema, type ConfirmStatus, subscribeSchema, type SubscribeStatus } from "./newsletter.schemas";
-import { confirm, subscribe } from "./newsletter.service";
+import {
+  confirmSchema,
+  type ConfirmStatus,
+  subscribeSchema,
+  type SubscribeStatus,
+  unsubscribeSchema,
+  type UnsubscribeStatus,
+} from "./newsletter.schemas";
+import { confirm, subscribe, unsubscribe } from "./newsletter.service";
 
 /** The client's IP as Vercel forwards it (first `x-forwarded-for` entry). */
 async function requestMeta() {
@@ -38,4 +45,13 @@ export async function confirmNewsletter(_previous: ConfirmState, formData: FormD
   if (!parsed.success) return { status: "invalid" };
   const meta = await requestMeta();
   return { status: await confirm({ token: parsed.data.token, locale: parsed.data.locale, ...meta }) };
+}
+
+export type UnsubscribeState = { status: UnsubscribeStatus };
+
+/** Unsubscribes from the unsubscribe page's button (never on a plain visit). */
+export async function unsubscribeNewsletter(_previous: UnsubscribeState, formData: FormData): Promise<UnsubscribeState> {
+  const parsed = unsubscribeSchema.safeParse({ token: formData.get("token") });
+  if (!parsed.success) return { status: "invalid" };
+  return { status: await unsubscribe(parsed.data.token) };
 }

@@ -18,9 +18,9 @@ select tables_are(
     'reviews', 'post_categories', 'post_category_translations', 'posts', 'post_translations',
     'pages', 'page_translations', 'redirects', 'subscribers',
     'settings', 'consent_records', 'email_logs', 'audit_logs',
-    'cookie_consents'
+    'cookie_consents', 'newsletter_unsubscribe_tokens'
   ],
-  'the 38 approved tables exist'
+  'the 39 approved tables exist'
 );
 
 select is(
@@ -37,7 +37,7 @@ select is(
     where n.nspname = 'public' and c.relkind = 'r'
       and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = c.relname)
       -- Service-role-only tables, closed to every API role on purpose (Phase 6 PR 6P, ADR-039).
-      and c.relname not in ('cookie_consents')
+      and c.relname not in ('cookie_consents', 'newsletter_unsubscribe_tokens')
   ),
   null,
   'every table has at least one policy (none is accidentally closed to staff)'

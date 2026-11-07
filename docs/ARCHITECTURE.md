@@ -71,7 +71,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── (public)/[locale]/    # public website (VI default, /en): prerendered, nonce-free CSP
     │   │   └── (site)/           # home, tours, tours/[slug], destinations, travel-styles,
     │   │                         # tailor-made, journal, about, reviews, contact, faq,
-    │   │                         # policies/[slug], search, newsletter/confirm
+    │   │                         # policies/[slug], search, newsletter/confirm, newsletter/unsubscribe
     │   ├── (secure)/[locale]/    # own root layout, fully dynamic with a nonce CSP (ADR-027; Phase 4–5)
     │   │   ├── (booking)/        # book/[tourSlug], checkout/[code] (payment, result),
     │   │   │                     # pay/[token], booking-lookup
@@ -133,7 +133,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D) | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D); the newsletter unsubscribe tokens of the audited subscriber export after `requirePermission("newsletter.manage")` (Phase 6 PR 6P) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -205,6 +205,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Sales payment link | `/thanh-toan/link/[token]` | `/en/pay/[token]` |
 | Booking lookup (noindex; the emailed single-use link opens `/thanh-toan/[code]?access=…`) | `/tra-cuu-booking` | `/en/booking-lookup` |
 | Newsletter confirmation (noindex) | `/ban-tin/xac-nhan` | `/en/newsletter/confirm` |
+| Newsletter unsubscribe (noindex; single-use link from the subscriber export, acts on a button press; Phase 6 PR 6P) | `/ban-tin/huy` | `/en/newsletter/unsubscribe` |
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |
 

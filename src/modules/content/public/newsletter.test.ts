@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requestSubscription: vi.fn(),
   confirmSubscription: vi.fn(),
+  unsubscribe: vi.fn(),
   rateLimit: vi.fn(),
   verifyTurnstile: vi.fn(),
   sendEmail: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock("@/lib/site-url", () => ({ siteUrl: new URL("https://example.com") }));
 vi.mock("./newsletter.repository", () => ({
   requestSubscription: mocks.requestSubscription,
   confirmSubscription: mocks.confirmSubscription,
+  unsubscribe: mocks.unsubscribe,
 }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit, rateLimitKey: (scope: string, id: string) => `rl:${scope}:${id}` }));
 vi.mock("@/lib/redis", () => ({ isRedisConfigured: () => mocks.configured.redis }));
@@ -45,10 +47,10 @@ vi.mock("./content-public.service", () => ({
     mocks.privacy[locale] ? { href: `/${locale}/policies/privacy`, version: mocks.privacy[locale] } : null,
 }));
 
-import { confirmNewsletter, subscribeToNewsletter } from "./newsletter.actions";
+import { confirmNewsletter, subscribeToNewsletter, unsubscribeNewsletter } from "./newsletter.actions";
 import { confirmationEmail } from "./newsletter.email";
 import { confirm, newsletterAvailability, subscribe } from "./newsletter.service";
-import { createConfirmToken, hashToken, isTokenFresh } from "./newsletter.token";
+import { createConfirmToken, createUnsubscribeToken, hashToken, isTokenFresh } from "./newsletter.token";
 
 const input = { email: "anna@example.com", locale: "en" as const, turnstileToken: "cf-token", ip: "203.0.113.7" };
 
@@ -221,5 +223,40 @@ describe("actions", () => {
     const { token } = createConfirmToken();
     expect(await confirmNewsletter({ status: "idle" }, form({ token, locale: "fr" }))).toEqual({ status: "invalid" });
     expect(mocks.confirmSubscription).not.toHaveBeenCalled();
+  });
+});
+
+describe("newsletter unsubscribe (Phase 6 step 10a)", () => {
+  const form = (values: Record<string, string>) => {
+    const data = new FormData();
+    for (const [key, value] of Object.entries(values)) data.set(key, value);
+    return data;
+  };
+
+  it("makes 256-bit tokens and stores only their hash", () => {
+    const { token, hash } = createUnsubscribeToken();
+    expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(hash).toBe(hashToken(token));
+    expect(createUnsubscribeToken().token).not.toBe(token);
+  });
+
+  it("unsubscribes once, by the token's hash, on the button's POST", async () => {
+    const { token, hash } = createUnsubscribeToken();
+    mocks.unsubscribe.mockResolvedValueOnce({ data: "unsubscribed", error: null });
+    expect(await unsubscribeNewsletter({ status: "idle" }, form({ token }))).toEqual({ status: "unsubscribed" });
+    expect(mocks.unsubscribe).toHaveBeenCalledWith(hash);
+    mocks.unsubscribe.mockResolvedValueOnce({ data: "invalid", error: null });
+    expect(await unsubscribeNewsletter({ status: "idle" }, form({ token }))).toEqual({ status: "invalid" });
+    mocks.unsubscribe.mockResolvedValueOnce({ data: "already", error: null });
+    expect(await unsubscribeNewsletter({ status: "idle" }, form({ token }))).toEqual({ status: "already" });
+  });
+
+  it("refuses a malformed token without a database call, and reports an outage", async () => {
+    mocks.unsubscribe.mockReset();
+    expect(await unsubscribeNewsletter({ status: "idle" }, form({ token: "short" }))).toEqual({ status: "invalid" });
+    expect(mocks.unsubscribe).not.toHaveBeenCalled();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.unsubscribe.mockResolvedValueOnce({ data: null, error: { code: "PGRST000", message: "down" } });
+    expect(await unsubscribeNewsletter({ status: "idle" }, form({ token: createUnsubscribeToken().token }))).toEqual({ status: "unavailable" });
   });
 });

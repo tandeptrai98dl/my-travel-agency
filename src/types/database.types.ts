@@ -377,6 +377,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"newsletter_unsubscribe_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"subscriber_id": string,"token_hash": string,"used_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"subscriber_id": string,"token_hash": string,"used_at"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"subscriber_id"?: string,"token_hash"?: string,"used_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "newsletter_unsubscribe_tokens_subscriber_id_fkey"
+      columns: ["subscriber_id"]
+isOneToOne: false
+      referencedRelation: "subscribers"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"page_translations": {
                   Row: {
                     "content": NonNullable<Json>,"id": string,"is_published": boolean,"locale": Database["public"]['Enums']["locale"],"page_id": string,"seo_description": string | null,"seo_title": string | null,"slug": string,"title": string
@@ -1050,6 +1070,9 @@ isOneToOne: false
 "issue_booking_lookup":
 { Args: { "email": string,"target_code": string,"token_hash": string,"valid_minutes"?: number }; Returns: Json
                            },
+"issue_newsletter_unsubscribe_tokens":
+{ Args: { "p_subscriber_ids": (string)[],"p_token_hashes": (string)[] }; Returns: number
+                           },
 "itinerary_media_ids":
 { Args: { "itinerary": Json }; Returns: (string)[]
                            },
@@ -1181,6 +1204,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
               "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
             }[]
+                           },
+"unsubscribe_newsletter":
+{ Args: { "p_token_hash": string }; Returns: string
                            },
 "update_draft_booking":
 { Args: { "payload": Json,"target_id": string }; Returns: undefined

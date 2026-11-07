@@ -30,6 +30,7 @@ export const pathnames = {
   "/pay/[token]": { vi: "/thanh-toan/link/[token]", en: "/pay/[token]" },
   "/booking-lookup": { vi: "/tra-cuu-booking", en: "/booking-lookup" },
   "/newsletter/confirm": { vi: "/ban-tin/xac-nhan", en: "/newsletter/confirm" },
+  "/newsletter/unsubscribe": { vi: "/ban-tin/huy", en: "/newsletter/unsubscribe" },
   "/login": { vi: "/dang-nhap", en: "/login" },
   "/register": { vi: "/dang-ky", en: "/register" },
   "/forgot-password": { vi: "/quen-mat-khau", en: "/forgot-password" },

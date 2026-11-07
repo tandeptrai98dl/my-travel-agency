@@ -28,6 +28,7 @@ export const NO_ANALYTICS_ROUTES: ReadonlySet<string> = new Set<Route>([
   "/forgot-password",
   "/reset-password",
   "/newsletter/confirm",
+  "/newsletter/unsubscribe",
 ]);
 
 /** The template GA receives for unknown paths: never the path someone typed. */

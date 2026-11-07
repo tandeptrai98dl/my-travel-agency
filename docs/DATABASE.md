@@ -17,7 +17,7 @@ Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 - Customer profiles are soft-deleted (`deleted_at`) and anonymised on request; content uses `archived`.
 - `updated_at` is maintained by a shared `set_updated_at()` trigger.
 
-## Table groups (38 tables)
+## Table groups (39 tables)
 
 | Group | Tables |
 | --- | --- |
@@ -27,7 +27,7 @@ Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 | Booking | bookings, booking_items, travellers, booking_events, booking_access_tokens |
 | Payments | payments, payment_links, webhook_events |
 | Inquiries | inquiries, internal_notes |
-| Content | posts, post_translations, post_categories, post_category_translations, pages, page_translations, reviews, media, redirects, subscribers |
+| Content | posts, post_translations, post_categories, post_category_translations, pages, page_translations, reviews, media, redirects, subscribers, newsletter_unsubscribe_tokens |
 | System & compliance | settings, consent_records, cookie_consents, email_logs, audit_logs |
 
 Main relationships: `tours 1──* departures 1──* bookings`; `tours *──* destinations`; `inquiries 1──0..1 bookings`; `bookings 1──* payments`; `bookings 1──* booking_items / travellers / booking_events`; `auth.users 1──1 profiles 1──* bookings`.
@@ -551,6 +551,14 @@ create table subscribers (
   created_at         timestamptz not null default now()
 );
 
+create table newsletter_unsubscribe_tokens (  -- Phase 6 PR 6P: single-use unsubscribe links from the export
+  id            uuid primary key default gen_random_uuid(),
+  subscriber_id uuid not null references subscribers (id) on delete cascade,
+  token_hash    text not null unique,  -- SHA-256 hex; the plaintext exists only in the exported CSV
+  created_at    timestamptz not null default now(),
+  used_at       timestamptz
+);
+
 -- System & compliance
 create table settings (
   key        text primary key,  -- company, contact, bank_account, booking_rules, homepage, social
@@ -659,6 +667,7 @@ Customer reads (Phase 5, `*_customer_reads.sql`, closes the last Phase 0 limit):
 | settings | Read keys with `is_public` | Same as anon | admin writes |
 | consent_records, email_logs, audit_logs | — | — | admin reads; `email_logs` rows of a booking also for staff who read bookings (resend); writes only via service role or triggers |
 | cookie_consents | — | — | No policy and no privilege for any API role; written by `record_cookie_consent()` (service role), purged after 5 years |
+| newsletter_unsubscribe_tokens | — | — | No policy and no privilege for any API role; written and redeemed only by the two service-role newsletter functions |
 | booking_access_tokens | — | — | admin reads; writes only via service-role functions |
 | redirects, subscribers | — | — | editor, admin |
 
@@ -735,6 +744,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `current_customer_id()`, `customer_travellers_editable(status, start_date)`, `is_real_date(value)` | service_role | Helpers of the customer functions (`is_real_date`: a real `YYYY-MM-DD` calendar date) |
 | `record_cookie_consent(id, action, analytics, marketing, banner_version, locale)` | service_role | One cookie choice from the banner or the settings dialog (Phase 6 PR 6P, ADR-039): the consent Server Action calls it after Zod and a per-IP rate limit; the table's checks keep the choices to the two booleans and make them agree with the action |
 | `purge_cookie_consents()` | `pg_cron` daily (`cookie-consents-purge`, 03:10 Vietnam) | Deletes `cookie_consents` rows older than 5 years (retention confirmed by counsel, owner item 4a); returns the count |
+| `issue_newsletter_unsubscribe_tokens(subscriber_ids, token_hashes)` | service_role | The subscriber export (after `requirePermission("newsletter.manage")` and its audit row) stores one fresh token hash per **active** subscriber (others skipped), at most 1000 per call; earlier tokens keep working until used (Phase 6 PR 6P) |
+| `unsubscribe_newsletter(token_hash)` | service_role | The unsubscribe page's button: spends the token once, sets `subscribers.unsubscribed_at` and writes the withdrawal (`marketing`, `granted = false`, document `newsletter-unsubscribe`) to `consent_records` in one transaction; `unsubscribed`, `already` (the token is spent, nothing else changes) or `invalid` |
 | `raise_on_email_problems()` | `pg_cron`, every 15 min | Fails the run (the alert) when an email stayed `queued` 10–25 minutes or one `failed` in the last 15 minutes |
 | `hold_minutes()`, `booking_prices_current()`, `take_seats()`, `release_seats()`, `refresh_payment_state()`, `log_booking_event()`, `check_draft_payload()` | service_role | Helpers of the booking functions (`*_booking_functions.sql`) |
 
