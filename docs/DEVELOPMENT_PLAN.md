@@ -42,8 +42,8 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 
 - [x] Homepage
 - [ ] Tour listing (`docs/specs/tour-listing.md`)
-- [ ] Tour detail with live departures in `<Suspense>`
-- [ ] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies, site search
+- [x] Tour detail with live departures in `<Suspense>` (#18)
+- [ ] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies (done in #30, #31), site search (PR L)
 - [ ] Metadata, JSON-LD, sitemap, hreflang, OG images, redirects; CSP per page type
 - [ ] Acceptance: Core Web Vitals "Good" on staging; Rich Results Test passes; pages without an English translation return 404
 
