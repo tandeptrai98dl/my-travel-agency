@@ -41,21 +41,21 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 ## Phase 3: Public website and SEO (2 weeks)
 
 - [x] Homepage
-- [ ] Tour listing (`docs/specs/tour-listing.md`)
+- [x] Tour listing (`docs/specs/tour-listing.md`, #35)
 - [x] Tour detail with live departures in `<Suspense>` (#18)
-- [ ] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies (done in #30, #31), site search (PR L)
+- [x] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies, site search (#30, #31, #35)
 - [ ] Metadata, JSON-LD, sitemap, hreflang, OG images, redirects; CSP per page type
 - [ ] Acceptance: Core Web Vitals "Good" on staging; Rich Results Test passes; pages without an English translation return 404
 
 ## Phase 4: Booking and payments (4 weeks) — spec: `docs/specs/phase-4-booking-payments.md`
 
-- [ ] `pricing.ts`, `state-machine.ts`; `reserve_and_create_payment`, `confirm_payment`, `expire_holds`, `cancel_booking`, `check_seat_invariant` + pgTAP; `pg_cron` schedules
-- [ ] Book-now flow with VAT invoice details, terms consent, cancellation policy summary
-- [ ] VNPay adapter (sandbox); VietQR + SePay/Casso webhook; under/overpaid and wrong-memo transfers
-- [ ] Private-tour quotes: inquiries + `quoted` bookings in the admin, payment links
-- [ ] Emails: booking received, payment received, booking confirmed, payment link
-- [ ] Admin: bookings, payments, manual recording, refunds, "needs attention" queue
-- [ ] Acceptance: E2E booking + sandbox payment passes; two customers booking the last seat → only one succeeds; repeated IPN creates no duplicates; late IPN handled on both branches; seat invariant holds after the full test run
+- [x] `pricing.ts`, `state-machine.ts`; `reserve_and_create_payment`, `confirm_payment`, `expire_holds`, `cancel_booking`, `check_seat_invariant` + pgTAP; `pg_cron` schedules
+- [x] Book-now flow with VAT invoice details, terms consent, cancellation policy summary
+- [x] VNPay adapter (sandbox); VietQR + SePay/Casso webhook; under/overpaid and wrong-memo transfers
+- [x] Private-tour quotes: inquiries + `quoted` bookings in the admin, payment links
+- [x] Emails: booking received, payment received, booking confirmed, payment link
+- [x] Admin: bookings, payments, manual recording, refunds, "needs attention" queue
+- [ ] Acceptance: E2E booking + sandbox payment passes; two customers booking the last seat → only one succeeds; repeated IPN creates no duplicates; late IPN handled on both branches; seat invariant holds after the full test run (in CI with the signed VNPay stub: booking flow, last-seat race, ten identical IPNs, late payment on both branches in pgTAP, nightly seat check; open until the real VNPay sandbox runs on staging with the owner's merchant account)
 
 ## Phase 5: Accounts, inquiries and operations (2 weeks)
 
