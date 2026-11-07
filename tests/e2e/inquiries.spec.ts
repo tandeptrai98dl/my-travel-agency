@@ -77,6 +77,8 @@ test("sales take an inquiry, record the first contact and quote it", async ({ pa
 
   await page.getByRole("button", { name: "Nhận yêu cầu này" }).click();
   await expect.poll(async () => (await inquiryRow(open.id)).assigned_to).toBe(await profileId("sales@example.test"));
+  // The page refreshes after taking it (the "take" form goes); work on the refreshed forms.
+  await expect(page.getByRole("button", { name: "Nhận yêu cầu này" })).toHaveCount(0);
 
   const note = page.getByRole("form", { name: "Thêm ghi chú" });
   await note.getByRole("button", { name: "Thêm ghi chú" }).click();
