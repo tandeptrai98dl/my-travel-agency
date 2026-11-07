@@ -44,20 +44,21 @@ export function buildFilterOptions(index: DestinationSummary[], styles: { id: st
 export function knownCriteria(criteria: TourSearchCriteria, options: TourFilterOptions): TourSearchCriteria {
   return {
     ...criteria,
-    dest: criteria.dest.filter((key) => key in options.destinationIds),
-    style: criteria.style.filter((key) => key in options.styleIds),
+    // Own keys only: `in` would also accept inherited names such as "constructor".
+    dest: criteria.dest.filter((key) => Object.hasOwn(options.destinationIds, key)),
+    style: criteria.style.filter((key) => Object.hasOwn(options.styleIds, key)),
   };
 }
 
 /** `search_tours` arguments for one page of a (known) search. */
 export function searchArgs(locale: Locale, criteria: TourSearchCriteria, options: TourFilterOptions): SearchToursArgs {
-  const destinationIds = [...new Set(criteria.dest.flatMap((key) => options.destinationIds[key] ?? []))];
+  const destinationIds = [...new Set(criteria.dest.flatMap((key) => (Object.hasOwn(options.destinationIds, key) ? options.destinationIds[key] : [])))];
   return {
     locale,
     q: criteria.q ?? undefined,
     scopes: criteria.scopes,
     destinationIds,
-    travelStyleIds: criteria.style.flatMap((key) => (options.styleIds[key] ? [options.styleIds[key]] : [])),
+    travelStyleIds: criteria.style.flatMap((key) => (Object.hasOwn(options.styleIds, key) ? [options.styleIds[key]] : [])),
     priceMin: criteria.priceMin ?? undefined,
     priceMax: criteria.priceMax ?? undefined,
     months: criteria.months.map((month) => `${month}-01`),

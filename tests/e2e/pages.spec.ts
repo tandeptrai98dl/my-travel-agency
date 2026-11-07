@@ -77,6 +77,12 @@ test.describe("static pages, journal, reviews and contact", () => {
     expect(article).toMatchObject({ headline: "Một ngày trên vịnh Lan Hạ", inLanguage: "vi" });
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "article");
 
+    // A scheduled article (published, published_at tomorrow) is not public yet.
+    await page.goto("/journal/mua-nuoc-do-mu-cang-chai");
+    await expect(page.getByRole("heading", { level: 1, name: "Mùa nước đổ ở Mù Cang Chải" })).toHaveCount(0);
+    await page.goto("/tim-kiem?q=mu%20cang%20chai");
+    await expect(page.getByRole("link", { name: "Mùa nước đổ ở Mù Cang Chải" })).toHaveCount(0);
+
     await page.goto("/en/journal");
     await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(2);
     await page.goto("/en/journal/kyoto-in-autumn");
