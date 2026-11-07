@@ -449,8 +449,8 @@ join public.tours t on t.code = v.code;
 -- Phase 3 PR L: listing sample (docs/specs/tour-listing.md §3; development only)
 -- ============================================================================================
 -- 26 more published tours (31 in Vietnamese, 3 pages): Thailand and France, group and private,
--- all duration buckets, 15–298 million dong, departures over 12 months with sold-out, closed,
--- within-cutoff and few-seats cases. None is featured and none uses Vietnam, Japan, honeymoon or
+-- all duration buckets, 15–298 million dong, departures over 12 months with closed, within-cutoff
+-- and few-seats cases. None is featured and none uses Vietnam, Japan, honeymoon or
 -- wellness, so the homepage and destination E2E keep their numbers. FR-PAR-07 has no English.
 
 insert into public.destinations (key, type, status, latitude, longitude, sort_order) values
@@ -537,12 +537,14 @@ insert into public.tour_travel_styles (tour_id, travel_style_id)
 select t.id, st.id from listing_seed s join public.tours t on t.code = s.code join public.travel_styles st on st.key = s.style;
 
 -- Departures: one a month from day 20 for 12 months (group tours only).
---   few: 3 seats left on the first; soldout: the first is full; closed: every date closed (no
---   bookable date, "contact us for dates"); cutoff: an extra date 3 days out (inside the cutoff).
+--   few: the first date has only 3 seats; soldout: the first date is closed (a full date needs
+--   bookings, and seats_reserved must always match them: check_seat_invariant()); closed: every
+--   date closed (no bookable date, "contact us for dates"); cutoff: an extra date 3 days out
+--   (inside the cutoff). Seats are never reserved here.
 insert into public.departures (tour_id, start_date, end_date, capacity, seats_reserved, status, price_adult, price_child, single_supplement)
-select t.id, (current_date + 20 + g * 30)::date, (current_date + 20 + g * 30 + s.days - 1)::date, 12,
-       case when s.profile = 'few' and g = 0 then 9 when s.profile = 'soldout' and g = 0 then 12 else 0 end,
-       case when s.profile = 'closed' then 'closed' else 'open' end::public.departure_status,
+select t.id, (current_date + 20 + g * 30)::date, (current_date + 20 + g * 30 + s.days - 1)::date,
+       case when s.profile = 'few' and g = 0 then 3 else 12 end, 0,
+       case when s.profile = 'closed' or (s.profile = 'soldout' and g = 0) then 'closed' else 'open' end::public.departure_status,
        s.price + (g % 3) * 1000000, (s.price + (g % 3) * 1000000) * 3 / 4, s.price / 5
 from listing_seed s join public.tours t on t.code = s.code
 cross join generate_series(0, 11) as g
