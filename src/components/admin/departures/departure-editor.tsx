@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";

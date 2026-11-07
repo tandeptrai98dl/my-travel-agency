@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormatter, useTranslations } from "next-intl";
 import Link from "next/link";

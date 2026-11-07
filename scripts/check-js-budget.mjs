@@ -3,8 +3,8 @@
  * Initial JavaScript budget on public pages (ARCHITECTURE.md "Performance": < 150 KB gzip;
  * docs/specs/phase-3-public-site.md decision 16). Reads the prerendered HTML of a production
  * build, adds up the gzip size of the scripts a modern browser loads at start (script tags and
- * script preloads, no `noModule` polyfills) and reports them. A warning until Phase 3 PR M;
- * `--enforce` makes an over-budget page fail.
+ * script preloads, no `noModule` polyfills) and reports them. CI runs it with `--enforce`
+ * (Phase 3 PR M), which makes an over-budget page fail; without it, it only warns.
  *
  * Usage: node scripts/check-js-budget.mjs [--enforce] [page.html ...]
  * Pages are paths under .next/server/app; by default the home page and the first tour page.

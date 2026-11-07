@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Minus, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
