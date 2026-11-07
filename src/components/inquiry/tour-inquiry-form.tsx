@@ -5,21 +5,34 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
-import { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
+import type { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
 import type { InquiryState } from "@/modules/inquiry/tailor-made.schemas";
 
-import { InquirySuccess, type InquirySuccessLabels } from "./inquiry-success";
-import { ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, upcomingMonths } from "./inquiry-fields";
+import type { InquirySuccessLabels } from "./inquiry-success";
+import { LazyInquirySuccess, preloadInquirySuccess } from "./inquiry-success-lazy";
+import { ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, submitKeepingValues, upcomingMonths } from "./inquiry-fields";
 
 export type TourInquiryLabels = InquiryContactLabels & { monthUndecided: string; messagePlaceholder: string; submit: string; success: InquirySuccessLabels };
 
-type Props = { locale: "vi" | "en"; tourCode: string; siteKey: string | null; privacyHref: string | null; labels: TourInquiryLabels };
+type Props = {
+  locale: "vi" | "en";
+  tourCode: string;
+  siteKey: string | null;
+  privacyHref: string | null;
+  labels: TourInquiryLabels;
+  /**
+   * The Server Action, passed down from the page. Importing it here would pull Next.js's action
+   * client into this lazy chunk's graph, and Turbopack then splits those modules out of the shared
+   * router chunk on every page (+0.3 KB gzip; /tours went over the 150 KB budget).
+   */
+  sendInquiry: typeof sendInquiry;
+};
 
 /**
  * The inquiry form on a private tour's page (Phase 5 PR 5W): the tour is known, so it asks only
  * for the month, the party and how to reply. Saved as an inquiry with `source = 'tour_inquiry'`.
  */
-export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels }: Props) {
+export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels, sendInquiry }: Props) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(sendInquiry, { status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
@@ -30,17 +43,23 @@ export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels
 
   useEffect(() => setMonths(upcomingMonths()), []);
   useEffect(() => {
+    if (pending) preloadInquirySuccess();
+  }, [pending]);
+  useEffect(() => {
     if (state.status === "idle" || state.status === "sent") return;
     reset();
     const invalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
     (invalid ?? statusRef.current)?.focus();
   }, [state, reset]);
 
-  if (state.status === "sent") return <InquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
+  if (state.status === "sent") return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
 
   return (
-    <form ref={formRef} action={action} noValidate onFocus={turnstile.start} onPointerDown={turnstile.start} onSubmit={turnstile.onSubmit} className="flex flex-col gap-5">
+    <form ref={formRef} action={action} noValidate onFocus={turnstile.start} onPointerDown={turnstile.start} onSubmit={(event) => {
+        turnstile.onSubmit(event);
+        submitKeepingValues(event, action);
+      }} className="flex flex-col gap-5">
       <input type="hidden" name="source" value="tour_inquiry" />
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="tourCode" value={tourCode} />

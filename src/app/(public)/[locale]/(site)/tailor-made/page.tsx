@@ -15,6 +15,7 @@ import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
 import { getTravelStyleOptions } from "@/modules/catalog/public/destination-public.service";
 import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
+import { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
 import { inquiryAvailability } from "@/modules/inquiry/tailor-made.service";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -61,7 +62,7 @@ export default async function TailorMadePage({ params }: Props) {
       />
       <SectionHeading level={1} size="h1" eyebrow={t("eyebrow")} title={t("title")} description={t("intro")} />
       <div className="max-w-4xl">
-        <TailorMadeWizard locale={locale} siteKey={siteKey} privacyHref={privacy?.href ?? null} destinations={destinations} styles={styles} labels={labels} />
+        <TailorMadeWizard locale={locale} siteKey={siteKey} privacyHref={privacy?.href ?? null} destinations={destinations} styles={styles} labels={labels} sendInquiry={sendInquiry} />
       </div>
     </Container>
   );

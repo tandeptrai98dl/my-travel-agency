@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type FormEvent, type ReactNode, startTransition } from "react";
 
 import { cx } from "@/lib/cx";
 import type { InquiryField, InquiryState } from "@/modules/inquiry/tailor-made.schemas";
@@ -24,6 +24,21 @@ export type InquiryContactLabels = {
   unavailable: string;
   errors: Record<string, string>;
 };
+
+/**
+ * Sends the form through `dispatch` (the `useActionState` action) in a transition. React resets a
+ * form once its `action` prop completes, which would empty every field when the server answers
+ * with an error; dispatching here keeps what the visitor typed. Without JavaScript the form's own
+ * `action` still posts. Call it after anything that may hold the submit back (Turnstile).
+ */
+export function submitKeepingValues(event: FormEvent<HTMLFormElement>, dispatch: (data: FormData) => void) {
+  if (event.defaultPrevented) return;
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  // React's own hidden fields for the no-JavaScript post.
+  for (const key of [...data.keys()]) if (key.startsWith("$ACTION")) data.delete(key);
+  startTransition(() => dispatch(data));
+}
 
 export const fieldClass =
   "w-full min-w-0 rounded-md border border-input bg-card px-3.5 text-body text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive";

@@ -5,11 +5,12 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
-import { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
+import type { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
 import type { InquiryField, InquiryState } from "@/modules/inquiry/tailor-made.schemas";
 
-import { InquirySuccess, type InquirySuccessLabels } from "./inquiry-success";
-import { choiceClass, ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, upcomingMonths } from "./inquiry-fields";
+import type { InquirySuccessLabels } from "./inquiry-success";
+import { LazyInquirySuccess, preloadInquirySuccess } from "./inquiry-success-lazy";
+import { choiceClass, ConsentField, ContactFields, Field, fieldClass, Honeypot, type InquiryContactLabels, monthLabel, submitKeepingValues, upcomingMonths } from "./inquiry-fields";
 
 export type WizardDestination = { key: string; name: string; children: { key: string; name: string }[] };
 
@@ -45,57 +46,16 @@ type Props = {
   destinations: WizardDestination[];
   styles: { key: string; name: string }[];
   labels: TailorMadeLabels;
+  /** The Server Action, passed down from the page (as the tour form: no action client in this page's JS). */
+  sendInquiry: typeof sendInquiry;
 };
 
-const DRAFT_KEY = "pta:tailor-made:draft:v1";
-/** Never kept in the draft: consent is given at submit time; tokens and the honeypot are per request. */
-const NOT_DRAFTED = new Set(["consent", "cf-turnstile-response", "website", "source", "locale"]);
 /** The step that holds each field, to reopen it when the server reports an error there. */
 const FIELD_STEP: Partial<Record<InquiryField, number>> = { destinations: 0, travelMonth: 1, durationDays: 1, adults: 2, children: 2, budget: 3 };
 const BUDGET_KEYS = ["under_30m", "30_60m", "60_100m", "100_200m", "over_200m", "not_sure"];
 
-function readDraft(): [string, string][] | null {
-  try {
-    const raw = window.localStorage.getItem(DRAFT_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed.filter((entry): entry is [string, string] => Array.isArray(entry) && entry.length === 2 && entry.every((v) => typeof v === "string")) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(form: HTMLFormElement) {
-  try {
-    const entries = [...new FormData(form)].filter((entry): entry is [string, string] => typeof entry[1] === "string" && !NOT_DRAFTED.has(entry[0]));
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(entries));
-  } catch {
-    // Private windows and blocked storage: the wizard works without a draft.
-  }
-}
-
-function clearDraft() {
-  try {
-    window.localStorage.removeItem(DRAFT_KEY);
-  } catch {
-    // Nothing to clear.
-  }
-}
-
-/** Puts a saved draft back into the form's controls. */
-function restore(form: HTMLFormElement, entries: [string, string][]) {
-  const values = new Map<string, string[]>();
-  for (const [name, value] of entries) values.set(name, [...(values.get(name) ?? []), value]);
-  for (const element of Array.from(form.elements)) {
-    if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) || !element.name || NOT_DRAFTED.has(element.name)) continue;
-    const saved = values.get(element.name);
-    if (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio")) {
-      // An unticked box is absent from the draft, so it is unticked; a radio group without a saved
-      // choice keeps its default.
-      if (saved) element.checked = saved.includes(element.value);
-      else if (element.type === "checkbox") element.checked = false;
-    } else if (saved) element.value = saved[0];
-  }
-}
+/** The draft code, loaded on demand (see tailor-made-draft.ts). */
+const loadDraft = () => import("./tailor-made-draft");
 
 /**
  * The tailor-made wizard (Phase 5 PR 5W, DESIGN_SYSTEM "Consultation"): destination → timing →
@@ -104,7 +64,7 @@ function restore(form: HTMLFormElement, entries: [string, string][]) {
  * draft is kept in this browser and cleared after sending. Turnstile loads on the first
  * interaction; the server validates everything again.
  */
-export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, styles, labels }: Props) {
+export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, styles, labels, sendInquiry }: Props) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(sendInquiry, { status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
   const headingRefs = useRef<(HTMLHeadingElement | null)[]>([]);
@@ -127,21 +87,30 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
     setUtm(["source", "medium", "campaign", "term", "content"].flatMap((key) => (params.get(`utm_${key}`) ? [[`utm_${key}`, params.get(`utm_${key}`)!.slice(0, 100)] as [string, string]] : [])));
   }, []);
 
+  useEffect(() => {
+    if (pending) preloadInquirySuccess();
+  }, [pending]);
+
   // The draft goes back in once the month options exist (a saved month needs its option).
   useEffect(() => {
     if (!months.length || !formRef.current) return;
-    const draft = readDraft();
-    if (draft?.length) {
-      restore(formRef.current, draft);
+    let cancelled = false;
+    void loadDraft().then(({ readDraft, restoreDraft }) => {
+      const draft = readDraft();
+      if (cancelled || !draft?.length || !formRef.current) return;
+      restoreDraft(formRef.current, draft);
       setRestored(true);
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [months]);
 
   useEffect(() => {
     if (state.status === "idle") return;
     reset();
     if (state.status === "sent") {
-      clearDraft();
+      void loadDraft().then(({ clearDraft }) => clearDraft());
       return;
     }
     const first = (Object.keys(state.errors ?? {}) as InquiryField[])[0];
@@ -168,7 +137,7 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
     go(step + 1);
   };
 
-  if (done) return <InquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
+  if (done) return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
 
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
   const panelClass = (index: number) => cx("flex flex-col gap-6", ready && index !== step && "hidden");
@@ -187,8 +156,12 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
           return;
         }
         turnstile.onSubmit(event);
+        submitKeepingValues(event, action);
       }}
-      onChange={(event) => writeDraft(event.currentTarget)}
+      onChange={(event) => {
+        const form = event.currentTarget;
+        void loadDraft().then(({ writeDraft }) => writeDraft(form));
+      }}
       className="flex flex-col gap-8"
     >
       <input type="hidden" name="source" value="tailor_made" />
@@ -329,12 +302,14 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
               {labels.back}
             </button>
           )}
+          {/* Separate keys: React would otherwise turn the clicked "next" button into the submit
+              button during the click, and the browser would then submit the form. */}
           {ready && step < last ? (
-            <button type="button" onClick={next} className={buttonVariants({ size: "lg" })}>
+            <button key="next" type="button" onClick={next} className={buttonVariants({ size: "lg" })}>
               {labels.next}
             </button>
           ) : (
-            <button type="submit" disabled={pending || turnstile.waiting} className={buttonVariants({ size: "lg" })}>
+            <button key="submit" type="submit" disabled={pending || turnstile.waiting} className={buttonVariants({ size: "lg" })}>
               {pending || turnstile.waiting ? labels.sending : labels.submit}
             </button>
           )}

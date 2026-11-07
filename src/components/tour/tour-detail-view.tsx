@@ -29,6 +29,7 @@ import { tourJsonLd } from "./tour-json-ld";
 import { TourFactsBar } from "./tour-facts-bar";
 import { LazyTourInquiryForm } from "@/components/inquiry/tour-inquiry-lazy";
 import type { TourInquiryLabels } from "@/components/inquiry/tour-inquiry-form";
+import type { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
 
 import { TourGallery } from "./tour-gallery";
 import { TourHeader } from "./tour-header";
@@ -47,7 +48,7 @@ type Props = {
   /** Staff preview: no structured data, alternates or breadcrumbs JSON-LD. */
   preview?: boolean;
   /** Private tours (Phase 5 PR 5W): the inquiry form at the end of the page, while `features.inquiry` is on. */
-  inquiry?: { siteKey: string | null; privacyHref: string | null; labels: TourInquiryLabels; title: string; intro: string } | null;
+  inquiry?: { siteKey: string | null; privacyHref: string | null; labels: TourInquiryLabels; title: string; intro: string; sendInquiry: typeof sendInquiry } | null;
 };
 
 /**
@@ -240,7 +241,7 @@ export async function TourDetailView({ locale, tour, related, reviews, contact, 
               <section id="tour-inquiry" aria-labelledby="tour-inquiry-title" className={sectionClass}>
                 <Heading level={2} id="tour-inquiry-title">{inquiry.title}</Heading>
                 <p className="max-w-prose text-body text-muted-foreground">{inquiry.intro}</p>
-                <LazyTourInquiryForm locale={locale} tourCode={tour.code} siteKey={inquiry.siteKey} privacyHref={inquiry.privacyHref} labels={inquiry.labels} />
+                <LazyTourInquiryForm locale={locale} tourCode={tour.code} siteKey={inquiry.siteKey} privacyHref={inquiry.privacyHref} labels={inquiry.labels} sendInquiry={inquiry.sendInquiry} />
               </section>
             )}
           </div>

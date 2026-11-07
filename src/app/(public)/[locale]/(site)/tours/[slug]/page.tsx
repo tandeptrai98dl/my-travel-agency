@@ -20,6 +20,7 @@ import {
 import type { Locale } from "@/modules/catalog/public/types";
 import { onlineBookingAvailable } from "@/modules/catalog/public/online-booking.service";
 import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
+import { sendInquiry } from "@/modules/inquiry/tailor-made.actions";
 import { inquiryAvailability } from "@/modules/inquiry/tailor-made.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -84,7 +85,7 @@ export default async function TourDetailPage({ params }: Props) {
     tour.type === "private" && features.inquiry
       ? await (async () => {
           const [privacy, labels, ti] = await Promise.all([getPrivacyConsent(locale), tourInquiryLabels(locale), getTranslations({ locale, namespace: "TourInquiry" })]);
-          return { siteKey: privacy ? inquiryAvailability().siteKey : null, privacyHref: privacy?.href ?? null, labels, title: ti("title"), intro: ti("intro") };
+          return { siteKey: privacy ? inquiryAvailability().siteKey : null, privacyHref: privacy?.href ?? null, labels, title: ti("title"), intro: ti("intro"), sendInquiry };
         })()
       : null;
   return (
