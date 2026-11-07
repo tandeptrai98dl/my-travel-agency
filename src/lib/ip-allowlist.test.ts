@@ -35,6 +35,8 @@ describe("parseIp", () => {
       "2001:db8::12345",
       "fe80::1%eth0",
       "::ffff:999.0.0.1",
+      "1.2.3.4::1",
+      "::1.2.3.4:1",
       "localhost",
       "0x7f000001",
     ]) {
@@ -49,12 +51,16 @@ describe("parseRange", () => {
     expect(parseRange("203.0.113.0/24")).toMatchObject({ version: 4, prefix: 24 });
     expect(parseRange("2001:db8::/32")).toMatchObject({ version: 6, prefix: 32 });
     expect(parseRange("2001:db8::1")).toMatchObject({ version: 6, prefix: 128 });
+    expect(parseRange("10.0.0.0/8")).toMatchObject({ version: 4, prefix: 8 });
+    expect(parseRange("2001::/16")).toMatchObject({ version: 6, prefix: 16 });
   });
 
-  it("refuses /0, out-of-range prefixes, host bits and malformed prefixes", () => {
+  it("refuses /0 and ranges wider than /8 (IPv4) or /16 (IPv6), out-of-range prefixes, host bits and malformed prefixes", () => {
     for (const bad of [
       "0.0.0.0/0",
       "::/0",
+      "10.0.0.0/7",
+      "2000::/15",
       "203.0.113.0/33",
       "2001:db8::/129",
       "203.0.113.5/24",

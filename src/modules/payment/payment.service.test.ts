@@ -11,6 +11,19 @@ const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
 vi.mock("@/lib/logger", () => ({ logger }));
 const captureMessage = vi.hoisted(() => vi.fn());
 vi.mock("@sentry/nextjs", () => ({ captureMessage }));
+// Upstash for the refused-source alert window: SET NX answers "OK" once per key, then null.
+const redis = vi.hoisted(() => ({ mode: "up" as "up" | "down" | "unconfigured", keys: new Set<string>() }));
+vi.mock("@/lib/redis", () => ({
+  redisPipeline: async (commands: (string | number)[][]) => {
+    if (redis.mode === "unconfigured") return { configured: false };
+    if (redis.mode === "down") return { configured: true, ok: false };
+    return {
+      configured: true,
+      ok: true,
+      results: commands.map(([, key]) => (redis.keys.has(String(key)) ? null : (redis.keys.add(String(key)), "OK"))),
+    };
+  },
+}));
 const config = {
   tmnCode: "CITEST01",
   hashSecret: "ci-only-vnpay-secret-0123456789",
@@ -41,7 +54,7 @@ vi.mock("./payment.repository", () => repo);
 const notifyBooking = vi.hoisted(() => vi.fn());
 vi.mock("@/modules/booking/booking-emails.service", () => ({ notifyBooking }));
 
-const { availableMethods, handleBankWebhook, handleVnpayIpn, receiveVnpayIpn } = await import("./payment.service");
+const { availableMethods, bankWebhookGate, handleBankWebhook, handleVnpayIpn, receiveVnpayIpn } = await import("./payment.service");
 
 /** An enforced allow-list (documentation ranges) and request headers from a given address. */
 const PROVIDER_RANGE = parseAllowList("203.0.113.0/24, 2001:db8::/32").list;
@@ -65,6 +78,8 @@ beforeEach(() => {
   configState.vnpay = config;
   configState.bank = { provider: "sepay", secret: "a-long-bank-webhook-secret" };
   configState.allowList = { mode: "off" };
+  redis.mode = "up";
+  redis.keys.clear();
   repo.findPaymentByReference.mockResolvedValue({ data: payment, error: null });
   repo.recordPaymentEvent.mockResolvedValue({ data: { result: "recorded", booking_id: "b-1", status: "confirmed", needs_attention: false }, error: null });
 });
@@ -161,15 +176,42 @@ describe("VNPay IPN source allow-list (Phase 6 decision 2)", () => {
     expect(captureMessage).not.toHaveBeenCalledWith("payment.webhook_source_refused", expect.anything());
   });
 
-  it("reports a correctly signed IPN from an unlisted address as an error (the list is out of date)", async () => {
+  it("reports a correctly signed IPN from an unlisted address as one error per window, however often it is replayed", async () => {
     configState.allowList = PROVIDER_RANGE;
-    expect((await receiveVnpayIpn(ipn(), from("192.0.2.1"))).status).toBe(403);
+    // A signed set is not secret (VNPay signs the return URL with it): replays must not drain Sentry.
+    for (let i = 0; i < 25; i++) expect((await receiveVnpayIpn(ipn(), from("192.0.2.1"))).status).toBe(403);
     expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+    expect(captureMessage).toHaveBeenCalledTimes(1);
     expect(captureMessage).toHaveBeenCalledWith("payment.webhook_source_refused", {
       level: "error",
       tags: { "payment.webhook": "vnpay", "payment.event": "payment.webhook_source_refused" },
       fingerprint: ["payment", "payment.webhook_source_refused", "vnpay"],
     });
+    // Every call is still logged.
+    expect(logger.warn).toHaveBeenCalledTimes(25);
+    expect(redis.keys).toEqual(new Set(["webhook_source_refused:vnpay"]));
+  });
+
+  it("falls back to a 10 % sampled warning without Upstash", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    for (const mode of ["unconfigured", "down"] as const) {
+      redis.mode = mode;
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      await receiveVnpayIpn(ipn(), from("192.0.2.1"));
+      expect(captureMessage).not.toHaveBeenCalled();
+      vi.mocked(Math.random).mockReturnValue(0.05);
+      await receiveVnpayIpn(ipn(), from("192.0.2.1"));
+      expect(captureMessage).toHaveBeenCalledWith("payment.webhook_source_refused", expect.objectContaining({ level: "warning" }));
+      vi.mocked(Math.random).mockRestore();
+      captureMessage.mockClear();
+    }
+  });
+
+  it("does not alert for an IPN signed for another merchant code", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect((await receiveVnpayIpn(ipn({ vnp_TmnCode: "OTHER001" }), from("192.0.2.1"))).status).toBe(403);
+    expect(captureMessage).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith("payment.webhook_source_refused", { provider: "vnpay", signed: false });
   });
 
   it("handles a listed address (IPv4 or IPv6), and a bad signature from it is an unsampled error", async () => {
@@ -205,9 +247,20 @@ describe("bank webhook", () => {
     expect(await handleBankWebhook(from("192.0.2.1"), credit)).toEqual({ status: 403, body: { success: false } });
     expect(logger.warn).toHaveBeenCalledWith("payment.webhook_source_refused", { provider: "sepay", signed: false });
     expect(captureMessage).not.toHaveBeenCalled();
-    expect(await handleBankWebhook(from("192.0.2.1", { Authorization: "Apikey a-long-bank-webhook-secret" }), credit)).toEqual({ status: 403, body: { success: false } });
+    for (let i = 0; i < 3; i++) {
+      expect(await handleBankWebhook(from("192.0.2.1", { Authorization: "Apikey a-long-bank-webhook-secret" }), credit)).toEqual({ status: 403, body: { success: false } });
+    }
+    expect(captureMessage).toHaveBeenCalledTimes(1);
     expect(captureMessage).toHaveBeenCalledWith("payment.webhook_source_refused", expect.objectContaining({ level: "error", tags: expect.objectContaining({ "payment.webhook": "sepay" }) }));
     expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it("the route's gate refuses the source before the body is read", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect(await bankWebhookGate(from("192.0.2.1"))).toEqual({ status: 403, body: { success: false } });
+    expect(await bankWebhookGate(from("203.0.113.20"))).toBeNull();
+    configState.bank = null;
+    expect(await bankWebhookGate(from("203.0.113.20"))).toEqual({ status: 503, body: { success: false } });
   });
 
   it("records from a listed address; a wrong key from there is an unsampled error", async () => {

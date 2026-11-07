@@ -33,13 +33,14 @@ function parseIpv6(text: string): bigint | null {
   if (text.includes("%") || !/^[0-9a-fA-F:.]+$/.test(text)) return null;
   const halves = text.split("::");
   if (halves.length > 2) return null;
-  const groups = (half: string): number[] | null => {
+  // A dotted IPv4 tail is allowed only as the address's last 32 bits (`::ffff:1.2.3.4`).
+  const groups = (half: string, lastOfAddress: boolean): number[] | null => {
     if (half === "") return [];
     const out: number[] = [];
     const parts = half.split(":");
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]!;
-      if (i === parts.length - 1 && part.includes(".")) {
+      if (lastOfAddress && i === parts.length - 1 && part.includes(".")) {
         const v4 = parseIpv4(part);
         if (v4 === null) return null;
         out.push(Number(v4 >> BigInt(16)), Number(v4 & BigInt(0xffff)));
@@ -51,8 +52,8 @@ function parseIpv6(text: string): bigint | null {
     }
     return out;
   };
-  const head = groups(halves[0]!);
-  const tail = halves.length === 2 ? groups(halves[1]!) : [];
+  const head = groups(halves[0]!, halves.length === 1);
+  const tail = halves.length === 2 ? groups(halves[1]!, true) : [];
   if (!head || !tail) return null;
   const missing = 8 - head.length - tail.length;
   if (halves.length === 2 ? missing < 1 : missing !== 0) return null;
@@ -83,6 +84,9 @@ function mask(version: 4 | 6, prefix: number): bigint {
   return ((BigInt(1) << BigInt(bits)) - BigInt(1)) ^ ((BigInt(1) << BigInt(bits - prefix)) - BigInt(1));
 }
 
+/** Shortest prefixes accepted: anything wider is a typo, never a provider's published range. */
+const MIN_PREFIX = { 4: 8, 6: 16 } as const;
+
 /** One address (a /32 or /128) or a CIDR range; null for anything else, including /0. */
 export function parseRange(text: string): IpRange | null {
   const [address, prefixText, extra] = text.trim().split("/");
@@ -94,8 +98,9 @@ export function parseRange(text: string): IpRange | null {
   const bits = ip.version === 4 ? 32 : 128;
   if (prefixText !== undefined && !/^\d{1,3}$/.test(prefixText)) return null;
   const prefix = prefixText === undefined ? bits : Number(prefixText);
-  // /0 would allow every address: leave the variable empty for "not enforced" instead.
-  if (prefix < 1 || prefix > bits) return null;
+  // /0 (or any very wide range) would allow almost every address: leave the variable empty for
+  // "not enforced" instead.
+  if (prefix < MIN_PREFIX[ip.version] || prefix > bits) return null;
   const m = mask(ip.version, prefix);
   // Host bits must be zero (203.0.113.5/24 is almost always a typo for one address or the range).
   if ((ip.value & m) !== ip.value) return null;

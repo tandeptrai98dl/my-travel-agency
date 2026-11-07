@@ -55,6 +55,8 @@ jobs:
         with:
           # Every commit, so gitleaks reads the full history, not only the merge commit.
           fetch-depth: 0
+          # Nothing in this job pushes or calls the API: keep the token out of .git/config.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -68,6 +70,7 @@ jobs:
           curl -sSfL -o "$RUNNER_TEMP/$file" "$base/$file"
           curl -sSfL -o "$RUNNER_TEMP/checksums.txt" "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
           (cd "$RUNNER_TEMP" && grep " $file\$" checksums.txt | sha256sum -c -)
+          sha256sum "$RUNNER_TEMP/$file"
           tar -xzf "$RUNNER_TEMP/$file" -C "$RUNNER_TEMP" gitleaks
       - name: gitleaks (full git history)
         run: |

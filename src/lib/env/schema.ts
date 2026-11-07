@@ -31,7 +31,7 @@ const optionalString = z.preprocess(
 const allowList = z.string().optional().transform((value, ctx): IpAllowList => {
   const { list, errors } = parseAllowList(value);
   if (errors.length) {
-    ctx.addIssue({ code: "custom", message: `not an IPv4/IPv6 address or CIDR range (no /0, no host bits): ${errors.join(", ")}` });
+    ctx.addIssue({ code: "custom", message: `not an IPv4/IPv6 address or CIDR range (at least /8 for IPv4 and /16 for IPv6, no host bits): ${errors.join(", ")}` });
     return z.NEVER;
   }
   return list;

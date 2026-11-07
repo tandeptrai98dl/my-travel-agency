@@ -265,6 +265,9 @@ async function expectRefused(page: Page, role: Role, ids: Ids) {
 }
 
 test.describe("permissions per role", () => {
+  // Against a deployed preview (PLAYWRIGHT_BASE_URL) there is no local build to read action ids
+  // from; in CI the build is always local, so a missing manifest is an error, never a silent skip.
+  if (process.env.CI && !existsSync(MANIFEST)) throw new Error(`${MANIFEST} is missing: build before the E2E run`);
   test.skip(!existsSync(MANIFEST), "needs the local production build's server reference manifest");
 
   let ids: Ids;

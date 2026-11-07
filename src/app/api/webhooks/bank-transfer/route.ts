@@ -1,6 +1,6 @@
 import { connection, NextResponse } from "next/server";
 
-import { handleBankWebhook } from "@/modules/payment/payment.service";
+import { bankWebhookGate, handleBankWebhook } from "@/modules/payment/payment.service";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -11,6 +11,9 @@ const MAX_BODY_BYTES = 64 * 1024;
  */
 export async function POST(request: Request) {
   await connection();
+  // Settings and the source allow-list before anything of the body is read (Phase 6 decision 2).
+  const refused = await bankWebhookGate(request.headers);
+  if (refused) return NextResponse.json(refused.body, { status: refused.status, headers: { "Cache-Control": "no-store" } });
   // Refuse a declared oversized body before reading it; the length is checked again after.
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) {
