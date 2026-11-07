@@ -8,7 +8,6 @@
     "eyebrow": "Nơi chúng tôi đưa bạn đến",
     "intro": "Từ vịnh đá vôi phía Bắc đến những khu vườn thiền ở Kyoto: chọn một vùng đất để xem các hành trình ở đó.",
     "tourCount": "{count, plural, =0 {Chưa có hành trình} other {# hành trình}}",
-    "tourCountCapped": "{shown} trên {count} hành trình",
     "bestTime": "Thời điểm đẹp: {value}",
     "bestTimeLabel": "Thời điểm đẹp nhất",
     "toursLabel": "Hành trình",
@@ -23,7 +22,8 @@
     "noTours": "Chưa có hành trình nào ở đây. Hãy cho chúng tôi biết bạn muốn đi thế nào, chuyên viên tư vấn sẽ thiết kế một lịch trình riêng.",
     "call": "Gọi {phone}",
     "email": "Gửi email cho chúng tôi",
-    "aboutTitle": "Về {name}"
+    "aboutTitle": "Về {name}",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}}"
   },
   "TravelStyles": {
     "eyebrow": "Phong cách",
@@ -35,7 +35,8 @@
     "noTours": "Chưa có hành trình nào theo phong cách này. Chuyên viên tư vấn có thể thiết kế riêng cho bạn.",
     "call": "Gọi {phone}",
     "email": "Gửi email cho chúng tôi",
-    "others": "Phong cách khác"
+    "others": "Phong cách khác",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}}"
   },
   "PageError": {
     "title": "Chưa tải được trang này",

@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ContactEmptyState } from "@/components/destination/contact-empty-state";
 import { DestinationCard } from "@/components/destination/destination-card";
 import { PlaceHeader } from "@/components/destination/place-header";
-import { TourGridSection } from "@/components/destination/tour-grid-section";
+import { SECTION_TOUR_LIMIT, TourGridSection } from "@/components/destination/tour-grid-section";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Container } from "@/components/layout/container";
 import { LocaleAlternates } from "@/components/layout/locale-alternates";
@@ -22,6 +22,7 @@ import {
   getDestinationPage,
   getPublishedDestinationSlugs,
 } from "@/modules/catalog/public/destination-public.service";
+import { listingHref } from "@/modules/catalog/tour-listing-href";
 import type { Locale } from "@/modules/catalog/public/types";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -85,11 +86,7 @@ export default async function DestinationPageRoute({ params }: Props) {
     page.bestTime ? { label: t("bestTimeLabel"), value: page.bestTime } : null,
     {
       label: t("toursLabel"),
-      // The grid stops at the search_tours cap (48) until the listing's "see all" link (PR L).
-      value:
-        page.tourCount > page.tours.length
-          ? t("tourCountCapped", { shown: page.tours.length, count: page.tourCount })
-          : t("tourCount", { count: page.tourCount }),
+      value: t("tourCount", { count: page.tourCount }),
     },
   ].filter((fact): fact is { label: string; value: string } => fact !== null);
 
@@ -100,7 +97,7 @@ export default async function DestinationPageRoute({ params }: Props) {
         <JsonLd
           data={itemListJsonLd(
             t("toursListName", { name: page.name }),
-            page.tours.map((tour) => getPathname({ locale, href: { pathname: "/tours/[slug]", params: { slug: tour.slug } } })),
+            page.tours.slice(0, SECTION_TOUR_LIMIT).map((tour) => getPathname({ locale, href: { pathname: "/tours/[slug]", params: { slug: tour.slug } } })),
           )}
         />
       )}
@@ -147,6 +144,7 @@ export default async function DestinationPageRoute({ params }: Props) {
         <TourGridSection
           id="destination-tours"
           locale={locale}
+          seeAll={{ href: listingHref(locale, { dest: [page.key] }), label: t("seeAllTours", { count: page.tourCount }) }}
           eyebrow={t("toursEyebrow")}
           title={t("toursTitle", { name: page.name })}
           tours={page.tours}

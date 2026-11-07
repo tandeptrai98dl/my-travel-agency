@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ContactEmptyState } from "@/components/destination/contact-empty-state";
 import { PlaceHeader } from "@/components/destination/place-header";
-import { TourGridSection } from "@/components/destination/tour-grid-section";
+import { SECTION_TOUR_LIMIT, TourGridSection } from "@/components/destination/tour-grid-section";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Container } from "@/components/layout/container";
 import { LocaleAlternates } from "@/components/layout/locale-alternates";
@@ -19,6 +19,7 @@ import {
   getTravelStylePage,
   type TravelStylePage,
 } from "@/modules/catalog/public/destination-public.service";
+import { listingHref } from "@/modules/catalog/tour-listing-href";
 import type { Locale } from "@/modules/catalog/public/types";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -84,7 +85,7 @@ export default async function TravelStylePageRoute({ params }: Props) {
         <JsonLd
           data={itemListJsonLd(
             t("toursListName", { name: page.name }),
-            page.tours.map((tour) => getPathname({ locale, href: { pathname: "/tours/[slug]", params: { slug: tour.slug } } })),
+            page.tours.slice(0, SECTION_TOUR_LIMIT).map((tour) => getPathname({ locale, href: { pathname: "/tours/[slug]", params: { slug: tour.slug } } })),
           )}
         />
       )}
@@ -105,6 +106,7 @@ export default async function TravelStylePageRoute({ params }: Props) {
         <TourGridSection
           id="style-tours"
           locale={locale}
+          seeAll={{ href: listingHref(locale, { style: [page.key] }), label: t("seeAllTours", { count: page.tours.length }) }}
           eyebrow={t("toursEyebrow")}
           title={t("toursTitle", { name: page.name })}
           tours={page.tours}

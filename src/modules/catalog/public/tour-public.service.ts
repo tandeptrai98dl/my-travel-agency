@@ -417,23 +417,6 @@ export async function getTourReviews(tourId: string): Promise<TourReviews> {
   }
 }
 
-/** Every published tour as cards, recommended order (interim listing until PR L; cached, no seats). */
-export async function getAllTourCards(locale: Locale): Promise<TourCardItem[]> {
-  "use cache";
-  cacheTag(TOURS_TAG, DESTINATIONS_TAG);
-  cacheLife("hours");
-  try {
-    const { data, error } = await repo.searchTours({ locale, limit: 48 });
-    if (error) fail("tour list", error);
-    return await cardsFor(locale, data ?? []);
-  } catch (error) {
-    console.error("getAllTourCards failed", error instanceof Error ? error.message : error);
-    cacheLife({ stale: 30, revalidate: 30, expire: 300 });
-    return [];
-  }
-}
-
-
 /**
  * Featured tours for the homepage (`tours.is_featured`, recommended order; cached, so cards show no
  * seat badges, decision 3). An empty list on failure: the section is then left out (decision 12).
