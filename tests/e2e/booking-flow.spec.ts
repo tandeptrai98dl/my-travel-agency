@@ -3,6 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { adminApi } from "./support/admin-api";
 import { expectNoSeriousViolations } from "./support/axe";
 import { closeTestDepartures, testDeparture } from "./support/booking";
+import { signAccess } from "../../src/modules/booking/booking-access";
 
 // Phase 4 PR 4B (docs/specs/phase-4-booking-payments.md steps 6–9): book a group tour as a guest,
 // pay through the CI VNPay stub (its IPN is signed with the CI-only secret) and see the result,
@@ -38,6 +39,7 @@ const violations = async (page: Page) =>
   (await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? [])).filter((entry) => !/ingest\.sentry\.io/.test(entry));
 
 let code = "";
+const email = `guest-${Date.now()}@example.test`;
 
 /** Date, one guest and full payment, through the form, up to the payment page; returns the code. */
 async function bookThroughForm(page: Page, slug: string, departureId: string) {
@@ -45,7 +47,7 @@ async function bookThroughForm(page: Page, slug: string, departureId: string) {
   await expect(page.getByTestId("booking-total")).toHaveText(/12\.900\.000/);
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
   await page.getByLabel("Họ và tên").fill("Nguyễn An");
-  await page.getByLabel("Email").fill(`guest-${Date.now()}@example.test`);
+  await page.getByLabel("Email").fill(email);
   await page.getByLabel("Số điện thoại").fill("+84 912 000 111");
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
   await page.getByLabel("Thanh toán toàn bộ").check();
@@ -120,6 +122,44 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Đặt tour đã được xác nhận" })).toBeVisible();
   await expectNoSeriousViolations(page, "/thanh-toan/[code]/ket-qua");
   expect(await violations(page)).toEqual([]);
+
+  // 4E: one email per booking event, logged after the commit. Resend is not configured in CI, so
+  // each row is `skipped`; the confirming payment sends "confirmed", not also "payment received".
+  const emails = async () => {
+    const { data } = await adminApi().from("email_logs").select("template, status, to_email, dedupe_key, error").eq("booking_id", booking!.id);
+    return (data ?? []).map((row) => `${row.template}:${row.status}:${row.to_email}`).sort();
+  };
+  await expect.poll(emails, { timeout: 15_000 }).toEqual([
+    `booking_confirmed:skipped:${email}`,
+    `booking_received:skipped:${email}`,
+    "staff_booking_confirmed:skipped:hello@example.com",
+  ]);
+  // Reloading the result page polls again and mails nobody: the rows stay the same.
+  await page.reload();
+  await expect(page.getByTestId("checkout-result")).toHaveAttribute("data-status", "confirmed");
+  expect(await emails()).toHaveLength(3);
+});
+
+test("an emailed checkout link opens the booking only after a click", async ({ browser }) => {
+  const secret = process.env.BOOKING_ACCESS_SECRET;
+  test.skip(!secret, "needs BOOKING_ACCESS_SECRET (CI)");
+  const { data: booking } = await adminApi().from("bookings").select("id").eq("code", code).single();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(`/thanh-toan/${code}?access=${encodeURIComponent(signAccess(secret!, booking!.id).value)}`);
+  await expect(page.getByTestId("checkout-email-link")).toBeVisible();
+  await expect(page.getByText(email)).toHaveCount(0);
+  await page.getByRole("button", { name: "Mở đặt chỗ" }).click();
+  await expect(page).toHaveURL(new RegExp(`/thanh-toan/${code}$`));
+  await expect(page.getByText(code).first()).toBeVisible();
+  // A token for another booking opens nothing.
+  const other = await browser.newContext();
+  const stranger = await other.newPage();
+  await stranger.goto(`/thanh-toan/${code}?access=${encodeURIComponent(signAccess(secret!, "00000000-0000-4000-8000-000000000000").value)}`);
+  await expect(stranger.getByTestId("checkout-email-link")).toHaveCount(0);
+  await expect(stranger.getByText(code)).toHaveCount(0);
+  await context.close();
+  await other.close();
 });
 
 test("a booking code alone opens nothing", async ({ browser }) => {

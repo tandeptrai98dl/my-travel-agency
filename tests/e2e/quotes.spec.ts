@@ -46,6 +46,12 @@ test("sales create a quote and a payment link", async ({ page }) => {
   expect(rows?.[0].amount).toBe(12_000_000);
   // Only the hash is stored.
   expect(rows?.[0].token_hash).not.toContain(linkPath.split("/").pop());
+  // 4E: the link is emailed to the customer (Resend is off in CI: a `skipped` row), and the
+  // token is in no column of the log.
+  await expect(page.getByTestId("payment-link-email")).toHaveAttribute("data-state", "skipped");
+  const { data: logged } = await adminApi().from("email_logs").select("*").eq("booking_id", bookingId);
+  expect(logged?.map((row) => `${row.template}:${row.status}:${row.to_email}`)).toEqual([`payment_link:skipped:${email.toLowerCase()}`]);
+  expect(JSON.stringify(logged)).not.toContain(linkPath.split("/").pop());
 });
 
 test("the customer pays the quote from the link, which then works no more", async ({ browser }) => {
@@ -70,6 +76,12 @@ test("the customer pays the quote from the link, which then works no more", asyn
   const again = await other.newPage();
   await again.goto(linkPath);
   await expect(again.getByTestId("pay-link")).toHaveAttribute("data-state", "used");
+  await expect(again.getByRole("link", { name: "Mở trang thanh toán của đặt chỗ" })).toHaveCount(0);
+  // The browser that used the link still holds the booking's access cookie: it gets the checkout.
+  await page.goto(linkPath);
+  await expect(page.getByTestId("pay-link")).toHaveAttribute("data-state", "used");
+  await page.getByRole("link", { name: "Mở trang thanh toán của đặt chỗ" }).click();
+  await expect(page).toHaveURL(/\/thanh-toan\/PTA-\d{4}-\d{4,}$/);
   await context.close();
   await other.close();
 });
