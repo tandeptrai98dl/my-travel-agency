@@ -398,6 +398,21 @@ Template:
   - Emailed checkout links carry the booking's 7-day access token (`?access=`); the checkout page shows an "open" button and sets the access cookie only on that click, so mail scanners neither see the booking nor use the link.
 - **Consequences:** One small runtime dependency (with `html-to-text` and `prettier` as its own dependencies). Sending needs the owner's Resend account and a sending domain with SPF, DKIM and DMARC. An email that failed (or was skipped before Resend existed) stays recorded and is not sent later on its own.
 
+## ADR-037: Accounts, guest lookup, deletion and operations jobs
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Phase 5 adds customer accounts, a guest booking lookup, inquiry handling and scheduled operations jobs. It must close the Phase 0 limit on customer reads of internal booking and payment columns, and it needs rules for abuse protection, data deletion (Decree 13/2023) and jobs that run without a user. Details: `docs/specs/phase-5-accounts-inquiries-operations.md`.
+- **Decision:**
+  - Customers sign in on localized pages under the secure root (nonce CSP). Staff keep the Vietnamese `/auth/login`, `/auth/forgot-password` and `/auth/update-password`, rebuilt on Server Actions; staff self sign-up pages are removed. No auth form calls Supabase from the browser. Sign-up, password reset and booking lookup never reveal whether an address has an account.
+  - Rate limits on sign-in (fail open, logged), sign-up, password reset, booking lookup and inquiries (fail closed); Turnstile on sign-up, password reset, booking lookup and inquiries (spec decision 2).
+  - Google sign-in only when `AUTH_GOOGLE_ENABLED=true` and the provider is configured in Supabase; `/auth/callback` exchanges the code on the server.
+  - Customers read bookings, price lines, travellers and payments only through `security definer` functions with a fixed set of columns (`customer_bookings()`, `customer_booking(code)`, `save_customer_travellers()`); the direct customer policies on `bookings`, `booking_items`, `payments` and `travellers` are dropped. Earlier bookings with the same address attach only after the email is confirmed and never move from another account.
+  - Guest booking lookup: code + email, always the same answer, a single-use 30-minute emailed token (hash stored in `booking_lookup_tokens`), redeemed by a button that sets the booking's access cookie.
+  - Deletion: immediate when no trip or money is open, otherwise recorded for an admin; the profile and the Auth user are anonymised (email replaced, password randomised, identities removed, user banned) and kept as rows for foreign keys; bookings are unlinked but keep their contact details for legal retention; consent records stay; audit-logged without personal data. Subject to legal review before launch.
+  - Operations jobs run as Vercel Cron calls to `/api/cron/*` with `Authorization: Bearer <CRON_SECRET>` (constant-time check, 401 without it, 503 when unset, required in production); they are idempotent through exactly-once email keys (ADR-036). Balance reminders at 7 and 2 days, overdue balances flagged and never cancelled, minimum-traveller alerts at 21, 14 and 7 days.
+- **Consequences:** Hosted sign-up and password reset need the owner's SMTP (Resend) and Auth templates; Google needs an OAuth client; schedules need Vercel Pro. Stream B owns the inquiry write path and the `features` flags; Stream A owns auth, accounts, the inbox, emails and jobs (spec cross-stream table).
+
 ## ADR-038: Single-use emailed checkout links
 
 - **Date:** 2026-11-07
