@@ -302,7 +302,7 @@ function mapDepartures(rows: DepartureRow[]): Departure[] {
 }
 
 /** Cards for tours returned by `search_tours`, in that order. */
-async function cardsFor(locale: Locale, hits: SearchRow[]): Promise<TourCardItem[]> {
+export async function cardsFor(locale: Locale, hits: SearchRow[]): Promise<TourCardItem[]> {
   if (hits.length === 0) return [];
   const [rows, lookup] = await Promise.all([
     repo.findTourCards(
