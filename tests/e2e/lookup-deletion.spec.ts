@@ -111,7 +111,8 @@ test("a customer deletes their account: anonymised, unlinked, signed out for goo
   await expect(form.getByText("Mật khẩu hiện tại chưa đúng.")).toBeVisible();
   await form.getByLabel("Mật khẩu hiện tại").fill(person.password);
   await form.getByRole("button", { name: "Xoá tài khoản" }).click();
-  await expect(form.getByRole("status")).toContainText("Tài khoản của bạn đã được xoá");
+  await expect(page).toHaveURL(/\/dang-nhap\?deleted=1$/);
+  await expect(page.getByTestId("account-deleted")).toContainText("Tài khoản của bạn đã được xoá");
 
   const { data: profile } = await adminApi().from("profiles").select("full_name, email, deleted_at").eq("id", person.id).single();
   expect(profile).toMatchObject({ full_name: null, email: `deleted+${person.id}@invalid.local` });

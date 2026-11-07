@@ -54,7 +54,7 @@ async function Profile({ locale }: { locale: Locale }) {
     authLabels(locale, t("emailSubmit"), t("pending")),
     authLabels(locale, t("passwordSubmit"), t("pending")),
     authLabels(locale, t("deletionSubmit"), t("pending"), {
-      status: { deleted: t("deletionDone"), deletion_pending: t("deletionPending"), received: t("deletionReceived") },
+      status: { deletion_pending: t("deletionPending") },
     }),
   ]);
   const sectionClass = "flex flex-col gap-5 rounded-lg border border-border bg-card p-6 md:p-8";
@@ -136,7 +136,7 @@ async function Profile({ locale }: { locale: Locale }) {
           action={deleteAccountAction}
           locale={locale}
           labels={deletionLabels}
-          doneOn={["deleted", "deletion_pending", "received"]}
+          doneOn={["deletion_pending"]}
           resetOn={["invalid"]}
           testId="deletion-form"
           fields={[{ name: "current", type: "password", label: tAuth("fields.current"), autoComplete: "current-password", required: true }]}

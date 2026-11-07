@@ -162,9 +162,7 @@
       "deletionTitle": "Xoá tài khoản và dữ liệu",
       "deletionIntro": "Chúng tôi xoá tên, số điện thoại và địa chỉ email của bạn khỏi tài khoản, gỡ các đặt chỗ khỏi tài khoản và xoá đăng ký nhận tin. Hồ sơ đặt chỗ và thanh toán được giữ theo thời hạn luật kế toán yêu cầu. Việc này không thể hoàn tác.",
       "deletionSubmit": "Xoá tài khoản",
-      "deletionPending": "Chúng tôi đã ghi nhận yêu cầu. Vì bạn còn chuyến đi sắp tới hoặc khoản thanh toán chưa hoàn tất, đội ngũ của chúng tôi sẽ hoàn tất việc xoá sau đó và thông báo cho bạn.",
-      "deletionDone": "Tài khoản của bạn đã được xoá và bạn đã được đăng xuất. Cảm ơn bạn đã đồng hành cùng chúng tôi.",
-      "deletionReceived": "Chúng tôi đã nhận được yêu cầu xoá. Đội ngũ của chúng tôi sẽ hoàn tất và thông báo cho bạn."
+      "deletionPending": "Chúng tôi đã ghi nhận yêu cầu. Vì bạn còn chuyến đi sắp tới hoặc khoản thanh toán chưa hoàn tất, đội ngũ của chúng tôi sẽ hoàn tất việc xoá sau đó và thông báo cho bạn."
     }
   }
 }
