@@ -5,9 +5,11 @@ import { expect, test } from "./support/test";
 // account) and admin page types are covered by Stream A's header E2E. All of these pages are
 // prerendered or static, so they get the nonce-free policy from next.config.ts (ADR-027), never a
 // nonce, and never `unsafe-eval` (ADR-039: no tag manager). Each path asserts its exact status, so
-// this file runs in the "status-codes" project on the fresh build (playwright.config.ts): after
-// another spec refreshes a tag, Next.js 16.4 answers a re-rendered 404 or 308 with its 200 shell
-// once (status-codes.spec.ts).
+// this file runs in the "status-codes" project on the fresh build (playwright.config.ts). After
+// another spec refreshes a tag, Next.js 16.4 re-renders those pages: the first request to a
+// re-rendered 404 may get the 200 shell once, and a re-rendered other-language redirect keeps its
+// 308 but loses its `Location` header until the next build (status-codes.spec.ts; known issue in
+// docs/specs/phase-3-public-site.md step 22).
 
 /** Each path with the status it must answer: the headers must be there on every outcome. */
 const PUBLIC_PAGES: ReadonlyArray<readonly [string, number]> = [

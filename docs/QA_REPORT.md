@@ -143,8 +143,11 @@ New E2E: `tests/e2e/responsive.spec.ts` covers:
 2. **Listing SEO 92: metadata streamed into `<body>`.** `/tours` (and `/tim-kiem`) read `searchParams`, so Next.js 16 streams their metadata after the shell for browsers. Googlebot was not in Next's `htmlLimitedBots` list (Bingbot and Lighthouse's own UA are), so the description, canonical, hreflang and the filtered pages' `noindex` sat in `<body>`, where Google ignores a `rel=canonical`.
    - **Decided (option a, ADR-041):** `htmlLimitedBots` is Next's default pattern plus `Googlebot|Google-InspectionTool` (`src/lib/html-limited-bots.ts`). Googlebot now gets blocking metadata in `<head>`; each Googlebot request renders on the server (about 30 ms instead of about 4 ms locally).
    - **Re-check:** URL Inspection on staging shows the canonical in `<head>` for `/tours` (and for `/tours?page=2`).
-3. **Fonts and diacritics with the real Google-hosted fonts** at every size, on staging.
-4. **Images on 360 px phones:** the floating contact buttons overlap the right 32 px of content while scrolling. That is normal for floating buttons, and the Tab walk found no focused element hidden. Check on real devices.
+3. **Status codes after a content save** (the Next.js 16.4.5 issue in `docs/specs/phase-3-public-site.md` step 22): save a tour in the admin, then:
+   - `curl -I` a URL in a language where it has no published translation (for example `/en/tours/<vi-only slug>`): expect `404` (the first request after the save may get the `noindex` 200 shell once; the second must be a 404);
+   - `curl -I` the other language's slug (for example `/en/tours/<vi slug>`): expect `301` with `Location`, answered by the proxy from the Redis hash `redirects:languages` (Upstash configured).
+4. **Fonts and diacritics with the real Google-hosted fonts** at every size, on staging.
+5. **Images on 360 px phones:** the floating contact buttons overlap the right 32 px of content while scrolling. That is normal for floating buttons, and the Tab walk found no focused element hidden. Check on real devices.
 
 ### For Stream A (secure pages; not changed here)
 
