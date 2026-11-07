@@ -160,6 +160,9 @@ test("admin enrols TOTP, reaches aal2, and must verify again after signing in", 
 
   // Only this aal2 admin edits tour prices (ADR-024): the private tour gets a new from price.
   await menu.getByRole("link", { name: "Tour", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/tours$/);
+  // The seed has more tours than one page holds: find it by its code.
+  await page.goto("/admin/tours?q=VN-HER-05");
   await page.getByRole("link", { name: "Di sản Hội An và Huế" }).click();
   const fromPrice = page.getByLabel("Giá từ (đồng)");
   await expect(fromPrice).toBeVisible();

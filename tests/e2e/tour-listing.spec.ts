@@ -56,7 +56,7 @@ test.describe("tour listing", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/tours");
     const filters = page.getByRole("group", { name: "Điểm đến" });
-    await filters.getByRole("checkbox", { name: "Thái Lan" }).check();
+    await filters.getByRole("checkbox", { name: "Thái Lan", exact: true }).check();
     await expect(page).toHaveURL(/\/tours\?dest=thailand$/);
     await expect(count(page)).toHaveText("13 hành trình");
     // Children of a chosen country are included and step aside.
