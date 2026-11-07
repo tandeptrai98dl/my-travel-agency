@@ -66,7 +66,7 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [ ] Balance reminders (Vercel Cron), minimum-traveller alerts, dashboard, passenger CSV export
 - [ ] Acceptance: sales completes inquiry → quote → customer payment → confirmed booking on staging
 
-## Phase 6: Hardening and launch (2.5 weeks)
+## Phase 6: Hardening and launch (2.5 weeks) — spec: `docs/specs/phase-6-hardening-launch.md`
 
 - [ ] Security review: RLS and service-role audit, Supabase Security Advisor clean, headers, rate limits, permission tests
 - [ ] Performance, accessibility and responsive QA (Lighthouse)
