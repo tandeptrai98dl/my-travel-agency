@@ -8,9 +8,11 @@ import { RedeemLinkButton } from "@/components/booking/redeem-link-button";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/typography/eyebrow";
 import { Heading } from "@/components/typography/heading";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link as LocaleLink } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
-import { bookingEnabled, paymentLinkState } from "@/modules/booking/checkout.service";
+import { bookingEnabled, paymentLinkState, usedLinkCheckout } from "@/modules/booking/checkout.service";
 
 type Props = { params: Promise<{ locale: string; token: string }> };
 
@@ -46,6 +48,8 @@ async function Link({ params }: Props) {
     invalid: [t("invalidTitle"), t("invalidBody")],
     unavailable: [t("unavailableTitle"), t("unavailableBody")],
   }[state];
+  // A used link reopened in the browser that used it: offer that booking's checkout (#34 review).
+  const existing = state === "used" ? await usedLinkCheckout(token) : null;
   const messages = await getMessages({ locale });
   return (
     <section className="flex flex-col gap-6" data-testid="pay-link" data-state={state}>
@@ -55,6 +59,13 @@ async function Link({ params }: Props) {
       </Heading>
       <div aria-hidden="true" className="h-px w-16 bg-gold" />
       <p className="max-w-[680px] text-body-lg text-muted-foreground">{copy[1]}</p>
+      {existing && (
+        <div>
+          <Button asChild size="lg">
+            <LocaleLink href={{ pathname: "/checkout/[code]", params: { code: existing.code } }}>{t("openCheckout")}</LocaleLink>
+          </Button>
+        </div>
+      )}
       {state === "valid" && (
         <NextIntlClientProvider locale={locale} messages={{ PayLink: messages.PayLink }}>
           <RedeemLinkButton token={token} />

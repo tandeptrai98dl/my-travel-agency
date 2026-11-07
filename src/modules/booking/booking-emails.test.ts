@@ -1,5 +1,3 @@
-import { createHmac } from "node:crypto";
-
 import { describe, expect, it } from "vitest";
 
 import { loadMessages } from "@/i18n/messages";
@@ -17,6 +15,7 @@ import {
   type PlannedEmail,
   planBookingEmails,
 } from "./booking-emails";
+import { verifyAccess } from "./booking-access";
 
 const messages = { vi: await loadMessages("vi"), en: await loadMessages("en") };
 const site = new URL("https://travel.example");
@@ -116,10 +115,10 @@ describe("checkoutUrl", () => {
     const now = Date.UTC(2026, 10, 7);
     const vi = new URL(checkoutUrl(booking(), site, "s3cret", now));
     expect(vi.pathname).toBe("/thanh-toan/PTA-2611-0042");
-    const [expires, mac] = vi.searchParams.get("access")!.split(".");
-    expect(Number(expires)).toBe(now + 7 * 86_400_000);
-    expect(mac).toBe(createHmac("sha256", "s3cret").update(`${booking().id}.${expires}`).digest("base64url"));
-    expect(mac).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const token = vi.searchParams.get("access")!;
+    expect(Number(token.split(".")[0])).toBe(now + 7 * 86_400_000);
+    expect(verifyAccess("s3cret", booking().id, token, now)).toBe(true);
+    expect(verifyAccess("s3cret", "another-booking", token, now)).toBe(false);
     expect(new URL(checkoutUrl(booking({ locale: "en" }), site, undefined)).toString()).toBe("https://travel.example/en/checkout/PTA-2611-0042");
   });
 });

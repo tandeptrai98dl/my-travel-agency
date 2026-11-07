@@ -1,5 +1,3 @@
-import { createHmac } from "node:crypto";
-
 import type { ReactElement } from "react";
 
 import { createTranslator } from "next-intl";
@@ -15,6 +13,7 @@ import type { EmailBrand } from "../../../emails/components/layout";
 import { PaymentLinkEmail } from "../../../emails/payment-link";
 import { PaymentReceivedEmail } from "../../../emails/payment-received";
 import { StaffBookingEmail } from "../../../emails/staff-booking";
+import { signAccess } from "./booking-access";
 import { attentionReason } from "./booking-admin.schemas";
 
 /**
@@ -137,14 +136,11 @@ export function dueNow(booking: Pick<EmailBooking, "payment_plan" | "deposit_amo
   return Math.max(target - booking.amount_paid, 0);
 }
 
-const ACCESS_MS = 7 * 86_400_000;
-
 /**
- * The checkout page of a booking, signed for guest access (decision 7): `?access=<expiry>.<mac>`,
- * an HMAC-SHA256 of `<booking id>.<expiry>` with BOOKING_ACCESS_SECRET, valid for 7 days. It is
- * the same token as the `booking_access_<code>` cookie of 4B (`booking-access.ts`), so the
- * checkout verifies it with `verifyAccess()`. Without the secret the link is unsigned (it then
- * opens only in the browser that holds the cookie, or for the signed-in owner).
+ * The checkout page of a booking, signed for guest access (decision 7): `?access=<token>`, the
+ * same 7-day token as the `booking_access_<code>` cookie (`signAccess()`), which the checkout
+ * page checks and turns into the cookie on the customer's click. Without the secret the link is
+ * unsigned (it then opens only where the cookie exists, or for the signed-in owner).
  */
 export function checkoutUrl(
   booking: Pick<EmailBooking, "id" | "code" | "locale">,
@@ -153,11 +149,7 @@ export function checkoutUrl(
   now = Date.now(),
 ): string {
   const url = new URL(localizedPath(booking.locale, { pathname: "/checkout/[code]", params: { code: booking.code } }), siteUrl);
-  if (secret) {
-    const expires = now + ACCESS_MS;
-    const mac = createHmac("sha256", secret).update(`${booking.id}.${expires}`).digest("base64url");
-    url.searchParams.set("access", `${expires}.${mac}`);
-  }
+  if (secret) url.searchParams.set("access", signAccess(secret, booking.id, now).value);
   return url.toString();
 }
 

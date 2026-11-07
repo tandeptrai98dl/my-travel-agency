@@ -173,6 +173,14 @@
     "notPayableTitle": "Nothing to pay on this booking",
     "notPayableBody": "This booking is paid, cancelled or its quote has expired. Please contact us.",
     "unavailableTitle": "Online payment is paused",
-    "unavailableBody": "Please call us to complete your payment."
+    "unavailableBody": "Please call us to complete your payment.",
+    "openCheckout": "Open the booking's checkout"
+  },
+  "CheckoutLink": {
+    "title": "Open your booking",
+    "body": "The link in your email lets this browser open booking {code}.",
+    "open": "Open the booking",
+    "opening": "Opening…",
+    "failed": "This link no longer works. Please get in touch with us."
   }
 }

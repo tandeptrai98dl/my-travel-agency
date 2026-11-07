@@ -43,7 +43,7 @@ export type QuoteActionResult =
   | { ok: false; error: string; fields?: Record<string, string> };
 
 export type PaymentLinkResult =
-  | { ok: true; url: string; amount: number; expiresAt: string }
+  | { ok: true; url: string; amount: number; expiresAt: string; email: "sent" | "skipped" | "failed" }
   | { ok: false; error: string; fields?: Record<string, string> };
 
 /** Errors raised by create_quote() and create_payment_link(), as message keys. */
