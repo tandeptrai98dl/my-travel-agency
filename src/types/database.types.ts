@@ -922,6 +922,9 @@ isOneToOne: false
 "create_redirect":
 { Args: { "source": string,"status"?: number,"target": string }; Returns: string
                            },
+"create_tailor_made_inquiry":
+{ Args: { "ip"?: unknown,"payload": Json,"privacy_version": string,"user_agent"?: string }; Returns: Json
+                           },
 "current_customer_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
