@@ -44,7 +44,7 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 - [x] Tour listing (`docs/specs/tour-listing.md`, #35)
 - [x] Tour detail with live departures in `<Suspense>` (#18)
 - [x] Destinations, travel styles, journal, about, reviews, contact, FAQ, policies, site search (#30, #31, #35)
-- [ ] Metadata, JSON-LD, sitemap, hreflang, OG images, redirects; CSP per page type
+- [ ] Metadata, JSON-LD, sitemap, hreflang, OG images, redirects; CSP per page type (PR M; Rich Results Test waits for Vercel)
 - [ ] Acceptance: Core Web Vitals "Good" on staging; Rich Results Test passes; pages without an English translation return 404
 
 ## Phase 4: Booking and payments (4 weeks) — spec: `docs/specs/phase-4-booking-payments.md`
