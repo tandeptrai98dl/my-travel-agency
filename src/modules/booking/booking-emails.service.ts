@@ -12,12 +12,16 @@ import { renderEmail } from "@/modules/notification/render";
 import { claimedEmailKeys, isEmailConfigured, type SendResult, sendEmail } from "@/modules/notification/email.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
+import type { MinPaxFacts } from "../../../emails/staff-departure";
+
 import {
   type BookingEventRow,
   type BuildContext,
   type BuiltEmail,
+  buildBalanceOverdueEmail,
   buildBalanceReminderEmail,
   buildBookingLookupEmail,
+  buildMinPaxEmail,
   buildBookingEmail,
   buildPaymentLinkEmail,
   type EmailBooking,
@@ -36,7 +40,7 @@ const RECENT_MS = 48 * 3_600_000;
 /** Emailed checkout links work once within 7 days (ADR-038). */
 const LINK_MINUTES = 7 * 24 * 60;
 
-async function buildContext(): Promise<BuildContext & { staffEmail: string | null }> {
+export async function buildContext(): Promise<BuildContext & { staffEmail: string | null }> {
   const [settings, vi, en] = await Promise.all([getPublicSettings(), loadMessages("vi"), loadMessages("en")]);
   const metadata = vi.Metadata;
   const siteName = metadata && typeof metadata === "object" && typeof metadata.siteName === "string" ? metadata.siteName : "";
@@ -172,6 +176,40 @@ export async function sendBalanceReminder(bookingId: string, dedupeKey: string):
     return (await deliver(buildBalanceReminderEmail(booking as EmailBooking, context, token), booking as EmailBooking, dedupeKey, context.staffEmail)) ?? "failed";
   } catch (caught) {
     logger.error("booking.email_failed", { template: "balance_reminder", error: caught instanceof Error ? caught.name : "Error" });
+    return "failed";
+  }
+}
+
+/** The one-time team alert for an overdue balance (Phase 5 daily job); `dedupeKey` is `balance_overdue:<booking id>`. */
+export async function sendBalanceOverdueAlert(bookingId: string, dedupeKey: string): Promise<SendResult | "not_found"> {
+  try {
+    const { data: booking, error } = await repo.findBookingForEmail(bookingId);
+    if (error || !booking) return "not_found";
+    const context = await buildContext();
+    return (await deliver(buildBalanceOverdueEmail(booking as EmailBooking, context), booking as EmailBooking, dedupeKey, context.staffEmail)) ?? "failed";
+  } catch (caught) {
+    logger.error("booking.email_failed", { template: "balance_overdue", error: caught instanceof Error ? caught.name : "Error" });
+    return "failed";
+  }
+}
+
+/**
+ * The minimum-traveller team alert for a departure (Phase 5 daily job), keyed
+ * `min_pax:<departure id>:<days>d`. Without a team address nothing is claimed, so a later run
+ * sends it once the address is set.
+ */
+export async function sendMinPaxAlert(departureId: string, facts: MinPaxFacts, dedupeKey: string): Promise<SendResult | "no_address"> {
+  try {
+    const context = await buildContext();
+    if (!context.staffEmail) {
+      logger.warn("booking.email_no_staff_address", { template: "min_pax" });
+      return "no_address";
+    }
+    const built = buildMinPaxEmail(departureId, facts, context);
+    const { html, text } = await renderEmail(built.element);
+    return await sendEmail({ to: context.staffEmail, subject: built.subject, html, text, template: built.template, dedupeKey });
+  } catch (caught) {
+    logger.error("booking.email_failed", { template: "min_pax", error: caught instanceof Error ? caught.name : "Error" });
     return "failed";
   }
 }

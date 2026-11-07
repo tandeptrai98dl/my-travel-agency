@@ -3,7 +3,7 @@
 -- email-sync trigger after GoTrue's soft delete, reviews audited without names, and the #45 review
 -- fix of the first response after spam.
 begin;
-select plan(56);
+select plan(57);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -253,6 +253,13 @@ select pg_temp.claims('00000000-0000-4000-8000-000000002604', 'aal2');
 set local role authenticated;
 select throws_ok($$ select public.admin_anonymise_customer('00000000-0000-4000-8000-000000002602', 'ok') $$, 'P0001', 'note_required', 'a note is required');
 select throws_ok($$ select public.admin_anonymise_customer('00000000-0000-4000-8000-000000002603', 'Khách yêu cầu') $$, 'P0002', null, 'only a requested customer deletion');
+-- PR 5D: the wrapper refuses while a blocker remains (the balance, payment and trip ahead).
+select throws_ok($$ select public.admin_anonymise_customer('00000000-0000-4000-8000-000000002602', 'Khách yêu cầu') $$, '55000', 'blocked', 'not while a blocker remains');
+reset role;
+-- The trips end and the open payment lapses: nothing blocks any more.
+update public.bookings set status = 'completed', start_date = current_date - 5, amount_paid = total, needs_attention = false, attention_reason = null where id in ('51000000-0000-4000-8000-000000002603', '51000000-0000-4000-8000-000000002605');
+update public.bookings set status = 'expired' where id = '51000000-0000-4000-8000-000000002604';
+set local role authenticated;
 select lives_ok($$ select public.admin_anonymise_customer('00000000-0000-4000-8000-000000002602', 'Chuyến đi đã kết thúc') $$, 'an MFA-verified admin finishes a waiting request');
 reset role;
 select ok(

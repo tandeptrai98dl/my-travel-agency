@@ -233,6 +233,8 @@ jobs:
           BOOKING_ACCESS_SECRET: ci-only-booking-access-secret-${{ github.run_id }}
           # Serves /admin/design-system in the production build so axe can check it.
           SHOW_DESIGN_SYSTEM: "true"
+          # The cron routes' bearer secret at run time (operations.spec.ts calls them); CI-only.
+          CRON_SECRET: ci-only-cron-secret-${{ github.run_id }}-e2e-only
         run: npm run test:e2e
         # Green runs took 5.5–8 minutes before the Phase 5 account tests; a cap, not a cost.
         timeout-minutes: 12

@@ -6,9 +6,11 @@ import { renderEmail } from "@/modules/notification/render";
 import {
   amountFromEvent,
   type BookingEventRow,
+  buildBalanceOverdueEmail,
   buildBalanceReminderEmail,
   buildBookingLookupEmail,
   buildBookingEmail,
+  buildMinPaxEmail,
   buildPaymentLinkEmail,
   checkoutUrl,
   dueNow,
@@ -222,5 +224,32 @@ describe("booking lookup email", () => {
     expect(html).toContain("https://travel.example/en/checkout/PTA-2611-0042?access=tok_abc");
     expect(text).toContain("17:30");
     expect(built.subject).not.toContain("tok_abc");
+  });
+});
+
+describe("operations alerts (Phase 5 daily jobs)", () => {
+  it("the overdue balance alert is Vietnamese, links the admin and leaves out the customer's contact", async () => {
+    const built = buildBalanceOverdueEmail(booking({ locale: "en" }), context);
+    expect(built).toMatchObject({ to: "staff", template: "balance_overdue", subject: "Quá hạn thanh toán · PTA-2611-0042" });
+    const { html, text } = await renderEmail(built.element);
+    expect(html).toContain('<html lang="vi"');
+    expect(text).toContain("vẫn giữ nguyên");
+    expect(html).toContain("https://travel.example/admin/bookings/00000000-0000-4000-8000-000000000001");
+    expect(text).not.toContain("lan@example.com");
+    expect(text).not.toContain("Nguyễn Thị Lan");
+  });
+
+  it("the minimum-traveller alert names the departure, the count and the minimum", async () => {
+    const built = buildMinPaxEmail(
+      "00000000-0000-4000-8000-0000000000d1",
+      { tourCode: "VN-HLB-03", tourTitle: "Vịnh Hạ Long", startDate: "21/11/2026", daysLeft: 7, confirmed: 2, minPax: 8 },
+      context,
+    );
+    expect(built).toMatchObject({ template: "min_pax", subject: "Chưa đủ khách · VN-HLB-03 ngày 21/11/2026" });
+    const { html, text } = await renderEmail(built.element);
+    expect(text).toContain("2 / tối thiểu 8");
+    expect(text).toContain("7 ngày");
+    expect(text).toContain("không tự huỷ");
+    expect(html).toContain("https://travel.example/admin/departures/00000000-0000-4000-8000-0000000000d1");
   });
 });

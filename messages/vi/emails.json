@@ -169,6 +169,27 @@
       "button": "Mở đặt chỗ",
       "expiry": "Đường dẫn chỉ dùng được một lần, đến {time} (giờ Việt Nam).",
       "ignore": "Nếu bạn không yêu cầu, hãy bỏ qua email này; đặt chỗ của bạn vẫn an toàn."
+    },
+    "staffMinPax": {
+      "subject": "Chưa đủ khách · {code} ngày {date}",
+      "preview": "{code} khởi hành {date} chưa đủ số khách tối thiểu.",
+      "eyebrow": "Chưa đủ khách",
+      "heading": "{code} ngày {date} chưa đủ khách",
+      "intro": "Còn {count, plural, other {# ngày}} đến ngày khởi hành và số khách đã xác nhận còn dưới mức tối thiểu để khởi hành.",
+      "tour": "Tour",
+      "date": "Ngày khởi hành",
+      "daysLeft": "Còn lại",
+      "days": "{count, plural, other {# ngày}}",
+      "confirmed": "Khách đã xác nhận",
+      "ofMinimum": "{confirmed} / tối thiểu {min}",
+      "decide": "Bộ phận điều hành quyết định giữ hay huỷ ngày khởi hành; hệ thống không tự huỷ."
+    },
+    "staffOverdue": {
+      "subject": "Quá hạn thanh toán · {code}",
+      "preview": "{code} đã quá hạn trả phần còn lại.",
+      "eyebrow": "Quá hạn thanh toán",
+      "heading": "{code} quá hạn trả phần còn lại",
+      "intro": "Hạn thanh toán phần còn lại đã qua. Đặt chỗ vẫn giữ nguyên và nằm trong danh sách cần xử lý cho tới khi khách trả đủ."
     }
   }
 }

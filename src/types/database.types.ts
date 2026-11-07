@@ -859,6 +859,12 @@ isOneToOne: false
 "admin_anonymise_customer":
 { Args: { "note": string,"target_id": string }; Returns: Json
                            },
+"admin_dashboard":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_deletion_requests":
+{ Args: { "target_id"?: string }; Returns: Json
+                           },
 "anonymise_customer":
 { Args: { "target_id": string }; Returns: Json
                            },
@@ -948,6 +954,15 @@ isOneToOne: false
               "adults": number,"amount_paid": number,"balance_due_date": string,"children": number,"code": string,"created_at": string,"end_date": string,"infants": number,"payment_state": Database["public"]['Enums']["booking_payment_state"],"start_date": string,"status": Database["public"]['Enums']["booking_status"],"total": number,"tour_code": string,"tour_title": string
             }[]
                            },
+"customer_consents":
+{ Args: { "target_id": string }; Returns: Json
+                           },
+"customer_data_export":
+{ Args: { "target_id": string }; Returns: Json
+                           },
+"customer_deletion_blockers":
+{ Args: { "target_id": string }; Returns: (string)[]
+                           },
 "customer_deletion_state":
 { Args: { "target_id": string }; Returns: Json
                            },
@@ -960,11 +975,17 @@ isOneToOne: false
 "departure_has_open_bookings":
 { Args: { "target_id": string }; Returns: boolean
                            },
+"departures_below_minimum":
+{ Args: { "within_days"?: number }; Returns: Json
+                           },
 "expire_booking_if_due":
 { Args: { "target_id": string }; Returns: boolean
                            },
 "expire_holds":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"export_departure_passengers":
+{ Args: { "target_id": string }; Returns: Json
                            },
 "has_role":
 { Args: { "roles": (Database["public"]['Enums']["user_role"])[] }; Returns: boolean

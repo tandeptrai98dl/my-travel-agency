@@ -118,13 +118,24 @@ describe("serverEnvSchema", () => {
     expect(env.GOOGLE_OAUTH_ENABLED).toBe(true);
   });
 
-  it("rejects a short cron secret", () => {
-    expect(() =>
-      parseEnv("server", serverEnvSchema, {
-        SUPABASE_SECRET_KEY: "sb_secret_example",
-        CRON_SECRET: "short",
-      }),
-    ).toThrow(/CRON_SECRET/);
+  it("rejects a cron secret under 32 characters", () => {
+    for (const secret of ["short", "x".repeat(31)]) {
+      expect(() =>
+        parseEnv("server", serverEnvSchema, {
+          SUPABASE_SECRET_KEY: "sb_secret_example",
+          CRON_SECRET: secret,
+        }),
+      ).toThrow(/CRON_SECRET/);
+    }
+    expect(parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", CRON_SECRET: "x".repeat(32) }).CRON_SECRET).toHaveLength(32);
+  });
+
+  it("requires the cron secret in production only", () => {
+    const upstash = { UPSTASH_REDIS_REST_URL: "https://example.upstash.io", UPSTASH_REDIS_REST_TOKEN: "token" };
+    expect(() => parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", VERCEL_ENV: "production", ...upstash })).toThrow(
+      /CRON_SECRET/,
+    );
+    expect(parseEnv("server", serverEnvSchema, { SUPABASE_SECRET_KEY: "sb_secret_example", VERCEL_ENV: "preview" }).CRON_SECRET).toBeUndefined();
   });
 
   it("keeps the Upstash variables optional and needs an https URL", () => {
@@ -168,6 +179,7 @@ describe("serverEnvSchema", () => {
       VERCEL_ENV: "production",
       UPSTASH_REDIS_REST_URL: "https://eu1.upstash.io",
       UPSTASH_REDIS_REST_TOKEN: "token",
+      CRON_SECRET: "c".repeat(32),
     });
     expect(env.VERCEL_ENV).toBe("production");
   });
