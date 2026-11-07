@@ -86,7 +86,10 @@ export default async function SecureLayout({ children, params }: Props) {
             destinations={destinations}
             desktopNav={<DesktopNav locale={locale} destinations={destinations} className="hidden lg:block" />}
           />
-          <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
+          {/* At least a screen tall, so the footer starts below the fold and the streamed content
+              (Suspense fallbacks, then the form or the sign-in redirect) never moves it in view
+              (docs/QA_REPORT.md: CLS up to 0.107 on book, checkout and sign-in). */}
+          <main id="main" tabIndex={-1} className="min-h-screen flex-1 focus:outline-none">
             {children}
           </main>
           <SiteFooter settings={settings} brandName={brandName} locale={locale} policyLinks={policyLinks} />
