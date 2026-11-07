@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   // ADR-021: Partial Prefetching alongside Cache Components, as Next.js recommends.
   partialPrefetching: true,
+  // No `X-Powered-By: Next.js` on pages (docs/SECURITY_REVIEW.md "Headers", Phase 6 PR 6A).
+  poweredByHeader: false,
   async headers() {
     // Public pages and /auth (ADR-027): a static nonce-free policy; checkout, account and the
     // admin get a nonce policy from src/proxy.ts instead.
