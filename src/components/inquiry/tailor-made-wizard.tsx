@@ -303,7 +303,10 @@ export function TailorMadeWizard({ locale, siteKey, privacyHref, destinations, s
           <div ref={turnstile.widgetRef} />
         </section>
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Before hydration a script-capable browser shows only step 1, and a native submit would
+            stop at required fields in the hidden steps: the row stays invisible (its space kept,
+            so nothing moves) until React runs. Without JavaScript every step and the submit show. */}
+        <div className={cx("flex flex-wrap items-center gap-3", !ready && "[@media(scripting:enabled)]:invisible")}>
           {ready && step > 0 && (
             <button type="button" onClick={() => go(step - 1)} className={buttonVariants({ variant: "ghost", size: "lg" })}>
               {labels.back}

@@ -26,6 +26,16 @@ test("the wizard shows one step at a time and is disabled until its services exi
   await expectNoSeriousViolations(page, "tailor-made 375");
 });
 
+test("before hydration only step 1 shows and its buttons stay invisible", async ({ page }) => {
+  // The app's chunks never arrive, so React never hydrates (JavaScript itself runs).
+  await page.route("**/_next/static/chunks/**", (route) => route.abort());
+  await page.goto("/thiet-ke-rieng");
+  await expect(page.getByRole("heading", { level: 2, name: "Bạn muốn đi đâu?" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Chúng tôi liên hệ bạn thế nào?" })).toBeHidden();
+  // A native submit from here would stop at required fields in the hidden steps.
+  await expect(page.getByRole("button", { name: "Gửi yêu cầu" })).toBeHidden();
+});
+
 test("English page and the menu link", async ({ page }) => {
   await page.goto("/en/tailor-made");
   await expect(page.getByRole("heading", { level: 1, name: "A journey of your own" })).toBeVisible();

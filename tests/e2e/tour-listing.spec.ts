@@ -88,6 +88,20 @@ test.describe("tour listing", () => {
     await expect(cards(page)).toHaveCount(2);
   });
 
+  test("mobile: before hydration, Filters still opens and closes the sheet (invoker commands)", async ({ page }) => {
+    // JavaScript runs (React's inline scripts reveal the streamed results) but the app's chunks
+    // never arrive, so React never hydrates: the buttons work only through command/commandfor.
+    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/tours");
+    const open = page.getByRole("button", { name: "Bộ lọc", exact: true });
+    await open.click();
+    const sheet = page.getByRole("dialog", { name: "Bộ lọc" });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: "Đóng bộ lọc" }).click();
+    await expect(sheet).toBeHidden();
+  });
+
   test("mobile: the filter sheet stages choices until Apply and returns focus", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/tours");
