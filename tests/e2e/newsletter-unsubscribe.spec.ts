@@ -24,7 +24,8 @@ test("the exported link unsubscribes once, on the button press, and records the 
   await page.goto("/admin/subscribers");
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Xuất CSV" }).click();
-  const csv = await readFile(await (await download).path(), "utf8");
+  // The download starts with a byte-order mark (spreadsheets read UTF-8 with it).
+  const csv = (await readFile(await (await download).path(), "utf8")).replace(/^\uFEFF/, "");
   expect(csv.split("\r\n")[0]).toBe('"email","locale","source","confirmed_at","created_at","unsubscribe_url"');
   const line = csv.split("\r\n").find((row) => row.startsWith(`"${email}"`));
   const link = /"(https?:\/\/[^"]+\/ban-tin\/huy\?token=[A-Za-z0-9_-]{43})"$/.exec(line ?? "")?.[1];
