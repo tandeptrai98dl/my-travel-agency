@@ -875,6 +875,12 @@ isOneToOne: false
 "create_draft_booking":
 { Args: { "payload": Json }; Returns: string
                            },
+"create_payment_link":
+{ Args: { "target_id": string,"token_hash": string,"valid_hours": number }; Returns: Json
+                           },
+"create_quote":
+{ Args: { "payload": Json }; Returns: string
+                           },
 "create_redirect":
 { Args: { "source": string,"status"?: number,"target": string }; Returns: string
                            },
@@ -944,6 +950,9 @@ isOneToOne: false
 "next_inquiry_code":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"payment_link_state":
+{ Args: { "token_hash": string }; Returns: string
+                           },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
@@ -958,6 +967,9 @@ isOneToOne: false
                            },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
+                           },
+"redeem_payment_link":
+{ Args: { "token_hash": string }; Returns: Json
                            },
 "refresh_payment_state":
 { Args: { "target_id": string }; Returns: undefined
