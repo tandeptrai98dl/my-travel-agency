@@ -116,13 +116,14 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | content | Journal, static pages, reviews, redirects | media |
 | media | Upload, image metadata, alt text | Supabase Storage |
 | notification | Transactional email, send log | Resend |
+| consent | Cookie-consent records (`cookie_consents`, ADR-039): the banner's and settings dialog's choices, rate-limited, through a service-role function | — |
 | settings, audit | System configuration, audit log | — |
 
 ## Data flow
 
 - **Reads**: Server Components call services; repositories use the server Supabase client (`@/lib/supabase/server`) so RLS applies to the signed-in user (or anon).
 - **Writes**: Server Actions validate with Zod, call `requireRole()` when staff-only, then call a service. Atomic changes (seat holds, payments) go through Postgres functions. After writes, call `revalidateTag()` / `updateTag()` for affected cache tags.
-- **Guest writes** (draft booking, inquiry, newsletter): Server Actions use the service-role client after Zod validation, Turnstile and rate limiting. anon has no direct INSERT rights.
+- **Guest writes** (draft booking, inquiry, newsletter, cookie-consent records): Server Actions use the service-role client after Zod validation, Turnstile and rate limiting. anon has no direct INSERT rights.
 - **Auth**: `proxy.ts` refreshes the session cookie. Layouts and actions verify the user with the Auth server (`getClaims()`/`getUser()`), never from cookie contents alone.
 
 ### Supabase clients
