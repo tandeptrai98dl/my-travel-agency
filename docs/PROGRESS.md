@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 3 and 4 code-complete (acceptance items wait for the owner's Vercel, Upstash and VNPay accounts); 5 in progress; Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 5 PRs 5A–5D (accounts, booking lookup, inquiry inbox, operations). Stream B: Phase 5 PR 5W (tailor-made wizard), with the PR M backlog first. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 in progress (5A, 5C, 5W merged; 5B and 5D left); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 5 PR 5B (guest booking lookup, deletion and export), then 5D (reminders, alerts, dashboard, CSV, customers). Stream B: public backlog PR, then the Phase 6 spec. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -25,7 +25,46 @@ Open items:
 - Phase 3 (PR M review): skip the Redis lookup for paths that fail `isSitePath`; measure the 50 ms redirect timeout on cold starts on staging; write cross-language slug pairs to Redis (Next 16.4.5 308-without-Location issue); check a sitemap build during a Supabase outage; `bankAccount()` must throw so read errors use the 30 s cache profile; one source for the public and secure CSP path lists.
 - Emails (PR 4 polish review): window failed emails on a `failed_at` time, not the claim time; nothing reads failed pg_cron runs yet (Phase 6 alerting); expired access-token cleanup (Phase 6 housekeeping).
 
+- Phase 5 (PR 5C review): an inquiry marked spam first never gets a first-response time (fixed in 5B).
+- Owner (before staging): Supabase "Confirm email" and "Secure email change" ON, the new Auth email templates, minimum password length 10, leaked-password protection; `settings.contact.email` for team alerts.
+
 ## Log
+
+### 2026-11-07 (Phase 5 — 5W: tailor-made wizard and tour inquiry form)
+
+PR #43, branch `feat/p5-wizard` (migration `20261110120000`).
+
+- `/thiet-ke-rieng` 5-step wizard with a browser draft (no contact fields stored), inquiry form on private tour pages, `create_tailor_made_inquiry()` (service role, private tours only, strict privacy version, consent in the same transaction); `sendInquiryEmails()` for the wizard, tour form and contact form (one team alert, customer acknowledgement); every source fails closed (Turnstile, per-IP and per-address limits).
+- #40 backlog: proxy `isSitePath` gate, `redirects:languages` Redis hash with a generation-guarded rebuild (works around Next 16.4.5's 308 without `Location`), one `SECURE_ROUTES` list for both CSP policies.
+- React 19 form reset fixed with one shared `useSubmitWithoutReset`.
+- Verified: 796 unit tests, pgTAP, Turbopack budget (`/tours` 147.7 KB), 60 browser and axe checks; CI green.
+- Independent review: approved; targeted re-review approved.
+
+### 2026-11-07 (Phase 5 — 5C: inquiry inbox and emails)
+
+PR #45, branch `feat/p5-inquiries` (migration `20261110110000`).
+
+- UPDATE on `inquiries` revoked; `assign_inquiry()`, `update_inquiry_status()`, `add_inquiry_note(…, contacted)` with role checks and audit rows; `sales_manager` reads every inquiry; `create_quote()` checks the caller may work the inquiry.
+- `/admin/inquiries` inbox and detail page; quote prefill from an inquiry; `sendInquiryEmails()` (exactly once, 48-hour cutoff, no personal data in the team alert).
+- Verified: pgTAP 25 (59), E2E per role; CI green.
+- Independent review: approved.
+
+### 2026-11-07 (Phase 3 — public JS trim)
+
+PR #44, branch `perf/public-js-trim`.
+
+- Sentry route manifest off (it put every route, admin included, into public JS), desktop nav rendered on the server, cookie banner loaded on demand. Every public page lost about 2.3 KB; `/tours` 149.98 → 147.69 KB; new routes no longer grow public pages.
+- Independent review: approved.
+
+### 2026-11-07 (Phase 5 — 5A: customer auth, account area, customer-safe reads)
+
+PR #42, branch `feat/p5-accounts` (migrations `20261109190000`, `20261109191000`).
+
+- Customers read and edit only through `customer_bookings()`, `customer_booking()` and `save_customer_travellers()`; the six direct customer policies are dropped (closes the Phase 0 limit).
+- Localized sign-in, sign-up, password reset (recovery-session marker), email change and Google (staff refused); account overview, bookings, booking detail, profile; staff `/auth` pages in Vietnamese; starter browser-client forms removed.
+- `attach_customer_bookings(target_id)` is service-role only and runs after the autoconfirm guard; `set_marketing_consent()` service-role only with a strict version.
+- Verified: pgTAP 24 (46), 143 E2E; CI green.
+- Independent review: changes requested (the attach function could be called directly, bypassing the autoconfirm guard), fixed; re-review approved.
 
 ### 2026-11-07 (Phase 3 — PR M: SEO completion, CSP, redirects, status codes)
 
@@ -530,9 +569,7 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.
 - Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
-- Phase 5: customers can read internal columns of their own bookings and payments through the API (`DATABASE.md` "Known Phase 0 limits").
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).
-- The starter `/auth` forms call the Supabase browser client directly (against the "components never import Supabase clients" rule); they are replaced by the localized auth pages with Server Actions in Phase 5.
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
