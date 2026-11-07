@@ -30,9 +30,10 @@ function focusMain() {
  * privacy policy's real path in this language, or the contact page until it is published. Nothing optional loads
  * before a choice; "Essential only" is as easy as "Accept all". The choice lives in a first-party
  * cookie so cached pages stay static, and a `consentchange` event tells GA4 Consent Mode
- * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift.
+ * (Phase 3/6). The banner is fixed to the bottom, so it causes no layout shift. Loaded on demand by
+ * `CookieConsent`.
  */
-export function CookieConsentBanner({ privacyHref }: { privacyHref: string }) {
+export function CookieConsentBanner({ privacyHref, openSettingsFrom = false }: { privacyHref: string; openSettingsFrom?: HTMLElement | null | false }) {
   const t = useLabels("Consent");
   const titleId = useId();
   const [decided, setDecided] = useState<ConsentChoice | null | undefined>(undefined);
@@ -55,7 +56,11 @@ export function CookieConsentBanner({ privacyHref }: { privacyHref: string }) {
       setSettingsOpen(true);
     };
     window.addEventListener(CONSENT_OPEN_EVENT, open);
+    // Loaded by "Cookie settings" (`CookieConsent`): open the settings for that request.
+    if (openSettingsFrom !== false) open(new CustomEvent(CONSENT_OPEN_EVENT, { detail: openSettingsFrom }));
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, open);
+    // Only the request that loaded the banner; later ones arrive as events.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Stays mounted while the settings dialog is open, so focus can return to "Customise".

@@ -1,6 +1,5 @@
 "use client";
 
-import { Menu } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 
@@ -36,7 +35,10 @@ export function MobileNav({ destinations, className }: Props) {
           setOpen(true);
         }}
       >
-        <Menu strokeWidth={1.5} aria-hidden="true" />
+        {/* lucide "menu" (ISC licence) drawn inline: no icon factory in every page's initial JavaScript. */}
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 12h16M4 18h16M4 6h16" />
+        </svg>
       </button>
       {loaded && (
         <MobileNavSheet
