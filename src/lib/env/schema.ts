@@ -193,9 +193,9 @@ export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 export class EnvValidationError extends Error {
-  constructor(scope: "public" | "server", issues: z.core.$ZodIssue[]) {
+  constructor(scope: "public" | "server" | "deployment", issues: ReadonlyArray<{ path: readonly PropertyKey[]; message: string }>) {
     const details = issues
-      .map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`)
+      .map((issue) => `  - ${issue.path.map(String).join(".") || "(root)"}: ${issue.message}`)
       .join("\n");
     super(
       `Invalid ${scope} environment variables:\n${details}\n` +

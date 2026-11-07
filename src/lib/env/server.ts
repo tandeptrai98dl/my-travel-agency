@@ -1,6 +1,7 @@
 import "server-only";
 
-import { parseEnv, publicEnvSchema, serverEnvSchema } from "./schema";
+import { deploymentIssues } from "./deployment";
+import { EnvValidationError, parseEnv, publicEnvSchema, serverEnvSchema } from "./schema";
 
 /** Public values, validated (server-side copy). */
 export const validatedPublicEnv = parseEnv("public", publicEnvSchema, {
@@ -10,6 +11,7 @@ export const validatedPublicEnv = parseEnv("public", publicEnvSchema, {
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS: process.env.NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
 });
 
 export const serverEnv = parseEnv("server", serverEnvSchema, {
@@ -20,6 +22,7 @@ export const serverEnv = parseEnv("server", serverEnvSchema, {
   EMAIL_FROM: process.env.EMAIL_FROM,
   SENTRY_DSN: process.env.SENTRY_DSN,
   CRON_SECRET: process.env.CRON_SECRET,
+  CRON_HEARTBEAT_URL: process.env.CRON_HEARTBEAT_URL,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
@@ -34,3 +37,8 @@ export const serverEnv = parseEnv("server", serverEnvSchema, {
   BANK_WEBHOOK_ALLOWED_IPS: process.env.BANK_WEBHOOK_ALLOWED_IPS,
   BOOKING_ACCESS_SECRET: process.env.BOOKING_ACCESS_SECRET,
 });
+
+// Production uses only production values and previews never production ones (Phase 6 decision 11,
+// `./deployment.ts`). Runs on the whole environment, since it also checks variable names.
+const deployment = deploymentIssues(process.env);
+if (deployment.length) throw new EnvValidationError("deployment", deployment);
