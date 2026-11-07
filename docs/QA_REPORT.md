@@ -97,7 +97,7 @@ For every Tab stop, the script checked three things:
 | Cookie banner and settings dialog (Escape returns focus) | Pass (existing E2E) |
 | Mobile menu sheet (Escape returns focus) | Pass at 375 px (existing E2E), 768 px (existing E2E) and 1024 px (checked) |
 | Listing filter sheet (native modal `<dialog>`) | Pass. Focus stays in the dialog; past its last control focus goes to the browser UI, as a native modal does; Escape returns focus to "Filters" |
-| Tour gallery lightbox | **Fixed** (Escape lost focus); now Enter opens it, focus is trapped, the arrows change photo, Escape returns focus |
+| Tour gallery lightbox | **Fixed** (Escape lost focus); now Enter opens it, focus is trapped, the arrows change photo, Escape returns focus. Checked with a local script only: the seed has no gallery photos and the tour page is cached, so an E2E test cannot add some |
 | FAQ (`<details>`) | Pass (Enter toggles) |
 | Tab walk on 13 pages (public and secure) at 1280 px, 7 at 375 px and 8 at 1024 px | Pass after the footer fix. Every stop shows a ring; nothing is covered; no traps |
 | Customer sign-in | Order is email → password → "Đăng nhập" → forgot password → create account. Signing in with Enter is in the new E2E (runs in CI) |
@@ -107,7 +107,6 @@ For every Tab stop, the script checked three things:
 New E2E: `tests/e2e/keyboard.spec.ts` covers:
 
 - the Tab walk over eight public pages at 1280 and 1024 px;
-- the gallery;
 - sign-in;
 - the booking form.
 
