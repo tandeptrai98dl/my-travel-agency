@@ -51,3 +51,11 @@ export async function findPublishedTerms(locale: "vi" | "en") {
     .eq("pages.status", "published")
     .maybeSingle();
 }
+
+export async function paymentLinkState(tokenHash: string) {
+  return db().rpc("payment_link_state", { token_hash: tokenHash });
+}
+
+export async function redeemPaymentLink(tokenHash: string) {
+  return db().rpc("redeem_payment_link", { token_hash: tokenHash });
+}

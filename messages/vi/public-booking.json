@@ -156,5 +156,23 @@
     "viewBooking": "Xem đặt tour",
     "policy": "Chính sách huỷ",
     "priceChanged": "Giá ngày khởi hành vừa thay đổi; tổng mới là {total}. Kiểm tra lại rồi bấm thanh toán để tiếp tục."
+  },
+  "PayLink": {
+    "metaTitle": "Liên kết thanh toán",
+    "eyebrow": "Thanh toán",
+    "title": "Liên kết thanh toán của bạn",
+    "validBody": "Liên kết này mở trang thanh toán cho chuyến đi đã được tư vấn riêng cho bạn. Mỗi liên kết chỉ dùng được một lần.",
+    "continue": "Tiếp tục thanh toán",
+    "continuing": "Đang mở…",
+    "usedTitle": "Liên kết đã được sử dụng",
+    "usedBody": "Nếu bạn đã mở liên kết trên thiết bị này, hãy tiếp tục từ email xác nhận hoặc liên hệ chuyên viên tư vấn để nhận liên kết mới.",
+    "expiredTitle": "Liên kết đã hết hạn",
+    "expiredBody": "Vui lòng liên hệ chuyên viên tư vấn để nhận liên kết mới.",
+    "invalidTitle": "Liên kết không hợp lệ",
+    "invalidBody": "Hãy kiểm tra lại đường dẫn trong email, hoặc liên hệ chúng tôi.",
+    "notPayableTitle": "Đặt tour không còn cần thanh toán",
+    "notPayableBody": "Đặt tour này đã được thanh toán, đã huỷ hoặc báo giá đã hết hạn. Vui lòng liên hệ chúng tôi.",
+    "unavailableTitle": "Thanh toán trực tuyến đang tạm dừng",
+    "unavailableBody": "Vui lòng gọi cho chúng tôi để hoàn tất thanh toán."
   }
 }
