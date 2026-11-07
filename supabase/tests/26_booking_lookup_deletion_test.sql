@@ -3,7 +3,7 @@
 -- email-sync trigger after GoTrue's soft delete, reviews audited without names, and the #45 review
 -- fix of the first response after spam.
 begin;
-select plan(55);
+select plan(56);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -54,7 +54,7 @@ insert into public.reviews (id, booking_id, author_name, rating, content, locale
   ('52000000-0000-4000-8000-000000002601', '51000000-0000-4000-8000-000000002601', 'Nguyễn Văn An', 5, 'Tuyệt vời', 'vi', 'approved');
 -- An audit row written before this migration still carried the name.
 insert into public.audit_logs (action, entity_type, entity_id, changes) values
-  ('reviews.insert', 'reviews', '52000000-0000-4000-8000-000000002601', '{"after": {"author_name": "Nguyễn Văn An", "rating": 5}}');
+  ('reviews.insert', 'reviews', '52000000-0000-4000-8000-000000002601', '{"after": {"author_name": "Nguyễn Văn An", "author_country": "Việt Nam", "title": "Kỳ nghỉ của An", "content": "Tuyệt vời", "rating": 5}}');
 insert into public.internal_notes (body, author_id, inquiry_id) values
   ('Note on the open inquiry', '00000000-0000-4000-8000-000000002603', '26000000-0000-4000-8000-000000000001'),
   ('Note on the quoted inquiry', '00000000-0000-4000-8000-000000002603', '26000000-0000-4000-8000-000000000002');
@@ -172,6 +172,12 @@ select is((select author_name from public.reviews where id = '52000000-0000-4000
 select is(
   (select count(*)::int from public.audit_logs where entity_id = '52000000-0000-4000-8000-000000002601' and changes::text like '%Nguyễn%'),
   0, 'audit_logs: no review row keeps the name'
+);
+select ok(
+  (select bool_and(not (changes -> 'after' ?| array['author_country', 'title', 'content']) and (changes -> 'after' ->> 'rating') = '5')
+     from public.audit_logs where entity_id = '52000000-0000-4000-8000-000000002601' and action = 'reviews.insert'
+       and changes -> 'after' ? 'rating'),
+  'audit_logs: older review rows lose the country, title and text and keep the rating'
 );
 select ok(
   (select name = 'Đã xoá' and email = 'deleted+00000000-0000-4000-8000-000000002601@invalid.local' and phone is null and message is null

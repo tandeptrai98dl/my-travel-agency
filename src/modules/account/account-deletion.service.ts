@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { checkLimits } from "@/modules/identity/auth-guards";
 import type { AuthState, DeleteAccountInput } from "@/modules/identity/customer-auth.schemas";
-import { confirmCurrentPassword } from "@/modules/identity/customer-auth.service";
+import { confirmCurrentPassword, signedInUser } from "@/modules/identity/customer-auth.service";
 
 import * as repo from "./account-deletion.repository";
 
@@ -66,12 +66,15 @@ export async function runDeletionSteps(
  * and the request waits for an admin).
  */
 export async function requestMyDeletion(input: DeleteAccountInput): Promise<AuthState> {
+  // The limit comes before the password check, so a stolen session cannot guess the password here.
+  const signedIn = await signedInUser();
+  if (!signedIn) return { status: "expired" };
+  const limited = await checkLimits([{ scope: "deletion", id: signedIn.id, limit: 5, window: HOUR }]);
+  if (limited !== "ok") return { status: limited };
   const user = await confirmCurrentPassword(input.current);
   if (user === "expired") return { status: "expired" };
   if (user === "rate_limited") return { status: "rate_limited" };
   if (user === "invalid") return { status: "invalid", errors: { current: "wrongPassword" } };
-  const limited = await checkLimits([{ scope: "deletion", id: user.id, limit: 5, window: HOUR }]);
-  if (limited !== "ok") return { status: limited };
 
   const { data: reasons, error } = await repo.requestDeletion(user.id);
   if (error) {

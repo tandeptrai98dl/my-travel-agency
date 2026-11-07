@@ -120,6 +120,9 @@ test("a customer deletes their account: anonymised, unlinked, signed out for goo
   expect((await adminApi().from("subscribers").select("id").eq("email", person.email)).data).toEqual([]);
   const { data: auth } = await adminApi().auth.admin.getUserById(person.id);
   expect(auth.user?.email ?? "").not.toBe(person.email);
+  // The ban cleared the user metadata, so the name is gone from Auth too.
+  const { data: meta } = await adminApi().schema("auth" as never).from("users").select("raw_user_meta_data").eq("id", person.id).maybeSingle();
+  expect(JSON.stringify(meta ?? auth.user?.user_metadata ?? {})).not.toContain("Khách Xoá Dữ Liệu");
 
   // The account is gone: the old password signs nobody in, and the account pages send to sign-in.
   await page.goto("/tai-khoan");

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   softDeleteUser: vi.fn(),
   signOutHere: vi.fn(),
   confirmCurrentPassword: vi.fn(),
+  signedInUser: vi.fn(),
   checkLimits: vi.fn(),
   requirePermission: vi.fn(),
 }));
@@ -23,7 +24,7 @@ vi.mock("./account-deletion.repository", () => ({
   softDeleteUser: mocks.softDeleteUser,
   signOutHere: mocks.signOutHere,
 }));
-vi.mock("@/modules/identity/customer-auth.service", () => ({ confirmCurrentPassword: mocks.confirmCurrentPassword }));
+vi.mock("@/modules/identity/customer-auth.service", () => ({ confirmCurrentPassword: mocks.confirmCurrentPassword, signedInUser: mocks.signedInUser }));
 vi.mock("@/modules/identity/auth-guards", () => ({ checkLimits: mocks.checkLimits }));
 vi.mock("@/lib/auth/require-role", () => ({ requirePermission: mocks.requirePermission }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
@@ -42,6 +43,7 @@ beforeEach(() => {
   mocks.requestDeletion.mockResolvedValue({ data: [], error: null });
   mocks.confirmCurrentPassword.mockResolvedValue({ id, email: "x@example.test", accessToken: "access-token" });
   mocks.checkLimits.mockResolvedValue("ok");
+  mocks.signedInUser.mockResolvedValue({ id, email: "x@example.test" });
 });
 
 describe("deletion steps", () => {
@@ -108,10 +110,18 @@ describe("the customer's request", () => {
     expect(mocks.requestDeletion).not.toHaveBeenCalled();
   });
 
-  it("is rate-limited per user", async () => {
+  it("is rate-limited per user before the password is checked", async () => {
     mocks.checkLimits.mockResolvedValue("rate_limited");
     expect(await requestMyDeletion(input)).toEqual({ status: "rate_limited" });
     expect(mocks.checkLimits).toHaveBeenCalledWith([{ scope: "deletion", id, limit: 5, window: 3600 }]);
+    expect(mocks.confirmCurrentPassword).not.toHaveBeenCalled();
+  });
+
+  it("answers 'expired' without a session, before any limit or password check", async () => {
+    mocks.signedInUser.mockResolvedValue(null);
+    expect(await requestMyDeletion(input)).toEqual({ status: "expired" });
+    expect(mocks.checkLimits).not.toHaveBeenCalled();
+    expect(mocks.confirmCurrentPassword).not.toHaveBeenCalled();
   });
 
   it("waits while a trip or money is open, with the request on record", async () => {

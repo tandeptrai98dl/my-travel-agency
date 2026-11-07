@@ -282,6 +282,11 @@ async function verifyCurrentPassword(supabase: Supabase, email: string, password
   return error.status === 429 ? "rate_limited" : "invalid";
 }
 
+/** The signed-in user (verified with the Auth server), or null: for limits keyed on the user. */
+export async function signedInUser(): Promise<{ id: string; email: string } | null> {
+  return currentUser(await createClient());
+}
+
 /**
  * The signed-in user re-entering their password before a sensitive step (data deletion, 5B):
  * the user, or why not. Rate-limited per user by the caller.

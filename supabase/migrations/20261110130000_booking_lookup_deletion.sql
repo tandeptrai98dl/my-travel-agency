@@ -170,16 +170,21 @@ begin
   select coalesce(array_agg(b.id), '{}') into booking_ids from public.bookings b
    where b.customer_id = p.id or (address is not null and lower(b.contact_email) = address);
 
-  -- Reviews on those bookings: initials only; earlier audit rows lose the name too.
+  -- Reviews on those bookings: initials only; earlier audit rows lose the name, country, title and text.
   select coalesce(array_agg(r.id), '{}') into review_ids from public.reviews r
    where r.booking_id = any (booking_ids) and r.author_name is distinct from public.name_initials(r.author_name);
   update public.reviews set author_name = public.name_initials(author_name) where id = any (review_ids);
   get diagnostics n_reviews = row_count;
   update public.audit_logs
-     set changes = changes #- '{before,author_name}' #- '{after,author_name}'
+     set changes = changes
+       #- '{before,author_name}' #- '{after,author_name}'
+       #- '{before,author_country}' #- '{after,author_country}'
+       #- '{before,title}' #- '{after,title}'
+       #- '{before,content}' #- '{after,content}'
    where entity_type = 'reviews'
      and entity_id in (select r.id from public.reviews r where r.booking_id = any (booking_ids))
-     and (changes #> '{before,author_name}' is not null or changes #> '{after,author_name}' is not null);
+     and (changes -> 'before' ?| array['author_name', 'author_country', 'title', 'content']
+          or changes -> 'after' ?| array['author_name', 'author_country', 'title', 'content']);
 
   -- Unused access tokens of those bookings.
   delete from public.booking_access_tokens where booking_id = any (booking_ids) and used_at is null;
