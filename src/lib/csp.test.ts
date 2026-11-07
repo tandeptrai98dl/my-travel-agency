@@ -88,7 +88,7 @@ describe("public CSP", () => {
     expect(PUBLIC_CSP_SOURCE).toBe(
       "/((?!admin/|admin$|api/|dat-tour/|en/book/|thanh-toan/|en/checkout/|thanh-toan/link/|en/pay/|dang-nhap$|dang-nhap/|en/login$|en/login/|dang-ky$|dang-ky/|en/register$|en/register/|quen-mat-khau$|quen-mat-khau/|en/forgot-password$|en/forgot-password/|dat-lai-mat-khau$|dat-lai-mat-khau/|en/reset-password$|en/reset-password/|tai-khoan$|tai-khoan/|en/account$|en/account/|tra-cuu-booking$|tra-cuu-booking/|en/booking-lookup$|en/booking-lookup/).*)",
     );
-    expect(SECURE_ROUTES).toEqual(["/book/[tourSlug]", "/checkout/[code]", "/pay/[token]", "/login", "/register", "/forgot-password", "/reset-password", "/account"]);
+    expect(SECURE_ROUTES).toEqual(["/book/[tourSlug]", "/checkout/[code]", "/pay/[token]", "/login", "/register", "/forgot-password", "/reset-password", "/account", "/booking-lookup"]);
   });
 
   it("covers a route without parameters and the paths below it, in both languages (Phase 5 routes)", () => {
