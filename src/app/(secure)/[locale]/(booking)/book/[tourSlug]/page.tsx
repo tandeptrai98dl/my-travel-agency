@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPathname, Link } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
 import { bookingEnabled, getBookingForm } from "@/modules/booking/checkout.service";
-import { getPolicyLinks } from "@/modules/content/public/content-public.service";
+import { getPolicyLinks, getPrivacyConsent } from "@/modules/content/public/content-public.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 import { BookingMessages } from "../../messages";
@@ -67,7 +67,9 @@ async function Book({ params, searchParams }: Props) {
     </div>
   );
 
-  if (!bookingEnabled() || form.departures.length === 0) {
+  // Consent needs a published privacy policy (decision 9), as the newsletter does.
+  const privacy = await getPrivacyConsent(locale);
+  if (!bookingEnabled() || !privacy || form.departures.length === 0) {
     const settings = await getPublicSettings();
     const phone = settings.contact?.phone ?? null;
     const email = settings.contact?.email ?? null;
@@ -75,8 +77,8 @@ async function Book({ params, searchParams }: Props) {
       <>
         {header}
         <section className="flex max-w-[680px] flex-col gap-4 rounded-lg border border-border bg-card p-6">
-          <h2 className="font-serif text-h3 font-semibold">{bookingEnabled() ? t("noDepartures") : t("unavailableTitle")}</h2>
-          {!bookingEnabled() && <p className="text-body text-muted-foreground">{t("unavailableBody")}</p>}
+          <h2 className="font-serif text-h3 font-semibold">{bookingEnabled() && privacy ? t("noDepartures") : t("unavailableTitle")}</h2>
+          {!(bookingEnabled() && privacy) && <p className="text-body text-muted-foreground">{t("unavailableBody")}</p>}
           <p className="flex flex-wrap gap-4 text-body">
             {phone && <a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className="underline underline-offset-4">{phone}</a>}
             {email && <a href={`mailto:${email}`} className="underline underline-offset-4">{email}</a>}
@@ -117,10 +119,7 @@ async function Book({ params, searchParams }: Props) {
           initial={{ departureId: departure.id, adults: Math.min(adults, departure.seatsLeft), children: Math.min(children, Math.max(departure.seatsLeft - adults, 0)) }}
           turnstileSiteKey={form.turnstileSiteKey}
           checkoutPath={getPathname({ locale, href: { pathname: "/checkout/[code]/payment", params: { code: "{code}" } } }).replace(encodeURIComponent("{code}"), "{code}")}
-          links={{
-            terms: policyLinks.find((link) => link.key === "terms")?.href ?? getPathname({ locale, href: "/contact" }),
-            privacy: policyLinks.find((link) => link.key === "privacy")?.href ?? getPathname({ locale, href: "/contact" }),
-          }}
+          links={{ terms: policyLinks.find((link) => link.key === "terms")?.href ?? null, privacy: privacy.href }}
           policy={policy}
         />
       </BookingMessages>

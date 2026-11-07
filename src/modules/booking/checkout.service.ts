@@ -1,21 +1,24 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import { cookies } from "next/headers";
 
 import { todayInVietnam } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { serverEnv } from "@/lib/env/server";
-import { logger } from "@/lib/logger";
 import { rateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { isTurnstileConfigured, turnstileSiteKey, verifyTurnstile } from "@/lib/turnstile";
 import { getTourDepartures, getTourPage } from "@/modules/catalog/public/tour-public.service";
+import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
 import type { Locale } from "@/modules/catalog/public/types";
 import { availableMethods, instructionsFor } from "@/modules/payment/payment.service";
 import type { PaymentInstructions } from "@/modules/payment/provider";
 
 import { accessCookieName, signAccess, verifyAccess } from "./booking-access";
 import type { CheckoutDraftValues } from "./booking.schemas";
-import { type BookingError, quote as quoteBooking, startDraft, startPayment } from "./booking.service";
+import * as bookingRepo from "./booking.repository";
+import { type BookingError, buildDraft, mapBookingError, quote as quoteBooking, repriceStaleDraft, startPayment } from "./booking.service";
 import * as repo from "./checkout.repository";
 import { availablePlans, type PaymentPlan, type Quote } from "./pricing";
 
@@ -114,20 +117,25 @@ export type RequestContext = { ip: string | null; userAgent: string | null };
 
 export type CreateResult =
   | { ok: true; code: string }
-  | { ok: false; error: BookingError | "turnstile" | "rate_limited" | "unavailable" | "consent_failed" };
+  | { ok: false; error: BookingError | "turnstile" | "rate_limited" | "unavailable" };
 
 /** Production is VERCEL_ENV=production only (decision 8); previews and CI run without Turnstile keys. */
 function turnstileRequired(): boolean {
   return serverEnv.VERCEL_ENV === "production" || isTurnstileConfigured();
 }
 
-async function legalVersions(): Promise<{ terms: string; privacy: string }> {
-  const { data } = await repo.findLegalPages();
-  const version = (key: string) => {
-    const row = data?.find((page) => page.key === key);
-    return row ? `${key}@${row.updated_at}` : `${key}@unpublished`;
-  };
-  return { terms: version("terms"), privacy: version("privacy") };
+/**
+ * Versions of the documents the customer accepts (decision 9), only for published pages: the
+ * privacy policy as the newsletter records it (`getPrivacyConsent`, required), and the terms page
+ * by the same scheme when one is published (null otherwise).
+ */
+async function legalVersions(locale: Locale): Promise<{ terms: string | null; privacy: string } | null> {
+  const [privacy, terms] = await Promise.all([getPrivacyConsent(locale), repo.findPublishedTerms(locale)]);
+  if (!privacy) return null;
+  const termsVersion = terms.data
+    ? `terms-${locale}-${createHash("sha256").update(JSON.stringify([terms.data.title, terms.data.content ?? null])).digest("hex").slice(0, 16)}`
+    : null;
+  return { terms: termsVersion, privacy: privacy.version };
 }
 
 /**
@@ -146,26 +154,25 @@ export async function createCheckoutBooking(values: CheckoutDraftValues, context
   });
   if (limited === "limited") return { ok: false, error: "rate_limited" };
 
+  const versions = await legalVersions(values.locale);
+  if (!versions) return { ok: false, error: "unavailable" };
   const user = await getCurrentUser();
   const customerId = user && user.role === "customer" ? user.id : null;
-  const draft = await startDraft(values, customerId);
-  if (!draft.ok) return draft;
-  const { data: row } = await repo.findBookingCode(draft.id);
-  if (!row) return { ok: false, error: "failed" };
-
-  const versions = await legalVersions();
-  const consent = await repo.recordConsent({
-    bookingId: draft.id,
+  const built = await buildDraft(values, customerId);
+  if (!built.ok) return built;
+  // The draft and the consent are one transaction; a replay records nothing twice.
+  const { data: id, error } = await bookingRepo.createCheckoutDraft({
+    payload: built.payload,
     termsVersion: versions.terms,
     privacyVersion: versions.privacy,
     marketing: values.marketing,
     ip: context.ip,
     userAgent: context.userAgent,
   });
-  if (consent.error) {
-    logger.error("booking.consent_failed", { code: consent.error.code, booking: row.code });
-    return { ok: false, error: "consent_failed" };
-  }
+  if (error || !id) return { ok: false, error: mapBookingError(error) };
+  const draft = { id };
+  const { data: row } = await repo.findBookingCode(draft.id);
+  if (!row) return { ok: false, error: "failed" };
 
   const access = signAccess(secret, draft.id);
   (await cookies()).set(accessCookieName(row.code), access.value, {
@@ -297,7 +304,7 @@ export async function openTransfer(view: CheckoutView): Promise<OpenInstructions
 
 export type StartResult =
   | { ok: true; instructions: PaymentInstructions; expiresAt: string }
-  | { ok: false; error: BookingError | "rate_limited" | "method_unavailable" | "nothing_due" };
+  | { ok: false; error: BookingError | "rate_limited" | "method_unavailable" | "nothing_due"; total?: number };
 
 /** Pay: holds the seats on the first attempt (decision 4) and returns what to do next. */
 export async function startCheckoutPayment(view: CheckoutView, provider: "vnpay" | "bank_transfer", context: RequestContext): Promise<StartResult> {
@@ -316,7 +323,16 @@ export async function startCheckoutPayment(view: CheckoutView, provider: "vnpay"
   if (limited === "limited" || perBooking === "limited") return { ok: false, error: "rate_limited" };
 
   const started = await startPayment({ bookingId: view.id, provider, kind: view.dueNow.kind });
-  if (!started.ok) return started;
+  if (!started.ok) {
+    // Decision 2: the departure's price changed since the draft. Reprice it from the booking row,
+    // tell the customer the new total, and the next Pay goes through.
+    if (started.error === "price_changed" && view.status === "draft") {
+      const repriced = await repriceStaleDraft(view.id);
+      if (repriced.ok) return { ok: false, error: "price_changed", total: repriced.quote.total };
+      return { ok: false, error: repriced.error };
+    }
+    return started;
+  }
   const instructions = await instructionsFor(provider, {
     reference: started.payment.reference,
     amount: started.payment.amount,

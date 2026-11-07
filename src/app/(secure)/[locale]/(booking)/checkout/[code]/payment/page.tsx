@@ -95,6 +95,7 @@ async function Payment({ params }: Props) {
               <PaymentMethodForm
                 code={view.code}
                 methods={methods}
+                locale={locale}
                 submitLabel={transfer ? t("switchMethod") : t("pay", { amount: formatVnd(due.amount, locale) })}
               />
             </section>

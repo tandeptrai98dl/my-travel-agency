@@ -40,25 +40,14 @@ export async function checkoutStatus(code: string) {
   return db().rpc("booking_checkout_status", { target_code: code });
 }
 
-/** Versions of the terms and privacy pages the customer accepted (page key and last update). */
-export async function findLegalPages() {
-  return db().from("pages").select("key, updated_at").in("key", ["terms", "privacy"]);
-}
-
-export async function recordConsent(input: {
-  bookingId: string;
-  termsVersion: string;
-  privacyVersion: string;
-  marketing: boolean;
-  ip: string | null;
-  userAgent: string | null;
-}) {
-  return db().rpc("record_booking_consent", {
-    target_id: input.bookingId,
-    terms_version: input.termsVersion,
-    privacy_version: input.privacyVersion,
-    marketing: input.marketing,
-    ip: input.ip as unknown as string,
-    user_agent: input.userAgent as string,
-  });
+/** The published terms page in one language (its version is recorded with the consent). */
+export async function findPublishedTerms(locale: "vi" | "en") {
+  return db()
+    .from("page_translations")
+    .select("title, content, pages!inner(key, status)")
+    .eq("locale", locale)
+    .eq("is_published", true)
+    .eq("pages.key", "terms")
+    .eq("pages.status", "published")
+    .maybeSingle();
 }

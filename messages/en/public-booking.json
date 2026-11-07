@@ -94,7 +94,8 @@
       "invalid": "Please check the details.",
       "consent_failed": "Could not save. Please try again.",
       "failed": "Something went wrong. Please try again."
-    }
+    },
+    "acceptPrivacy": "I accept the privacy policy."
   },
   "Checkout": {
     "metaTitle": "Booking {code}",
@@ -134,7 +135,7 @@
     "transferTitle": "Bank transfer",
     "transferIntro": "Transfer the exact amount with this memo so we can confirm it automatically.",
     "qrAlt": "VietQR code to transfer {amount}",
-    "bank": "Bank (BIN)",
+    "bank": "Bank",
     "account": "Account number",
     "holder": "Account holder",
     "amount": "Amount",
@@ -153,6 +154,7 @@
     "notConfirmedBody": "You can try again or choose another method while your places are held.",
     "tryAgain": "Try paying again",
     "viewBooking": "View booking",
-    "policy": "Cancellation policy"
+    "policy": "Cancellation policy",
+    "priceChanged": "The departure's price has just changed; the new total is {total}. Check it, then pay to continue."
   }
 }

@@ -32,7 +32,8 @@ type Props = {
   turnstileSiteKey: string | null;
   /** The payment page path with `{code}` for the booking code (functions cannot cross to the client). */
   checkoutPath: string;
-  links: { terms: string; privacy: string };
+  /** Published policy pages only; without terms the box accepts the privacy policy alone. */
+  links: { terms: string | null; privacy: string };
   policy: React.ReactNode;
 };
 
@@ -126,8 +127,11 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [departure, party.adults, party.children, party.infants, party.singleRooms, plan]);
 
+  // Focus follows a step change (never the first render, so the page loads at its top).
+  const previousStep = useRef(step);
   useEffect(() => {
-    headingRef.current?.focus();
+    if (previousStep.current !== step) headingRef.current?.focus();
+    previousStep.current = step;
   }, [step]);
 
   async function next() {
@@ -381,11 +385,15 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
                         <Checkbox checked={field.value === true} onCheckedChange={(checked) => field.onChange(checked === true)} />
                       </FormControl>
                       <FormLabel className="font-normal leading-relaxed">
-                        {t("acceptTerms")}{" "}
-                        <a href={links.terms} target="_blank" rel="noopener" className="underline underline-offset-4">
-                          {t("termsLink")}
-                        </a>
-                        {" · "}
+                        {links.terms ? t("acceptTerms") : t("acceptPrivacy")}{" "}
+                        {links.terms && (
+                          <>
+                            <a href={links.terms} target="_blank" rel="noopener" className="underline underline-offset-4">
+                              {t("termsLink")}
+                            </a>
+                            {" · "}
+                          </>
+                        )}
                         <a href={links.privacy} target="_blank" rel="noopener" className="underline underline-offset-4">
                           {t("privacyLink")}
                         </a>

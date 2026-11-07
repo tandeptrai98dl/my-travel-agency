@@ -34,6 +34,22 @@ const violations = (page: Page) => page.evaluate(() => (window as unknown as { _
 
 let code = "";
 
+/** Date, one guest and full payment, through the form, up to the payment page; returns the code. */
+async function bookThroughForm(page: Page, slug: string, departureId: string) {
+  await page.goto(`/dat-tour/${slug}?departure=${departureId}&adults=1`);
+  await expect(page.getByTestId("booking-total")).toHaveText(/12\.900\.000/);
+  await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
+  await page.getByLabel("Họ và tên").fill("Nguyễn An");
+  await page.getByLabel("Email").fill(`guest-${Date.now()}@example.test`);
+  await page.getByLabel("Số điện thoại").fill("+84 912 000 111");
+  await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
+  await page.getByLabel("Thanh toán toàn bộ").check();
+  await page.getByRole("checkbox", { name: /Tôi đồng ý với/ }).click();
+  await page.getByRole("button", { name: "Tiếp tục thanh toán" }).click();
+  await expect(page).toHaveURL(/\/thanh-toan\/PTA-\d{4}-\d{4,}\/phuong-thuc$/);
+  return decodeURIComponent(new URL(page.url()).pathname.split("/")[2]);
+}
+
 test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   test.setTimeout(120_000);
   await watchCsp(page);
@@ -65,7 +81,7 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   await page.getByLabel("Thanh toán toàn bộ").check();
   await page.getByRole("button", { name: "Tiếp tục thanh toán" }).click();
   await expect(page.getByText("Vui lòng đồng ý để tiếp tục.")).toBeVisible();
-  await page.getByRole("checkbox", { name: /Tôi đồng ý với điều khoản/ }).click();
+  await page.getByRole("checkbox", { name: /Tôi đồng ý với/ }).click();
   await expectNoSeriousViolations(page, "/dat-tour confirm step");
   await page.getByRole("button", { name: "Tiếp tục thanh toán" }).click();
 
@@ -85,7 +101,7 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   await expect(page).toHaveURL(/\/api\/payments\/vnpay\/stub\?/);
   const { data: held } = await adminApi().from("departures").select("seats_reserved").eq("id", departure.departureId).single();
   expect(held?.seats_reserved).toBe(2);
-  await page.getByRole("button", { name: "Pay" }).click();
+  await page.getByRole("button", { name: "Pay", exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/thanh-toan/${code}/ket-qua$`));
   await expect(page.getByTestId("checkout-result")).toHaveAttribute("data-status", "confirmed", { timeout: 20_000 });
@@ -103,6 +119,35 @@ test("a booking code alone opens nothing", async ({ browser }) => {
     await expect(page.getByText(code)).toHaveCount(0);
   }
   await context.close();
+});
+
+test("a price change before Pay reprices the draft, and a bank transfer shows the VietQR code", async ({ page }) => {
+  test.setTimeout(120_000);
+  await watchCsp(page);
+  const departure = await testDeparture(4);
+  const bookingCode = await bookThroughForm(page, await tourSlug("vi"), departure.departureId);
+  // The departure's price changes while the customer is on the payment page (spec decision 2).
+  const { error } = await adminApi().from("departures").update({ price_adult: 13_500_000 }).eq("id", departure.departureId);
+  expect(error).toBeNull();
+
+  await page.getByRole("radio", { name: /Chuyển khoản/ }).check();
+  await page.getByRole("button", { name: /^Thanh toán/ }).click();
+  await expect(page.getByText(/tổng mới là 13\.500\.000/)).toBeVisible();
+  const { data: repriced } = await adminApi().from("bookings").select("status, total").eq("code", bookingCode).single();
+  expect(repriced).toMatchObject({ status: "draft", total: 13_500_000 });
+
+  // The next Pay goes through at the new price and shows the transfer to make.
+  await page.getByRole("radio", { name: /Chuyển khoản/ }).check();
+  await page.getByRole("button", { name: /^Thanh toán 13\.500\.000/ }).click();
+  const panel = page.getByTestId("vietqr-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText("Vietcombank")).toBeVisible();
+  await expect(panel.getByText(/PTA\d{10,}/)).toBeVisible();
+  await expect(page.getByTestId("hold-countdown")).toBeVisible();
+  await expectNoSeriousViolations(page, "/thanh-toan/[code]/phuong-thuc (VietQR)");
+  const { data: held } = await adminApi().from("bookings").select("status").eq("code", bookingCode).single();
+  expect(held?.status).toBe("pending_payment");
+  expect(await violations(page)).toEqual([]);
 });
 
 test("the booking page works at phone width in English", async ({ page }) => {

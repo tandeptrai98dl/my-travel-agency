@@ -866,6 +866,9 @@ isOneToOne: false
 "confirm_newsletter_subscription":
 { Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
                            },
+"create_checkout_draft":
+{ Args: { "ip": unknown,"marketing": boolean,"payload": Json,"privacy_version": string,"terms_version": string,"user_agent": string }; Returns: string
+                           },
 "create_contact_inquiry":
 { Args: { "p_email": string,"p_ip"?: unknown,"p_locale": Database["public"]['Enums']["locale"],"p_message": string,"p_name": string,"p_phone": string,"p_preferred_contact": string,"p_privacy_version": string,"p_tour_code": string,"p_user_agent"?: string }; Returns: string
                            },
@@ -943,9 +946,6 @@ isOneToOne: false
                            },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
-                           },
-"record_booking_consent":
-{ Args: { "ip": unknown,"marketing": boolean,"privacy_version": string,"target_id": string,"terms_version": string,"user_agent": string }; Returns: undefined
                            },
 "record_manual_payment":
 { Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json

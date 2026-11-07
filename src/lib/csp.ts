@@ -6,8 +6,13 @@
  * The cached public pages get their own nonce-free policy (Phase 3 PR M).
  */
 
-/** Localized checkout and account paths (src/i18n/pathnames.ts), in both languages. */
-const SECURE_PATH = /^\/(?:en\/)?(?:dat-tour|thanh-toan|tai-khoan|book|checkout|pay|account)(?:\/|$)/;
+/**
+ * Localized paths the secure root serves (src/i18n/pathnames.ts), in both languages. Only these:
+ * a prefix the root does not serve yet would be answered by the public root, whose prerendered
+ * scripts have no nonce. Payment links (`/thanh-toan/link`, `/en/pay`) and the account are added
+ * with their pages.
+ */
+const SECURE_PATH = /^\/(?:dat-tour\/|thanh-toan\/(?!link(?:\/|$))|en\/book\/|en\/checkout\/)/;
 
 export function isSecurePath(pathname: string): boolean {
   return SECURE_PATH.test(pathname);

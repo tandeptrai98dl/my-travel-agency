@@ -94,7 +94,8 @@
       "invalid": "Vui lòng kiểm tra lại thông tin.",
       "consent_failed": "Không lưu được. Vui lòng thử lại.",
       "failed": "Đã có lỗi. Vui lòng thử lại."
-    }
+    },
+    "acceptPrivacy": "Tôi đồng ý với chính sách bảo mật."
   },
   "Checkout": {
     "metaTitle": "Đặt tour {code}",
@@ -134,7 +135,7 @@
     "transferTitle": "Chuyển khoản",
     "transferIntro": "Chuyển đúng số tiền với đúng nội dung để hệ thống tự xác nhận.",
     "qrAlt": "Mã VietQR để chuyển {amount}",
-    "bank": "Ngân hàng (BIN)",
+    "bank": "Ngân hàng",
     "account": "Số tài khoản",
     "holder": "Chủ tài khoản",
     "amount": "Số tiền",
@@ -153,6 +154,7 @@
     "notConfirmedBody": "Bạn có thể thử lại hoặc chọn phương thức khác trong thời gian giữ chỗ.",
     "tryAgain": "Thử thanh toán lại",
     "viewBooking": "Xem đặt tour",
-    "policy": "Chính sách huỷ"
+    "policy": "Chính sách huỷ",
+    "priceChanged": "Giá ngày khởi hành vừa thay đổi; tổng mới là {total}. Kiểm tra lại rồi bấm thanh toán để tiếp tục."
   }
 }

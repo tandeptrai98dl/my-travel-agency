@@ -13,8 +13,9 @@ export async function VietQrPanel({ transfer, locale }: { transfer: Transfer; lo
   const t = await getTranslations({ locale, namespace: "Checkout" });
   const svg = await vietQrSvg(transfer.payload);
   const amount = formatVnd(transfer.amount, locale);
-  const rows: [string, string, string][] = [
-    [t("bank"), transfer.bankBin, transfer.bankBin],
+  // Copyable values; the bank is shown by name (its BIN is only inside the QR payload).
+  const rows: [string, string, string | null][] = [
+    [t("bank"), transfer.bankName || transfer.bankBin, null],
     [t("account"), transfer.accountNumber, transfer.accountNumber],
     [t("holder"), transfer.accountHolder, transfer.accountHolder],
     [t("amount"), amount, String(transfer.amount)],
@@ -29,14 +30,12 @@ export async function VietQrPanel({ transfer, locale }: { transfer: Transfer; lo
       <div className="grid gap-6 sm:grid-cols-[12rem_1fr] sm:items-start">
         {/* The SVG comes from our own QR encoder (no user markup). */}
         <div role="img" aria-label={t("qrAlt", { amount })} className="w-48 bg-white p-2 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
-        <dl className="flex flex-col gap-3 text-small">
+        <dl className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-3 text-small">
           {rows.map(([label, shown, value]) => (
-            <div key={label} className="flex items-center justify-between gap-3 border-b border-border pb-2">
-              <div>
-                <dt className="text-muted-foreground">{label}</dt>
-                <dd className="font-medium tabular-nums">{shown}</dd>
-              </div>
-              <CopyButton value={value} label={label} />
+            <div key={label} className="contents">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="break-all font-medium tabular-nums">{shown}</dd>
+              <dd>{value ? <CopyButton value={value} label={label} /> : null}</dd>
             </div>
           ))}
         </dl>

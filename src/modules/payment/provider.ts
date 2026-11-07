@@ -16,7 +16,7 @@ export type PaymentToStart = {
 
 export type PaymentInstructions =
   | { kind: "redirect"; url: string }
-  | { kind: "transfer"; payload: string; bankBin: string; accountNumber: string; accountHolder: string; amount: number; memo: string };
+  | { kind: "transfer"; payload: string; bankBin: string; bankName: string; accountNumber: string; accountHolder: string; amount: number; memo: string };
 
 /** A verified gateway result, ready for record_payment_event(). */
 export type GatewayEvent = {

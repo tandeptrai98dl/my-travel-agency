@@ -132,22 +132,65 @@ function payload(input: DraftValues, loaded: Loaded, customerId: string | null):
 
 export type DraftResult = { ok: true; id: string; quote: Quote } | { ok: false; error: BookingError };
 
-/** Creates the draft (no seats). The same idempotency key returns the same booking. */
-export async function startDraft(input: DraftValues, customerId: string | null): Promise<DraftResult> {
+/** The draft payload for create_draft_booking(), priced on the server (decision 1). */
+export async function buildDraft(input: DraftValues, customerId: string | null) {
   const loaded = await quoteFor(input.departureId, input.party, input.plan);
   if (!loaded.ok) return loaded;
-  const { data, error } = await repo.createDraft(payload(input, loaded.value, customerId));
-  if (error || !data) return { ok: false, error: mapBookingError(error) };
-  return { ok: true, id: data, quote: loaded.value.quote };
+  return { ok: true as const, payload: payload(input, loaded.value, customerId), quote: loaded.value.quote };
 }
 
-/** Reprices a draft, e.g. after `price_changed` or a new party (decision 2). */
-export async function repriceDraft(bookingId: string, input: DraftValues): Promise<DraftResult> {
-  const loaded = await quoteFor(input.departureId, input.party, input.plan);
-  if (!loaded.ok) return loaded;
-  const { error } = await repo.updateDraft(bookingId, payload(input, loaded.value, null));
+/** Creates the draft (no seats). The same idempotency key returns the same booking. */
+export async function startDraft(input: DraftValues, customerId: string | null): Promise<DraftResult> {
+  const built = await buildDraft(input, customerId);
+  if (!built.ok) return built;
+  const { data, error } = await repo.createDraft(built.payload);
+  if (error || !data) return { ok: false, error: mapBookingError(error) };
+  return { ok: true, id: data, quote: built.quote };
+}
+
+/** Reprices a draft, e.g. after `price_changed` or a new party (decision 2). Keeps the customer. */
+export async function repriceDraft(bookingId: string, input: DraftValues, customerId: string | null): Promise<DraftResult> {
+  const built = await buildDraft(input, customerId);
+  if (!built.ok) return built;
+  const { error } = await repo.updateDraft(bookingId, built.payload);
   if (error) return { ok: false, error: mapBookingError(error) };
-  return { ok: true, id: bookingId, quote: loaded.value.quote };
+  return { ok: true, id: bookingId, quote: built.quote };
+}
+
+/**
+ * A draft whose departure price changed since it was made (reserve_and_create_payment raised
+ * `price_changed`): repriced from the booking row itself (departure, party, plan, contact,
+ * customer), so the customer sees the new total and the next Pay goes through (decision 2).
+ */
+export async function repriceStaleDraft(bookingId: string): Promise<DraftResult> {
+  const { data: row, error } = await repo.findDraftForReprice(bookingId);
+  if (error || !row) return { ok: false, error: error ? mapBookingError(error) : "not_found" };
+  if (row.status !== "draft" || !row.departure_id) return { ok: false, error: "not_payable" };
+  const invoice = row.invoice_info as { company_name?: string; tax_code?: string; address?: string; email?: string } | null;
+  const input: DraftValues = {
+    idempotencyKey: row.idempotency_key ?? crypto.randomUUID(),
+    departureId: row.departure_id,
+    locale: row.locale,
+    party: { adults: row.adults, children: row.children, infants: row.infants, singleRooms: row.single_rooms },
+    plan: row.payment_plan,
+    contact: {
+      name: row.contact_name,
+      email: row.contact_email,
+      phone: row.contact_phone,
+      country: row.contact_country,
+      specialRequests: row.special_requests,
+    },
+    invoice:
+      row.invoice_requested && invoice
+        ? { companyName: invoice.company_name ?? "", taxCode: invoice.tax_code ?? "", address: invoice.address ?? "", email: invoice.email ?? "" }
+        : null,
+  };
+  let result = await repriceDraft(bookingId, input, row.customer_id);
+  // The deposit plan may have closed meanwhile (the balance would already be due): pay in full.
+  if (!result.ok && result.error === "planUnavailable" && input.plan === "deposit") {
+    result = await repriceDraft(bookingId, { ...input, plan: "full" }, row.customer_id);
+  }
+  return result;
 }
 
 export type PaymentStart = { paymentId: string; reference: string; amount: number; expiresAt: string; bookingStatus: string };

@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { formatVnd } from "@/lib/money";
 import { startPaymentAction } from "@/modules/booking/checkout.actions";
 
 type Method = "vnpay" | "bank_transfer";
@@ -14,7 +15,7 @@ type Method = "vnpay" | "bank_transfer";
  * Method choice (decision 4): choosing one holds the seats. VNPay continues on VNPay's page; a
  * bank transfer reloads the page, which then shows the VietQR code for the open attempt.
  */
-export function PaymentMethodForm({ code, methods, submitLabel }: { code: string; methods: Method[]; submitLabel: string }) {
+export function PaymentMethodForm({ code, methods, submitLabel, locale }: { code: string; methods: Method[]; submitLabel: string; locale: "vi" | "en" }) {
   const t = useTranslations("Checkout");
   const errors = useTranslations("Booking.errors");
   const router = useRouter();
@@ -30,6 +31,12 @@ export function PaymentMethodForm({ code, methods, submitLabel }: { code: string
     const result = await startPaymentAction({ code, provider: method });
     if (!result.ok) {
       setBusy(false);
+      if (result.error === "price_changed" && "total" in result && typeof result.total === "number") {
+        // The draft was repriced on the server: show the new total and reload the summary.
+        setAlert(t("priceChanged", { total: formatVnd(result.total, locale) }));
+        router.refresh();
+        return;
+      }
       setAlert(errors.has(result.error) ? errors(result.error) : errors("failed"));
       return;
     }
