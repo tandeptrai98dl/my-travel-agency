@@ -5,12 +5,14 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { ADMIN_NAV } from "@/components/admin/nav-items";
+import { DashboardFigures } from "@/components/admin/operations/dashboard-figures";
 import { PageHeader } from "@/components/admin/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type CurrentUser } from "@/lib/auth/get-user";
 import { can, STAFF_ROLES } from "@/lib/auth/permissions";
 import { designSystemEnabled } from "@/lib/env/flags";
 import { attentionCount } from "@/modules/booking/booking-admin.service";
+import { getDashboard } from "@/modules/operations/dashboard.service";
 import { unmatchedTransferCount } from "@/modules/payment/payment-admin.service";
 
 import { requireAdminAccess } from "../admin-gate";
@@ -18,8 +20,9 @@ import { requireAdminAccess } from "../admin-gate";
 export const metadata: Metadata = { title: "Tổng quan" };
 
 /**
- * Role-aware landing page (spec Phase 2 step 23): shortcuts to every section the role can use,
- * from the same permission matrix as the menu. The dashboard figures come in Phases 4–5.
+ * Role-aware landing page (spec Phase 2 step 23): the dashboard figures of the role (spec Phase 5
+ * decision 13, `admin_dashboard()`), then shortcuts to every section the role can use, from the
+ * same permission matrix as the menu.
  */
 export default async function AdminHomePage() {
   const user = await requireAdminAccess(STAFF_ROLES);
@@ -70,6 +73,10 @@ export default async function AdminHomePage() {
         </Suspense>
       )}
 
+      <Suspense fallback={<Skeleton className="h-64 w-full" aria-hidden="true" />}>
+        <Figures />
+      </Suspense>
+
       <section aria-labelledby="dashboard-shortcuts-title" className="flex flex-col gap-6">
         <h2 id="dashboard-shortcuts-title" className="font-serif text-h3 font-semibold lg:text-h3-lg">
           {t("Dashboard.sectionsTitle")}
@@ -98,6 +105,10 @@ export default async function AdminHomePage() {
       </section>
     </div>
   );
+}
+
+async function Figures() {
+  return <DashboardFigures data={await getDashboard()} />;
 }
 
 /** Counts of what needs a person today, for the roles that work bookings (spec Phase 4 step 18). */

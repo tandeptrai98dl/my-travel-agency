@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { AdminMessages } from "@/components/admin/admin-messages";
 import { DepartureEditor } from "@/components/admin/departures/departure-editor";
+import { ExportPassengersButton } from "@/components/admin/operations/export-passengers-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -51,7 +52,12 @@ async function Editor({ params }: Props) {
         breadcrumbs={[{ label: t("Departures.title"), href: "/admin/departures" }, { label: title }]}
         breadcrumbLabel={t("Shell.breadcrumb")}
         actions={
-          <StatusBadge kind="departure" status={data.values.status} label={t(`Departures.statuses.${data.values.status}`)} />
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge kind="departure" status={data.values.status} label={t(`Departures.statuses.${data.values.status}`)} />
+            <AdminMessages namespaces={["Operations"]}>
+              <ExportPassengersButton departureId={id} />
+            </AdminMessages>
+          </div>
         }
       />
       <AdminMessages namespaces={["Departures", "Taxonomy", "Form", "Shell"]}>

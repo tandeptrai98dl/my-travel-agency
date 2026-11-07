@@ -1,0 +1,161 @@
+{
+  "Admin": {
+    "Nav": {
+      "customers": "Khách hàng"
+    },
+    "Dashboard": {
+      "links": {
+        "customers": "Hồ sơ khách, đặt chỗ, ghi chú, xuất dữ liệu và yêu cầu xoá"
+      }
+    },
+    "Operations": {
+      "Dashboard": {
+        "title": "Số liệu hôm nay",
+        "noData": "Chưa có",
+        "minutes": "{minutes} phút",
+        "hoursMinutes": "{hours} giờ {minutes} phút",
+        "sales": {
+          "title": "Bán hàng",
+          "own": "Của bạn",
+          "team": "Cả nhóm",
+          "newBookings": "Đặt chỗ mới (7 ngày)",
+          "openInquiries": "Yêu cầu đang xử lý",
+          "unassigned": "Yêu cầu chưa có người nhận",
+          "quotes": "Báo giá chờ thanh toán",
+          "firstResponse": "Phản hồi đầu tiên (trung vị 30 ngày)"
+        },
+        "operations": {
+          "title": "Điều hành",
+          "belowMinimum": "Ngày khởi hành chưa đủ khách (21 ngày tới)",
+          "missingTravellers": "Đặt chỗ thiếu thông tin khách",
+          "noDepartures": "Không có ngày khởi hành nào trong 14 ngày tới.",
+          "upcoming": "Khởi hành trong 14 ngày tới",
+          "tour": "Tour",
+          "date": "Ngày",
+          "seats": "Chỗ đã giữ",
+          "confirmed": "Khách đã xác nhận",
+          "travellers": "Thông tin khách",
+          "seatsValue": "{reserved} / {capacity}",
+          "confirmedValue": "{confirmed} / tối thiểu {min}",
+          "travellersValue": "{filled} / {party}"
+        },
+        "finance": {
+          "title": "Tài chính",
+          "revenue": "Đã thu tháng này (trừ hoàn tiền)",
+          "expiring": "Thanh toán sắp hết hạn (30 phút)",
+          "unmatched": "Chuyển khoản chưa khớp",
+          "moneyAttention": "Đặt chỗ cần xử lý về tiền"
+        },
+        "content": {
+          "title": "Nội dung",
+          "drafts": "Bản nháp",
+          "missingTranslations": "Nội dung đã đăng thiếu một ngôn ngữ",
+          "missingAlt": "Ảnh thiếu mô tả"
+        },
+        "admin": {
+          "title": "Quản trị",
+          "deletionRequests": "Yêu cầu xoá dữ liệu đang mở"
+        }
+      },
+      "Passengers": {
+        "export": "Tải danh sách khách (CSV)",
+        "exported": "Đã tải {count, plural, other {# dòng}}. Lượt tải đã được ghi vào nhật ký.",
+        "errors": {
+          "forbidden": "Bạn không có quyền tải danh sách khách.",
+          "not_found": "Không tìm thấy ngày khởi hành.",
+          "failed": "Không tải được danh sách. Vui lòng thử lại."
+        }
+      },
+      "Customers": {
+        "title": "Khách hàng",
+        "description": "Tài khoản khách hàng: đặt chỗ, yêu cầu tư vấn, ghi chú, lịch sử đồng ý và yêu cầu xoá dữ liệu.",
+        "search": "Tìm theo tên hoặc email",
+        "name": "Họ tên",
+        "noName": "(chưa có tên)",
+        "email": "Email",
+        "phone": "Điện thoại",
+        "state": "Trạng thái",
+        "allStates": "Mọi trạng thái",
+        "createdAt": "Ngày tạo",
+        "states": {
+          "active": "Đang dùng",
+          "requested": "Yêu cầu xoá",
+          "deleted": "Đã xoá"
+        },
+        "blockers": {
+          "open_payment": "thanh toán đang chờ",
+          "balance_due": "còn phần chưa thanh toán",
+          "upcoming_trip": "chuyến đi sắp tới",
+          "attention": "khoản tiền cần xử lý"
+        },
+        "purposes": {
+          "terms": "Điều khoản",
+          "privacy": "Chính sách bảo mật",
+          "marketing": "Nhận tin tiếp thị",
+          "analytics": "Phân tích"
+        },
+        "errors": {
+          "forbidden": "Bạn không có quyền làm việc này.",
+          "invalid": "Vui lòng kiểm tra lại thông tin.",
+          "not_found": "Không tìm thấy khách hàng.",
+          "not_requested": "Khách hàng này không có yêu cầu xoá dữ liệu.",
+          "blocked": "Chưa thể xoá vì:",
+          "failed": "Không thực hiện được. Vui lòng thử lại.",
+          "noteRequired": "Hãy ghi chú ít nhất 3 ký tự.",
+          "tooLong": "Ghi chú tối đa 2.000 ký tự."
+        },
+        "Detail": {
+          "description": "Hồ sơ, đặt chỗ, yêu cầu tư vấn, ghi chú và lịch sử đồng ý của khách.",
+          "breadcrumb": "Đường dẫn",
+          "profile": "Hồ sơ",
+          "country": "Quốc gia",
+          "language": "Ngôn ngữ",
+          "languages": {
+            "vi": "Tiếng Việt",
+            "en": "Tiếng Anh"
+          },
+          "marketing": "Nhận tin tiếp thị",
+          "yes": "Có",
+          "no": "Không",
+          "bookings": "Đặt chỗ",
+          "noBookings": "Chưa có đặt chỗ nào gắn với tài khoản.",
+          "inquiries": "Yêu cầu tư vấn",
+          "noInquiries": "Không có yêu cầu tư vấn nào với email này.",
+          "notes": "Ghi chú nội bộ",
+          "noNotes": "Chưa có ghi chú.",
+          "noteTitle": "Thêm ghi chú",
+          "noteBody": "Ghi chú",
+          "noteSave": "Lưu ghi chú",
+          "noteSaved": "Đã lưu ghi chú.",
+          "saving": "Đang lưu…",
+          "consents": "Lịch sử đồng ý",
+          "noConsents": "Chưa có bản ghi đồng ý.",
+          "granted": "Đồng ý",
+          "withdrawn": "Rút lại",
+          "export": "Tải dữ liệu cá nhân (JSON)",
+          "exported": "Đã tải dữ liệu. Lượt tải đã được ghi vào nhật ký."
+        },
+        "Deletion": {
+          "title": "Yêu cầu xoá dữ liệu",
+          "openTitle": "Yêu cầu xoá dữ liệu đang mở",
+          "none": "Không có yêu cầu nào đang mở.",
+          "requestedAt": "Yêu cầu lúc {date}",
+          "authPending": "Đã ẩn danh dữ liệu; còn bước xoá tài khoản đăng nhập.",
+          "blockedBy": "Đang chờ: {reasons}",
+          "ready": "Không còn gì cản trở: có thể hoàn tất.",
+          "notRequested": "Khách chưa yêu cầu xoá dữ liệu.",
+          "completed": "Đã xoá xong.",
+          "adminOnly": "Quản trị viên (đã xác thực hai bước) sẽ hoàn tất yêu cầu khi không còn gì cản trở.",
+          "finishTitle": "Hoàn tất xoá dữ liệu",
+          "retryTitle": "Chạy lại bước còn thiếu",
+          "note": "Ghi chú (bắt buộc)",
+          "noteHelp": "Ghi lại vì sao yêu cầu đã có thể hoàn tất. Ghi chú được lưu vào nhật ký, không gửi cho khách.",
+          "finish": "Xoá dữ liệu",
+          "retry": "Chạy lại",
+          "running": "Đang xoá…",
+          "done": "Đã xoá dữ liệu của khách."
+        }
+      }
+    }
+  }
+}

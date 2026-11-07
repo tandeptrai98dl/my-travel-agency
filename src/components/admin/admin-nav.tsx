@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ClipboardList, Inbox, Wallet, FileClock, FileText, Mail, MessageSquareQuote, Newspaper, Signpost, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Settings, Sparkles, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, Contact, Inbox, Wallet, FileClock, FileText, Mail, MessageSquareQuote, Newspaper, Signpost, Images, LayoutDashboard, Map as MapIcon, MapPinned, Menu, Palette, ScrollText, Settings, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -33,6 +33,7 @@ const ICONS = {
   bookings: ClipboardList,
   payments: Wallet,
   inquiries: Inbox,
+  customers: Contact,
 } as const;
 
 type Props = {

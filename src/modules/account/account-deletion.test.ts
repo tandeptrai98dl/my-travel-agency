@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   anonymise: vi.fn(),
   anonymiseAsAdmin: vi.fn(),
   banUser: vi.fn(),
+  deletionBlockers: vi.fn(),
   revokeSessions: vi.fn(),
   softDeleteUser: vi.fn(),
   signOutHere: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("./account-deletion.repository", () => ({
   anonymise: mocks.anonymise,
   anonymiseAsAdmin: mocks.anonymiseAsAdmin,
   banUser: mocks.banUser,
+  deletionBlockers: mocks.deletionBlockers,
   revokeSessions: mocks.revokeSessions,
   softDeleteUser: mocks.softDeleteUser,
   signOutHere: mocks.signOutHere,
@@ -41,6 +43,7 @@ beforeEach(() => {
   mocks.deletionState.mockResolvedValue({ data: open, error: null });
   for (const fn of [mocks.banUser, mocks.revokeSessions, mocks.softDeleteUser, mocks.anonymise, mocks.anonymiseAsAdmin, mocks.signOutHere]) fn.mockResolvedValue(ok);
   mocks.requestDeletion.mockResolvedValue({ data: [], error: null });
+  mocks.deletionBlockers.mockResolvedValue({ data: [], error: null });
   mocks.confirmCurrentPassword.mockResolvedValue({ id, email: "x@example.test", accessToken: "access-token" });
   mocks.checkLimits.mockResolvedValue("ok");
   mocks.signedInUser.mockResolvedValue({ id, email: "x@example.test" });
@@ -155,6 +158,23 @@ describe("the admin's way", () => {
     expect(mocks.requirePermission).toHaveBeenCalledWith("customers.delete_data");
     expect(mocks.anonymiseAsAdmin).toHaveBeenCalledWith(id, "Chuyến đi đã kết thúc");
     expect(mocks.anonymise).not.toHaveBeenCalled();
+  });
+
+  it("refuses while a blocker remains, and finishes once it clears", async () => {
+    mocks.deletionBlockers.mockResolvedValue({ data: ["balance_due"], error: null });
+    expect(await finishDeletionAsAdmin(id, "Khách yêu cầu")).toEqual({ status: "blocked", reasons: ["balance_due"] });
+    expect(mocks.banUser).not.toHaveBeenCalled();
+    mocks.deletionBlockers.mockResolvedValue({ data: [], error: null });
+    expect(await finishDeletionAsAdmin(id, "Khách đã trả đủ")).toEqual({ status: "done" });
+  });
+
+  it("a retry after the SQL step skips the blocker check and runs only the Auth step left", async () => {
+    mocks.deletionState.mockResolvedValue({ data: { ...open, profile_deleted: true }, error: null });
+    mocks.deletionBlockers.mockResolvedValue({ data: ["upcoming_trip"], error: null });
+    expect(await finishDeletionAsAdmin(id, "Thử lại")).toEqual({ status: "done" });
+    expect(mocks.deletionBlockers).not.toHaveBeenCalled();
+    expect(mocks.anonymiseAsAdmin).not.toHaveBeenCalled();
+    expect(mocks.softDeleteUser).toHaveBeenCalledWith(id);
   });
 
   it("refuses an account without a request", async () => {

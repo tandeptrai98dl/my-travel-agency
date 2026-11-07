@@ -92,16 +92,25 @@ export async function requestMyDeletion(input: DeleteAccountInput): Promise<Auth
   return { status: outcome.status === "done" ? "deleted" : "received" };
 }
 
+export type AdminDeletionOutcome = DeletionOutcome | { status: "forbidden" | "not_requested" } | { status: "blocked"; reasons: string[] };
+
 /**
- * An MFA-verified admin finishes a request that had to wait (the customers page, PR 5D). The SQL
- * step goes through admin_anonymise_customer(), which checks the role, the request and the note.
+ * An MFA-verified admin finishes a request that had to wait (the customers page, PR 5D), once
+ * nothing blocks it any more (`blocked` with the reasons otherwise; the database refuses too).
+ * The SQL step goes through admin_anonymise_customer(), which checks the role, the request, the
+ * blockers and the note. A retry after a failed step runs only the steps still to do.
  */
-export async function finishDeletionAsAdmin(profileId: string, note: string): Promise<DeletionOutcome | { status: "forbidden" | "not_requested" }> {
+export async function finishDeletionAsAdmin(profileId: string, note: string): Promise<AdminDeletionOutcome> {
   await requirePermission("customers.delete_data");
   const { data, error } = await repo.deletionState(profileId);
   if (error || !data) return failed("ban", error);
   const state = data as State;
   if (state.role !== "customer" || !state.requested) return { status: "not_requested" };
+  if (!state.profile_deleted) {
+    const blockers = await repo.deletionBlockers(profileId);
+    if (blockers.error) return failed("ban", blockers.error);
+    if ((blockers.data ?? []).length > 0) return { status: "blocked", reasons: blockers.data ?? [] };
+  }
   return runDeletionSteps(profileId, {
     anonymise: async () => {
       const { error: wrapperError } = await repo.anonymiseAsAdmin(profileId, note);

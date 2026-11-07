@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 
 import { expect, test } from "./support/test";
@@ -120,9 +121,20 @@ test("a customer deletes their account: anonymised, unlinked, signed out for goo
   expect((await adminApi().from("subscribers").select("id").eq("email", person.email)).data).toEqual([]);
   const { data: auth } = await adminApi().auth.admin.getUserById(person.id);
   expect(auth.user?.email ?? "").not.toBe(person.email);
-  // The ban cleared the user metadata, so the name is gone from Auth too.
-  const { data: meta } = await adminApi().schema("auth" as never).from("users").select("raw_user_meta_data").eq("id", person.id).maybeSingle();
-  expect(JSON.stringify(meta ?? auth.user?.user_metadata ?? {})).not.toContain("Khách Xoá Dữ Liệu");
+  // The ban cleared the user metadata, so the name is gone from Auth too. auth.users is not
+  // exposed over REST, so this reads the row itself (PR 5D: the earlier REST read always came
+  // back empty and could not fail).
+  if (process.env.E2E_DB_URL) {
+    const row = spawnSync(
+      "psql",
+      [process.env.E2E_DB_URL, "-qXtA", "-v", "ON_ERROR_STOP=1", "-c", `select json_build_object('deleted', deleted_at is not null, 'meta', raw_user_meta_data) from auth.users where id = '${person.id}'`],
+      { encoding: "utf8" },
+    );
+    expect(row.status).toBe(0);
+    const parsed = JSON.parse(row.stdout.trim()) as { deleted: boolean; meta: Record<string, unknown> | null };
+    expect(parsed.deleted).toBe(true);
+    expect(parsed.meta ?? {}).not.toHaveProperty("full_name");
+  }
 
   // The account is gone: the old password signs nobody in, and the account pages send to sign-in.
   await page.goto("/tai-khoan");

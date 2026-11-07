@@ -21,6 +21,7 @@ export const MESSAGE_FILES = [
   "admin-settings",
   "admin-bookings",
   "admin-inquiries",
+  "admin-operations",
   "emails",
   "auth",
   "account",

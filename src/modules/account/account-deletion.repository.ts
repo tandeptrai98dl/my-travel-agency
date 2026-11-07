@@ -26,9 +26,22 @@ export async function anonymiseAsAdmin(profileId: string, note: string) {
   return (await createClient()).rpc("admin_anonymise_customer", { target_id: profileId, note });
 }
 
-/** Blocks sign-in and token refresh at once, and drops the name kept in user metadata. */
+/** Why a deletion must wait (read only; `request_customer_deletion()` also records the request). */
+export async function deletionBlockers(profileId: string) {
+  return createAdminClient().rpc("customer_deletion_blockers", { target_id: profileId });
+}
+
+/**
+ * Blocks sign-in and token refresh at once, and drops the name kept in user metadata. GoTrue
+ * merges `user_metadata` on update (a key set to null is removed, an empty object changes
+ * nothing), so every key the user has is sent as null (PR 5D: 5B sent `{}`, which kept the name).
+ */
 export async function banUser(profileId: string) {
-  return createAdminClient().auth.admin.updateUserById(profileId, { ban_duration: "876000h", user_metadata: {} });
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.getUserById(profileId);
+  if (error) return { data: null, error };
+  const cleared = Object.fromEntries(Object.keys(data.user?.user_metadata ?? {}).map((key) => [key, null]));
+  return admin.auth.admin.updateUserById(profileId, { ban_duration: "876000h", user_metadata: cleared });
 }
 
 /** Revokes every refresh token of the session's user (an issued access token lives until it expires). */
