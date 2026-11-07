@@ -23,7 +23,14 @@ if (pages.length === 0) {
   // Home, the tour listing, site search and one tour page (Phase 3 PR L adds the listing and search).
   pages = ["vi.html", join("vi", "tours.html"), join("vi", "search.html")];
   const tours = join(APP, "vi", "tours");
-  const first = existsSync(tours) ? readdirSync(tours).find((file) => file.endsWith(".html") && !file.includes("[")) : undefined;
+  // A real page, not the other language's slug prerendered as a 308 (Phase 3 PR M).
+  const isPage = (file) => {
+    const meta = join(tours, file.replace(/\.html$/, ".meta"));
+    if (!existsSync(meta)) return true;
+    const status = JSON.parse(readFileSync(meta, "utf8")).status;
+    return status === undefined || status === 200;
+  };
+  const first = existsSync(tours) ? readdirSync(tours).find((file) => file.endsWith(".html") && !file.includes("[") && isPage(file)) : undefined;
   if (first) pages.push(join("vi", "tours", first));
 }
 
