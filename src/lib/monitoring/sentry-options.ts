@@ -79,17 +79,47 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
   return event;
 }
 
-/** Drops console breadcrumbs (they can echo anything) and query strings from recorded URLs. */
+/** The cron heartbeat's origin (server only): its URL carries the monitor's token in the path. */
+function heartbeatOrigin(): string | null {
+  const url = process.env.CRON_HEARTBEAT_URL;
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Drops console breadcrumbs (they can echo anything) and requests to the cron heartbeat (its path
+ * is a secret, Phase 6 PR 6B), and query strings from recorded URLs.
+ */
 export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   if (breadcrumb.category === "console") return null;
+  const origin = heartbeatOrigin();
+  const url = breadcrumb.data?.url;
+  if (origin && typeof url === "string" && url.startsWith(origin)) return null;
   redactUrlsIn(breadcrumb.data);
   return breadcrumb;
 }
 
+/**
+ * Release tracking (docs/specs/phase-6-hardening-launch.md decision 3): the deployment's commit
+ * SHA, so each event and each uploaded source map belong to one Vercel build. Vercel sets
+ * `VERCEL_GIT_COMMIT_SHA` on the server and, with system variables exposed, the NEXT_PUBLIC_ copy
+ * that Next.js inlines into browser code; `SENTRY_RELEASE` overrides both. Without any of them the
+ * SDK keeps the release the build plugin injected (none locally).
+ */
+export function sentryRelease(): string | undefined {
+  return process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || undefined;
+}
+
 export function sentryOptions(dsn: string | undefined) {
+  const release = sentryRelease();
   return {
     dsn,
     enabled: Boolean(dsn),
+    ...(release ? { release } : {}),
     environment: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
     dataCollection,
     // Errors only, on the server and in the browser: `tracesSampleRate` is left unset, which is

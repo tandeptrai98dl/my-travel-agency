@@ -80,7 +80,8 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── auth/                 # confirm (existing), callback (OAuth), error
     │   ├── admin/                # Vietnamese-only admin, role + MFA checked in layout
     │   ├── api/                  # payments/vnpay/ipn, webhooks/bank-transfer,
-    │   │                         # cron/balance-reminders, cron/departure-checks, health
+    │   │                         # cron/balance-reminders, cron/departure-checks,
+    │   │                         # cron/health-checks, cron/housekeeping, health
     │   ├── sitemap.ts · robots.ts · not-found.tsx
     ├── modules/                  # catalog, booking, payment, inquiry, content, media,
     │                             # notification, identity, account, operations, settings, audit
@@ -133,7 +134,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D); the newsletter unsubscribe tokens of the audited subscriber export after `requirePermission("newsletter.manage")` (Phase 6 PR 6P) | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D); the newsletter unsubscribe tokens of the audited subscriber export after `requirePermission("newsletter.manage")` (Phase 6 PR 6P); the health check (`cron_failures()`, lapsed holds) and the staged-upload cleanup in `media-uploads` after the `CRON_SECRET` check (Phase 6 PR 6B) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -183,7 +184,7 @@ RLS is the source of truth; `requireRole()` is the first check in every Server A
 | Redirects, newsletter | — | — | — | Edit | Full |
 | Settings, staff, audit log | — | — | — | — | Full |
 
-`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037); inquiry status, owner and first response change only through the role-checked inquiry functions (`DATABASE.md`); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
+`sales_manager` has the Sales permissions and, for inquiries, sees every inquiry and assigns anyone (ADR-037); everyone who reads customers (sales roles, operator, accountant, admin) also reads a customer's consent history through `customer_consents()` (purpose, granted, version, time; no IP or user agent), while `consent_records` itself stays admin-only (Phase 5 PR 5D); inquiry status, owner and first response change only through the role-checked inquiry functions (`DATABASE.md`); only Admin edits departure prices (ADR-016). Admin and accountant need MFA (`aal2`).
 
 ## Routes
 
@@ -211,7 +212,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 
 Admin routes (no prefix, not indexed): `/admin`, `/admin/bookings` (with `/admin/bookings/attention`, the "needs attention" queue, and `/admin/bookings/new`, a private-trip quote, prefilled from an inquiry with `?inquiry=<code>`), `/admin/departures`, `/admin/tours`, `/admin/destinations`, `/admin/travel-styles`, `/admin/cancellation-policies`, `/admin/inquiries` (the inbox, with `/admin/inquiries/[id]`), `/admin/customers` (with `/admin/customers/[id]`: notes, consent history, data export and deletion requests), `/admin/payments`, `/admin/journal`, `/admin/pages`, `/admin/reviews`, `/admin/media`, `/admin/redirects`, `/admin/subscribers`, `/admin/settings`, `/admin/staff`, `/admin/audit-log`, `/admin/mfa`, `/admin/design-system` (dev only).
 
-Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tours, destinations, travel styles, journal), `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/balance-reminders` and `/api/cron/departure-checks` (GET, `Authorization: Bearer <CRON_SECRET>` compared as SHA-256 digests in constant time, 401 otherwise and 503 without the secret; scheduled in `vercel.json` daily at 01:43 and 01:17 UTC, 08:43 and 08:17 in Vietnam; idempotent through exactly-once email keys), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
+Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tours, destinations, travel styles, journal), `/robots.txt`, `opengraph-image` file routes (ADR-028), `/api/payments/vnpay/ipn`, `/api/webhooks/bank-transfer`, `/api/cron/balance-reminders`, `/api/cron/departure-checks`, `/api/cron/health-checks` and `/api/cron/housekeeping` (GET, `Authorization: Bearer <CRON_SECRET>` compared as SHA-256 digests in constant time, 401 otherwise and 503 without the secret; scheduled in `vercel.json`: health checks every 15 minutes, the others daily at 01:43, 01:17 and 02:29 UTC, 08:43, 08:17 and 09:29 in Vietnam; idempotent through exactly-once email keys; each run checks in with Sentry Cron Monitors and pings `CRON_HEARTBEAT_URL` on success, Phase 6 PR 6B), `/api/health`, `/api/monitoring/test-error` (POST, MFA-verified admin only; throws to test Sentry), `/auth/confirm`, `/auth/callback`.
 
 ## Security
 
@@ -251,7 +252,14 @@ Comfortably serves tens of thousands of visits per day and a few thousand bookin
 
 ## Monitoring
 
-Sentry for errors and IPN failures; alerts on failed `pg_cron` runs (`cron.job_run_details`); uptime check on `/api/health`; structured logs with the booking code and never card data, passwords or tokens; runbooks for gateway outages, unconfirmed payments, the "needs attention" queue and refunds.
+Phase 6 PR 6B (`docs/specs/phase-6-hardening-launch.md` decisions 3 and 4; runbooks in `README.md`):
+
+- **Errors**: Sentry, with each event tagged with its release (the commit SHA of the Vercel build; source maps uploaded with it). IPN and webhook problems are sent as events tagged `payment.webhook` (provider) and `payment.event`, without references, amounts or payloads; bad signatures and unauthorized webhook calls, which anyone can repeat, are warnings sampled at 10 %. The alert rules (new issue, spike, payments, scheduled jobs, Cron Monitors) are created by the owner in Sentry, as listed in `README.md` "Deployment".
+- **Scheduled database jobs**: `/api/cron/health-checks` (Vercel Cron, every 15 minutes) reads `cron_failures()`: every failed `pg_cron` run of the last day and every job overdue by the missed-run rule (3 intervals for jobs every few minutes or hourly, 26 hours for daily ones). Each is reported once to `settings.contact.email` (key `cron_failure:<job>:<start>` or `cron_missed:<job>:<last success>`, ADR-036; not claimed while the address is empty), in at most one email per job per check that lists its runs and claims all their keys, so a job failing every 5 minutes cannot drain the Resend quota; each such email is also sent to Sentry with tags `cron.job` and `cron.kind`. The alert jobs (`booking-seat-invariant-alert`, `email-problems-alert`) fail on purpose, so their failed run is the signal. The same check refreshes the `tours` cache tag when held seats lapsed in `pg_cron`.
+- **Vercel Cron itself**: every `/api/cron/*` run checks in with Sentry Cron Monitors (`cron-<job>`, with its schedule from `src/modules/operations/cron-jobs.ts`, kept equal to `vercel.json` by a unit test) and, on success, pings `CRON_HEARTBEAT_URL` (the uptime monitor's heartbeat); a late check-in or ping alerts.
+- **Uptime**: the owner's monitor calls `/api/health` every minute; two consecutive failures page the on-call person.
+- **Housekeeping**: daily `pg_cron` jobs remove access tokens 30 days after use or expiry, trim webhook payloads after 400 days only where they are copied into `payments.raw_response` (never `unmatched` or error rows), and purge `cron.job_run_details` after 30 days; `/api/cron/housekeeping` removes staged uploads older than 24 hours from `media-uploads` through the Storage API. Nothing else is deleted on a timer.
+- **Logs**: structured JSON lines with the booking code, never card data, passwords, tokens, payloads or addresses; cron answers and logs carry counts only.
 
 ## Environments
 

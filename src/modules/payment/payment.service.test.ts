@@ -7,6 +7,8 @@ const revalidateTag = vi.fn();
 vi.mock("next/cache", () => ({ revalidateTag }));
 const logger = { error: vi.fn(), info: vi.fn() };
 vi.mock("@/lib/logger", () => ({ logger }));
+const captureMessage = vi.hoisted(() => vi.fn());
+vi.mock("@sentry/nextjs", () => ({ captureMessage }));
 const config = {
   tmnCode: "CITEST01",
   hashSecret: "ci-only-vnpay-secret-0123456789",
@@ -66,11 +68,28 @@ describe("VNPay IPN", () => {
   });
 
   it("answers 97 for a bad signature, another merchant or missing keys, and records nothing", async () => {
+    // Sampled at 10 % (public, repeatable requests): make this one land.
+    vi.spyOn(Math, "random").mockReturnValue(0.05);
     expect(await handleVnpayIpn({ ...ipn(), vnp_Amount: "1" })).toMatchObject({ RspCode: "97" });
     expect(await handleVnpayIpn(ipn({ vnp_TmnCode: "OTHER001" }))).toMatchObject({ RspCode: "97" });
     configState.vnpay = null;
     expect(await handleVnpayIpn(ipn())).toMatchObject({ RspCode: "97" });
     expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+    // Each problem reaches Sentry with the payments tag, and nothing from the request.
+    expect(captureMessage).toHaveBeenCalledWith("payment.vnpay_bad_signature", {
+      level: "warning",
+      tags: { "payment.webhook": "vnpay", "payment.event": "payment.vnpay_bad_signature" },
+      fingerprint: ["payment", "payment.vnpay_bad_signature", "vnpay"],
+    });
+    expect(captureMessage).toHaveBeenCalledWith("payment.vnpay_ipn_unconfigured", expect.objectContaining({ tags: expect.objectContaining({ "payment.webhook": "vnpay" }) }));
+    expect(JSON.stringify(captureMessage.mock.calls)).not.toMatch(/PTA|vnp_|1290000000/);
+    // The other 90 % are logged only.
+    captureMessage.mockClear();
+    vi.mocked(Math.random).mockReturnValue(0.5);
+    expect(await handleVnpayIpn({ ...ipn(), vnp_Amount: "1" })).toMatchObject({ RspCode: "97" });
+    expect(captureMessage).not.toHaveBeenCalledWith("payment.vnpay_bad_signature", expect.anything());
+    expect(logger.error).toHaveBeenCalledWith("payment.vnpay_bad_signature", expect.anything());
+    vi.mocked(Math.random).mockRestore();
   });
 
   it("answers 01 for an unknown order", async () => {
@@ -120,8 +139,11 @@ describe("bank webhook", () => {
     configState.bank = null;
     expect(await handleBankWebhook(auth, credit)).toEqual({ status: 503, body: { success: false } });
     configState.bank = { provider: "sepay", secret: "a-long-bank-webhook-secret" };
+    vi.spyOn(Math, "random").mockReturnValue(0.05);
     expect(await handleBankWebhook(new Headers(), credit)).toEqual({ status: 401, body: { success: false } });
+    vi.mocked(Math.random).mockRestore();
     expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+    expect(captureMessage).toHaveBeenCalledWith("payment.bank_webhook_unauthorized", expect.objectContaining({ level: "warning", tags: { "payment.webhook": "sepay", "payment.event": "payment.bank_webhook_unauthorized" } }));
   });
 
   it("records an incoming credit as a bank-transfer event", async () => {

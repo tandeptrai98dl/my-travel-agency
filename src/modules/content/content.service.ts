@@ -71,6 +71,17 @@ export function contentPath(kind: ContentKind, locale: ContentLocale, slug: stri
   return null;
 }
 
+/**
+ * A published translation serves its path again: a redirect left there by an earlier slug change
+ * or removal would shadow it, since the proxy reads Redis before the page (as tours do, #22).
+ */
+async function clearRedirectFrom(kind: ContentKind, path: string | null) {
+  if (!path) return;
+  const cleared = await repo.deleteRedirectFrom(path);
+  if (cleared.error) logger.error("content.redirect_clear_failed", { kind, message: cleared.error.message });
+  else if (cleared.data?.length) await syncSlugRedirect(path);
+}
+
 async function redirectIfSlugChanged(
   kind: ContentKind,
   locale: ContentLocale,
@@ -324,6 +335,7 @@ export async function savePost(values: PostValues): Promise<SaveResult> {
       is_published: t.isPublished,
     });
     if (error) return fail(mapContentError(error, locale));
+    if (t.isPublished) await clearRedirectFrom("post", contentPath("post", locale, t.slug));
     await redirectIfSlugChanged("post", locale, before, t.slug);
   }
 
@@ -414,7 +426,11 @@ export async function saveCategory(values: CategoryValues): Promise<SaveResult> 
       else updateTag(POSTS_TAG);
       return mapContentError(error, locale);
     }
-    if (t.name) await redirectIfSlugChanged("category", locale, before, t.slug);
+    if (t.name) {
+      // Topics have no publish flag: their page exists as soon as they do.
+      await clearRedirectFrom("category", contentPath("category", locale, t.slug));
+      await redirectIfSlugChanged("category", locale, before, t.slug);
+    }
   }
   updateTag(POSTS_TAG);
   scheduleLanguageRedirects();
@@ -537,6 +553,7 @@ export async function savePage(values: PageValues): Promise<SaveResult> {
       refresh();
       return mapContentError(error, locale);
     }
+    if (t.isPublished) await clearRedirectFrom("page", contentPath("page", locale, t.slug, values.key));
     await redirectIfSlugChanged("page", locale, before, t.slug, values.key);
   }
   if (firstStatus !== values.status) {

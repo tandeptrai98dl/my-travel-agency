@@ -21,18 +21,20 @@ export type JobCounts = { considered: number; sent: number; skipped: number; fai
 const PAGE = 500;
 const KEY_CHUNK = 200;
 
-function emptyCounts(): JobCounts {
+export function emptyCounts(): JobCounts {
   return { considered: 0, sent: 0, skipped: 0, failed: 0, duplicate: 0 };
 }
 
-function count(counts: JobCounts, result: string) {
+/** Adds one send result to the counts (`unavailable` and `no_address` count as skipped). */
+export function tally(counts: JobCounts, result: string) {
   if (result === "sent") counts.sent += 1;
   else if (result === "duplicate") counts.duplicate += 1;
   else if (result === "unavailable" || result === "no_address") counts.skipped += 1;
   else counts.failed += 1;
 }
 
-async function claimedAmong(keys: string[]): Promise<Set<string>> {
+/** Which of these exactly-once keys are already claimed in `email_logs` (in chunks). */
+export async function claimedAmong(keys: string[]): Promise<Set<string>> {
   const claimed = new Set<string>();
   for (let i = 0; i < keys.length; i += KEY_CHUNK) {
     const { data, error } = await repo.claimedKeys(keys.slice(i, i + KEY_CHUNK));
@@ -70,8 +72,8 @@ export async function runBalanceReminders(now: Date = new Date()): Promise<{ rem
   overdue.considered = unclaimed.overdue.length;
   reminders.duplicate = unclaimed.reminders.length - plan.reminders.length;
   overdue.duplicate = unclaimed.overdue.length - plan.overdue.length;
-  for (const reminder of plan.reminders) count(reminders, await sendBalanceReminder(reminder.bookingId, reminder.key));
-  for (const alert of plan.overdue) count(overdue, await sendBalanceOverdueAlert(alert.bookingId, alert.key));
+  for (const reminder of plan.reminders) tally(reminders, await sendBalanceReminder(reminder.bookingId, reminder.key));
+  for (const alert of plan.overdue) tally(overdue, await sendBalanceOverdueAlert(alert.bookingId, alert.key));
   logger.info("cron.balance_reminders", { today, reminders: JSON.stringify(reminders), overdue: JSON.stringify(overdue) });
   return { reminders, overdue };
 }
@@ -124,7 +126,7 @@ export async function runDepartureChecks(): Promise<{ alerts: JobCounts }> {
         },
         alert.key,
       );
-      count(alerts, result);
+      tally(alerts, result);
     }
   }
   logger.info("cron.departure_checks", { alerts: JSON.stringify(alerts) });

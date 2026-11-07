@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
-import { redactUrl, sentryOptions } from "./sentry-options";
+import { redactUrl, scrubBreadcrumb, sentryOptions } from "./sentry-options";
 
 const DSN = "https://publickey@o0.ingest.sentry.io/0";
 
@@ -16,6 +16,35 @@ describe("Sentry options", () => {
     expect(redactUrl("/thanh-toan/link/abc123")).toBe("/thanh-toan/link/[redacted]");
     expect(redactUrl("/en/tours/ha-long?page=2")).toBe("/en/tours/ha-long");
     expect(redactUrl("/thanh-toan/PTA-2611-0042/ket-qua")).toBe("/thanh-toan/PTA-2611-0042/ket-qua");
+  });
+
+  describe("release tracking", () => {
+    afterEach(() => vi.unstubAllEnvs());
+    it("names the release after the deployment's commit", () => {
+      vi.stubEnv("SENTRY_RELEASE", "");
+      vi.stubEnv("NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "");
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "d02ea67abc");
+      expect(sentryOptions(DSN).release).toBe("d02ea67abc");
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "");
+      vi.stubEnv("NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "fromclient1");
+      expect(sentryOptions(DSN).release).toBe("fromclient1");
+      vi.stubEnv("SENTRY_RELEASE", "pta@1.0.0");
+      expect(sentryOptions(DSN).release).toBe("pta@1.0.0");
+    });
+    it("leaves the release to the SDK when no commit is known", () => {
+      vi.stubEnv("SENTRY_RELEASE", "");
+      vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "");
+      vi.stubEnv("NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "");
+      expect("release" in sentryOptions(DSN)).toBe(false);
+    });
+  });
+
+  it("drops breadcrumbs of requests to the cron heartbeat (a secret URL)", () => {
+    vi.stubEnv("CRON_HEARTBEAT_URL", "https://hb.example.test/ping/secret-token-{job}");
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://hb.example.test/ping/secret-token-health-checks", method: "GET" } })).toBeNull();
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://api.resend.com/emails", method: "POST" } })).not.toBeNull();
+    vi.unstubAllEnvs();
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://hb.example.test/ping/x" } })).not.toBeNull();
   });
 
   it("records errors only, no performance traces", () => {

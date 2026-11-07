@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"email_logs": {
                   Row: {
-                    "booking_id": string | null,"created_at": string,"dedupe_key": string | null,"error": string | null,"id": string,"inquiry_id": string | null,"provider_message_id": string | null,"status": string,"subject": string,"template": string,"to_email": string
+                    "booking_id": string | null,"created_at": string,"dedupe_key": string | null,"error": string | null,"failed_at": string | null,"id": string,"inquiry_id": string | null,"provider_message_id": string | null,"status": string,"subject": string,"template": string,"to_email": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status": string,"subject": string,"template": string,"to_email": string
+                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"failed_at"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status": string,"subject": string,"template": string,"to_email": string
                   }
                   Update: {
-                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status"?: string,"subject"?: string,"template"?: string,"to_email"?: string
+                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"failed_at"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status"?: string,"subject"?: string,"template"?: string,"to_email"?: string
                   }
                   Relationships: [
                     {
@@ -944,6 +944,9 @@ isOneToOne: false
 "check_seat_invariant":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"cleanup_booking_access_tokens":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "complete_bookings":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -973,6 +976,14 @@ isOneToOne: false
                            },
 "create_tailor_made_inquiry":
 { Args: { "ip"?: unknown,"payload": Json,"privacy_version": string,"user_agent"?: string }; Returns: Json
+                           },
+"cron_failures":
+{ Args: { "since": string }; Returns: {
+              "job_name": string,"kind": string,"message": string,"run_at": string
+            }[]
+                           },
+"cron_job_overdue":
+{ Args: { "at": string,"reference": string,"schedule": string }; Returns: boolean
                            },
 "current_customer_id":
 { Args: Record<PropertyKey, never>; Returns: string
@@ -1109,6 +1120,9 @@ isOneToOne: false
 "purge_cookie_consents":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"purge_cron_history":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "raise_on_email_problems":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
@@ -1204,6 +1218,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
               "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
             }[]
+                           },
+"trim_webhook_payloads":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "unsubscribe_newsletter":
 { Args: { "p_token_hash": string }; Returns: string

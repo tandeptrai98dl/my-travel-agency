@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const repo = vi.hoisted(() => ({ insertEmailLog: vi.fn(), updateEmailLog: vi.fn(), claimedKeysForBooking: vi.fn() }));
 vi.mock("./email.repository", () => repo);
 
-import { escapeHtml, isEmailConfigured, sendEmail, sendError } from "./email.service";
+import { claimExtraKeys, escapeHtml, isEmailConfigured, sendEmail, sendError } from "./email.service";
 
 const fetchMock = vi.fn();
 const message = { to: "anna@example.com", subject: "Confirm", html: "<p>Hi</p>", text: "Hi", template: "newsletter_confirm" };
@@ -94,5 +94,19 @@ describe("sendEmail", () => {
 
   it("escapes HTML", () => {
     expect(escapeHtml(`<a href="x">Tom & 'Jerry'</a>`)).toBe("&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39;&lt;/a&gt;");
+  });
+});
+
+describe("claimExtraKeys", () => {
+  it("writes one skipped row per key, leaves keys already held alone and sends nothing", async () => {
+    repo.insertEmailLog
+      .mockResolvedValueOnce({ data: { id: "a" }, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code: "23505" } })
+      .mockResolvedValueOnce({ data: null, error: { code: "08006" } });
+    expect(await claimExtraKeys({ to: "team@example.com", subject: "S", template: "cron_alert" }, ["k-2", "k-3", "k-4"])).toBe(1);
+    expect(repo.insertEmailLog.mock.calls.map(([row]) => row)).toEqual(
+      ["k-2", "k-3", "k-4"].map((key) => ({ to_email: "team@example.com", template: "cron_alert", subject: "S", dedupe_key: key, status: "skipped", error: "grouped" })),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

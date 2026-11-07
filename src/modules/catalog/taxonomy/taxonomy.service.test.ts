@@ -16,6 +16,7 @@ const repo = vi.hoisted(() => {
     findMediaSummary: ok(),
     findMediaRows: ok([]),
     saveRedirect: ok(),
+    deleteRedirectFrom: ok([]),
     findCancellationPolicy: ok(),
     insertCancellationPolicy: ok({ id: "p-new" }),
     updateCancellationPolicy: ok({ id: "p1" }),
@@ -144,6 +145,14 @@ describe("saveDestination", () => {
     });
     await service.saveDestination(destination({ id: "d1" }));
     expect(repo.saveRedirect).toHaveBeenCalledWith("/diem-den/ha-long", "/diem-den/vinh-ha-long");
+  });
+
+  it("publishing a language removes a redirect from its path; a draft language keeps it (decision 14)", async () => {
+    await service.saveDestination(destination());
+    expect(repo.deleteRedirectFrom.mock.calls).toEqual([["/diem-den/vinh-ha-long"]]);
+    repo.deleteRedirectFrom.mockClear();
+    await service.saveDestination(destination({ status: "draft", translations: { vi: translation({ isPublished: false }), en: translation({ name: "", slug: "", isPublished: false }) } }));
+    expect(repo.deleteRedirectFrom).not.toHaveBeenCalled();
   });
 });
 

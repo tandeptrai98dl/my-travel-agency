@@ -78,6 +78,13 @@ export const serverEnvSchema = z
     (value) => (value === "" ? undefined : value),
     z.string().min(32, "must be at least 32 characters").optional(),
   ),
+  // Heartbeat of the Vercel Cron jobs (docs/specs/phase-6-hardening-launch.md decision 3): an
+  // uptime monitor's heartbeat URL, pinged after every successful run; `{job}` is replaced by the
+  // job name. Optional: Sentry Cron Monitors also receive check-ins when SENTRY_DSN is set.
+  CRON_HEARTBEAT_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.url({ protocol: /^https$/, error: "must be an https URL" }).optional(),
+  ),
   // Upstash Redis REST (redirects, decision 5; rate limits later). Optional until the account
   // exists: without both, redirect sync and lookups are logged no-ops. Required in production.
   UPSTASH_REDIS_REST_URL: z.preprocess(

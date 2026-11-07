@@ -190,6 +190,22 @@
       "eyebrow": "Balance overdue",
       "heading": "The balance of {code} is overdue",
       "intro": "The balance due date has passed. The booking stays as it is and in the attention queue until the balance is paid."
+    },
+    "staffCron": {
+      "subject": "Scheduled job {kind, select, failed {failed} other {missed}} · {job}",
+      "preview": "The job {job} {kind, select, failed {failed} other {did not run on schedule}}.",
+      "eyebrow": "System monitoring",
+      "headingFailed": "The job {job} failed",
+      "headingMissed": "The job {job} did not run on schedule",
+      "introFailed": "A run of a scheduled database job failed. The alert jobs fail on purpose when something needs attention.",
+      "introMissed": "This scheduled job has had no successful run for too long.",
+      "job": "Job",
+      "failedAt": "Failed runs",
+      "lastSuccess": "Last success",
+      "never": "Never",
+      "message": "Latest message",
+      "runbook": "See the runbook \"A job failed or was missed\" in the README (Runbooks). Each failed run is reported once; each check sends at most one email per job.",
+      "more": "and {count, plural, one {# more} other {# more}}"
     }
   }
 }

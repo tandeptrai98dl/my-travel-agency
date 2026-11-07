@@ -11,6 +11,7 @@ const repo = vi.hoisted(() => {
     upsertPostTranslation: ok(),
     findMediaRows: ok([]),
     saveRedirect: ok(),
+    deleteRedirectFrom: ok([]),
     findPageByKey: ok(),
     insertPage: ok({ id: "page-new" }),
     updatePage: ok({ id: "page1" }),
@@ -140,6 +141,24 @@ describe("savePost", () => {
     expect(repo.saveRedirect).toHaveBeenCalledWith("/journal/pho-co-cu", "/journal/pho-co");
   });
 
+  it("publishing a language removes a redirect from its path, as tours do (decision 14)", async () => {
+    repo.findPost.mockResolvedValue({ data: storedPost(), error: null });
+    repo.deleteRedirectFrom.mockResolvedValueOnce({ data: [{ id: "r1" }], error: null });
+    await service.savePost(post());
+    expect(repo.deleteRedirectFrom.mock.calls).toEqual([["/journal/pho-co"]]);
+    // A draft language serves nothing, so its path keeps any redirect.
+    repo.deleteRedirectFrom.mockClear();
+    await service.savePost(post({ status: "draft", translations: { vi: translation({ isPublished: false }), en: empty } }));
+    expect(repo.deleteRedirectFrom).not.toHaveBeenCalled();
+  });
+
+  it("a failed redirect removal is logged and never fails the save", async () => {
+    repo.findPost.mockResolvedValue({ data: storedPost(), error: null });
+    repo.deleteRedirectFrom.mockResolvedValueOnce({ data: null, error: { message: "denied" } });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await service.savePost(post())).toMatchObject({ ok: true });
+  });
+
   it("maps the database rules back to their fields", () => {
     expect(service.mapContentError({ code: "23514", message: "a published article needs a cover image with Vietnamese and English alt text" })).toEqual({
       ok: false,
@@ -181,6 +200,7 @@ describe("deletePost and categories", () => {
       translations: { vi: { name: "Ẩm thực", slug: "am-thuc" }, en: { name: "", slug: "" } },
     });
     expect(repo.saveRedirect).toHaveBeenCalledWith("/journal/topics/am-thuc-cu", "/journal/topics/am-thuc");
+    expect(repo.deleteRedirectFrom.mock.calls).toEqual([["/journal/topics/am-thuc"]]);
     expect(repo.deleteCategoryTranslation).toHaveBeenCalledWith("c1", "en");
   });
 });
@@ -204,9 +224,12 @@ describe("savePage", () => {
     repo.findPageByKey.mockResolvedValueOnce(stored("terms"));
     await service.savePage(page("terms"));
     expect(repo.saveRedirect).toHaveBeenCalledWith("/policies/cu", "/policies/chinh-sach-moi");
+    expect(repo.deleteRedirectFrom.mock.calls).toEqual([["/policies/chinh-sach-moi"]]);
     repo.saveRedirect.mockClear();
+    repo.deleteRedirectFrom.mockClear();
     repo.findPageByKey.mockResolvedValueOnce(stored("about"));
     await service.savePage(page("about"));
     expect(repo.saveRedirect).not.toHaveBeenCalled();
+    expect(repo.deleteRedirectFrom).not.toHaveBeenCalled();
   });
 });

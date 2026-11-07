@@ -110,6 +110,13 @@ export async function getCustomer(id: string): Promise<CustomerDetail | null> {
   if (!profile) return null;
 
   const readsNotes = can(user.role, "customers.notes") || user.role === "operator";
+  // Inquiries are matched by `profiles.email`, read under the inbox's RLS (Phase 5 review minor,
+  // documented rather than changed in Phase 6 PR 6B). That address is the Auth address kept in sync
+  // by handle_user_email_change() and changes only after a confirmed email change ("Secure email
+  // change"); it can differ from the confirmed address only for an account that never confirmed its
+  // sign-up. The list is informational: it attaches nothing and grants no access, whereas the data
+  // export and the deletion blockers, which act on the person's data, use the confirmed address
+  // (`confirmed_customer_email()`).
   const [bookings, inquiries, notes, consents, deletion] = await Promise.all([
     repo.customerBookings(id),
     can(user.role, "inquiries.read") ? repo.customerInquiries(exactPattern(profile.email)) : Promise.resolve({ data: [], error: null }),

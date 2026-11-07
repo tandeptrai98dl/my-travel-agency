@@ -108,6 +108,17 @@ function publicPath(kind: PathKind, locale: ContentLocale, slug: string): string
   return getPathname({ href: { pathname, params: { slug } }, locale });
 }
 
+/**
+ * A published translation serves its path again: a redirect left there by an earlier slug change
+ * or removal would shadow it, since the proxy reads Redis before the page (as tours do, #22).
+ */
+async function clearRedirectFrom(kind: PathKind, locale: ContentLocale, slug: string) {
+  const path = publicPath(kind, locale, slug);
+  const cleared = await repo.deleteRedirectFrom(path);
+  if (cleared.error) logger.error("taxonomy.redirect_clear_failed", { kind, locale, message: cleared.error.message });
+  else if (cleared.data?.length) await syncSlugRedirect(path);
+}
+
 /** Decision 4: a published translation whose slug changes gets a 301 from its old path. */
 async function redirectIfSlugChanged(
   kind: PathKind,
@@ -311,6 +322,7 @@ export async function saveDestination(values: DestinationValues): Promise<SaveRe
     });
     if (error) return fail(mapWriteError(error, locale, "summary"));
     // Right after this language is saved, so a later failure cannot lose the redirect.
+    if (t.isPublished) await clearRedirectFrom("destination", locale, t.slug);
     if (existing) await redirectIfSlugChanged("destination", locale, existing.destination_translations, t.slug);
   }
   updateTag(DESTINATIONS_TAG);
@@ -452,6 +464,7 @@ export async function saveTravelStyle(values: TravelStyleValues): Promise<SaveRe
       is_published: t.isPublished,
     });
     if (error) return fail(mapWriteError(error, locale, "description"));
+    if (t.isPublished) await clearRedirectFrom("travelStyle", locale, t.slug);
     if (existing) await redirectIfSlugChanged("travelStyle", locale, existing.travel_style_translations, t.slug);
   }
   updateTag(TRAVEL_STYLES_TAG);

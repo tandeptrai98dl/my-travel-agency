@@ -190,6 +190,22 @@
       "eyebrow": "Quá hạn thanh toán",
       "heading": "{code} quá hạn trả phần còn lại",
       "intro": "Hạn thanh toán phần còn lại đã qua. Đặt chỗ vẫn giữ nguyên và nằm trong danh sách cần xử lý cho tới khi khách trả đủ."
+    },
+    "staffCron": {
+      "subject": "Tác vụ định kỳ {kind, select, failed {thất bại} other {không chạy}} · {job}",
+      "preview": "Tác vụ {job} {kind, select, failed {vừa chạy thất bại} other {đã không chạy đúng lịch}}.",
+      "eyebrow": "Giám sát hệ thống",
+      "headingFailed": "Tác vụ {job} chạy thất bại",
+      "headingMissed": "Tác vụ {job} không chạy đúng lịch",
+      "introFailed": "Một lần chạy của tác vụ định kỳ trong cơ sở dữ liệu đã thất bại. Các tác vụ cảnh báo cố ý thất bại khi có việc cần xử lý.",
+      "introMissed": "Tác vụ định kỳ này đã quá lâu không có lần chạy thành công.",
+      "job": "Tác vụ",
+      "failedAt": "Lần chạy thất bại",
+      "lastSuccess": "Lần thành công gần nhất",
+      "never": "Chưa có",
+      "message": "Thông báo gần nhất",
+      "runbook": "Xem hướng dẫn xử lý \"A job failed or was missed\" trong README (mục Runbooks). Mỗi lần chạy thất bại chỉ được báo một lần; mỗi lần kiểm tra gửi tối đa một email cho mỗi tác vụ.",
+      "more": "và {count, plural, other {# lần khác}}"
     }
   }
 }
