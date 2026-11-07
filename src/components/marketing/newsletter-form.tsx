@@ -1,52 +1,27 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 
+import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { type SubscribeState, subscribeToNewsletter } from "@/modules/content/public/newsletter.actions";
+
+import { PolicySentence } from "./policy-sentence";
 
 export type NewsletterLabels = {
   email: string;
   placeholder: string;
   submit: string;
   sending: string;
+  /** With a `{policy}` placeholder for the link to the privacy policy. */
   privacy: string;
+  privacyLink: string;
   unavailable: string;
   success: string;
   errors: Record<"invalidEmail" | "verification" | "rateLimited" | "unavailable" | "failed", string>;
 };
 
-type Props = { locale: "vi" | "en"; siteKey: string | null; labels: NewsletterLabels };
-
-type TurnstileApi = {
-  render: (element: HTMLElement, options: Record<string, unknown>) => string;
-  reset: (widgetId?: string) => void;
-};
-declare global {
-  interface Window {
-    turnstile?: TurnstileApi;
-  }
-}
-
-const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-let scriptPromise: Promise<TurnstileApi> | null = null;
-
-/** Loads Cloudflare's script once, on the visitor's first interaction with the form. */
-function loadTurnstile(): Promise<TurnstileApi> {
-  scriptPromise ??= new Promise<TurnstileApi>((resolve, reject) => {
-    if (window.turnstile) return resolve(window.turnstile);
-    const script = document.createElement("script");
-    script.src = SCRIPT_SRC;
-    script.async = true;
-    script.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("turnstile missing")));
-    script.onerror = () => {
-      scriptPromise = null;
-      reject(new Error("turnstile failed to load"));
-    };
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
+type Props = { locale: "vi" | "en"; siteKey: string | null; privacyHref: string | null; labels: NewsletterLabels };
 
 const inputClass =
   "h-12 w-full min-w-0 rounded-md border border-input bg-card px-3.5 text-body text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive";
@@ -57,76 +32,32 @@ const inputClass =
  * on page load; it runs invisibly unless Cloudflare needs an interaction. A submit before the
  * token arrives waits for it. Without the services configured the form is shown disabled.
  */
-export function NewsletterForm({ locale, siteKey, labels }: Props) {
+export function NewsletterForm({ locale, siteKey, privacyHref, labels }: Props) {
   const [state, action, pending] = useActionState<SubscribeState, FormData>(subscribeToNewsletter, { status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-  const submitWhenReady = useRef(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [waiting, setWaiting] = useState(false);
+  const turnstile = useTurnstile({ siteKey, locale, action: "newsletter", formRef });
   const emailId = useId();
   const messageId = useId();
   const privacyId = useId();
   const disabled = !siteKey;
-
-  const start = useCallback(() => {
-    if (!siteKey || widgetId.current || !widgetRef.current) return;
-    widgetId.current = "loading";
-    loadTurnstile()
-      .then((turnstile) => {
-        if (!widgetRef.current) return;
-        widgetId.current = turnstile.render(widgetRef.current, {
-          sitekey: siteKey,
-          action: "newsletter",
-          appearance: "interaction-only",
-          language: locale,
-          callback: (value: string) => {
-            setToken(value);
-            if (submitWhenReady.current) {
-              submitWhenReady.current = false;
-              setWaiting(false);
-              formRef.current?.requestSubmit();
-            }
-          },
-          "expired-callback": () => setToken(null),
-          "error-callback": () => {
-            setToken(null);
-            setWaiting(false);
-          },
-        });
-      })
-      .catch(() => {
-        widgetId.current = null;
-        setWaiting(false);
-      });
-  }, [siteKey, locale]);
+  const { reset } = turnstile;
 
   // A used token cannot be submitted twice: get a fresh one after every answer.
   useEffect(() => {
-    if (state.status === "idle" || !widgetId.current || widgetId.current === "loading") return;
-    setToken(null);
-    window.turnstile?.reset(widgetId.current);
-  }, [state]);
+    if (state.status !== "idle") reset();
+  }, [state, reset]);
 
   const done = state.status === "sent";
   const error = state.status !== "idle" && state.status !== "sent" ? labels.errors[state.status] : null;
-  const busy = pending || waiting;
+  const busy = pending || turnstile.waiting;
 
   return (
     <form
       ref={formRef}
       action={action}
-      onFocus={start}
-      onPointerDown={start}
-      onSubmit={(event) => {
-        if (!token && siteKey) {
-          event.preventDefault();
-          submitWhenReady.current = true;
-          setWaiting(true);
-          start();
-        }
-      }}
+      onFocus={turnstile.start}
+      onPointerDown={turnstile.start}
+      onSubmit={turnstile.onSubmit}
       className="flex w-full max-w-xl flex-col gap-3"
     >
       <input type="hidden" name="locale" value={locale} />
@@ -162,9 +93,9 @@ export function NewsletterForm({ locale, siteKey, labels }: Props) {
           {busy ? labels.sending : labels.submit}
         </button>
       </div>
-      <div ref={widgetRef} />
+      <div ref={turnstile.widgetRef} />
       <p id={privacyId} className="text-small text-muted-foreground">
-        {disabled ? labels.unavailable : labels.privacy}
+        {disabled || !privacyHref ? labels.unavailable : <PolicySentence text={labels.privacy} href={privacyHref} link={labels.privacyLink} />}
       </p>
       <p id={messageId} role="status" aria-live="polite" className={done ? "text-small font-medium text-success" : "text-small font-medium text-destructive"}>
         {done ? labels.success : error}
@@ -172,3 +103,4 @@ export function NewsletterForm({ locale, siteKey, labels }: Props) {
     </form>
   );
 }
+

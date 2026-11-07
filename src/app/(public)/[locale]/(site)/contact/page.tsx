@@ -12,7 +12,7 @@ import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname } from "@/i18n/navigation";
 import { isLocale } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
-import { getPolicyLinks } from "@/modules/content/public/content-public.service";
+import { getPrivacyConsent } from "@/modules/content/public/content-public.service";
 import { contactAvailability } from "@/modules/inquiry/contact.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -37,18 +37,19 @@ export default async function ContactPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
-  const [t, tf, tp, settings, policies] = await Promise.all([
+  const [t, tf, tp, settings, privacy] = await Promise.all([
     getTranslations({ locale, namespace: "ContactPage" }),
     getTranslations({ locale, namespace: "ContactForm" }),
     getTranslations({ locale, namespace: "Pages" }),
     getPublicSettings(),
-    getPolicyLinks(locale),
+    getPrivacyConsent(locale),
   ]);
   const company = settings.company;
   const contact = settings.contact;
   const address = company?.address?.[locale]?.trim() || null;
   const hours = contact?.office_hours?.[locale]?.trim() || null;
-  const { siteKey } = contactAvailability();
+  // The form asks for consent to the privacy policy: without a published one it stays disabled.
+  const siteKey = privacy ? contactAvailability().siteKey : null;
   const labels: ContactFormLabels = {
     name: tf("name"),
     email: tf("email"),
@@ -70,7 +71,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
       ["required", "tooLong", "invalidEmail", "invalidPhone", "tooShort", "consentRequired", "invalid", "verification", "rateLimited", "unavailable", "failed"].map((key) => [key, tf(`errors.${key}`)]),
     ),
   };
-  const formProps = { locale, siteKey, privacyHref: policies.find((link) => link.key === "privacy")?.href ?? null, labels };
+  const formProps = { locale, siteKey, privacyHref: privacy?.href ?? null, labels };
   const items = [
     address && {
       icon: MapPin,

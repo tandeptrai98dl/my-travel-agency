@@ -23,6 +23,7 @@ import {
   type TopicRow,
   vietnamDate,
 } from "./content-public.mapping";
+import { privacyConsentVersion } from "./consent-version";
 import * as repo from "./content-public.repository";
 import { type ContentMedia, contentMediaMap } from "./rich-media";
 
@@ -69,6 +70,33 @@ export async function getPolicyLinks(locale: Locale): Promise<PolicyLink[]> {
     console.error("getPolicyLinks failed", error instanceof Error ? error.message : error);
     cacheLife(FAILED);
     return [];
+  }
+}
+
+export type PrivacyConsent = { href: string; version: string };
+
+/**
+ * The published privacy policy of one language, for forms that ask for consent: its path and the
+ * version recorded with the consent (`privacyConsentVersion`). Null when it is not published in
+ * that language: the contact and newsletter forms are then disabled, since nobody can agree to a
+ * text that is not there. Cached with the `pages` tag; null on failure (forms disabled briefly).
+ */
+export async function getPrivacyConsent(locale: Locale): Promise<PrivacyConsent | null> {
+  "use cache";
+  cacheTag(PAGES_TAG);
+  cacheLife("hours");
+  try {
+    const { data, error } = await repo.findPageByKey(locale, "privacy");
+    if (error) fail("privacy page", error);
+    if (!data || richTextIsEmpty(data.content)) return null;
+    return {
+      href: getPathname({ locale, href: { pathname: "/policies/[slug]", params: { slug: data.slug } } }),
+      version: privacyConsentVersion(locale, data.title, data.content),
+    };
+  } catch (error) {
+    console.error("getPrivacyConsent failed", error instanceof Error ? error.message : error);
+    cacheLife(FAILED);
+    return null;
   }
 }
 

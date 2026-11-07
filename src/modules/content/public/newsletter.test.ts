@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   sendEmail: vi.fn(),
   configured: { turnstile: true, redis: true, email: true },
   headers: new Map<string, string>(),
+  privacy: { vi: "privacy-vi-0123456789abcdef", en: "privacy-en-fedcba9876543210" } as Record<string, string | null>,
 }));
 
 vi.mock("@/lib/env/public", () => ({
@@ -39,6 +40,10 @@ vi.mock("next-intl/server", () => ({
     `${namespace}.${key}${values ? ` ${JSON.stringify(values)}` : ""}`,
 }));
 vi.mock("next/headers", () => ({ headers: async () => mocks.headers }));
+vi.mock("./content-public.service", () => ({
+  getPrivacyConsent: async (locale: string) =>
+    mocks.privacy[locale] ? { href: `/${locale}/policies/privacy`, version: mocks.privacy[locale] } : null,
+}));
 
 import { confirmNewsletter, subscribeToNewsletter } from "./newsletter.actions";
 import { confirmationEmail } from "./newsletter.email";
@@ -58,6 +63,7 @@ beforeEach(() => {
   mocks.confirmSubscription.mockResolvedValue({ data: true, error: null });
   mocks.sendEmail.mockResolvedValue("sent");
   mocks.headers.clear();
+  mocks.privacy = { vi: "privacy-vi-0123456789abcdef", en: "privacy-en-fedcba9876543210" };
 });
 
 describe("tokens", () => {
@@ -92,6 +98,13 @@ describe("subscribe", () => {
       expect(newsletterAvailability()).toEqual({ enabled: false, siteKey: null });
       expect(await subscribe(input)).toBe("unavailable");
     }
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.requestSubscription).not.toHaveBeenCalled();
+  });
+
+  it("is refused, with nothing written, while the privacy policy is not published in that language", async () => {
+    mocks.privacy.en = null;
+    expect(await subscribe(input)).toBe("unavailable");
     expect(mocks.rateLimit).not.toHaveBeenCalled();
     expect(mocks.requestSubscription).not.toHaveBeenCalled();
   });
@@ -142,20 +155,28 @@ describe("subscribe", () => {
 });
 
 describe("confirm", () => {
-  it("confirms a fresh token by its hash with the consent version", async () => {
+  it("confirms a fresh token by its hash with the version of the privacy policy shown", async () => {
     const { token, hash } = createConfirmToken();
-    expect(await confirm({ token, ip: "203.0.113.7", userAgent: "UA" })).toBe("confirmed");
-    expect(mocks.confirmSubscription).toHaveBeenCalledWith(hash, "newsletter-2026-11", "203.0.113.7", "UA");
+    expect(await confirm({ token, locale: "en", ip: "203.0.113.7", userAgent: "UA" })).toBe("confirmed");
+    expect(mocks.confirmSubscription).toHaveBeenCalledWith(hash, "privacy-en-fedcba9876543210", "203.0.113.7", "UA");
+    await confirm({ token: createConfirmToken().token, locale: "vi", ip: null, userAgent: null });
+    expect(mocks.confirmSubscription.mock.calls[1][1]).toBe("privacy-vi-0123456789abcdef");
+  });
+
+  it("waits while the privacy policy is not published", async () => {
+    mocks.privacy.vi = null;
+    expect(await confirm({ token: createConfirmToken().token, locale: "vi", ip: null, userAgent: null })).toBe("unavailable");
+    expect(mocks.confirmSubscription).not.toHaveBeenCalled();
   });
 
   it("refuses stale, unknown and failing confirmations", async () => {
     const stale = createConfirmToken(new Date(Date.now() - 8 * 86_400_000)).token;
-    expect(await confirm({ token: stale, ip: null, userAgent: null })).toBe("invalid");
+    expect(await confirm({ token: stale, locale: "vi", ip: null, userAgent: null })).toBe("invalid");
     expect(mocks.confirmSubscription).not.toHaveBeenCalled();
     mocks.confirmSubscription.mockResolvedValueOnce({ data: false, error: null });
-    expect(await confirm({ token: createConfirmToken().token, ip: null, userAgent: null })).toBe("invalid");
+    expect(await confirm({ token: createConfirmToken().token, locale: "vi", ip: null, userAgent: null })).toBe("invalid");
     mocks.confirmSubscription.mockResolvedValueOnce({ data: null, error: { message: "down" } });
-    expect(await confirm({ token: createConfirmToken().token, ip: null, userAgent: null })).toBe("unavailable");
+    expect(await confirm({ token: createConfirmToken().token, locale: "vi", ip: null, userAgent: null })).toBe("unavailable");
   });
 });
 
@@ -189,8 +210,16 @@ describe("actions", () => {
     expect(mocks.requestSubscription.mock.calls[0][0]).toBe("anna@example.com");
   });
 
-  it("refuses a malformed confirmation token without a database call", async () => {
-    expect(await confirmNewsletter({ status: "idle" }, form({ token: "<script>" }))).toEqual({ status: "invalid" });
+  it("confirms from the button with the page's language", async () => {
+    const { token } = createConfirmToken();
+    expect(await confirmNewsletter({ status: "idle" }, form({ token, locale: "en" }))).toEqual({ status: "confirmed" });
+    expect(mocks.confirmSubscription.mock.calls[0][1]).toBe("privacy-en-fedcba9876543210");
+  });
+
+  it("refuses a malformed confirmation token or language without a database call", async () => {
+    expect(await confirmNewsletter({ status: "idle" }, form({ token: "<script>", locale: "vi" }))).toEqual({ status: "invalid" });
+    const { token } = createConfirmToken();
+    expect(await confirmNewsletter({ status: "idle" }, form({ token, locale: "fr" }))).toEqual({ status: "invalid" });
     expect(mocks.confirmSubscription).not.toHaveBeenCalled();
   });
 });

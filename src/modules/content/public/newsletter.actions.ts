@@ -34,8 +34,8 @@ export type ConfirmState = { status: ConfirmStatus };
 
 /** Confirms a subscription from the confirmation page's button. */
 export async function confirmNewsletter(_previous: ConfirmState, formData: FormData): Promise<ConfirmState> {
-  const parsed = confirmSchema.safeParse({ token: formData.get("token") });
+  const parsed = confirmSchema.safeParse({ token: formData.get("token"), locale: formData.get("locale") });
   if (!parsed.success) return { status: "invalid" };
   const meta = await requestMeta();
-  return { status: await confirm({ token: parsed.data.token, ...meta }) };
+  return { status: await confirm({ token: parsed.data.token, locale: parsed.data.locale, ...meta }) };
 }

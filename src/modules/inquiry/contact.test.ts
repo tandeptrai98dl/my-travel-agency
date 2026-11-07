@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   createContactInquiry: vi.fn(),
+  findPublishedTourByCode: vi.fn(),
+  privacyVersion: "privacy-vi-0123456789abcdef" as string | null,
   rateLimit: vi.fn(),
   verifyTurnstile: vi.fn(),
   sendEmail: vi.fn(),
@@ -10,7 +12,14 @@ const mocks = vi.hoisted(() => ({
   staffEmail: "team@example.com" as string | null,
 }));
 
-vi.mock("./contact.repository", () => ({ createContactInquiry: mocks.createContactInquiry }));
+vi.mock("./contact.repository", () => ({
+  createContactInquiry: mocks.createContactInquiry,
+  findPublishedTourByCode: mocks.findPublishedTourByCode,
+}));
+vi.mock("@/modules/content/public/content-public.service", () => ({
+  getPrivacyConsent: async (locale: string) =>
+    mocks.privacyVersion ? { href: `/${locale}/chinh-sach/bao-mat`, version: mocks.privacyVersion } : null,
+}));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit, rateLimitKey: (scope: string, id: string) => `rl:${scope}:${id}` }));
 vi.mock("@/lib/redis", () => ({ isRedisConfigured: () => mocks.configured.redis }));
 vi.mock("@/lib/turnstile", () => ({
@@ -31,7 +40,7 @@ vi.mock("next/headers", () => ({ headers: async () => mocks.headers }));
 
 import { sendContactMessage } from "./contact.actions";
 import { contactSchema } from "./contact.schemas";
-import { contactAvailability, staffNotification, submitContact } from "./contact.service";
+import { contactAvailability, headerText, staffNotification, submitContact } from "./contact.service";
 
 const valid = {
   name: "Lan",
@@ -58,6 +67,8 @@ beforeEach(() => {
   mocks.rateLimit.mockResolvedValue("ok");
   mocks.verifyTurnstile.mockResolvedValue(true);
   mocks.createContactInquiry.mockResolvedValue({ data: "INQ-2611-0001", error: null });
+  mocks.findPublishedTourByCode.mockResolvedValue({ data: { id: "t1" }, error: null });
+  mocks.privacyVersion = "privacy-vi-0123456789abcdef";
   mocks.sendEmail.mockResolvedValue("sent");
   mocks.headers.clear();
 });
@@ -84,24 +95,57 @@ describe("submitContact", () => {
     expect(mocks.createContactInquiry).not.toHaveBeenCalled();
   });
 
-  it("rate-limits (fail closed) before verifying, then verifies before writing", async () => {
-    mocks.rateLimit.mockResolvedValueOnce("limited").mockResolvedValueOnce("ok");
-    expect(await submitContact(input, meta)).toEqual({ status: "rateLimited" });
-    expect(mocks.verifyTurnstile).not.toHaveBeenCalled();
-    mocks.rateLimit.mockResolvedValue("unavailable");
+  it("is refused, with nothing written, while the privacy policy is not published", async () => {
+    mocks.privacyVersion = null;
     expect(await submitContact(input, meta)).toEqual({ status: "unavailable" });
-    mocks.rateLimit.mockResolvedValue("ok");
-    mocks.verifyTurnstile.mockResolvedValue(false);
-    expect(await submitContact(input, meta)).toEqual({ status: "verification" });
-    expect(mocks.verifyTurnstile).toHaveBeenCalledWith("cf", { action: "contact", ip: "203.0.113.7" });
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
     expect(mocks.createContactInquiry).not.toHaveBeenCalled();
   });
 
-  it("saves the inquiry with the consent version and notifies the team", async () => {
+  it("limits by IP before verifying and by address only after Turnstile", async () => {
+    mocks.rateLimit.mockResolvedValueOnce("limited");
+    expect(await submitContact(input, meta)).toEqual({ status: "rateLimited" });
+    expect(mocks.verifyTurnstile).not.toHaveBeenCalled();
+    expect(mocks.rateLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.rateLimit).toHaveBeenCalledWith(["rl:contact-ip:203.0.113.7"], 5, 600);
+
+    mocks.rateLimit.mockClear();
+    mocks.verifyTurnstile.mockResolvedValueOnce(false);
+    expect(await submitContact(input, meta)).toEqual({ status: "verification" });
+    expect(mocks.verifyTurnstile).toHaveBeenCalledWith("cf", { action: "contact", ip: "203.0.113.7" });
+    // An unverified request never touches the address's allowance.
+    expect(mocks.rateLimit).toHaveBeenCalledTimes(1);
+
+    mocks.rateLimit.mockClear();
+    mocks.rateLimit.mockResolvedValueOnce("ok").mockResolvedValueOnce("limited");
+    expect(await submitContact(input, meta)).toEqual({ status: "rateLimited" });
+    expect(mocks.rateLimit).toHaveBeenLastCalledWith(["rl:contact-email:lan@example.com"], 3, 3600);
+
+    mocks.rateLimit.mockResolvedValue("unavailable");
+    expect(await submitContact(input, meta)).toEqual({ status: "unavailable" });
+    expect(mocks.createContactInquiry).not.toHaveBeenCalled();
+  });
+
+  it("saves the inquiry with the published privacy policy's version and notifies the team", async () => {
     expect(await submitContact(input, meta)).toEqual({ status: "sent", code: "INQ-2611-0001" });
-    expect(mocks.createContactInquiry).toHaveBeenCalledWith(input, "privacy-2026-11", "203.0.113.7", "UA");
-    const message = mocks.sendEmail.mock.calls[0][0] as { to: string; template: string; subject: string };
+    expect(mocks.createContactInquiry).toHaveBeenCalledWith(input, "privacy-vi-0123456789abcdef", "203.0.113.7", "UA");
+    const message = mocks.sendEmail.mock.calls[0][0] as { to: string; template: string; subject: string; text: string };
     expect(message).toMatchObject({ to: "team@example.com", template: "contact_staff", subject: "Liên hệ mới INQ-2611-0001 từ Lan" });
+    expect(mocks.findPublishedTourByCode).toHaveBeenCalledWith("VN-HLB-03");
+    expect(message.text).toContain("Tour: VN-HLB-03\n");
+  });
+
+  it("marks a tour code that names no published tour as not matched", async () => {
+    mocks.findPublishedTourByCode.mockResolvedValue({ data: null, error: null });
+    await submitContact(input, meta);
+    const message = mocks.sendEmail.mock.calls[0][0] as { text: string; html: string };
+    expect(message.text).toContain("Tour: VN-HLB-03 (không khớp tour nào đang mở bán)");
+  });
+
+  it("keeps the name on one line in the subject", () => {
+    const email = staffNotification("INQ-1", contactSchema.parse({ ...valid, name: "Lan\r\nBcc: x@y.z\u0007" }));
+    expect(email.subject).toBe("Liên hệ mới INQ-1 từ Lan Bcc: x@y.z");
+    expect(headerText("a\u2028b\tc")).toBe("a b c");
   });
 
   it("keeps a saved message when the notification cannot be sent, and reports write failures", async () => {

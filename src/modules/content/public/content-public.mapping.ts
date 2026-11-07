@@ -71,7 +71,8 @@ export type FaqItem = { question: string; answer: string };
 
 /**
  * Question and answer pairs of an FAQ page for `FAQPage` structured data: each heading is a
- * question and the paragraphs and lists until the next heading are its answer (plain text).
+ * question when it ends in "?" and the paragraphs and lists until the next heading are its answer
+ * (plain text); other headings are section titles and are left out.
  */
 export function faqFromRichText(content: unknown): FaqItem[] {
   const doc: RichTextDoc = sanitizeRichText(content);
@@ -88,7 +89,10 @@ export function faqFromRichText(content: unknown): FaqItem[] {
   for (const block of doc.content) {
     if (block.type === "heading") {
       if (current?.answer) items.push(current);
-      current = { question: plain(block).trim(), answer: "" };
+      // Only a heading that asks something is a question; other headings (section titles such as
+      // "Đặt chỗ") end the current answer and start nothing, so their text is not marked up.
+      const heading = plain(block).replace(/\s+/g, " ").trim();
+      current = /[?？]$/.test(heading) ? { question: heading, answer: "" } : null;
     } else if (current && block.type !== "image") {
       const part = plain(block).replace(/\s+/g, " ").trim();
       if (part) current.answer = current.answer ? `${current.answer} ${part}` : part;

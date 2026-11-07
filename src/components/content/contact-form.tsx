@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 
+import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
 import { type ContactState, sendContactMessage } from "@/modules/inquiry/contact.actions";
@@ -36,31 +37,6 @@ type Props = {
   tour?: { code: string; date: string | null } | null;
 };
 
-type TurnstileApi = { render: (element: HTMLElement, options: Record<string, unknown>) => string; reset: (id?: string) => void };
-
-const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-let scriptPromise: Promise<TurnstileApi> | null = null;
-function loadTurnstile(): Promise<TurnstileApi> {
-  scriptPromise ??= new Promise<TurnstileApi>((resolve, reject) => {
-    const existing = (window as { turnstile?: TurnstileApi }).turnstile;
-    if (existing) return resolve(existing);
-    const script = document.createElement("script");
-    script.src = SCRIPT_SRC;
-    script.async = true;
-    script.onload = () => {
-      const api = (window as { turnstile?: TurnstileApi }).turnstile;
-      if (api) resolve(api);
-      else reject(new Error("turnstile missing"));
-    };
-    script.onerror = () => {
-      scriptPromise = null;
-      reject(new Error("turnstile failed to load"));
-    };
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
-
 const fieldClass =
   "w-full min-w-0 rounded-md border border-input bg-card px-3.5 text-body text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-destructive";
 
@@ -79,55 +55,17 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
     : "";
 
   const formRef = useRef<HTMLFormElement>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-  const submitWhenReady = useRef(false);
+  const turnstile = useTurnstile({ siteKey, locale, action: "contact", formRef });
+  const { reset } = turnstile;
   const statusRef = useRef<HTMLParagraphElement>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [waiting, setWaiting] = useState(false);
   const ids = { name: useId(), email: useId(), phone: useId(), message: useId(), consent: useId(), status: useId() };
   const disabled = !siteKey;
   const done = state.status === "sent";
   const errors = state.errors ?? {};
 
-  const start = useCallback(() => {
-    if (!siteKey || widgetId.current || !widgetRef.current) return;
-    widgetId.current = "loading";
-    loadTurnstile()
-      .then((turnstile) => {
-        if (!widgetRef.current) return;
-        widgetId.current = turnstile.render(widgetRef.current, {
-          sitekey: siteKey,
-          action: "contact",
-          appearance: "interaction-only",
-          language: locale,
-          callback: (value: string) => {
-            setToken(value);
-            if (submitWhenReady.current) {
-              submitWhenReady.current = false;
-              setWaiting(false);
-              formRef.current?.requestSubmit();
-            }
-          },
-          "expired-callback": () => setToken(null),
-          "error-callback": () => {
-            setToken(null);
-            setWaiting(false);
-          },
-        });
-      })
-      .catch(() => {
-        widgetId.current = null;
-        setWaiting(false);
-      });
-  }, [siteKey, locale]);
-
   useEffect(() => {
     if (state.status === "idle") return;
-    if (widgetId.current && widgetId.current !== "loading") {
-      setToken(null);
-      (window as { turnstile?: TurnstileApi }).turnstile?.reset(widgetId.current);
-    }
+    reset();
     // Field errors: focus the first invalid field; other answers: the status line.
     const first = (["name", "email", "phone", "message", "consent"] as const).find((field) => errors[field]);
     if (first) document.getElementById(ids[first])?.focus();
@@ -159,16 +97,9 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
       ref={formRef}
       action={action}
       noValidate
-      onFocus={start}
-      onPointerDown={start}
-      onSubmit={(event) => {
-        if (!token && siteKey) {
-          event.preventDefault();
-          submitWhenReady.current = true;
-          setWaiting(true);
-          start();
-        }
-      }}
+      onFocus={turnstile.start}
+      onPointerDown={turnstile.start}
+      onSubmit={turnstile.onSubmit}
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="locale" value={locale} />
@@ -231,9 +162,9 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
           </label>
           {error("consent")}
         </div>
-        <div ref={widgetRef} />
-        <button type="submit" disabled={pending || waiting} className={buttonVariants({ size: "lg", className: "self-start" })}>
-          {pending || waiting ? labels.sending : labels.submit}
+        <div ref={turnstile.widgetRef} />
+        <button type="submit" disabled={pending || turnstile.waiting} className={buttonVariants({ size: "lg", className: "self-start" })}>
+          {pending || turnstile.waiting ? labels.sending : labels.submit}
         </button>
       </fieldset>
       <p

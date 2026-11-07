@@ -29,6 +29,25 @@ describe("faqFromRichText", () => {
     ]);
   });
 
+  it("marks up only headings that end in a question mark", () => {
+    const items = faqFromRichText(
+      doc(
+        h("Đặt chỗ"),
+        p("Mọi điều cần biết về việc đặt chỗ."),
+        h("Tôi thanh toán bằng cách nào?"),
+        p("Qua VNPay hoặc chuyển khoản."),
+        h("Thanh toán"),
+        p("Văn bản của mục, không phải câu trả lời."),
+        h("Có hoàn tiền không ？"),
+        p("Theo chính sách hủy."),
+      ),
+    );
+    expect(items).toEqual([
+      { question: "Tôi thanh toán bằng cách nào?", answer: "Qua VNPay hoặc chuyển khoản." },
+      { question: "Có hoàn tiền không ？", answer: "Theo chính sách hủy." },
+    ]);
+  });
+
   it("returns nothing for empty or invalid content", () => {
     expect(faqFromRichText(null)).toEqual([]);
     expect(faqFromRichText({ type: "doc", content: "nope" })).toEqual([]);

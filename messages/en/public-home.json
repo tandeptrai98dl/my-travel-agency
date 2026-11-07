@@ -63,7 +63,7 @@
       "placeholder": "name@email.com",
       "submit": "Subscribe",
       "sending": "Sending…",
-      "privacy": "We use this email only for the newsletter, as our privacy policy describes.",
+      "privacy": "We use this email only for the newsletter, as our {policy} describes.",
       "unavailable": "Newsletter sign-up opens soon.",
       "success": "Almost done: open the email we just sent and click the confirmation link.",
       "errors": {
@@ -72,7 +72,8 @@
         "rateLimited": "Too many attempts. Please try again in a few minutes.",
         "unavailable": "Newsletter sign-up is not open yet.",
         "failed": "Something went wrong. Please try again later."
-      }
+      },
+      "privacyLink": "privacy policy"
     }
   },
   "NewsletterConfirm": {
@@ -85,7 +86,9 @@
     "invalidTitle": "This link is no longer valid",
     "invalidText": "The confirmation link has been used or has expired. You can sign up again on the home page.",
     "unavailable": "We could not confirm right now. Please try again in a few minutes.",
-    "backHome": "Back to the home page"
+    "backHome": "Back to the home page",
+    "consent": "By confirming, you agree to receive the newsletter under our {policy}.",
+    "privacyLink": "privacy policy"
   },
   "NewsletterEmail": {
     "subject": "Confirm your {brand} newsletter subscription",

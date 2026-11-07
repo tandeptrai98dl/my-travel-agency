@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/** Version of the privacy notice the contact form links, recorded in `consent_records`. */
-export const PRIVACY_CONSENT_VERSION = "privacy-2026-11";
-
 export const CONTACT_CHANNELS = ["email", "phone", "zalo", "whatsapp"] as const;
 
 const optionalText = z

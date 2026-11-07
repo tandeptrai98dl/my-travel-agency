@@ -63,7 +63,7 @@
       "placeholder": "ten@email.com",
       "submit": "Đăng ký",
       "sending": "Đang gửi…",
-      "privacy": "Chúng tôi chỉ dùng email này để gửi bản tin, theo chính sách bảo mật.",
+      "privacy": "Chúng tôi chỉ dùng email này để gửi bản tin, theo {policy}.",
       "unavailable": "Đăng ký nhận bản tin sẽ sớm mở.",
       "success": "Gần xong rồi: hãy mở email chúng tôi vừa gửi và bấm liên kết xác nhận.",
       "errors": {
@@ -72,7 +72,8 @@
         "rateLimited": "Bạn đã gửi nhiều lần. Hãy thử lại sau ít phút.",
         "unavailable": "Đăng ký nhận bản tin tạm thời chưa mở.",
         "failed": "Chưa gửi được. Hãy thử lại sau."
-      }
+      },
+      "privacyLink": "chính sách bảo mật"
     }
   },
   "NewsletterConfirm": {
@@ -85,7 +86,9 @@
     "invalidTitle": "Liên kết không còn hiệu lực",
     "invalidText": "Liên kết xác nhận đã được dùng hoặc đã hết hạn. Bạn có thể đăng ký lại ở trang chủ.",
     "unavailable": "Chưa xác nhận được lúc này. Hãy thử lại sau ít phút.",
-    "backHome": "Về trang chủ"
+    "backHome": "Về trang chủ",
+    "consent": "Khi xác nhận, bạn đồng ý nhận bản tin theo {policy}.",
+    "privacyLink": "chính sách bảo mật"
   },
   "NewsletterEmail": {
     "subject": "Xác nhận đăng ký bản tin {brand}",

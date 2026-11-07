@@ -374,3 +374,13 @@ Template:
 - **Decision:** Build the EMVCo/NAPAS 247 payload in `src/modules/payment/providers/vietqr.ts` and render it to SVG on the server with `qrcode` 1.5.4 (MIT; exact version pinned, `@types/qrcode` as a dev dependency). No QR code is drawn in the browser and no third party sees the payment.
 - **Consequences:** One small server-only dependency. The SVG is inlined in the checkout page (4B), so no extra request and no CSP change.
 
+## ADR-035: Consent versions from the published privacy policy
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted. Amends ADR-029 (the newsletter's fixed document version)
+- **Context:** The contact form (Phase 3 PR K) and the newsletter (ADR-029) recorded consent with fixed strings (`privacy-2026-11`, `newsletter-2026-11`). Decree 13/2023 asks for proof of what a person agreed to; a fixed string says nothing once the privacy policy is edited, and the forms could take consent while no privacy policy was published at all (PR K review).
+- **Decision:**
+  - `getPrivacyConsent(locale)` (`src/modules/content/public/content-public.service.ts`, cached with the `pages` tag) returns the published privacy page of a language, its path and its version `privacy-<locale>-<16 hex>`, the start of the SHA-256 of its title and content (`privacyConsentVersion()`). The version changes exactly when the text changes, and the text behind a version can be found again in `audit_logs`, which keeps the before and after of page translation changes.
+  - The contact form and the newsletter sign-up are disabled, and their actions refuse, while the privacy policy is not published in the form's language. Both forms link the policy.
+  - The contact form records that version with the inquiry. The newsletter records it when the subscription is confirmed: the confirmation page names and links the privacy policy next to its button, and its language picks the version.
+- **Consequences:** No new tables or migrations. Publishing the privacy policy in a language turns those forms on (with the services of ADR-029). Phase 4–5 consent rows (terms at checkout, inquiries) follow the same rule for their documents.
