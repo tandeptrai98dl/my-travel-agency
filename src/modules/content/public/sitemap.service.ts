@@ -14,7 +14,7 @@ import * as repo from "./sitemap.repository";
 /**
  * Content entries of sitemap.xml (Phase 3 spec step 19): fixed pages, about and FAQ, policies,
  * the journal, its articles and topics, per language and only where they render. Cached with
- * the tags the content admin refreshes; errors throw (the route answers 503).
+ * the tags the content admin refreshes; errors throw, so a failed re-render keeps the last good sitemap.
  */
 
 const POSTS_TAG = "posts";
