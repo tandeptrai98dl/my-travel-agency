@@ -9,7 +9,7 @@
  * Hosts come from the validated public env (Supabase, Sentry ingest), never hard-coded.
  */
 
-import { localizedPath, type Locale } from "../i18n/paths";
+import { currentRoute, localizedPath, type Locale } from "../i18n/paths";
 import type { pathnames } from "../i18n/pathnames";
 
 /**
@@ -62,6 +62,25 @@ const SECURE_PATH = new RegExp(`^/(?:${SECURE_ALTERNATIVES.join("|")})`);
 
 export function isSecurePath(pathname: string): boolean {
   return SECURE_PATH.test(pathname);
+}
+
+/**
+ * The secure routes where Google Analytics may load (Phase 6 spec decision 7): book, checkout and
+ * its payment and result pages. Only their nonce policy lists Google's hosts (#55 review m4); the
+ * payment link, booking lookup, sign-in and account pages never allow a request to Google, so even
+ * a loader bug could not send their codes or tokens there. Must stay the complement of the secure
+ * routes in `NO_ANALYTICS_ROUTES` (src/components/analytics/routes.ts; unit-tested).
+ */
+export const ANALYTICS_SECURE_ROUTES: ReadonlySet<string> = new Set([
+  "/book/[tourSlug]",
+  "/checkout/[code]",
+  "/checkout/[code]/payment",
+  "/checkout/[code]/result",
+] satisfies (keyof typeof pathnames)[]);
+
+/** Whether a secure path's nonce policy may list Google's hosts (`ANALYTICS_SECURE_ROUTES`). */
+export function isAnalyticsSecurePath(pathname: string): boolean {
+  return isSecurePath(pathname) && ANALYTICS_SECURE_ROUTES.has(currentRoute(pathname).pathname);
 }
 
 /** The admin (`src/app/admin`, fully dynamic with a nonce). */
@@ -158,7 +177,9 @@ export function publicCsp(options: Hosts): string {
 /**
  * Checkout and account: nonce'd scripts, Turnstile, and VNPay's payment page as a form target.
  * gtag.js is loaded with the request nonce on the pages that may use it (book, checkout, result);
- * its host stays in `script-src` for browsers without `'strict-dynamic'`.
+ * the proxy passes the measurement ID only for those paths (`isAnalyticsSecurePath`), so every
+ * other secure page has no Google host at all. Its host stays in `script-src` for browsers without
+ * `'strict-dynamic'`.
  */
 export function secureCsp({ nonce, paymentUrl, ...options }: NonceOptions & { paymentUrl?: string }): string {
   const { supabase, list } = hosts(options);

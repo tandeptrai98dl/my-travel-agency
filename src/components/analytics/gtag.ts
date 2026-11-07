@@ -77,6 +77,26 @@ let viewedPath: string | null = null;
 let lastLocation: string | null = null;
 let pageAllowed = false;
 let listening = false;
+let documentAllowed: boolean | null = null;
+
+/**
+ * Whether this document may use GA at all, by the route it was loaded on. A document opened on a
+ * route without analytics (the payment link, booking lookup, the account, sign-in, the newsletter's
+ * single-use pages) keeps GA off for its whole life, also after a client-side navigation into
+ * checkout (the payment link's button, the account's "pay the balance"): the secure root's nonce
+ * policy lists Google's hosts only on book and checkout (#55 review m4), so in such a document
+ * Google's requests would be blocked anyway.
+ */
+function documentAllowsAnalytics(): boolean {
+  let landing = window.location.pathname;
+  try {
+    const entry = performance.getEntriesByType("navigation")[0];
+    if (entry?.name) landing = new URL(entry.name).pathname;
+  } catch {
+    // No Navigation Timing: the current path is the best guess (this runs on the first page).
+  }
+  return analyticsAllowed(landing, "");
+}
 
 // gtag.js reads `arguments` objects from the data layer, exactly as Google's snippet pushes them.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -158,7 +178,8 @@ function flush() {
  */
 export function sync(measurementId: string, choice: ConsentChoice, pathname: string, search: string) {
   measurement = measurementId;
-  pageAllowed = analyticsAllowed(pathname, search);
+  documentAllowed ??= documentAllowsAnalytics();
+  pageAllowed = documentAllowed && analyticsAllowed(pathname, search);
   if (state === "idle" && (!choice.analytics || !pageAllowed)) {
     if (!choice.analytics) deleteGaCookies();
     window.__ptaAnalytics = [];
