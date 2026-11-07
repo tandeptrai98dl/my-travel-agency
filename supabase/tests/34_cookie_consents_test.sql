@@ -17,8 +17,12 @@ select ok(
   not has_table_privilege('anon', 'public.cookie_consents', 'select')
     and not has_table_privilege('authenticated', 'public.cookie_consents', 'select')
     and not has_table_privilege('anon', 'public.cookie_consents', 'insert')
-    and not has_table_privilege('authenticated', 'public.cookie_consents', 'insert'),
-  'API roles hold no privilege on cookie_consents'
+    and not has_table_privilege('authenticated', 'public.cookie_consents', 'insert')
+    and not has_table_privilege('anon', 'public.cookie_consents', 'update')
+    and not has_table_privilege('authenticated', 'public.cookie_consents', 'update')
+    and not has_table_privilege('anon', 'public.cookie_consents', 'delete')
+    and not has_table_privilege('authenticated', 'public.cookie_consents', 'delete'),
+  'API roles hold no privilege on cookie_consents (no select, insert, update or delete)'
 );
 select ok(
   not has_function_privilege('anon', 'public.record_cookie_consent(uuid, text, boolean, boolean, text, public.locale)', 'execute')

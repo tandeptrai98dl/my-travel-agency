@@ -10,9 +10,9 @@ select ok(
   'RLS is on with no API-role policy'
 );
 select ok(
-  not has_table_privilege('anon', 'public.newsletter_unsubscribe_tokens', 'select')
-    and not has_table_privilege('authenticated', 'public.newsletter_unsubscribe_tokens', 'select'),
-  'API roles cannot read token hashes'
+  not has_table_privilege('anon', 'public.newsletter_unsubscribe_tokens', 'select, insert, update, delete')
+    and not has_table_privilege('authenticated', 'public.newsletter_unsubscribe_tokens', 'select, insert, update, delete'),
+  'API roles cannot read or write token hashes'
 );
 select ok(
   not has_function_privilege('anon', 'public.unsubscribe_newsletter(text)', 'execute')
@@ -34,17 +34,18 @@ insert into public.subscribers (id, email, locale, confirmed_at, unsubscribed_at
   ('a0000000-0000-4000-8000-000000000003', 'left@example.com', 'en', now() - interval '20 days', now() - interval '1 day');
 
 -- Issuing ---------------------------------------------------------------------------------------
+-- Since *_newsletter_tokens_followups.sql the function returns the ids that got a token.
 select is(
   public.issue_newsletter_unsubscribe_tokens(
     array['a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003']::uuid[],
     array[repeat('1', 64), repeat('2', 64), repeat('3', 64)]
   ),
-  1,
+  array['a0000000-0000-4000-8000-000000000001']::uuid[],
   'tokens are stored for active subscribers only'
 );
 select is(
   public.issue_newsletter_unsubscribe_tokens(array['a0000000-0000-4000-8000-000000000001']::uuid[], array[repeat('4', 64)]),
-  1,
+  array['a0000000-0000-4000-8000-000000000001']::uuid[],
   'a later export adds a fresh token; the earlier one keeps working'
 );
 select throws_ok(

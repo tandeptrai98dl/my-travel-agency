@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ALL_ACCEPTED } from "@/lib/consent";
 
 /**
- * `sync()` in a fake browser: the document rule of the #55 m4 CSP scoping.
+ * `sync()` in a fake browser: what reaches the data layer, the `ga-disable-<id>` switch and the
+ * script tag as the route changes after gtag.js has loaded (#55 review backlog), and the
+ * document rule of the #55 m4 CSP scoping.
  */
 
 const ID = "G-TEST1234";
@@ -54,6 +56,41 @@ async function browserOpenedOn(landing: string) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("sync() after gtag.js has loaded", () => {
+  it("switches every hit off on a route without GA and back on where it is allowed", async () => {
+    const browser = await browserOpenedOn("/en/checkout/PTA-2611-0042/result");
+    browser.go("/en/checkout/PTA-2611-0042/result");
+    expect(browser.scripts).toHaveLength(1);
+    expect(browser.disabled()).toBe(false);
+    expect(browser.pageViews()).toBe(1);
+
+    // A client-side navigation to the account (no GA): hits off, no page view, no second script.
+    browser.go("/en/account/bookings/PTA-2611-0042");
+    expect(browser.disabled()).toBe(true);
+    expect(browser.pageViews()).toBe(1);
+    // An emailed-link page (checkout with an `access` query) is off too.
+    browser.go("/en/checkout/PTA-2611-0042", "?access=tok");
+    expect(browser.disabled()).toBe(true);
+    expect(browser.pageViews()).toBe(1);
+
+    // And back to a page where GA is allowed: hits on, one page view with the template only.
+    browser.go("/en/tours");
+    expect(browser.disabled()).toBe(false);
+    expect(browser.pageViews()).toBe(2);
+    expect(browser.locations().at(-1)).toBe(`${ORIGIN}/tours`);
+    expect(browser.scripts).toHaveLength(1);
+    expect(JSON.stringify(browser.commands())).not.toContain("PTA-2611-0042");
+  });
+
+  it("re-sends nothing when the same allowed route is synced again", async () => {
+    const browser = await browserOpenedOn("/en/tours");
+    browser.go("/en/tours");
+    browser.go("/en/tours");
+    expect(browser.pageViews()).toBe(1);
+    expect(browser.disabled()).toBe(false);
+  });
 });
 
 describe("a document opened on a route without GA", () => {

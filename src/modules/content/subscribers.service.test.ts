@@ -5,7 +5,8 @@ const repo = vi.hoisted(() => ({
   listSubscriberRows: vi.fn<(...args: unknown[]) => Promise<Result & { count?: number }>>(async () => ({ data: [], error: null, count: 0 })),
   activeSubscriberRows: vi.fn<(...args: unknown[]) => Promise<Result>>(async () => ({ data: [], error: null })),
   writeAuditRow: vi.fn<(...args: unknown[]) => Promise<Result>>(async () => ({ data: null, error: null })),
-  issueUnsubscribeTokens: vi.fn<(...args: unknown[]) => Promise<Result>>(async () => ({ data: 1, error: null })),
+  // The function returns the subscribers that got a token (all of them unless one left meanwhile).
+  issueUnsubscribeTokens: vi.fn<(...args: unknown[]) => Promise<Result>>(async (ids) => ({ data: ids, error: null })),
 }));
 vi.mock("./subscribers.repository", () => repo);
 vi.mock("@/lib/site-url", () => ({ siteUrl: new URL("https://example.vn") }));
@@ -67,6 +68,28 @@ describe("subscribers", () => {
     expect(result.ok && result.csv).toContain("https://example.vn/en/newsletter/unsubscribe?token=");
     // The plaintext tokens appear only in the file.
     expect(JSON.stringify(repo.writeAuditRow.mock.calls)).not.toContain(tokens[0]);
+  });
+
+  it("leaves out a subscriber who unsubscribed before their token was stored (#55 m6)", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    repo.activeSubscriberRows.mockResolvedValueOnce({
+      data: [
+        { id: "s1", email: "stays@b.c", locale: "vi", source: null, confirmed_at: "2026-11-01", created_at: "2026-11-01" },
+        { id: "s2", email: "left@e.f", locale: "en", source: null, confirmed_at: "2026-11-01", created_at: "2026-11-01" },
+        { id: "s3", email: "also@g.h", locale: "en", source: null, confirmed_at: "2026-11-01", created_at: "2026-11-01" },
+      ],
+      error: null,
+    });
+    repo.issueUnsubscribeTokens.mockResolvedValueOnce({ data: ["s1", "s3"], error: null });
+    const result = await service.exportSubscribers();
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.count).toBe(2);
+    expect(result.csv).not.toContain("left@e.f");
+    const lines = result.csv.trim().split("\r\n").slice(1);
+    expect(lines).toHaveLength(2);
+    // Every row that is exported carries a working link.
+    for (const line of lines) expect(line).toMatch(/,"https:\/\/example\.vn\/(en\/newsletter\/unsubscribe|ban-tin\/huy)\?token=[A-Za-z0-9_-]{43}"$/);
   });
 
   it("gives no file when the tokens cannot be stored", async () => {
