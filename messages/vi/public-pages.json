@@ -135,5 +135,28 @@
       "failed": "Chưa gửi được. Hãy thử lại sau hoặc gọi hotline."
     },
     "newTab": "(mở trong thẻ mới)"
+  },
+  "SiteSearch": {
+    "metaTitle": "Tìm kiếm",
+    "metaTitleQuery": "Kết quả cho “{q}”",
+    "metaDescription": "Tìm hành trình, điểm đến và bài viết.",
+    "breadcrumb": "Tìm kiếm",
+    "eyebrow": "Tìm kiếm",
+    "title": "Tìm hành trình, điểm đến và bài viết",
+    "titleQuery": "Kết quả cho “{q}”",
+    "label": "Từ khoá",
+    "placeholder": "Ví dụ: Hạ Long, Kyoto, mùa thu",
+    "submit": "Tìm",
+    "hint": "Gõ ít nhất hai ký tự. Tìm không cần dấu: “ha long” cũng tìm ra “Hạ Long”.",
+    "tours": "Hành trình",
+    "toursCount": "{count, plural, other {# hành trình}}",
+    "seeAllTours": "Xem tất cả {count, plural, other {# hành trình}} trong danh sách",
+    "destinations": "Điểm đến",
+    "journal": "Bài viết",
+    "none": "Không tìm thấy kết quả nào cho “{q}”.",
+    "noneText": "Hãy thử một từ khác, xem tất cả hành trình hoặc liên hệ để chúng tôi tư vấn.",
+    "allTours": "Xem tất cả hành trình",
+    "contact": "Liên hệ tư vấn",
+    "loading": "Đang tìm"
   }
 }

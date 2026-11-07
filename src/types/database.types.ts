@@ -1001,6 +1001,11 @@ isOneToOne: false
 "rich_text_media_ids":
 { Args: { "doc": Json }; Returns: (string)[]
                            },
+"search_site":
+{ Args: { "p_limit"?: number,"p_locale": Database["public"]['Enums']["locale"],"p_q": string }; Returns: {
+              "id": string,"kind": string,"published_at": string,"slug": string,"summary": string,"title": string
+            }[]
+                           },
 "search_tours":
 { Args: { "p_destination_ids"?: (string)[],"p_durations"?: (string)[],"p_exclude_ids"?: (string)[],"p_featured_only"?: boolean,"p_limit"?: number,"p_locale": Database["public"]['Enums']["locale"],"p_months"?: (string)[],"p_offset"?: number,"p_price_max"?: number,"p_price_min"?: number,"p_q"?: string,"p_scopes"?: (Database["public"]['Enums']["tour_scope"])[],"p_sort"?: string,"p_travel_style_ids"?: (string)[] }; Returns: {
               "display_price": number,"next_departure_date": string,"other_departure_count": number,"price_source": string,"seats_left_next": number,"total_count": number,"tour_id": string

@@ -135,5 +135,28 @@
       "failed": "Something went wrong. Please try again later or call our hotline."
     },
     "newTab": "(opens in a new tab)"
+  },
+  "SiteSearch": {
+    "metaTitle": "Search",
+    "metaTitleQuery": "Results for “{q}”",
+    "metaDescription": "Search journeys, destinations and articles.",
+    "breadcrumb": "Search",
+    "eyebrow": "Search",
+    "title": "Search journeys, destinations and articles",
+    "titleQuery": "Results for “{q}”",
+    "label": "Search term",
+    "placeholder": "For example: Ha Long, Kyoto, autumn",
+    "submit": "Search",
+    "hint": "Type at least two characters. Accents are optional: “ha long” also finds “Hạ Long”.",
+    "tours": "Journeys",
+    "toursCount": "{count, plural, one {# journey} other {# journeys}}",
+    "seeAllTours": "See all {count, plural, one {# journey} other {# journeys}} in the listing",
+    "destinations": "Destinations",
+    "journal": "Articles",
+    "none": "Nothing matched “{q}”.",
+    "noneText": "Try another word, browse every journey or contact us and we will help.",
+    "allTours": "Browse all journeys",
+    "contact": "Talk to us",
+    "loading": "Searching"
   }
 }

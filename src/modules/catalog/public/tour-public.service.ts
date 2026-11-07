@@ -454,3 +454,14 @@ export async function getTourCards(
   return cardsFor(locale, data ?? []);
 }
 
+
+/**
+ * Tours matching a search term as live cards with the total (uncached: seats change with
+ * bookings; site search). Database errors throw.
+ */
+export async function searchTourCards(locale: Locale, filter: { q: string; limit: number }): Promise<{ items: TourCardItem[]; total: number }> {
+  const { data, error } = await repo.searchTours({ locale, q: filter.q, limit: filter.limit });
+  if (error) fail("tour search", error);
+  const rows = data ?? [];
+  return { items: await cardsFor(locale, rows), total: rows[0]?.total_count ?? 0 };
+}
