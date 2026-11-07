@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { type IpAllowList, parseAllowList, UNRESTRICTED } from "../ip-allowlist";
+
 /** Returns true for keys that grant service-role access (new or legacy JWT format). */
 export function isSecretSupabaseKey(key: string): boolean {
   if (key.startsWith("sb_secret_")) return true;
@@ -20,6 +22,20 @@ const optionalString = z.preprocess(
   (value) => (value === "" ? undefined : value),
   z.string().min(1).optional(),
 );
+
+/**
+ * A webhook source allow-list (docs/specs/phase-6-hardening-launch.md decision 2): empty is "not
+ * enforced", `unrestricted` an accepted exception, otherwise comma-separated addresses or CIDRs.
+ * Bad entries fail validation by name, so a typo never silently opens or closes the webhook.
+ */
+const allowList = z.string().optional().transform((value, ctx): IpAllowList => {
+  const { list, errors } = parseAllowList(value);
+  if (errors.length) {
+    ctx.addIssue({ code: "custom", message: `not an IPv4/IPv6 address or CIDR range (no /0, no host bits): ${errors.join(", ")}` });
+    return z.NEVER;
+  }
+  return list;
+});
 
 const booleanFlag = z.preprocess(
   (value) => (value === "" || value === undefined ? "false" : value),
@@ -109,6 +125,9 @@ export const serverEnvSchema = z
   ),
   // CI only: a local stand-in for VNPay's payment page that signs its IPN with VNPAY_HASH_SECRET.
   VNPAY_STUB: booleanFlag,
+  // Source addresses of VNPay's IPN calls (decision 2). Required in production while VNPay is on:
+  // the addresses VNPay gives the merchant, or `unrestricted` (an exception in SECURITY_REVIEW.md).
+  VNPAY_IPN_ALLOWED_IPS: allowList,
   // HMAC key of the guest checkout cookie (docs/specs/phase-4-booking-payments.md decision 7).
   // Without it online booking is off: the booking page offers the hotline instead.
   BOOKING_ACCESS_SECRET: z.preprocess(
@@ -121,6 +140,8 @@ export const serverEnvSchema = z
     (value) => (value === "" ? undefined : value),
     z.string().min(16, "must be at least 16 characters").optional(),
   ),
+  // Source addresses of the SePay or Casso webhook calls, as for VNPay above.
+  BANK_WEBHOOK_ALLOWED_IPS: allowList,
 }).superRefine((env, ctx) => {
   const pairs = [
     ["VNPAY_TMN_CODE", "VNPAY_HASH_SECRET"],
@@ -129,6 +150,20 @@ export const serverEnvSchema = z
   for (const [a, b] of pairs) {
     const missing = env[a] && !env[b] ? b : env[b] && !env[a] ? a : null;
     if (missing) ctx.addIssue({ code: "custom", path: [missing], message: `${missing} is missing (set both or neither)` });
+  }
+  // Production takes real money: each configured gateway has its allow-list or a recorded exception.
+  const lists = [
+    ["VNPAY_IPN_ALLOWED_IPS", env.VNPAY_TMN_CODE, env.VNPAY_IPN_ALLOWED_IPS],
+    ["BANK_WEBHOOK_ALLOWED_IPS", env.BANK_WEBHOOK_PROVIDER, env.BANK_WEBHOOK_ALLOWED_IPS],
+  ] as const;
+  for (const [name, configured, list] of lists) {
+    if (env.VERCEL_ENV === "production" && configured && list.mode === "off") {
+      ctx.addIssue({
+        code: "custom",
+        path: [name],
+        message: `${name} is required in production: the provider's addresses, or "${UNRESTRICTED}" with the accepted exception in docs/SECURITY_REVIEW.md`,
+      });
+    }
   }
   if (env.VNPAY_STUB && env.VERCEL_ENV === "production") {
     ctx.addIssue({ code: "custom", path: ["VNPAY_STUB"], message: "the VNPay stub is never allowed in production" });

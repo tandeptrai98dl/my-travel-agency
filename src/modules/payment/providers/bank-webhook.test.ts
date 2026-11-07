@@ -57,3 +57,13 @@ describe("bank webhook", () => {
     ]);
   });
 });
+
+// Phase 6 PR 6A (decision 2): Casso's current documentation (developer.casso.vn, webhook v2,
+// read 2026-11-07) says only that the configured security key is sent in a header, without naming
+// it, and that `data` is an array. Whether it is still `secure-token` or an `X-Casso-Signature`
+// HMAC is checked on the first real webhook with the owner's Casso account (owner item 9) and
+// recorded in docs/SECURITY_REVIEW.md; SePay also offers an HMAC-SHA256 signature with
+// `X-SePay-Timestamp`, a follow-up once its header format can be read from the owner's account.
+describe("bank webhook providers (waiting for owner item 9)", () => {
+  it.todo("Casso: the authentication header of a real webhook matches authorized()");
+});

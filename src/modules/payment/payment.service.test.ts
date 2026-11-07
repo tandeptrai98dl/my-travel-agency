@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { type IpAllowList, parseAllowList } from "@/lib/ip-allowlist";
+
 import { sign } from "./providers/vnpay";
 
 vi.mock("server-only", () => ({}));
 const revalidateTag = vi.fn();
 vi.mock("next/cache", () => ({ revalidateTag }));
-const logger = { error: vi.fn(), info: vi.fn() };
+const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
 vi.mock("@/lib/logger", () => ({ logger }));
 const captureMessage = vi.hoisted(() => vi.fn());
 vi.mock("@sentry/nextjs", () => ({ captureMessage }));
@@ -18,8 +20,13 @@ const config = {
 const configState = {
   vnpay: config as typeof config | null,
   bank: { provider: "sepay", secret: "a-long-bank-webhook-secret" } as { provider: "sepay" | "casso"; secret: string } | null,
+  allowList: { mode: "off" } as IpAllowList,
 };
-vi.mock("./payment.config", () => ({ vnpayConfig: () => configState.vnpay, bankWebhookConfig: () => configState.bank }));
+vi.mock("./payment.config", () => ({
+  vnpayConfig: () => configState.vnpay,
+  bankWebhookConfig: () => configState.bank,
+  webhookAllowList: () => configState.allowList,
+}));
 
 type Result = { data: unknown; error: null | { code?: string; message?: string } };
 const fn = (data: unknown) => vi.fn(async (...args: unknown[]): Promise<Result> => (void args, { data, error: null }));
@@ -34,7 +41,11 @@ vi.mock("./payment.repository", () => repo);
 const notifyBooking = vi.hoisted(() => vi.fn());
 vi.mock("@/modules/booking/booking-emails.service", () => ({ notifyBooking }));
 
-const { availableMethods, handleBankWebhook, handleVnpayIpn } = await import("./payment.service");
+const { availableMethods, handleBankWebhook, handleVnpayIpn, receiveVnpayIpn } = await import("./payment.service");
+
+/** An enforced allow-list (documentation ranges) and request headers from a given address. */
+const PROVIDER_RANGE = parseAllowList("203.0.113.0/24, 2001:db8::/32").list;
+const from = (ip: string, extra: Record<string, string> = {}) => new Headers({ "x-forwarded-for": ip, ...extra });
 
 const ipn = (patch: Record<string, string> = {}) => {
   const params = {
@@ -53,6 +64,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   configState.vnpay = config;
   configState.bank = { provider: "sepay", secret: "a-long-bank-webhook-secret" };
+  configState.allowList = { mode: "off" };
   repo.findPaymentByReference.mockResolvedValue({ data: payment, error: null });
   repo.recordPaymentEvent.mockResolvedValue({ data: { result: "recorded", booking_id: "b-1", status: "confirmed", needs_attention: false }, error: null });
 });
@@ -131,6 +143,48 @@ describe("VNPay IPN", () => {
   });
 });
 
+describe("VNPay IPN source allow-list (Phase 6 decision 2)", () => {
+  it("passes every source while the list is off, as before", async () => {
+    expect(await receiveVnpayIpn(ipn(), from("192.0.2.1"))).toEqual({ status: 200, body: { RspCode: "00", Message: "Confirm Success" } });
+    configState.allowList = { mode: "unrestricted" };
+    expect((await receiveVnpayIpn(ipn(), new Headers())).status).toBe(200);
+  });
+
+  it("refuses an address outside the list with 403 and records nothing; unsigned noise is logged only", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect(await receiveVnpayIpn({ ...ipn(), vnp_Amount: "1" }, from("192.0.2.1"))).toEqual({ status: 403, body: { RspCode: "99", Message: "Unknown error" } });
+    expect(await receiveVnpayIpn(null, new Headers())).toMatchObject({ status: 403 });
+    // A spoofed second hop does not help: only the first x-forwarded-for hop counts.
+    expect(await receiveVnpayIpn({ ...ipn(), vnp_Amount: "1" }, from("192.0.2.1, 203.0.113.9"))).toMatchObject({ status: 403 });
+    expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith("payment.webhook_source_refused", { provider: "vnpay", signed: false });
+    expect(captureMessage).not.toHaveBeenCalledWith("payment.webhook_source_refused", expect.anything());
+  });
+
+  it("reports a correctly signed IPN from an unlisted address as an error (the list is out of date)", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect((await receiveVnpayIpn(ipn(), from("192.0.2.1"))).status).toBe(403);
+    expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+    expect(captureMessage).toHaveBeenCalledWith("payment.webhook_source_refused", {
+      level: "error",
+      tags: { "payment.webhook": "vnpay", "payment.event": "payment.webhook_source_refused" },
+      fingerprint: ["payment", "payment.webhook_source_refused", "vnpay"],
+    });
+  });
+
+  it("handles a listed address (IPv4 or IPv6), and a bad signature from it is an unsampled error", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect(await receiveVnpayIpn(ipn(), from("203.0.113.9"))).toEqual({ status: 200, body: { RspCode: "00", Message: "Confirm Success" } });
+    expect(repo.recordPaymentEvent).toHaveBeenCalledTimes(1);
+    expect((await receiveVnpayIpn(ipn(), from("2001:db8::7"))).status).toBe(200);
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    expect(await receiveVnpayIpn({ ...ipn(), vnp_Amount: "1" }, from("203.0.113.9"))).toEqual({ status: 200, body: { RspCode: "97", Message: "Invalid Checksum" } });
+    vi.mocked(Math.random).mockRestore();
+    expect(captureMessage).toHaveBeenCalledWith("payment.vnpay_bad_signature", expect.objectContaining({ level: "error" }));
+    expect(await receiveVnpayIpn(null, from("203.0.113.9"))).toEqual({ status: 200, body: { RspCode: "97", Message: "Invalid Checksum" } });
+  });
+});
+
 describe("bank webhook", () => {
   const credit = { id: 7, transferType: "in", transferAmount: 3_000_000, content: "PTA2611004201" };
   const auth = new Headers({ Authorization: "Apikey a-long-bank-webhook-secret" });
@@ -144,6 +198,26 @@ describe("bank webhook", () => {
     vi.mocked(Math.random).mockRestore();
     expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
     expect(captureMessage).toHaveBeenCalledWith("payment.bank_webhook_unauthorized", expect.objectContaining({ level: "warning", tags: { "payment.webhook": "sepay", "payment.event": "payment.bank_webhook_unauthorized" } }));
+  });
+
+  it("refuses a source outside the allow-list before the key (403); a valid key from there is an error", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect(await handleBankWebhook(from("192.0.2.1"), credit)).toEqual({ status: 403, body: { success: false } });
+    expect(logger.warn).toHaveBeenCalledWith("payment.webhook_source_refused", { provider: "sepay", signed: false });
+    expect(captureMessage).not.toHaveBeenCalled();
+    expect(await handleBankWebhook(from("192.0.2.1", { Authorization: "Apikey a-long-bank-webhook-secret" }), credit)).toEqual({ status: 403, body: { success: false } });
+    expect(captureMessage).toHaveBeenCalledWith("payment.webhook_source_refused", expect.objectContaining({ level: "error", tags: expect.objectContaining({ "payment.webhook": "sepay" }) }));
+    expect(repo.recordPaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it("records from a listed address; a wrong key from there is an unsampled error", async () => {
+    configState.allowList = PROVIDER_RANGE;
+    expect(await handleBankWebhook(from("203.0.113.20", { Authorization: "Apikey a-long-bank-webhook-secret" }), credit)).toEqual({ status: 200, body: { success: true } });
+    expect(repo.recordPaymentEvent).toHaveBeenCalledTimes(1);
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    expect(await handleBankWebhook(from("203.0.113.20", { Authorization: "Apikey wrong" }), credit)).toEqual({ status: 401, body: { success: false } });
+    vi.mocked(Math.random).mockRestore();
+    expect(captureMessage).toHaveBeenCalledWith("payment.bank_webhook_unauthorized", expect.objectContaining({ level: "error" }));
   });
 
   it("records an incoming credit as a bank-transfer event", async () => {

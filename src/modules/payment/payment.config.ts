@@ -1,6 +1,7 @@
 import "server-only";
 
 import { serverEnv, validatedPublicEnv } from "@/lib/env/server";
+import type { IpAllowList } from "@/lib/ip-allowlist";
 
 import type { VnpayConfig } from "./providers/vnpay";
 
@@ -24,4 +25,12 @@ export function vnpayStubEnabled(): boolean {
 export function bankWebhookConfig(): { provider: "sepay" | "casso"; secret: string } | null {
   if (!serverEnv.BANK_WEBHOOK_PROVIDER || !serverEnv.BANK_WEBHOOK_SECRET) return null;
   return { provider: serverEnv.BANK_WEBHOOK_PROVIDER, secret: serverEnv.BANK_WEBHOOK_SECRET };
+}
+
+/**
+ * The source allow-list of a webhook (docs/specs/phase-6-hardening-launch.md decision 2): off,
+ * unrestricted (an accepted exception) or the provider's addresses; validated by the env schema.
+ */
+export function webhookAllowList(webhook: "vnpay" | "bank"): IpAllowList {
+  return webhook === "vnpay" ? serverEnv.VNPAY_IPN_ALLOWED_IPS : serverEnv.BANK_WEBHOOK_ALLOWED_IPS;
 }

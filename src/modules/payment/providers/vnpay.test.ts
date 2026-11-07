@@ -97,3 +97,15 @@ describe("IPN checks", () => {
     expect(odd.ok && odd.reportedAmount).toBe(0);
   });
 });
+
+// Phase 6 PR 6A (docs/specs/phase-6-hardening-launch.md decision 2; Phase 4 spec "Before go-live"):
+// real VNPay sandbox IPNs for a cancelled and a failed payment, with their empty `vnp_*` values,
+// pin down how the signature treats empty parameters (signData() leaves them out). They need the
+// owner's VNPay sandbox merchant (owner item 8): paste each IPN's query string, signed with the
+// sandbox secret, as a vector here and assert checkIpn() accepts it as `succeeded: false`. Never
+// commit the real secret: re-sign the captured parameters with the test `config.hashSecret` and
+// keep VNPay's own hash only as a comment of where it came from.
+describe("VNPay sandbox vectors (waiting for owner item 8)", () => {
+  it.todo("a cancelled payment (vnp_ResponseCode 24) from the sandbox verifies and records as failed");
+  it.todo("a failed payment (vnp_TransactionStatus 02) with empty vnp_* values from the sandbox verifies and records as failed");
+});
