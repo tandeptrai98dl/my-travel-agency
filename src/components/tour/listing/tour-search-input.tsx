@@ -29,7 +29,7 @@ export function TourSearchInput({ defaultValue, label, placeholder, clearLabel }
 
   const schedule = () => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(apply, DEBOUNCE_MS);
+    timer.current = setTimeout(() => apply(), DEBOUNCE_MS);
   };
 
   return (
@@ -64,7 +64,7 @@ export function TourSearchInput({ defaultValue, label, placeholder, clearLabel }
             setValue("");
             if (timer.current) clearTimeout(timer.current);
             // Let React write the empty value before the form is read.
-            setTimeout(apply, 0);
+            setTimeout(() => apply(), 0);
             inputRef.current?.focus();
           }}
           className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

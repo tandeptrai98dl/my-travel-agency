@@ -22,7 +22,7 @@ import {
   serializeTourSearchParams,
 } from "@/modules/catalog/tour-search-params";
 
-import { FilterPanel } from "./filter-panel";
+import { FilterColumn, FilterSheet } from "./filter-panel";
 import { FilterSheetButton } from "./filter-sheet";
 import { TourGrid } from "./tour-grid";
 import { TourListingForm } from "./tour-listing-form";
@@ -90,9 +90,11 @@ export async function TourListingView({ locale, criteria, options, months, items
   const clearFiltersHref = listingHref(locale, { q: null, sort: criteria.sort });
   const contactHref = localizedPath(locale, features.inquiry ? "/tailor-made" : "/contact");
   const countText = t("count", { count: total });
+  const action = localizedPath(locale, "/tours");
+  const filterProps = { locale, criteria, options, months };
 
   return (
-    <TourListingForm action={localizedPath(locale, "/tours")} className="flex flex-col gap-10">
+    <TourListingForm action={action} sheet={<FilterSheet key={query} action={action} {...filterProps} />} className="flex flex-col gap-10">
       <div className="sticky top-[4.5rem] z-20 -mx-4 flex flex-col gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:flex-row md:items-center md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
         <TourSearchInput defaultValue={criteria.q ?? ""} label={t("search")} placeholder={t("searchPlaceholder")} clearLabel={t("clearSearch")} />
         <div className="flex items-center gap-3 md:ml-auto">
@@ -141,7 +143,7 @@ export async function TourListingView({ locale, criteria, options, months, items
 
       <div className="grid gap-10 lg:grid-cols-[264px_1fr] xl:grid-cols-[280px_1fr]">
         <div className="max-lg:contents lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
-          <FilterPanel key={query} locale={locale} criteria={criteria} options={options} months={months} />
+          <FilterColumn key={query} {...filterProps} />
         </div>
 
         <TourResults count={countText} heading={t("results")} updating={t("updating")} page={criteria.page}>
