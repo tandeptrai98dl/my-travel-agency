@@ -105,6 +105,15 @@ test.describe("tour listing", () => {
     await expect(sheet).toBeVisible();
     await sheet.getByRole("button", { name: "Đóng bộ lọc" }).click();
     await expect(sheet).toBeHidden();
+
+    // "Apply" is then a plain GET of the sheet's form: it keeps the toolbar's search and sort.
+    await page.goto("/tours?q=ha&sort=price_asc");
+    await open.click();
+    await sheet.getByRole("checkbox", { name: "Nước ngoài" }).check();
+    await sheet.getByRole("button", { name: "Áp dụng" }).click();
+    await expect(page).toHaveURL(/[?&]scope=international(&|$)/);
+    expect(new URL(page.url()).searchParams.get("q")).toBe("ha");
+    expect(new URL(page.url()).searchParams.get("sort")).toBe("price_asc");
   });
 
   test("mobile: the filter sheet stages choices until Apply and returns focus", async ({ page }) => {

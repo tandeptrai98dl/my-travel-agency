@@ -65,8 +65,19 @@ export function FilterSheetButton({ label }: { label: string }) {
  * The sheet's own form (outside the listing form, so forms never nest): changes are staged; Apply
  * sends them with the toolbar's search and sort and closes the sheet.
  */
-export function FilterSheetForm({ action, children, className }: { action: string; children: ReactNode; className?: string }) {
-  const { apply } = useListing();
+export function FilterSheetForm({
+  action,
+  children,
+  className,
+  toolbar,
+}: {
+  action: string;
+  children: ReactNode;
+  className?: string;
+  /** The toolbar's search and sort from the URL, for a native submit before hydration. */
+  toolbar: { name: string; value: string }[];
+}) {
+  const { apply, ready } = useListing();
   const ref = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -94,6 +105,12 @@ export function FilterSheetForm({ action, children, className }: { action: strin
         event.currentTarget.closest("dialog")?.close("apply");
       }}
     >
+      {/* Before hydration "Apply" is a plain GET of this form, which would drop the toolbar's
+          search and sort (they live in the listing form); these carry them. Disabled once React
+          runs, so apply() stays the only path with JavaScript. */}
+      {toolbar.map(({ name, value }) => (
+        <input key={name} type="hidden" name={name} value={value} disabled={ready} />
+      ))}
       {children}
     </form>
   );
