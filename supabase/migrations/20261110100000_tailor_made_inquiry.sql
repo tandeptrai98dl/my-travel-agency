@@ -48,8 +48,9 @@ begin
   if v_locale is null or v_locale not in ('vi', 'en') then
     raise exception 'invalid locale' using errcode = '22023';
   end if;
-  if privacy_version is null or btrim(privacy_version) = '' then
-    raise exception 'privacy version required' using errcode = '22023';
+  -- The published policy's version as content-public.service.ts writes it (same check as #42).
+  if privacy_version is null or privacy_version !~ '^privacy-(vi|en)-[0-9a-f]{16}$' then
+    raise exception 'invalid privacy version' using errcode = '22023';
   end if;
   if v_name is null or char_length(v_name) not between 1 and 120 then
     raise exception 'invalid name' using errcode = '22023';
@@ -96,7 +97,9 @@ begin
     select id into v_style from public.travel_styles where key = payload ->> 'travel_style' and status = 'published';
   end if;
   if nullif(payload ->> 'tour_code', '') is not null then
-    select id into v_tour from public.tours where code = btrim(payload ->> 'tour_code') and status = 'published';
+    -- The inquiry form is only on private tours' pages; group tours are booked online.
+    select id into v_tour from public.tours
+    where code = btrim(payload ->> 'tour_code') and status = 'published' and (v_source <> 'tour_inquiry' or type = 'private');
   end if;
   if v_source = 'tour_inquiry' and v_tour is null then
     raise exception 'tour not found' using errcode = '22023';

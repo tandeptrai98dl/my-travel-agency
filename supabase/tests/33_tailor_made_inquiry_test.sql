@@ -2,7 +2,7 @@
 -- validated input mapped to existing columns, the inquiry and its privacy consent in one
 -- transaction.
 begin;
-select plan(14);
+select plan(16);
 
 select ok(
   not has_function_privilege('anon', 'public.create_tailor_made_inquiry(jsonb, text, inet, text)', 'execute')
@@ -22,10 +22,14 @@ insert into public.destinations (id, key, type, status, sort_order) values
   ('70000000-0000-4000-8000-000000003302', 'tm-test-hidden', 'country', 'draft', 2);
 insert into public.travel_styles (id, key, status) values ('71000000-0000-4000-8000-000000003301', 'tm-test-style', 'published');
 insert into public.tours (id, code, type, scope, status, duration_days, duration_nights, from_price, hero_media_id) values
-  ('40000000-0000-4000-8000-000000003301', 'TM-PRV-01', 'private', 'domestic', 'draft', 5, 4, 1000000, '80000000-0000-4000-8000-000000003301');
+  ('40000000-0000-4000-8000-000000003301', 'TM-PRV-01', 'private', 'domestic', 'draft', 5, 4, 1000000, '80000000-0000-4000-8000-000000003301'),
+  ('40000000-0000-4000-8000-000000003302', 'TM-GRP-01', 'group', 'domestic', 'draft', 5, 4, 1000000, '80000000-0000-4000-8000-000000003301');
 insert into public.tour_translations (tour_id, locale, slug, title, summary, seo_description, is_published) values
-  ('40000000-0000-4000-8000-000000003301', 'vi', 'tm-kiem-thu', 'Kiểm thử', 'Tóm tắt', 'Mô tả', true);
-update public.tours set status = 'published', published_at = now() where id = '40000000-0000-4000-8000-000000003301';
+  ('40000000-0000-4000-8000-000000003301', 'vi', 'tm-kiem-thu', 'Kiểm thử', 'Tóm tắt', 'Mô tả', true),
+  ('40000000-0000-4000-8000-000000003302', 'vi', 'tm-kiem-thu-doan', 'Kiểm thử đoàn', 'Tóm tắt', 'Mô tả', true);
+insert into public.departures (tour_id, start_date, end_date, capacity, price_adult) values
+  ('40000000-0000-4000-8000-000000003302', current_date + 60, current_date + 64, 10, 1000000);
+update public.tours set status = 'published', published_at = now() where id in ('40000000-0000-4000-8000-000000003301', '40000000-0000-4000-8000-000000003302');
 
 create temporary table result on commit drop as
 select public.create_tailor_made_inquiry(
@@ -82,19 +86,27 @@ select is(
 );
 
 select throws_ok(
-  $$ select public.create_tailor_made_inquiry('{"source": "tour_inquiry", "locale": "vi", "name": "C", "email": "c@example.com", "tour_code": "NOPE-01", "adults": 2}'::jsonb, 'v') $$,
+  $$ select public.create_tailor_made_inquiry('{"source": "tour_inquiry", "locale": "vi", "name": "C", "email": "c@example.com", "tour_code": "NOPE-01", "adults": 2}'::jsonb, 'privacy-vi-0123456789abcdef') $$,
   '22023', 'tour not found', 'a tour inquiry needs a published tour'
 );
 select throws_ok(
-  $$ select public.create_tailor_made_inquiry('{"source": "tailor_made", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 0}'::jsonb, 'v') $$,
+  $$ select public.create_tailor_made_inquiry('{"source": "tour_inquiry", "locale": "vi", "name": "C", "email": "c@example.com", "tour_code": "TM-GRP-01", "adults": 2}'::jsonb, 'privacy-vi-0123456789abcdef') $$,
+  '22023', 'tour not found', 'a tour inquiry is only for a private tour (group tours are booked online)'
+);
+select throws_ok(
+  $$ select public.create_tailor_made_inquiry('{"source": "tailor_made", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 2}'::jsonb, 'v1') $$,
+  '22023', 'invalid privacy version', 'the privacy version must be a published policy version'
+);
+select throws_ok(
+  $$ select public.create_tailor_made_inquiry('{"source": "tailor_made", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 0}'::jsonb, 'privacy-vi-0123456789abcdef') $$,
   '22023', 'invalid party', 'at least one adult'
 );
 select throws_ok(
-  $$ select public.create_tailor_made_inquiry('{"source": "tailor_made", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 2, "travel_month": "2001-01"}'::jsonb, 'v') $$,
+  $$ select public.create_tailor_made_inquiry('{"source": "tailor_made", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 2, "travel_month": "2001-01"}'::jsonb, 'privacy-vi-0123456789abcdef') $$,
   '22023', 'invalid travel month', 'a past month is refused'
 );
 select throws_ok(
-  $$ select public.create_tailor_made_inquiry('{"source": "contact", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 2}'::jsonb, 'v') $$,
+  $$ select public.create_tailor_made_inquiry('{"source": "contact", "locale": "vi", "name": "C", "email": "c@example.com", "adults": 2}'::jsonb, 'privacy-vi-0123456789abcdef') $$,
   '22023', 'invalid source', 'only the wizard and tour form sources'
 );
 
