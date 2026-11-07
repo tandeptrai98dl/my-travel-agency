@@ -60,7 +60,7 @@ Every integration has an off mode; nothing fails open in a way that exposes data
 6. **Earlier bookings attach after verification.** `attach_customer_bookings()` (`security definer`, authenticated) sets `customer_id = auth.uid()` on bookings whose `lower(contact_email)` equals the user's email **only when `auth.users.email_confirmed_at` is set**, and only where `customer_id` is null. It writes a `booking_events` row (`attached_to_account`) per booking and returns the count. Called after every successful sign-in, email confirmation and OAuth callback (idempotent). A Google address counts as verified by Google. An email change re-runs it after the new address is confirmed; bookings already attached to another account never move.
 7. **Guest booking lookup** (`/tra-cuu-booking`, `/en/booking-lookup`):
    - Form: booking code and email, Turnstile, decision 2's limits. The answer is always "if the details match, we have emailed a link", whatever matched.
-   - On a match, a single-use token (32 random bytes; only its SHA-256 stored) valid for `settings.booking_rules.booking_lookup_link_minutes` (default 30) is emailed to the booking's contact address (template `booking_lookup`, exactly-once key per token, ADR-036). New table `booking_lookup_tokens (id, booking_id, token_hash unique, expires_at, used_at, created_at)`, RLS on, no API-role policy; issue and redeem only through service-role functions (`issue_booking_lookup`, `redeem_booking_lookup`).
+   - On a match, a single-use token (32 random bytes; only its SHA-256 stored) valid for `settings.booking_rules.booking_lookup_link_minutes` (default 30) is emailed to the booking's contact address (template `booking_lookup`, exactly-once key per token, ADR-036). Tokens live in `booking_access_tokens` with purpose `lookup` (the single-use table of ADR-038, PR #39), issued and redeemed only through its service-role functions; issuing for a lookup also needs the code and email to match (`issue_booking_lookup(code, email, token_hash, minutes)`, a thin wrapper that returns nothing either way).
    - The link page shows a button; the click redeems the token once and sets the booking's access cookie (Phase 4 decision 7), then opens the checkout summary. Scanners that GET the page use nothing.
    - Stream A sets nothing in the public shell; Stream B flips `features.bookingLookup` to show the footer link once this PR is merged.
 8. **Data deletion** (Decree 13/2023/ND-CP; verify with legal counsel before launch):
@@ -125,7 +125,7 @@ One pull request per group, one commit per step. Every Server Action and Route H
 
 ### PR 5B — Guest booking lookup and deletion (Stream A)
 
-6. Migration `*_booking_lookup.sql`: `booking_lookup_tokens`, `issue_booking_lookup()`, `redeem_booking_lookup()`; `anonymise_customer()` and its admin wrapper. pgTAP.
+6. Migration `*_booking_lookup.sql`: `issue_booking_lookup()` over `booking_access_tokens` (purpose `lookup`); `anonymise_customer()` and its admin wrapper. pgTAP.
 7. Lookup page, link page with the redeem button, `booking_lookup` email (VI/EN). Deletion request in the account area (decision 8) with the Auth Admin API steps. E2E: lookup with right and wrong details gives the same answer, the emailed link works once, deletion signs the user out for good and unlinks bookings.
 
 ### PR 5C — Inquiry inbox (Stream A)
