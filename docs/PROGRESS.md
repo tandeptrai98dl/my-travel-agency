@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; Phase 3 in progress (Stream B: PRs H–K merged, L and M left); Phase 4 in progress (Stream A: 4A, 4C, 4F merged; 4B in review; 4D and 4E left); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: 4B (#32, in review), then 4D (quotes and payment links) and 4E (emails). Stream B: PR L (tour listing, booking box links to 4B), then PR M (SEO, CSP, redirects, real 404/308). Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 4 code-complete (acceptance needs the owner's payment sandbox and staging); 3 in progress (PR M left); 5 starting (spec); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 5 spec, then accounts, booking lookup, inquiry inbox and operations, plus a small Phase 4 polish. Stream B: Phase 3 PR M (SEO, CSP, redirects, real 404/308, JS budget, online-booking availability), then the Phase 5 tailor-made wizard. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -21,7 +21,48 @@ Open items:
 - Before go-live (Phase 4 spec): VNPay sandbox vectors for cancelled and failed IPNs, SePay/Casso/VNPay source-IP allow-lists, Casso signature check, `VNPAY_STUB` never on staging with real-looking data.
 - Contact form and newsletter stay disabled until the owner's Turnstile, Upstash and Resend keys exist and a privacy policy is published.
 
+- Emails (PR 4E review): alert or runbook for `email_logs` rows stuck in `queued` and for `failed` sends, plus a staff "resend"; `skipped` keys are spent for good (README); the emailed access token is reusable for 7 days (record or make single use); payment-link email through `after()`.
+- Before staging (PR L review): the trust bar and booking box must claim online payment only when a payment method is configured (PR M).
+
 ## Log
+
+### 2026-11-07 (Phase 4 — 4E: transactional emails)
+
+PR #36, branch `feat/p4-emails` (ADR-036; migrations `20261109170000`, `20261109171000`).
+
+- VI/EN templates (booking received, payment received, booking confirmed, payment link, balance reminder, cancelled) plus a staff alert; `@react-email/render` with in-house primitives (the component packages are deprecated).
+- Exactly once: the `email_logs` row with a unique `dedupe_key` is written before the Resend call; sending runs after the commit through `after()`, keyed on `booking_events`. Without Resend every email is a `skipped` row; logs keep only the status code.
+- Emailed checkout links carry the booking's access token; only a button press sets the cookie (mail scanners see nothing).
+- #34 backlog closed: quotes for private tours only, snapshot title fallback, a Sentry `transaction` leak of `/en/pay/<token>` fixed, a used link offers the existing checkout.
+- Verified: 681 unit tests, pgTAP 21 and 22, CI green.
+- Independent review: approved; backlog below.
+
+### 2026-11-07 (Phase 3 — PR L: tour listing and site search)
+
+PR #35, branch `feat/p3-listing`.
+
+- `/tours`: every filter in the URL (search, scope, destination with children, style, price, month, duration, five sorts, page), 12 per page, mobile filter sheet, loading, empty and error states; filtered pages `noindex` with canonical `/tours`; ItemList JSON-LD.
+- `/tim-kiem` (`search_site()`, invoker, published rows only); "see all" links from destination and style pages.
+- Booking box links group tours to the booking page (`bookingHref`); `features.booking` on; booking lookup link behind `features.bookingLookup`.
+- Seed grows to 31 VI and 29 EN tours. Initial JS: `/tours` 149.8 KB (0.2 KB under the budget).
+- Independent review: approved; backlog below (the trust bar and booking box must not claim online payment before it is configured, fixed in PR M).
+
+### 2026-11-07 (Phase 4 — 4D: quotes and payment links)
+
+PR #34, branch `feat/p4-quotes` (migration `20261109150000`).
+
+- `create_quote` (sales roles and admin at aal2), `create_payment_link` (256-bit token stored as SHA-256, amount due now, capped at the quote's expiry), `redeem_payment_link` (single use under a row lock); `/admin/bookings/new` and a payment-link panel; customer page `/thanh-toan/link/[token]` consumes the link only on the button press.
+- Verified: pgTAP 20; E2E from quote to paid link and a reused link; CI green.
+- Independent review: approved; backlog closed in #36.
+
+### 2026-11-07 (Phase 4 — 4B: book-now flow and checkout)
+
+PR #32, branch `feat/p4-checkout` (migration `20261109140000`).
+
+- Secure root `src/app/(secure)/[locale]`: fully dynamic, nonce CSP with `strict-dynamic` from the proxy (ADR-027).
+- `/dat-tour/[tourSlug]` (server prices, Turnstile, rate limits with `failOpen`), `/thanh-toan/[code]` (VNPay redirect, VietQR, real hold countdown), result page polling `booking_checkout_status()`; signed `booking_access_<code>` cookie; `create_checkout_draft()` writes draft and consent in one transaction; a stale draft price is repriced on Pay.
+- `z.config({ jitless: true })` because Zod's probe breaks under the nonce CSP.
+- Independent review: changes requested (major: a draft whose price changed could never be paid), fixed; re-review approved.
 
 ### 2026-11-07 (Phase 3: PR K, pages, journal, reviews, contact)
 
@@ -466,5 +507,4 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
-- Phase 4: when the `/pay/[token]` routes land, extend the Sentry unit test to check the envelope header (`trace.transaction`) for tokens too.
 - Phase 3: the CSP needs `connect-src` for the Sentry ingest host (or a Sentry `tunnelRoute`). Phase 6 legal pages: the privacy policy must name Sentry as a processor.
