@@ -34,3 +34,12 @@ export function languagePairs(rows: SlugRow[], route: SlugRoute): [source: strin
   }
   return pairs;
 }
+
+/**
+ * Topics that render in a language: those with a published article in it (the topic page is a 404
+ * otherwise, so neither a redirect to it nor its slug as a real page may count).
+ */
+export function liveTopicRows(topics: SlugRow[], posts: { category_id: string | null; post_translations: { locale: string }[] }[]): SlugRow[] {
+  const live = new Set(posts.flatMap((post) => (post.category_id ? post.post_translations.map((t) => `${post.category_id}:${t.locale}`) : [])));
+  return topics.filter((row) => live.has(`${row.id}:${row.locale}`));
+}

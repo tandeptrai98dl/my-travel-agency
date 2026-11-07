@@ -24,11 +24,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   const { file } = await params;
   const type = file.endsWith(".xml") ? file.slice(0, -4) : "";
   if (!isSitemapType(type)) return new Response("Not found", { status: 404 });
-  try {
-    const entries = await READERS[type]();
-    return new Response(urlsetXml(entries, siteUrl), { headers: { "content-type": "application/xml; charset=utf-8" } });
-  } catch (error) {
-    console.error("sitemap failed", type, error instanceof Error ? error.message : error);
-    return new Response("Sitemap temporarily unavailable", { status: 503, headers: { "cache-control": "no-store", "retry-after": "60" } });
-  }
+  // A failed read throws (no try/catch): a background re-render that fails keeps serving the last
+  // good sitemap, and a build during an outage fails and leaves the previous deployment live. A
+  // caught error answered with a 503 replaced the cached sitemap until the next re-render.
+  const entries = await READERS[type]();
+  return new Response(urlsetXml(entries, siteUrl), { headers: { "content-type": "application/xml; charset=utf-8" } });
 }

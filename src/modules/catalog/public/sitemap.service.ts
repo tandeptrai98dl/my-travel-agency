@@ -15,7 +15,7 @@ import type { Locale } from "./types";
 /**
  * Catalog entries of sitemap.xml (Phase 3 spec step 19): the pages that render, per language,
  * cached with the tags the admin refreshes, so an unpublished page leaves the sitemap after the
- * save. Errors throw; the sitemap route answers 503 rather than an empty list.
+ * save. Errors throw rather than return an empty list, so a failed re-render keeps the last good sitemap.
  */
 
 function fail(what: string, error: { message: string }): never {
