@@ -15,7 +15,7 @@ import {
 } from "@/modules/catalog/tour-search-params";
 
 import { FilterSheetClose, FilterSheetReset } from "./filter-sheet";
-import { FILTER_PANEL_ID } from "./tour-listing-form";
+import { FILTER_PANEL_ID } from "./listing-ids";
 
 type Props = { locale: Locale; criteria: TourSearchCriteria; options: TourFilterOptions; months: string[] };
 

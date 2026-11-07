@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { CloseIcon, SlidersIcon } from "./icons";
 import { GHOST_BUTTON, OUTLINE_BUTTON } from "./listing-classes";
-import { FILTER_PANEL_ID } from "./tour-listing-form";
+import { FILTER_PANEL_ID } from "./listing-ids";
 
 function panel(): HTMLDialogElement | null {
   return document.getElementById(FILTER_PANEL_ID) as HTMLDialogElement | null;

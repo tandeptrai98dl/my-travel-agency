@@ -5,9 +5,8 @@ import { type FormEvent, type ReactNode, createContext, useCallback, useContext,
 
 import { parseTourSearchParams, serializeTourSearchParams } from "@/modules/catalog/tour-search-params";
 
-/** Id of the listing form; the filter panel is the `<dialog>` inside it with this id. */
-export const LISTING_FORM_ID = "tour-search";
-export const FILTER_PANEL_ID = "tour-filters";
+import { FILTER_PANEL_ID, LISTING_FORM_ID } from "./listing-ids";
+
 
 type ListingContext = {
   pending: boolean;
@@ -110,7 +109,7 @@ export function TourListingForm({ action, children, className }: { action: strin
       // A country or region includes the places below it: they show as chosen and step aside.
       target
         .closest("li")!
-        .querySelectorAll<HTMLInputElement>("ul input[name='dest']")
+        .querySelectorAll<HTMLInputElement>(":scope > ul input[name='dest']")
         .forEach((child) => {
           child.checked = target.checked;
           child.disabled = target.checked;

@@ -140,7 +140,7 @@ export async function TourListingView({ locale, criteria, options, months, items
       )}
 
       <div className="grid gap-10 lg:grid-cols-[264px_1fr] xl:grid-cols-[280px_1fr]">
-        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
+        <div className="max-lg:contents lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <FilterPanel key={query} locale={locale} criteria={criteria} options={options} months={months} />
         </div>
 

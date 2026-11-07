@@ -23,12 +23,13 @@ export type TourScope = (typeof TOUR_SCOPES)[number];
 /** Price bounds accepted in the URL (VND per adult). */
 export const TOUR_PRICE_LIMIT = 10_000_000_000;
 
-/** Price presets offered by the filter (VND per adult); open ends are null. */
+/** Price presets offered by the filter (VND per adult; tour-listing.md L4); open ends are null. */
 export const TOUR_PRICE_PRESETS: readonly { min: number | null; max: number | null }[] = [
   { min: null, max: 30_000_000 },
   { min: 30_000_000, max: 60_000_000 },
-  { min: 60_000_000, max: 120_000_000 },
-  { min: 120_000_000, max: null },
+  { min: 60_000_000, max: 100_000_000 },
+  { min: 100_000_000, max: 200_000_000 },
+  { min: 200_000_000, max: null },
 ];
 
 export const TOUR_QUERY_MIN = 2;
