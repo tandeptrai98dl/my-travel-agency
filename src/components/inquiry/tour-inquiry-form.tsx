@@ -54,7 +54,7 @@ export function TourInquiryForm({ locale, tourCode, siteKey, privacyHref, labels
     (invalid ?? statusRef.current)?.focus();
   }, [state, reset]);
 
-  if (state.status === "sent") return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} />;
+  if (state.status === "sent") return <LazyInquirySuccess code={state.code ?? null} labels={labels.success} locale={locale} source="tour_inquiry" />;
   const statusText = state.status !== "idle" ? (labels.errors[state.status] ?? labels.errors.failed) : disabled ? labels.unavailable : "";
 
   return (

@@ -6,6 +6,8 @@ export type Locale = "vi" | "en";
 /** One tour as cards show it (docs/specs/tour-listing.md §4.4). */
 export type TourCardItem = {
   id: string;
+  /** The tour's public code (analytics item id, ADR-039). */
+  code: string;
   slug: string;
   title: string;
   type: "group" | "private";

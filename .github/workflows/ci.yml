@@ -139,6 +139,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.api_url }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
+          # A fake GA4 measurement ID, so analytics is built in and tested (ADR-039). Every Google
+          # request in E2E is answered by tests/e2e/support/google.ts; nothing reaches Google.
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: G-E2ETEST000
           SHOW_DESIGN_SYSTEM: "true"
         run: npm run build
       - name: Check that server-only values did not leak into client bundles
@@ -214,6 +217,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ steps.supabase.outputs.publishable_key }}
           SEED_USER_PASSWORD: ci-only-seed-password-${{ github.run_id }}
           NEXT_PUBLIC_SENTRY_DSN: https://e2epublickey@o0.ingest.sentry.io/0
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: G-E2ETEST000
           # Server-only, read at run time by `next start`; never part of the build output.
           SUPABASE_SECRET_KEY: ${{ steps.supabase.outputs.service_key }}
           # Test setup only (generating email-link tokens).

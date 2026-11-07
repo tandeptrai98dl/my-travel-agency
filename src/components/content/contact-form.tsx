@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { generateLead } from "@/components/analytics/events";
+import { track } from "@/components/analytics/track";
 import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -65,6 +67,11 @@ export function ContactForm({ locale, siteKey, privacyHref, labels, tour = null 
   const disabled = !siteKey;
   const done = state.status === "sent";
   const errors = state.errors ?? {};
+
+  // GA4 (ADR-039): the message was received; nothing about it or its sender is sent.
+  useEffect(() => {
+    if (done) track(generateLead("contact"));
+  }, [done]);
 
   useEffect(() => {
     if (state.status === "idle") return;

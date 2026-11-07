@@ -15,7 +15,7 @@ import { getPublicSettings } from "@/modules/settings/settings.service";
 import { getPrivacyConsent } from "./content-public.service";
 import { confirmationEmail } from "./newsletter.email";
 import * as repo from "./newsletter.repository";
-import { type ConfirmStatus, type SubscribeStatus } from "./newsletter.schemas";
+import { type ConfirmStatus, type SubscribeStatus, type UnsubscribeStatus } from "./newsletter.schemas";
 import { createConfirmToken, hashToken, isTokenFresh } from "./newsletter.token";
 
 /** Sign-ups per IP per 10 minutes, and per address per day. */
@@ -119,4 +119,18 @@ export async function confirm(input: ConfirmInput): Promise<ConfirmStatus> {
     return "unavailable";
   }
   return data === true ? "confirmed" : "invalid";
+}
+
+/**
+ * Newsletter withdrawal (step 10a), from the unsubscribe page's button (a POST, so link scanners
+ * cannot unsubscribe anyone). Tokens carry 256 random bits and work once, so no rate limit is
+ * needed against guessing. Nothing about the token or the address is logged.
+ */
+export async function unsubscribe(token: string): Promise<UnsubscribeStatus> {
+  const { data, error } = await repo.unsubscribe(hashToken(token));
+  if (error) {
+    logger.error("newsletter.unsubscribe_failed", { code: error.code ?? null });
+    return "unavailable";
+  }
+  return data === "unsubscribed" || data === "already" ? data : "invalid";
 }

@@ -87,6 +87,8 @@ type Hosts = {
   supabaseUrl: string;
   /** NEXT_PUBLIC_SENTRY_DSN: the browser SDK sends errors to its ingest host. */
   sentryDsn?: string;
+  /** NEXT_PUBLIC_GA_MEASUREMENT_ID: with it, gtag.js and its hosts are allowed (ADR-039). */
+  gaMeasurementId?: string;
   /** React needs eval in development only. */
   development?: boolean;
 };
@@ -102,6 +104,15 @@ const origin = (value: string | undefined) => {
 };
 
 const TURNSTILE = "https://challenges.cloudflare.com";
+
+/**
+ * Google Analytics 4 through gtag.js, never Google Tag Manager (ADR-039): the script from the Tag
+ * Manager host, collection requests and pixels to the Analytics hosts. Only when a measurement ID
+ * is configured; without one nothing of Google's is allowed.
+ */
+const GA_SCRIPT_HOSTS = ["https://*.googletagmanager.com"];
+const GA_HOSTS = ["https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com"];
+const ga = (options: Hosts) => (options.gaMeasurementId ? { script: GA_SCRIPT_HOSTS, hosts: GA_HOSTS } : { script: [], hosts: [] });
 
 type Directive = [string, ...string[]];
 
@@ -125,14 +136,15 @@ function hosts({ supabaseUrl, sentryDsn }: Hosts) {
  */
 export function publicCsp(options: Hosts): string {
   const { supabase, list } = hosts(options);
+  const analytics = ga(options);
   return build(
     [
       ["default-src", "'self'"],
-      ["script-src", "'self'", "'unsafe-inline'", TURNSTILE, ...(options.development ? ["'unsafe-eval'"] : [])],
+      ["script-src", "'self'", "'unsafe-inline'", TURNSTILE, ...analytics.script, ...(options.development ? ["'unsafe-eval'"] : [])],
       ["style-src", "'self'", "'unsafe-inline'"],
-      ["img-src", "'self'", "data:", "blob:", ...(supabase ? [supabase] : [])],
+      ["img-src", "'self'", "data:", "blob:", ...(supabase ? [supabase] : []), ...analytics.hosts],
       ["font-src", "'self'"],
-      ["connect-src", "'self'", ...list(TURNSTILE)],
+      ["connect-src", "'self'", ...list(TURNSTILE), ...analytics.hosts],
       ["frame-src", TURNSTILE],
       ["form-action", "'self'"],
       ["base-uri", "'self'"],
@@ -143,18 +155,23 @@ export function publicCsp(options: Hosts): string {
   );
 }
 
-/** Checkout and account: nonce'd scripts, Turnstile, and VNPay's payment page as a form target. */
+/**
+ * Checkout and account: nonce'd scripts, Turnstile, and VNPay's payment page as a form target.
+ * gtag.js is loaded with the request nonce on the pages that may use it (book, checkout, result);
+ * its host stays in `script-src` for browsers without `'strict-dynamic'`.
+ */
 export function secureCsp({ nonce, paymentUrl, ...options }: NonceOptions & { paymentUrl?: string }): string {
   const { supabase, list } = hosts(options);
   const vnpay = origin(paymentUrl);
+  const analytics = ga(options);
   return build(
     [
       ["default-src", "'self'"],
-      ["script-src", "'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...(options.development ? ["'unsafe-eval'"] : [])],
+      ["script-src", "'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ...analytics.script, ...(options.development ? ["'unsafe-eval'"] : [])],
       ["style-src", "'self'", "'unsafe-inline'"],
-      ["img-src", "'self'", "data:", "blob:", ...(supabase ? [supabase] : [])],
+      ["img-src", "'self'", "data:", "blob:", ...(supabase ? [supabase] : []), ...analytics.hosts],
       ["font-src", "'self'"],
-      ["connect-src", "'self'", ...list(TURNSTILE)],
+      ["connect-src", "'self'", ...list(TURNSTILE), ...analytics.hosts],
       ["frame-src", TURNSTILE],
       ["form-action", "'self'", ...(vnpay ? [vnpay] : [])],
       ["base-uri", "'none'"],

@@ -181,6 +181,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"cookie_consents": {
+                  Row: {
+                    "action": string,"banner_version": string,"choices": NonNullable<Json>,"created_at": string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"banner_version": string,"choices": NonNullable<Json>,"created_at"?: string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id"?: never
+                  }
+                  Update: {
+                    "action"?: string,"banner_version"?: string,"choices"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale"],"record_id"?: never
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"departures": {
                   Row: {
                     "capacity": number,"created_at": string,"end_date": string,"id": string,"note": string | null,"price_adult": number,"price_child": number | null,"price_infant": number | null,"seats_reserved": number,"single_supplement": number | null,"start_date": string,"status": Database["public"]['Enums']["departure_status"],"tour_id": string,"updated_at": string
@@ -360,6 +374,26 @@ isOneToOne: false
       columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"newsletter_unsubscribe_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"subscriber_id": string,"token_hash": string,"used_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"subscriber_id": string,"token_hash": string,"used_at"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"subscriber_id"?: string,"token_hash"?: string,"used_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "newsletter_unsubscribe_tokens_subscriber_id_fkey"
+      columns: ["subscriber_id"]
+isOneToOne: false
+      referencedRelation: "subscribers"
       referencedColumns: ["id"]
     }
                   ]
@@ -1036,6 +1070,9 @@ isOneToOne: false
 "issue_booking_lookup":
 { Args: { "email": string,"target_code": string,"token_hash": string,"valid_minutes"?: number }; Returns: Json
                            },
+"issue_newsletter_unsubscribe_tokens":
+{ Args: { "p_subscriber_ids": (string)[],"p_token_hashes": (string)[] }; Returns: number
+                           },
 "itinerary_media_ids":
 { Args: { "itinerary": Json }; Returns: (string)[]
                            },
@@ -1069,11 +1106,17 @@ isOneToOne: false
 "payment_link_state":
 { Args: { "token_hash": string }; Returns: string
                            },
+"purge_cookie_consents":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "raise_on_email_problems":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"record_cookie_consent":
+{ Args: { "p_action": string,"p_analytics": boolean,"p_banner_version": string,"p_id": string,"p_locale": Database["public"]['Enums']["locale"],"p_marketing": boolean }; Returns: undefined
                            },
 "record_manual_payment":
 { Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json
@@ -1161,6 +1204,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number,"p_tour_id": string }; Returns: {
               "bookable": boolean,"end_date": string,"id": string,"note": string,"price_adult": number,"price_child": number,"price_infant": number,"seats_left": number,"single_supplement": number,"start_date": string,"status": Database["public"]['Enums']["departure_status"]
             }[]
+                           },
+"unsubscribe_newsletter":
+{ Args: { "p_token_hash": string }; Returns: string
                            },
 "update_draft_booking":
 { Args: { "payload": Json,"target_id": string }; Returns: undefined

@@ -71,7 +71,7 @@ Other services: Resend (email + Auth SMTP), Upstash Redis (rate limits, redirect
     │   ├── (public)/[locale]/    # public website (VI default, /en): prerendered, nonce-free CSP
     │   │   └── (site)/           # home, tours, tours/[slug], destinations, travel-styles,
     │   │                         # tailor-made, journal, about, reviews, contact, faq,
-    │   │                         # policies/[slug], search, newsletter/confirm
+    │   │                         # policies/[slug], search, newsletter/confirm, newsletter/unsubscribe
     │   ├── (secure)/[locale]/    # own root layout, fully dynamic with a nonce CSP (ADR-027; Phase 4–5)
     │   │   ├── (booking)/        # book/[tourSlug], checkout/[code] (payment, result),
     │   │   │                     # pay/[token], booking-lookup
@@ -116,13 +116,14 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | content | Journal, static pages, reviews, redirects | media |
 | media | Upload, image metadata, alt text | Supabase Storage |
 | notification | Transactional email, send log | Resend |
+| consent | Cookie-consent records (`cookie_consents`, ADR-039): the banner's and settings dialog's choices, rate-limited, through a service-role function | — |
 | settings, audit | System configuration, audit log | — |
 
 ## Data flow
 
 - **Reads**: Server Components call services; repositories use the server Supabase client (`@/lib/supabase/server`) so RLS applies to the signed-in user (or anon).
 - **Writes**: Server Actions validate with Zod, call `requireRole()` when staff-only, then call a service. Atomic changes (seat holds, payments) go through Postgres functions. After writes, call `revalidateTag()` / `updateTag()` for affected cache tags.
-- **Guest writes** (draft booking, inquiry, newsletter): Server Actions use the service-role client after Zod validation, Turnstile and rate limiting. anon has no direct INSERT rights.
+- **Guest writes** (draft booking, inquiry, newsletter, cookie-consent records): Server Actions use the service-role client after Zod validation, Turnstile and rate limiting. anon has no direct INSERT rights.
 - **Auth**: `proxy.ts` refreshes the session cookie. Layouts and actions verify the user with the Auth server (`getClaims()`/`getUser()`), never from cookie contents alone.
 
 ### Supabase clients
@@ -132,7 +133,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 | Browser | `lib/supabase/client.ts` | publishable | Client components reading public data (use sparingly) | Applies |
 | Server session | `lib/supabase/server.ts` | publishable + session cookie | Server Components, Server Actions for customers and staff | Applies per user |
 | Public (no session) | `lib/supabase/public.ts` | publishable, no cookies | Health check; public reads inside `"use cache"` functions (no user context) | Applies as anon |
-| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D) | Bypassed |
+| Admin | `lib/supabase/admin.ts` | secret (service role), server only | Payment webhooks, cron routes, guest writes after validation; media Storage staging and publishing after `requirePermission()` (ADR-023); staff invitations through the Auth Admin API after `requirePermission("staff.manage")` (ADR-032); the guest booking lookup and the customer deletion steps (ban, anonymise, soft delete) after the password or `requirePermission("customers.delete_data")` (Phase 5 PR 5B); the daily cron jobs after the `CRON_SECRET` check and the customer data export after `requirePermission("customers.delete_data")` (Phase 5 PR 5D); the newsletter unsubscribe tokens of the audited subscriber export after `requirePermission("newsletter.manage")` (Phase 6 PR 6P) | Bypassed |
 
 Staff always work through the session client so RLS is a second layer after `requireRole()`.
 
@@ -204,6 +205,7 @@ Vietnamese is the default without a prefix; English uses `/en`. Folder names use
 | Sales payment link | `/thanh-toan/link/[token]` | `/en/pay/[token]` |
 | Booking lookup (noindex; the emailed single-use link opens `/thanh-toan/[code]?access=…`) | `/tra-cuu-booking` | `/en/booking-lookup` |
 | Newsletter confirmation (noindex) | `/ban-tin/xac-nhan` | `/en/newsletter/confirm` |
+| Newsletter unsubscribe (noindex; single-use link from the subscriber export, acts on a button press; Phase 6 PR 6P) | `/ban-tin/huy` | `/en/newsletter/unsubscribe` |
 | Customer auth | `/dang-nhap`, `/dang-ky`, `/quen-mat-khau`, `/dat-lai-mat-khau` | `/en/login`, `/en/register`, `/en/forgot-password`, `/en/reset-password` |
 | Account | `/tai-khoan`, `/tai-khoan/booking`, `/tai-khoan/booking/[code]`, `/tai-khoan/ho-so` | `/en/account`, `/en/account/bookings`, `/en/account/bookings/[code]`, `/en/account/profile` |
 
@@ -219,7 +221,7 @@ Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tou
 
 **Supabase**: secret key only in server env vars (never `NEXT_PUBLIC_`); RLS on every table; `supabase db lint` in CI; Security Advisor clean before launch; `security definer` functions set `search_path = ''` and revoke execute from `public`, `anon`, `authenticated` unless intentionally public (e.g. `search_tours`).
 
-**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; CSP per page type (ADR-027): a nonce-free policy on cached public pages and `/auth/*`, and on checkout, account and admin fully dynamic rendering (root layout with `instant = false` and `connection()`) with a per-request nonce from the proxy and `'strict-dynamic'`; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms (its script loads on the first interaction with the form; CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` on public pages, ADR-029); redirects read from Redis, never from the database in `proxy.ts` (`HMGET` on `redirects`, saved in the admin, and `redirects:languages`, the other-language slugs rebuilt on every content save; only paths that pass the source rules are looked up; targets re-checked with the admin's site-path rules, 301/302 only, 50 ms timeout failing open, 60 s per-instance cache; `src/lib/redirect-lookup.ts`); uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
+**Application**: Zod on every input; no string-built SQL; Tiptap rendered from JSON through a node whitelist; CSP per page type (ADR-027; with a GA4 measurement ID the public and secure policies add `https://*.googletagmanager.com` to `script-src` and the Google Analytics and Tag Manager hosts to `connect-src` and `img-src`, ADR-039): a nonce-free policy on cached public pages and `/auth/*`, and on checkout, account and admin fully dynamic rendering (root layout with `instant = false` and `connection()`) with a per-request nonce from the proxy and `'strict-dynamic'`; HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; Upstash rate limits on sign-in, sign-up, inquiries, booking lookup, booking creation and payment start; Turnstile on public forms (its script loads on the first interaction with the form; CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` on public pages, ADR-029); redirects read from Redis, never from the database in `proxy.ts` (`HMGET` on `redirects`, saved in the admin, and `redirects:languages`, the other-language slugs rebuilt on every content save; only paths that pass the source rules are looked up; targets re-checked with the admin's site-path rules, 301/302 only, 50 ms timeout failing open, 60 s per-instance cache; `src/lib/redirect-lookup.ts`); uploads checked for real type, size and pixel count, then re-encoded (metadata stripped) before they are public; no SVG uploads.
 
 **Personal data and compliance** (verify with legal counsel): Vietnamese personal data rules (Decree 13/2023/ND-CP and the Personal Data Protection Law) — privacy policy, consent before collection, proof in `consent_records`, export and deletion on request; e-commerce website notification to the Ministry of Industry and Trade; company details and tour operator licence in the footer; no passport numbers on the website; audit log for bookings, payments and customer data; daily backups + PITR from launch; SPF, DKIM, DMARC on the sending domain.
 
@@ -229,6 +231,7 @@ Technical routes: `/sitemap.xml` (an index of `/sitemaps/<type>.xml`: pages, tou
 - JSON-LD: `TravelAgency` + `Organization`, `Product` + `Offer` for tours, `TouristTrip`/`ItemList`, `Article`, `BreadcrumbList`, `FAQPage`. `AggregateRating` only from verified reviews (P1).
 - Automatic 301 on slug change; Metadata API on every public page; Open Graph images from photos or generated per locale (ADR-028).
 - Search Console for both languages; GA4 events `view_item_list`, `view_item`, `begin_checkout`, `purchase`, `generate_lead`.
+- Analytics (Phase 6 PR 6P, ADR-039; off without `NEXT_PUBLIC_GA_MEASUREMENT_ID`): `CookieConsent` mounts `Analytics` (`src/components/analytics/`), which imports the gtag loader only once "analytics" is granted. Consent Mode v2: all four signals default to denied with `ads_data_redaction`, `update` grants `analytics_storage` (the `ad_*` signals only with "marketing"), then `config` with `send_page_view: false` and gtag.js loads (with the request nonce on secure pages). `page_view` is sent by hand with `page_location` = origin + route template from `pathnames` (`/checkout/[code]/result`; unknown paths `/404`), `page_referrer` reduced to another site's origin or this site's template, and `page_title` replaced by the template on routes with a code or token. GA is never loaded on `/pay/[token]`, the booking lookup, the account, customer sign-in, the newsletter confirmation and unsubscribe pages, or any page with an `access` query (the emailed-link redeem page). Events come from `events.ts` (catalog facts only; `purchase` carries an HMAC of the booking code as `transaction_id`, sent once per booking, deduplicated in `localStorage`), and `scrubParams()` drops any value that looks like a code, an address, a phone number, a UUID or a token. Withdrawal updates every signal to denied, sets `ga-disable-<id>`, sends nothing more and deletes the `_ga*` cookies. Enhanced measurement must stay off in the GA4 data stream (README).
 
 ## Performance
 

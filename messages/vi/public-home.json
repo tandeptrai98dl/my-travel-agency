@@ -90,6 +90,20 @@
     "consent": "Khi xác nhận, bạn đồng ý nhận bản tin theo {policy}.",
     "privacyLink": "chính sách bảo mật"
   },
+  "NewsletterUnsubscribe": {
+    "metaTitle": "Hủy nhận bản tin",
+    "title": "Hủy nhận bản tin",
+    "text": "Bấm nút bên dưới để ngừng nhận bản tin của chúng tôi. Bạn có thể đăng ký lại bất cứ lúc nào.",
+    "button": "Hủy nhận bản tin",
+    "doneTitle": "Bạn đã hủy nhận bản tin",
+    "doneText": "Bạn sẽ không còn nhận bản tin của chúng tôi. Email về các đặt chỗ của bạn không bị ảnh hưởng.",
+    "alreadyTitle": "Bạn đã hủy nhận bản tin trước đó",
+    "alreadyText": "Địa chỉ này không còn nhận bản tin của chúng tôi.",
+    "invalidTitle": "Liên kết không còn hiệu lực",
+    "invalidText": "Liên kết hủy đã được dùng hoặc không đầy đủ. Nếu bạn vẫn nhận bản tin, hãy dùng liên kết trong email mới nhất hoặc liên hệ với chúng tôi.",
+    "unavailable": "Chưa hủy được lúc này. Hãy thử lại sau ít phút.",
+    "backHome": "Về trang chủ"
+  },
   "NewsletterEmail": {
     "subject": "Xác nhận đăng ký bản tin {brand}",
     "greeting": "Xin chào,",

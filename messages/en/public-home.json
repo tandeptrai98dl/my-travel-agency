@@ -90,6 +90,20 @@
     "consent": "By confirming, you agree to receive the newsletter under our {policy}.",
     "privacyLink": "privacy policy"
   },
+  "NewsletterUnsubscribe": {
+    "metaTitle": "Unsubscribe from the newsletter",
+    "title": "Unsubscribe from the newsletter",
+    "text": "Press the button below and we will stop sending you our newsletter. You can sign up again at any time.",
+    "button": "Unsubscribe",
+    "doneTitle": "You have been unsubscribed",
+    "doneText": "You will not receive our newsletter any more. Emails about your bookings are not affected.",
+    "alreadyTitle": "You are already unsubscribed",
+    "alreadyText": "This address no longer receives our newsletter.",
+    "invalidTitle": "This link is no longer valid",
+    "invalidText": "The unsubscribe link has already been used or is not complete. If you still receive our newsletter, use the link in the latest email or contact us.",
+    "unavailable": "We could not unsubscribe you right now. Please try again in a few minutes.",
+    "backHome": "Back to the home page"
+  },
   "NewsletterEmail": {
     "subject": "Confirm your {brand} newsletter subscription",
     "greeting": "Hello,",

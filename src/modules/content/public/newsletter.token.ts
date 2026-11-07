@@ -11,6 +11,15 @@ export function createConfirmToken(now: Date = new Date()): { token: string; has
   return { token, hash: hashToken(token) };
 }
 
+/**
+ * Unsubscribe tokens (Phase 6 step 10a): 32 random bytes, base64url (43 characters), one per
+ * subscriber per export; only the SHA-256 is stored, and each works once.
+ */
+export function createUnsubscribeToken(): { token: string; hash: string } {
+  const token = randomBytes(32).toString("base64url");
+  return { token, hash: hashToken(token) };
+}
+
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }

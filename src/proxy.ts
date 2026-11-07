@@ -73,6 +73,7 @@ export async function proxy(request: NextRequest) {
   const hosts = {
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
     development: process.env.NODE_ENV === "development",
   };
   let policy: string | null = null;

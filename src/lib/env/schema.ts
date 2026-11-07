@@ -48,6 +48,12 @@ export const publicEnvSchema = z.object({
   // Cloudflare Turnstile site key for public forms (ADR-014). Optional until the owner's account
   // exists: without it (or the secret) the forms that need it show a disabled state.
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: optionalString,
+  // Google Analytics 4 measurement ID (ADR-039). Without it nothing of Google's loads and the CSP
+  // allows no Google host; with it, gtag.js loads only after the visitor grants "analytics".
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().regex(/^G-[A-Z0-9]{4,16}$/, "must be a GA4 measurement ID (G-XXXXXXXXXX)").optional(),
+  ),
 });
 
 export const serverEnvSchema = z

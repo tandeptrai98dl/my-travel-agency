@@ -9,6 +9,8 @@ import { Container } from "@/components/layout/container";
 import { itemListJsonLd } from "@/components/seo/item-list-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { TourGridSkeleton } from "@/components/tour/listing/tour-grid-skeleton";
+import { AnalyticsEvent } from "@/components/analytics/analytics-event";
+import { viewItemList } from "@/components/analytics/events";
 import { TourListingCta, TourListingNone, TourListingView } from "@/components/tour/listing/tour-listing-view";
 import { SectionHeading } from "@/components/typography/section-heading";
 import { getPathname } from "@/i18n/navigation";
@@ -95,6 +97,13 @@ async function Listing({ locale, searchParams, listName }: { locale: Locale; sea
   return (
     <>
       {result.items.length > 0 && <JsonLd data={itemListJsonLd(listName, result.items.map((tour) => tourPath(tour.slug)))} />}
+      {result.items.length > 0 && (
+        // GA4 (ADR-039), once per page of results; sent only after consent.
+        <AnalyticsEvent
+          key={result.items.map((tour) => tour.id).join()}
+          event={viewItemList("tours", result.items.map((tour) => ({ code: tour.code, title: tour.title, price: tour.displayPrice })))}
+        />
+      )}
       <TourListingView
         locale={locale}
         criteria={result.criteria}

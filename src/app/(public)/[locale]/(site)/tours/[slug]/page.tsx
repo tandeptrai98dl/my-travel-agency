@@ -3,6 +3,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { tourInquiryLabels } from "@/components/inquiry/inquiry-labels";
+import { AnalyticsEvent } from "@/components/analytics/analytics-event";
+import { viewItem } from "@/components/analytics/events";
 import { TourDetailView } from "@/components/tour/tour-detail-view";
 import { getPathname } from "@/i18n/navigation";
 import { slugParams } from "@/i18n/static-params";
@@ -89,15 +91,19 @@ export default async function TourDetailPage({ params }: Props) {
         })()
       : null;
   return (
-    <TourDetailView
-      locale={locale}
-      tour={tour}
-      related={related}
-      reviews={reviews}
-      contact={{ phone: settings.contact?.phone ?? null, email: settings.contact?.email ?? null }}
-      onlineBooking={onlineBooking}
-      loadDepartures={getTourDepartures}
-      inquiry={inquiry}
-    />
+    <>
+      <TourDetailView
+        locale={locale}
+        tour={tour}
+        related={related}
+        reviews={reviews}
+        contact={{ phone: settings.contact?.phone ?? null, email: settings.contact?.email ?? null }}
+        onlineBooking={onlineBooking}
+        loadDepartures={getTourDepartures}
+        inquiry={inquiry}
+      />
+      {/* GA4 (ADR-039): sent only after consent, with catalog facts only. */}
+      <AnalyticsEvent event={viewItem({ code: tour.code, title: tour.title, price: tour.fromPrice })} />
+    </>
   );
 }

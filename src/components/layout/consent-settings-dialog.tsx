@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { type ConsentChoice, ESSENTIAL_ONLY } from "@/lib/consent";
+import { type ConsentChoice, type ConsentSource, ESSENTIAL_ONLY } from "@/lib/consent";
 import { useLabels } from "./labels";
 
 type Props = {
@@ -20,7 +20,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   draft: ConsentChoice;
   onDraftChange: (update: (draft: ConsentChoice) => ConsentChoice) => void;
-  onSave: (choice: ConsentChoice) => void;
+  onSave: (choice: ConsentChoice, source: ConsentSource) => void;
   /** Where focus goes when the dialog closes (it has no Radix trigger). */
   onCloseAutoFocus: () => void;
 };
@@ -73,10 +73,10 @@ export default function ConsentSettingsDialog({
           </ConsentRow>
         </ul>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onSave(ESSENTIAL_ONLY)}>
+          <Button variant="outline" onClick={() => onSave(ESSENTIAL_ONLY, "essential_only")}>
             {t("rejectAll")}
           </Button>
-          <Button onClick={() => onSave(draft)}>{t("save")}</Button>
+          <Button onClick={() => onSave(draft, "custom")}>{t("save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

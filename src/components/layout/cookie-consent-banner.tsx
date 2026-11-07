@@ -7,14 +7,19 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   ALL_ACCEPTED,
+  consentAction,
   CONSENT_EVENT,
   CONSENT_OPEN_EVENT,
   type ConsentChoice,
   consentCookieString,
+  type ConsentSource,
   ESSENTIAL_ONLY,
+  newConsentId,
   readConsentCookie,
+  readConsentRecord,
 } from "@/lib/consent";
-import { useLabels } from "./labels";
+import { recordChoice } from "./consent-record";
+import { useLabels, useShellLocale } from "./labels";
 
 // The settings dialog (Radix dialog + switch) loads only when opened, keeping it out of the
 // initial JS on public pages.
@@ -35,6 +40,7 @@ function focusMain() {
  */
 export function CookieConsentBanner({ privacyHref, openSettingsFrom = false }: { privacyHref: string; openSettingsFrom?: HTMLElement | null | false }) {
   const t = useLabels("Consent");
+  const locale = useShellLocale();
   const titleId = useId();
   const [decided, setDecided] = useState<ConsentChoice | null | undefined>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -71,15 +77,20 @@ export function CookieConsentBanner({ privacyHref, openSettingsFrom = false }: {
     document.documentElement.toggleAttribute("data-consent-open", bannerVisible);
   }, [bannerVisible]);
 
-  const save = useCallback((choice: ConsentChoice) => {
+  const save = useCallback((choice: ConsentChoice, source: ConsentSource) => {
     const focusWasInBanner = bannerRef.current?.contains(document.activeElement) ?? false;
-    document.cookie = consentCookieString(choice, window.location.protocol === "https:");
+    // The choice applies first (cookie and event); recording its proof follows and may fail
+    // without blocking it (ADR-039). A changed choice keeps the cookie's pseudonymous record id.
+    const previous = readConsentRecord(document.cookie);
+    const id = previous?.id ?? newConsentId();
+    document.cookie = consentCookieString(choice, window.location.protocol === "https:", id);
     setDecided(choice);
     setSettingsOpen(false);
     window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: choice }));
+    void recordChoice(id, consentAction(previous?.choice ?? null, choice, source), choice, locale);
     // The banner disappears with the focused button; continue from the main content.
     if (focusWasInBanner) requestAnimationFrame(focusMain);
-  }, []);
+  }, [locale]);
 
   const restoreFocus = useCallback(() => {
     const opener = openerRef.current;
@@ -125,11 +136,11 @@ export function CookieConsentBanner({ privacyHref, openSettingsFrom = false }: {
               </NextLink>
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <button type="button" className={buttonVariants()} onClick={() => save(ALL_ACCEPTED)}>
+              <button type="button" className={buttonVariants()} onClick={() => save(ALL_ACCEPTED, "accept_all")}>
                 {t("acceptAll")}
               </button>
               {/* Same weight as "Accept all": refusing is as easy as accepting. */}
-              <button type="button" className={buttonVariants()} onClick={() => save(ESSENTIAL_ONLY)}>
+              <button type="button" className={buttonVariants()} onClick={() => save(ESSENTIAL_ONLY, "essential_only")}>
                 {t("rejectAll")}
               </button>
               <button

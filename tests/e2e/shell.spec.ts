@@ -103,7 +103,8 @@ test.describe("cookie consent", () => {
     await banner.getByRole("button", { name: "Essential only" }).click();
     await expect(banner).toBeHidden();
     const consent = (await page.context().cookies()).find((c) => c.name === "consent");
-    expect(consent?.value).toBe("v1.a0.m0");
+    // The choice and its pseudonymous record id (cookie_consents.id, ADR-039).
+    expect(consent?.value).toMatch(/^v1\.a0\.m0\.[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
     await page.reload();
     await expect(page.getByRole("region", { name: "Cookies on this website" })).toBeHidden();
@@ -119,7 +120,8 @@ test.describe("cookie consent", () => {
     await dialog.getByRole("button", { name: "Save my choices" }).click();
     await expect(dialog).toBeHidden();
     const consent = (await page.context().cookies()).find((c) => c.name === "consent");
-    expect(consent?.value).toBe("v1.a1.m0");
+    // `dismissConsent` set a value without an id; the saved choice gets one.
+    expect(consent?.value).toMatch(/^v1\.a1\.m0\.[0-9a-f-]{36}$/);
     // The dialog has no trigger of its own: focus goes back to the button that opened it.
     await expect(page.getByRole("contentinfo").getByRole("button", { name: "Cookie settings" })).toBeFocused();
   });
