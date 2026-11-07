@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
 import { type AccountFormState, saveTravellersAction } from "@/modules/account/account.actions";
@@ -44,6 +45,7 @@ const blank = (): Traveller & { key: number } => ({ key: nextKey++, fullName: ""
  */
 export function TravellersForm({ code, max, initial, labels }: Props) {
   const [state, action, pending] = useActionState<AccountFormState, FormData>(saveTravellersAction, { status: "idle" });
+  const onSubmit = useSubmitWithoutReset(action);
   const [rows, setRows] = useState(() => (initial.length > 0 ? initial.map((t) => ({ ...t, key: nextKey++ })) : [{ ...blank(), isLead: true }]));
   const [lead, setLead] = useState(() => Math.max(rows.findIndex((row) => row.isLead), 0));
   const statusRef = useRef<HTMLParagraphElement>(null);
@@ -97,7 +99,7 @@ export function TravellersForm({ code, max, initial, labels }: Props) {
   const statusText = state.status === "idle" ? "" : (labels.status[state.status] ?? labels.status.failed);
 
   return (
-    <form action={action} noValidate className="flex flex-col gap-6" data-testid="travellers-form">
+    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-6" data-testid="travellers-form">
       <input type="hidden" name="code" value={code} />
       <fieldset className="flex flex-col gap-6">
         <legend className="sr-only">{labels.leadLegend}</legend>

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { useTurnstile } from "@/components/forms/use-turnstile";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
@@ -61,6 +62,7 @@ export function AuthForm({ action, fields, hidden = {}, labels, locale, turnstil
   const statusRef = useRef<HTMLParagraphElement>(null);
   const challenge = useTurnstile({ siteKey: turnstile?.siteKey ?? null, locale, action: turnstile?.action ?? "auth", formRef });
   const { reset } = challenge;
+  const onSubmit = useSubmitWithoutReset(formAction, turnstile ? challenge.onSubmit : undefined);
   const baseId = useId();
   const id = (name: string) => `${baseId}-${name}`;
   const errors = state.errors ?? {};
@@ -91,7 +93,7 @@ export function AuthForm({ action, fields, hidden = {}, labels, locale, turnstil
       data-testid={testId}
       onFocus={turnstile ? challenge.start : undefined}
       onPointerDown={turnstile ? challenge.start : undefined}
-      onSubmit={turnstile ? challenge.onSubmit : undefined}
+      onSubmit={onSubmit}
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="locale" value={locale} />

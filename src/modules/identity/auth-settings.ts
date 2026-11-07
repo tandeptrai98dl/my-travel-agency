@@ -40,8 +40,12 @@ export async function readConfirmationGuard(fetcher: Fetcher = fetch): Promise<C
   }
 }
 
-/** The guard, cached for five minutes per server instance; a refusal is logged once per period. */
-export async function confirmationGuard(now = Date.now(), fetcher?: Fetcher): Promise<ConfirmationGuard> {
+/**
+ * The guard, cached for five minutes per server instance; a refusal is logged once per period.
+ * Timed with `performance.now()` (monotonic), which Next.js allows while rendering, unlike
+ * `Date.now()`.
+ */
+export async function confirmationGuard(now = performance.now(), fetcher?: Fetcher): Promise<ConfirmationGuard> {
   if (cached && now - cached.at < CACHE_MS) return cached.value;
   const value = await readConfirmationGuard(fetcher);
   cached = { value, at: now };

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { useSubmitWithoutReset } from "@/components/forms/use-submit-without-reset";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cx } from "@/lib/cx";
 import { type AccountFormState, saveMarketingAction, saveProfileAction } from "@/modules/account/account.actions";
@@ -44,6 +45,7 @@ export type ProfileFormLabels = Messages & {
 /** Name, phone, country and email language (decision 4), through the profile column grants. */
 export function ProfileForm({ initial, labels }: { initial: { fullName: string; phone: string; country: string; locale: "vi" | "en" }; labels: ProfileFormLabels }) {
   const [state, action, pending] = useActionState<AccountFormState, FormData>(saveProfileAction, { status: "idle" });
+  const onSubmit = useSubmitWithoutReset(action);
   const baseId = useId();
   const statusRef = useAnswer(state, baseId);
   const errors = state.errors ?? {};
@@ -71,7 +73,7 @@ export function ProfileForm({ initial, labels }: { initial: { fullName: string; 
     </div>
   );
   return (
-    <form action={action} noValidate className="flex flex-col gap-5" data-testid="profile-form">
+    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5" data-testid="profile-form">
       <div className="grid gap-5 sm:grid-cols-2">
         {input("fullName", "text", "name", 120)}
         {input("phone", "tel", "tel", 30)}
@@ -103,10 +105,11 @@ export type MarketingFormLabels = Messages & { marketing: string; save: string; 
 /** The marketing choice: saved with its consent row (`set_marketing_consent()`). */
 export function MarketingForm({ locale, initial, labels }: { locale: "vi" | "en"; initial: boolean; labels: MarketingFormLabels }) {
   const [state, action, pending] = useActionState<AccountFormState, FormData>(saveMarketingAction, { status: "idle" });
+  const onSubmit = useSubmitWithoutReset(action);
   const baseId = useId();
   const statusRef = useAnswer(state, baseId);
   return (
-    <form action={action} className="flex flex-col gap-4" data-testid="marketing-form">
+    <form action={action} onSubmit={onSubmit} className="flex flex-col gap-4" data-testid="marketing-form">
       <input type="hidden" name="locale" value={locale} />
       <label className="flex items-start gap-3 text-body">
         <input name="marketing" type="checkbox" defaultChecked={initial} className="mt-1 h-5 w-5 shrink-0 accent-[hsl(var(--primary))]" />

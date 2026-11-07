@@ -97,25 +97,25 @@ describe("email confirmation guard (decision 6, review M1)", () => {
   });
 
   it("attaches nothing while emails are auto-confirmed", async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({ mailer_autoconfirm: true }));
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: true }));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(0);
     expect(rpc).not.toHaveBeenCalled();
   });
 
   it("attaches nothing when the settings are unreachable", async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({}, false));
+    await settings.confirmationGuard(undefined, settingsResponse({}, false));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(0);
     expect(rpc).not.toHaveBeenCalled();
   });
 
   it("attaches when confirmations are on", async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({ mailer_autoconfirm: false }));
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: false }));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(2);
     expect(rpc).toHaveBeenCalledWith("attach_customer_bookings");
   });
 
   it("disables sign-up while emails are auto-confirmed", async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({ mailer_autoconfirm: true }));
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: true }));
     expect((await service.signUpAvailability("vi")).enabled).toBe(false);
     const result = await service.signUp(
       { fullName: "A", email: "a@example.test", password: "long-enough-1", privacy: "on", marketing: false, locale: "vi", turnstileToken: "" },
@@ -131,7 +131,7 @@ describe("sign-up", () => {
   const meta = { ip: "203.0.113.1", userAgent: "UA", turnstileToken: "t" };
 
   beforeEach(async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({ mailer_autoconfirm: false }));
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: false }));
   });
 
   it("is off without a published privacy policy (ADR-035)", async () => {
@@ -165,7 +165,7 @@ describe("sign-up", () => {
 
 describe("sign-in", () => {
   beforeEach(async () => {
-    await settings.confirmationGuard(Date.now(), settingsResponse({ mailer_autoconfirm: false }));
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: false }));
   });
 
   it("sends customers to next (same site only) or their account, and attaches bookings", async () => {
