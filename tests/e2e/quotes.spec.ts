@@ -61,7 +61,7 @@ test("the customer pays the quote from the link, which then works no more", asyn
   await page.getByRole("radio", { name: /VNPay/ }).check();
   await page.getByRole("button", { name: /^Thanh toán/ }).click();
   await expect(page).toHaveURL(/\/api\/payments\/vnpay\/stub\?/);
-  await page.getByRole("button", { name: "Pay" }).click();
+  await page.getByRole("button", { name: "Pay", exact: true }).click();
   await expect(page.getByTestId("checkout-result")).toHaveAttribute("data-status", "confirmed", { timeout: 20_000 });
   const { data } = await adminApi().from("bookings").select("status, amount_paid").eq("id", bookingId).single();
   expect(data).toMatchObject({ status: "confirmed", amount_paid: 12_000_000 });
