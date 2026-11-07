@@ -26,7 +26,8 @@ export async function listQuoteTours() {
     .from("tours")
     .select("id, code, type, deposit_percent, balance_due_days, tour_translations(locale, title)")
     .neq("status", "archived")
-    .order("type", { ascending: false })
+    // Quotes are for private tours only (create_quote() refuses group tours, #34 review).
+    .eq("type", "private")
     .order("code", { ascending: true })
     .limit(500);
 }

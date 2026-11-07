@@ -173,6 +173,14 @@
     "notPayableTitle": "Đặt tour không còn cần thanh toán",
     "notPayableBody": "Đặt tour này đã được thanh toán, đã huỷ hoặc báo giá đã hết hạn. Vui lòng liên hệ chúng tôi.",
     "unavailableTitle": "Thanh toán trực tuyến đang tạm dừng",
-    "unavailableBody": "Vui lòng gọi cho chúng tôi để hoàn tất thanh toán."
+    "unavailableBody": "Vui lòng gọi cho chúng tôi để hoàn tất thanh toán.",
+    "openCheckout": "Mở trang thanh toán của đặt chỗ"
+  },
+  "CheckoutLink": {
+    "title": "Mở đặt chỗ của bạn",
+    "body": "Liên kết trong email cho phép trình duyệt này mở đặt chỗ {code}.",
+    "open": "Mở đặt chỗ",
+    "opening": "Đang mở…",
+    "failed": "Liên kết này không còn hiệu lực. Vui lòng liên hệ chúng tôi."
   }
 }

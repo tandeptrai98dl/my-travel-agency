@@ -7,6 +7,7 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { siteUrl } from "@/lib/site-url";
 
+import { sendPaymentLinkEmail } from "./booking-emails.service";
 import * as repo from "./quote.repository";
 import { type CreatePaymentLinkValues, type CreateQuoteValues, type PaymentLinkResult, type QuoteActionResult, quoteErrorCode } from "./quote.schemas";
 
@@ -52,7 +53,8 @@ export async function createQuote(values: CreateQuoteValues): Promise<QuoteActio
 
 /**
  * A payment link (step 14): 32 random bytes the customer gets once, of which only the SHA-256 is
- * stored. The URL is shown to the staff member once (and emailed in 4E).
+ * stored. The URL is shown to the staff member once and emailed to the booking's contact (4E):
+ * the token travels only in that email's body, never in `email_logs` or a log line.
  */
 export async function createPaymentLink(values: CreatePaymentLinkValues): Promise<PaymentLinkResult> {
   await requirePermission("bookings.send_payment_link");
@@ -63,9 +65,12 @@ export async function createPaymentLink(values: CreatePaymentLinkValues): Promis
     if (code === "failed") logger.error("booking.payment_link_failed", { code: error?.code });
     return { ok: false, error: code };
   }
-  const row = data as { amount: number; expires_at: string; locale: "vi" | "en" };
+  const row = data as { amount: number; kind: "deposit" | "full" | "balance"; expires_at: string; locale: "vi" | "en" };
   const path = getPathname({ locale: row.locale, href: { pathname: "/pay/[token]", params: { token } } });
-  return { ok: true, url: new URL(path, siteUrl).toString(), amount: row.amount, expiresAt: row.expires_at };
+  const url = new URL(path, siteUrl).toString();
+  const sent = await sendPaymentLinkEmail({ bookingId: values.bookingId, url, amount: row.amount, kind: row.kind, expiresAt: row.expires_at });
+  const email = sent === "sent" ? "sent" : sent === "unavailable" ? "skipped" : "failed";
+  return { ok: true, url, amount: row.amount, expiresAt: row.expires_at, email };
 }
 
 /** Tours for the quote form, with their title in Vietnamese (admin language). */

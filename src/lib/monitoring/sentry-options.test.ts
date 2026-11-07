@@ -104,4 +104,31 @@ describe("what a server error event actually contains", () => {
     }
     expect(sent).toContain("Mozilla/5.0");
   });
+
+  it("never sends a payment-link token in the transaction name or the envelope header's trace", async () => {
+    envelopes.length = 0;
+    for (const path of ["/en/pay/secret-dsc-token-en", "/thanh-toan/link/secret-dsc-token-vi"]) {
+      Sentry.withIsolationScope((scope) => {
+        scope.setTransactionName(`GET ${path}`);
+        Sentry.withScope((inner) => {
+          inner.setTransactionName(`GET ${path}`);
+          Sentry.captureException(new Error("link boom"));
+        });
+      });
+    }
+    // A span named after a raw URL: tracing is off, but its name must not reach a header either.
+    Sentry.startSpan({ name: "GET /en/pay/secret-dsc-token-span", forceTransaction: true }, () => {
+      Sentry.captureException(new Error("span boom"));
+    });
+    await Sentry.flush(2000);
+
+    expect(envelopes.length).toBeGreaterThanOrEqual(3);
+    process.stderr.write("HDRS " + envelopes.map((e) => JSON.stringify(JSON.parse(e)[0])).join("\n") + "\n");
+    for (const raw of envelopes) {
+      const [header, items] = JSON.parse(raw) as [{ trace?: { transaction?: string } }, [unknown, { transaction?: string }][]];
+      expect(header.trace?.transaction ?? "", "envelope header trace.transaction").not.toMatch(/secret-dsc/);
+      for (const [, payload] of items) expect(payload?.transaction ?? "", "event transaction").not.toMatch(/secret-dsc/);
+    }
+    expect(envelopes.join("\n")).not.toContain("secret-dsc");
+  });
 });

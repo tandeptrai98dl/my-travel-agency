@@ -328,13 +328,18 @@
     },
     "PaymentLink": {
       "title": "Liên kết thanh toán",
-      "help": "Tạo liên kết cho khoản cần thanh toán lúc này. Liên kết dùng một lần và chỉ hiện một lần: hãy sao chép và gửi cho khách.",
+      "help": "Tạo liên kết cho khoản cần thanh toán lúc này và gửi tới email của khách. Liên kết dùng một lần và chỉ hiện một lần tại đây.",
       "validHours": "Hiệu lực (giờ)",
       "create": "Tạo liên kết",
       "creating": "Đang tạo…",
       "created": "Liên kết cho {amount}, hết hạn {time}",
       "copy": "Sao chép liên kết",
-      "copied": "Đã sao chép"
+      "copied": "Đã sao chép",
+      "email": {
+        "sent": "Đã gửi liên kết tới email của khách.",
+        "skipped": "Chưa cấu hình gửi email: hãy sao chép và gửi liên kết cho khách.",
+        "failed": "Không gửi được email: hãy sao chép và gửi liên kết cho khách."
+      }
     }
   }
 }

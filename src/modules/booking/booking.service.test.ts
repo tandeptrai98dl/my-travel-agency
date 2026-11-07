@@ -35,6 +35,8 @@ const repo = {
   cancel: fn({ refund_percent: 80, refund_amount: 6_192_000 }),
 };
 vi.mock("./booking.repository", () => repo);
+const notifyBooking = vi.hoisted(() => vi.fn());
+vi.mock("./booking-emails.service", () => ({ notifyBooking }));
 
 const service = await import("./booking.service");
 const { draftInputSchema } = await import("./booking.schemas");
@@ -81,7 +83,10 @@ describe("startDraft", () => {
 
 describe("startPayment", () => {
   it("holds seats and refreshes the tour's cached pages", async () => {
+    notifyBooking.mockClear();
     const result = await service.startPayment({ bookingId: "b-1", provider: "vnpay", kind: "deposit" });
+    // Emails follow the commit (4E); the booking event decides which, once.
+    expect(notifyBooking).toHaveBeenCalledWith("b-1");
     expect(result).toEqual({
       ok: true,
       payment: { paymentId: "p-1", reference: "PTA2701000101", amount: 7_740_000, expiresAt: "2027-01-10T10:30:00Z", bookingStatus: "pending_payment" },

@@ -123,6 +123,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/admin/bookings` (Phase 4 PR 4F): NoteActionForm (resolve, request cancellation, cancel with an inline confirmation), MoneyActionForm (manual payment or refund), ContactForm, AssignTransferForm; the booking detail page's summary, price lines, payments table and event timeline; the dashboard's "Việc cần làm" counts
 - `src/components/booking` (Phase 4 PR 4B): BookingForm (three steps: date and guests with steppers, contact, plan, VAT invoice and terms; the server's price in a sticky summary), PriceSummary, HoldCountdown, PaymentMethodForm, VietQrPanel (server-rendered QR with copy buttons), BookingSummaryCard, ResultStatus (polls until the IPN or webhook is recorded); pages under `src/app/(secure)/[locale]` with their own root layout and nonce CSP
 - Phase 4 PR 4D: QuoteForm and PaymentLinkForm (`src/components/admin/bookings`), RedeemLinkButton and the payment-link page (`src/components/booking`, `(secure)/[locale]/(booking)/pay/[token]`)
+- `emails/` (Phase 4 PR 4E, ADR-036): EmailLayout (600 px table layout, ivory page, white card, gold rule, serif brand name with Georgia fallback), Eyebrow, Heading, Text, ButtonLink (one navy action per email), Details (label/value rows), SignOff; CustomerEmail frame; templates BookingReceived, PaymentReceived, BookingConfirmed (with the cancellation policy summary), PaymentLink, BalanceReminder, BookingCancelled and StaffBooking (confirmed or needs attention, Vietnamese). `src/components/booking/open-checkout-button.tsx` opens a checkout from an emailed link on click
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned
@@ -140,6 +141,6 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 | Account | AuthForm, GoogleButton, AccountNav, BookingListItem, BookingDetail, PaymentHistory, ProfileForm, DeleteAccountDialog |
 | States | ErrorState, tour suggestions on the 404 page (Phase 3) |
 | Admin | CommandMenu, StatCard, Timeline, NotesPanel, AuditTrail (per entity), AttentionQueue, ItineraryBuilder, StatusSelect, AssigneeSelect, QuoteForm, MfaEnrollment |
-| Email (React Email) | Brand layout, BookingReceived, PaymentConfirmed, BookingConfirmed, BalanceReminder, BookingCancelled, InquiryReceived, NewInquiryAlert, PaymentLinkEmail, PasswordReset, VerifyEmail |
+| Email (React Email) | InquiryReceived, NewInquiryAlert, PasswordReset, VerifyEmail (Phase 5) |
 
 Add shadcn primitives with `npx shadcn@latest add <component>` where the registry is reachable; otherwise copy the new-york source onto the Radix package from npm (ADR-021). A dev-only `/admin/design-system` page shows every token and component for visual review.

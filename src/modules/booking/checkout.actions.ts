@@ -10,6 +10,7 @@ import {
   checkoutStatus,
   createCheckoutBooking,
   loadCheckout,
+  openEmailLink,
   quoteForForm,
   redeemPaymentLink,
   type StatusView,
@@ -70,4 +71,12 @@ export async function redeemLinkAction(token: unknown) {
     ok: true as const,
     path: getPathname({ locale: result.locale, href: { pathname: "/checkout/[code]/payment", params: { code: result.code } } }),
   };
+}
+
+/** "Open my booking" on a checkout link from an email (4E): a button, so scanners never act. */
+export async function openEmailLinkAction(code: unknown, token: unknown) {
+  if (typeof code !== "string" || typeof token !== "string" || token.length > 80) return { ok: false as const };
+  const result = await openEmailLink(code, token);
+  if (!result.ok) return result;
+  return { ok: true as const, path: getPathname({ locale: result.locale, href: { pathname: "/checkout/[code]", params: { code: result.code } } }) };
 }

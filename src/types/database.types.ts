@@ -229,14 +229,14 @@ isOneToOne: false
                   ]
                 },"email_logs": {
                   Row: {
-                    "booking_id": string | null,"created_at": string,"error": string | null,"id": string,"inquiry_id": string | null,"provider_message_id": string | null,"status": string,"subject": string,"template": string,"to_email": string
+                    "booking_id": string | null,"created_at": string,"dedupe_key": string | null,"error": string | null,"id": string,"inquiry_id": string | null,"provider_message_id": string | null,"status": string,"subject": string,"template": string,"to_email": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id"?: string | null,"created_at"?: string,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status": string,"subject": string,"template": string,"to_email": string
+                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status": string,"subject": string,"template": string,"to_email": string
                   }
                   Update: {
-                    "booking_id"?: string | null,"created_at"?: string,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status"?: string,"subject"?: string,"template"?: string,"to_email"?: string
+                    "booking_id"?: string | null,"created_at"?: string,"dedupe_key"?: string | null,"error"?: string | null,"id"?: string,"inquiry_id"?: string | null,"provider_message_id"?: string | null,"status"?: string,"subject"?: string,"template"?: string,"to_email"?: string
                   }
                   Relationships: [
                     {

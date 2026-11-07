@@ -25,7 +25,7 @@ export function PaymentLinkForm({ bookingId }: { bookingId: string }) {
   const [hours, setHours] = useState("72");
   const [busy, setBusy] = useState(false);
   const [alert, setAlert] = useState<string | null>(null);
-  const [link, setLink] = useState<{ url: string; amount: number; expiresAt: string } | null>(null);
+  const [link, setLink] = useState<{ url: string; amount: number; expiresAt: string; email: "sent" | "skipped" | "failed" } | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function create(event: React.FormEvent) {
@@ -70,6 +70,9 @@ export function PaymentLinkForm({ bookingId }: { bookingId: string }) {
               amount: formatVnd(link.amount, "vi"),
               time: new Date(link.expiresAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short" }),
             })}
+          </span>
+          <span data-testid="payment-link-email" data-state={link.email}>
+            {t(`email.${link.email}`)}
           </span>
           <code className="break-all" data-testid="payment-link-url">
             {link.url}

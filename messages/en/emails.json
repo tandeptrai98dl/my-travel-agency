@@ -1,0 +1,105 @@
+{
+  "Emails": {
+    "common": {
+      "greeting": "Dear {name},",
+      "code": "Booking code",
+      "journey": "Journey",
+      "dates": "Dates",
+      "travellers": "Travellers",
+      "adults": "{count, plural, one {# adult} other {# adults}}",
+      "children": "{count, plural, one {# child} other {# children}}",
+      "infants": "{count, plural, one {# infant} other {# infants}}",
+      "total": "Total",
+      "paid": "Paid",
+      "balance": "Balance",
+      "balanceDue": "{amount}, due by {date}",
+      "helpBoth": "If you need anything, write to {email} or call {phone}.",
+      "helpEmail": "If you need anything, write to {email}.",
+      "helpPhone": "If you need anything, call {phone}.",
+      "closing": "With warm regards,",
+      "team": "The {brand} team",
+      "reason": "You are receiving this email because you made a booking with {brand}.",
+      "staffReason": "Internal email sent to the company's contact address.",
+      "openAdmin": "Open in the admin"
+    },
+    "bookingReceived": {
+      "subject": "Your places are held · {code}",
+      "preview": "Booking {code} is waiting for payment.",
+      "eyebrow": "Booking received",
+      "heading": "Your places are being held",
+      "intro": "Thank you for choosing {tour}. We are holding places for your party.",
+      "hold": "They are held until {time} (Vietnam time). Please complete the payment of {amount} before then to confirm your journey.",
+      "holdNoTime": "Please complete the payment of {amount} to confirm your journey.",
+      "button": "Continue to payment",
+      "lapse": "If the hold ends before your payment reaches us, the places are released to other travellers. You are welcome to book again at any time."
+    },
+    "paymentReceived": {
+      "subject": "Payment received · {code}",
+      "preview": "We have received a payment for {code}.",
+      "eyebrow": "Payment received",
+      "heading": "Thank you for your payment",
+      "intro": "We have received {amount} for booking {code}.",
+      "introNoAmount": "We have received a payment for booking {code}.",
+      "flagged": "Our team will review this payment and be in touch with you shortly."
+    },
+    "bookingConfirmed": {
+      "subject": "Your journey is confirmed · {code}",
+      "preview": "Booking {code} is confirmed.",
+      "eyebrow": "Confirmed",
+      "heading": "Your journey is confirmed",
+      "intro": "Booking {code} for {tour} is confirmed. We look forward to welcoming you.",
+      "balance": "The balance of {amount} is due by {date}. We will send you a reminder before then.",
+      "next": "Before departure, we will be in touch to complete the traveller details and send your detailed itinerary.",
+      "button": "View your booking",
+      "policy": "Cancellation policy"
+    },
+    "paymentLink": {
+      "subject": "A payment link for your journey · {code}",
+      "preview": "A payment link for booking {code}.",
+      "eyebrow": "Payment link",
+      "heading": "Your journey is ready",
+      "intro": "{tour} (booking {code}) has been prepared as we discussed.",
+      "kind": {
+        "deposit": "A deposit of {amount} holds your places and confirms the journey.",
+        "full": "A payment in full of {amount} holds your places and confirms the journey.",
+        "balance": "This is the balance of {amount} for your journey."
+      },
+      "button": "Pay {amount}",
+      "expiry": "The link works once and expires at {time} (Vietnam time).",
+      "private": "This link is for you alone. Please do not forward this email."
+    },
+    "balanceReminder": {
+      "subject": "A reminder about your balance · {code}",
+      "preview": "The balance for booking {code} is due soon.",
+      "eyebrow": "Balance reminder",
+      "heading": "Your journey is drawing near",
+      "intro": "The balance of {amount} for booking {code} is due by {date}.",
+      "introNoDate": "The balance of {amount} for booking {code} is awaiting payment.",
+      "button": "Pay the balance",
+      "ignore": "If you have just paid, please disregard this email."
+    },
+    "bookingCancelled": {
+      "subject": "Your booking has been cancelled · {code}",
+      "preview": "Booking {code} has been cancelled.",
+      "eyebrow": "Cancelled",
+      "heading": "Your booking has been cancelled",
+      "intro": "Booking {code} for {tour} has been cancelled.",
+      "refund": "For the amount you have paid, we will be in touch about a refund under the cancellation policy that applied when you booked.",
+      "farewell": "We hope to travel with you on another journey."
+    },
+    "staffConfirmed": {
+      "subject": "Booking confirmed · {code}",
+      "preview": "{code} has just been confirmed.",
+      "eyebrow": "New booking",
+      "heading": "{code} is confirmed",
+      "intro": "{paid} received."
+    },
+    "staffAttention": {
+      "subject": "Needs attention · {code}",
+      "preview": "{code} needs a check.",
+      "eyebrow": "Needs attention",
+      "heading": "{code} needs a check",
+      "reason": "Reason: {reason}"
+    }
+  }
+}

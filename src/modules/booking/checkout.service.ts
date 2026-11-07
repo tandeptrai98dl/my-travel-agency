@@ -397,3 +397,50 @@ export async function redeemPaymentLink(token: string): Promise<RedeemResult> {
   });
   return { ok: true, code: row.code, locale: row.locale };
 }
+
+const CODE_PATTERN = /^PTA-\d{4}-\d{4,}$/;
+
+/**
+ * Whether `?access=<token>` from an email (4E, `checkoutUrl()`) opens this booking. No side
+ * effects: the checkout page shows only an "open" button until the customer clicks it, so a mail
+ * scanner that follows the link sees no booking details and sets no cookie.
+ */
+export async function emailLinkValid(code: string, token: string | undefined): Promise<boolean> {
+  const secret = serverEnv.BOOKING_ACCESS_SECRET;
+  if (!secret || !token || !CODE_PATTERN.test(code)) return false;
+  const { data } = await repo.findBookingIdByCode(code);
+  return Boolean(data && verifyAccess(secret, data.id, token));
+}
+
+export type OpenLinkResult = { ok: true; code: string; locale: Locale } | { ok: false };
+
+/** The customer's click on an emailed checkout link: this browser gets the booking's access cookie. */
+export async function openEmailLink(code: string, token: string): Promise<OpenLinkResult> {
+  const secret = serverEnv.BOOKING_ACCESS_SECRET;
+  if (!secret || !CODE_PATTERN.test(code)) return { ok: false };
+  const { data } = await repo.findBookingIdByCode(code);
+  if (!data || !verifyAccess(secret, data.id, token)) return { ok: false };
+  // The cookie keeps the link's own expiry: opening a link never extends access.
+  (await cookies()).set(accessCookieName(data.code), token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: new Date(Number(token.split(".")[0])),
+  });
+  return { ok: true, code: data.code, locale: data.locale };
+}
+
+/**
+ * A used payment link opened again in the browser that used it (#34 review): that browser still
+ * holds the booking's access cookie, so the page offers the checkout instead of a dead end.
+ */
+export async function usedLinkCheckout(token: string): Promise<{ code: string } | null> {
+  const secret = serverEnv.BOOKING_ACCESS_SECRET;
+  if (!secret || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
+  const { data } = await repo.findLinkBooking(hashLinkToken(token));
+  const booking = data?.bookings as { code: string } | null | undefined;
+  if (!data || !booking) return null;
+  const cookie = (await cookies()).get(accessCookieName(booking.code))?.value;
+  return verifyAccess(secret, data.booking_id, cookie) ? { code: booking.code } : null;
+}

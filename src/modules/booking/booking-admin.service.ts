@@ -21,6 +21,7 @@ import {
   BOOKING_STATUSES,
   type UpdateContactValues,
 } from "./booking-admin.schemas";
+import { notifyBooking } from "./booking-emails.service";
 import { refreshTour } from "./booking.service";
 
 type One<T> = T | T[] | null;
@@ -255,6 +256,7 @@ export async function cancelBooking(values: BookingNoteValues): Promise<BookingA
   if (error) return failure("cancel", error);
   const { data: booking } = await repo.bookingTourId(values.bookingId);
   if (booking) refreshTour(booking.tour_id);
+  notifyBooking(values.bookingId);
   const result = (data ?? {}) as { refund_percent?: number; refund_amount?: number };
   return { ok: true, refundPercent: result.refund_percent ?? 0, refundAmount: result.refund_amount ?? 0 };
 }

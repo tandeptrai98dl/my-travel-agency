@@ -3,6 +3,7 @@ import "server-only";
 import { revalidateTag } from "next/cache";
 
 import { logger } from "@/lib/logger";
+import { notifyBooking } from "@/modules/booking/booking-emails.service";
 import { TOURS_TAG, tourTag } from "@/modules/catalog/cache-tags";
 import type { Json } from "@/types/database.types";
 
@@ -44,6 +45,9 @@ export async function recordEvent(provider: Provider, event: GatewayEvent): Prom
     // Monitored (ARCHITECTURE.md "Monitoring"); never the payload or card data.
     logger.error("payment.needs_attention", { provider, reference: event.reference, reason: result.attention_reason });
   }
+  // After the commit: payment received, booking confirmed and staff alerts, each once (4E). A
+  // duplicate event returns "duplicate" and sends nothing.
+  if (result.result === "recorded") notifyBooking(result.booking_id);
   return result;
 }
 

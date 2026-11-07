@@ -68,6 +68,10 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
     delete event.request.env;
     if (event.request.url) event.request.url = redactUrl(event.request.url);
   }
+  // The transaction name can be a raw path ("GET /en/pay/<token>") when no route pattern is known.
+  if (event.transaction) event.transaction = redactUrl(event.transaction);
+  const trace = event.contexts?.trace as Record<string, unknown> | undefined;
+  redactUrlsIn(trace?.data as Record<string, unknown> | undefined);
   const nextjs = event.contexts?.nextjs as Record<string, unknown> | undefined;
   redactUrlsIn(nextjs);
   for (const breadcrumb of event.breadcrumbs ?? []) scrubBreadcrumb(breadcrumb);

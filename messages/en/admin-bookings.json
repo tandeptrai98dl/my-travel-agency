@@ -328,13 +328,18 @@
     },
     "PaymentLink": {
       "title": "Payment link",
-      "help": "Creates a link for what is due now. It works once and is shown only once: copy it and send it to the customer.",
+      "help": "Creates a link for what is due now and emails it to the customer. It works once and is shown here only once.",
       "validHours": "Valid for (hours)",
       "create": "Create link",
       "creating": "Creating…",
       "created": "Link for {amount}, expires {time}",
       "copy": "Copy link",
-      "copied": "Copied"
+      "copied": "Copied",
+      "email": {
+        "sent": "The link was emailed to the customer.",
+        "skipped": "Email is not set up: copy the link and send it to the customer.",
+        "failed": "The email could not be sent: copy the link and send it to the customer."
+      }
     }
   }
 }

@@ -56,6 +56,16 @@ export async function paymentLinkState(tokenHash: string) {
   return db().rpc("payment_link_state", { token_hash: tokenHash });
 }
 
+/** The booking a payment link belongs to (the used-link page offers that checkout, step 14). */
+export async function findLinkBooking(tokenHash: string) {
+  return db().from("payment_links").select("booking_id, bookings!inner(code, locale)").eq("token_hash", tokenHash).maybeSingle();
+}
+
+/** The id and language behind a booking code (the emailed checkout link is checked against the id). */
+export async function findBookingIdByCode(code: string) {
+  return db().from("bookings").select("id, code, locale").eq("code", code).maybeSingle();
+}
+
 export async function redeemPaymentLink(tokenHash: string) {
   return db().rpc("redeem_payment_link", { token_hash: tokenHash });
 }

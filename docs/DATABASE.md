@@ -571,8 +571,9 @@ create table email_logs (
   booking_id          uuid references bookings (id),
   inquiry_id          uuid references inquiries (id),
   provider_message_id text,
-  status              text not null,  -- queued | sent | failed
-  error               text,
+  status              text not null,  -- queued | sent | failed | skipped (no Resend configured)
+  error               text,           -- provider HTTP status or error class only, never its message
+  dedupe_key          text unique,    -- exactly-once key (e.g. booking_confirmed:<booking_events.id>), 4E
   created_at          timestamptz not null default now()
 );
 
@@ -678,7 +679,7 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `request_cancellation(target_id, note)`, `resolve_attention(target_id, note)`, `attention_resolvers(reason)` | authenticated (`security definer`; requests: sales roles, operator, admin) | A request flags `cancel_requested` unless a money reason is open (that one is kept, and the request comes back when it is resolved). Resolving needs the reason's roles from `attention_resolvers()`: `cancel_requested` operator or admin, every other (money) reason an accountant or admin at aal2; the note goes to `booking_events`. Manual or assigned money for a cancelled booking sets `paid_after_cancel` (`*_booking_admin_review.sql`). `require_note()` (at least 3 characters) is shared |
 | `create_checkout_draft(payload, terms_version, privacy_version, marketing, ip, user_agent)` | service_role | The book-now draft and its consent in one transaction (spec Phase 4 decisions 2 and 9): `create_draft_booking()`, then `consent_records` rows for terms (when a terms page is published) and privacy (required), marketing only when ticked, and `bookings.terms_version`; a replay with the same key records nothing twice (`*_booking_consent.sql`) |
 | `booking_checkout_status(target_code)` | service_role | Status, payment state, amounts and hold expiry for the checkout result page's poll, after the booking module has checked access |
-| `create_quote(payload)` | authenticated (`security definer`; sales, sales_manager, admin) | A `quoted` booking for a private trip at staff prices per adult and child (infants free), the tour's deposit rule, `quote_expires_at`, snapshots and price lines; links and marks the inquiry `quoted`; `bookings.quote` in `audit_logs` (`*_quotes_payment_links.sql`) |
+| `create_quote(payload)` | authenticated (`security definer`; sales, sales_manager, admin) | A `quoted` booking for a private tour only (group tours are refused, `*_quote_private_only.sql`) at staff prices per adult and child (infants free), the snapshot title in the quote's language or else the other language's, the tour's deposit rule, `quote_expires_at`, snapshots and price lines; links and marks the inquiry `quoted`; `bookings.quote` in `audit_logs` (`*_quotes_payment_links.sql`) |
 | `create_payment_link(target_id, token_hash, valid_hours)` | authenticated (`security definer`; sales, sales_manager, admin) | Stores only the SHA-256 of an app-made token for the amount due now (deposit, full or balance), at most 7 days and never past the quote's expiry; booking event `payment_link_created` |
 | `redeem_payment_link(token_hash)`, `payment_link_state(token_hash)` | service_role | Opens a link once before its expiry for a booking still payable (the link page's button, never a plain visit); the state check has no side effects |
 | `hold_minutes()`, `booking_prices_current()`, `take_seats()`, `release_seats()`, `refresh_payment_state()`, `log_booking_event()`, `check_draft_payload()` | service_role | Helpers of the booking functions (`*_booking_functions.sql`) |
