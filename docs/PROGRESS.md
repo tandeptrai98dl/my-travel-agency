@@ -4,9 +4,9 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 in progress (5A, 5C, 5W merged; 5B and 5D left); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 5 PR 5B (guest booking lookup, deletion and export), then 5D (reminders, alerts, dashboard, CSV, customers). Stream B: public backlog PR, then the Phase 6 spec. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
-- **Owner actions:** create Supabase/Vercel/Sentry/Resend accounts; start the VNPay contract, e-commerce notification and bilingual content tracks; provide brand name, logo and contact details (`PROJECT_BRIEF.md` §9)
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 in progress (5A, 5B, 5C, 5W merged; 5D and the booking-lookup flag left); Phase 6 spec merged (#50); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: Phase 5 PR 5D (reminders, alerts, dashboard, passenger CSV, `/admin/customers` with export and admin deletion), then Phase 6 PRs 6A–6C. Stream B: the one-line PR that turns on `features.bookingLookup`, then Phase 6 PRs 6P–6Q; both streams then 6L (`docs/specs/phase-6-hardening-launch.md`). The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Owner actions:** the 14 numbered items in `docs/specs/phase-6-hardening-launch.md` "What the owner must provide" (accounts: Supabase, Vercel, Sentry, Resend with DNS, Upstash, Turnstile, VNPay, SePay or Casso, Google; Supabase Auth production settings; legal review; brand and content; branch protection on `main`)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
 
@@ -22,13 +22,51 @@ Open items:
 
 - Emails (PR 4E review): alert or runbook for `email_logs` rows stuck in `queued` and for `failed` sends, plus a staff "resend"; `skipped` keys are spent for good (README); the emailed access token is reusable for 7 days (record or make single use); payment-link email through `after()`.
 
-- Phase 3 (PR M review): skip the Redis lookup for paths that fail `isSitePath`; measure the 50 ms redirect timeout on cold starts on staging; write cross-language slug pairs to Redis (Next 16.4.5 308-without-Location issue); check a sitemap build during a Supabase outage; `bankAccount()` must throw so read errors use the 30 s cache profile; one source for the public and secure CSP path lists.
+- Phase 3 (staging only): measure the 50 ms redirect timeout on cold starts; with real Upstash, save a tour and `curl -I` its other-language slug (expect a 301 with `Location`). The other PR M items were done in #43 and #49.
 - Emails (PR 4 polish review): window failed emails on a `failed_at` time, not the claim time; nothing reads failed pg_cron runs yet (Phase 6 alerting); expired access-token cleanup (Phase 6 housekeeping).
 
-- Phase 5 (PR 5C review): an inquiry marked spam first never gets a first-response time (fixed in 5B).
+- Phase 5 (#46 review): the deletion E2E's Auth-metadata check can pass without proving anything; 5D checks it properly. Nit (#48): type the inquiry `panels` as `React.ReactElement[]`.
+- Public (#49 review): a topic's language pair should need a published article in both languages; the switcher's fallback drops the query string; an E2E should check the server HTML of `/lien-he` for `href="/en/contact"`.
+- Phase 6 spec (#50 re-review, fix in 6P/6C): how each recipient's single-use unsubscribe token reaches a Resend broadcast (or Resend's unsubscribe written back through the same function), plus a `List-Unsubscribe` header; state the emailed-link exclusion as "checkout with an `access` query"; unknown paths send a fixed `/404` template to GA; write the webhook-trim SQL predicate out (assigned transfers carry `error = 'assigned'`).
 - Owner (before staging): Supabase "Confirm email" and "Secure email change" ON, the new Auth email templates, minimum password length 10, leaked-password protection; `settings.contact.email` for team alerts.
 
 ## Log
+
+### 2026-11-07 (Phase 6 — spec)
+
+PR #50, branch `docs/p6-spec` (docs only).
+
+- `docs/specs/phase-6-hardening-launch.md`: 14 owner items, 14 decisions (evidence-based security review, payment hardening, monitoring that alerts once, housekeeping, Lighthouse and accessibility QA, launch content and SEO, analytics, PITR rehearsal, VNPay sign-off, staff UAT, production deployment, launch checklist, no new features, backlog closure), PRs 6A–6C (Stream A), 6P–6Q (Stream B), 6L (both).
+- ADR-039: GA4 through `gtag.js` only after consent (Consent Mode v2, manual `page_view` with route templates, never on payment-link, lookup or account pages); pseudonymous `cookie_consents` records. `ARCHITECTURE.md` analytics row updated.
+- Independent review: changes requested (GA leaking codes and tokens in paths and referrers; webhook trim would destroy unmatched transfers; owner list and launch checklist incomplete; newsletter unsubscribe dropped), all fixed; targeted re-review approved. New minors in the backlog.
+
+### 2026-11-07 (Phase 3 — public backlog)
+
+PR #49, branch `fix/p3-public-backlog`.
+
+- Language switcher: plain links (no 404 prefetches of Vietnamese paths from English pages), correct server-rendered href and the Vietnamese home's overlay header (`currentRoute()` reads the public and internal forms; no layout shift).
+- Sitemaps throw on read errors, so an outage keeps the last good sitemap instead of caching a 503; Phase 3 decision 4 corrected.
+- Redis language pairs: topics count only where they have a published article.
+- Verified: 798 unit tests, Turbopack build and budget (`/tours` 147.7 KB); CI green.
+- Independent review: approved; nits in the backlog.
+
+### 2026-11-07 (Phase 5 — inquiry panel fix)
+
+PR #48, branch `fix/inquiries-e2e` (main's E2E was red after #45).
+
+- Inquiry action panels were keyed by position, so taking an inquiry remounted the note and status forms on refresh (a note being typed could be lost); keyed by name now, and the E2E waits for the refreshed page.
+- Independent review: approved.
+
+### 2026-11-07 (Phase 5 — 5B: guest booking lookup and account deletion)
+
+PR #46, branch `feat/p5-lookup-deletion` (migration `20261110130000`).
+
+- `/tra-cuu-booking`: code and email, Turnstile, fail-closed limits, always the same answer; a single-use 30-minute lookup token (at most 3 open) emailed in `after()`, opened by the ADR-038 button flow. The page stays behind `features.bookingLookup` until Stream B's flag PR.
+- Deletion from the account profile with the password (5-per-hour limit before the password check): ban and revoke, `anonymise_customer()` (every table of decision 8, one transaction, idempotent, review audit rows stripped), GoTrue soft delete; waits for an admin while a trip or money is open; a retry runs the remaining steps; `finishDeletionAsAdmin()` and `admin_anonymise_customer()` (admin at aal2) ready for 5D.
+- Email-sync trigger skips deleted profiles; reviews audited without names or text; #45 minor fixed (first response after spam).
+- Verified: lint, tsc, unit tests, pgTAP 26 (56), Turbopack build and JS budget; CI green.
+- Deviations: lookup tokens are not issued without Resend (logged `skipped`); the export and the admin deletion UI move to 5D.
+- Independent review: approved with two fixes (limit before the password check, older review audit content), both done.
 
 ### 2026-11-07 (Phase 5 — 5W: tailor-made wizard and tour inquiry form)
 
@@ -564,13 +602,9 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 ## Known issues
 
 - Media uploads abandoned between the signed upload and the check leave a private object in `media-uploads`; add a daily cleanup of staged objects older than a day (Phase 6, ADR-023).
-- Phase 3: when tour pages embed cancellation-policy summaries, a policy save must also refresh the `tours` cache tag (spec decision 9's shared cache helper).
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
-- Phase 3: the CSP needs `img-src` for the Supabase Storage host (public images, blur placeholders are `data:`) and `connect-src` for the signed upload PUT in the admin.
-- Phase 3/6: consent proof. The `consent` cookie is the only record of a cookie choice; when GA4 lands, decide whether cookie choices are also written to `consent_records` (Decree 13/2023 asks for proof of consent).
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
 - The theme switcher is no longer rendered; next-themes stays installed for a possible admin dark mode (ADR-017).
-- Phase 3: `LanguageSwitcher` keeps the same slug in both languages; content pages with per-language slugs need a slug lookup.
 - Phase 6: add `includeSubDomains; preload` to HSTS once the production domain is fixed.
 - When performance tracing is wanted: add a `beforeSendSpan` that redacts span names and URL attributes, with a test, then set `tracesSampleRate` and drop `excludeTracing` in `next.config.ts`.
-- Phase 3: the CSP needs `connect-src` for the Sentry ingest host (or a Sentry `tunnelRoute`). Phase 6 legal pages: the privacy policy must name Sentry as a processor.
+- Phase 6 legal pages: the privacy policy must name Sentry as a processor (the CSP already allows its ingest host, `src/lib/csp.ts`).
