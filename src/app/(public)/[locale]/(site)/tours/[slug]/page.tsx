@@ -15,6 +15,7 @@ import {
   type TourPage,
 } from "@/modules/catalog/public/tour-public.service";
 import type { Locale } from "@/modules/catalog/public/types";
+import { onlineBookingAvailable } from "@/modules/catalog/public/online-booking.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -68,10 +69,11 @@ export default async function TourDetailPage({ params }: Props) {
   const { locale: raw, slug } = await params;
   const { locale, tour } = await load(raw, slug);
   setRequestLocale(locale);
-  const [related, reviews, settings] = await Promise.all([
+  const [related, reviews, settings, onlineBooking] = await Promise.all([
     getRelatedTours(locale, tour),
     getTourReviews(tour.id),
     getPublicSettings(),
+    onlineBookingAvailable(),
   ]);
   return (
     <TourDetailView
@@ -80,6 +82,7 @@ export default async function TourDetailPage({ params }: Props) {
       related={related}
       reviews={reviews}
       contact={{ phone: settings.contact?.phone ?? null, email: settings.contact?.email ?? null }}
+      onlineBooking={onlineBooking}
       loadDepartures={getTourDepartures}
     />
   );

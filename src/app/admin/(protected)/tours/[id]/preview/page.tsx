@@ -7,6 +7,7 @@ import { TourDetailView } from "@/components/tour/tour-detail-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { rolesFor } from "@/lib/auth/permissions";
 import { getTourPreview, getTourPreviewDepartures } from "@/modules/catalog/public/tour-public.service";
+import { onlineBookingAvailable } from "@/modules/catalog/public/online-booking.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 import { requireAdminAccess } from "../../../../admin-gate";
@@ -32,7 +33,7 @@ async function Preview({ params, searchParams }: Props) {
   const id = z.uuid().safeParse((await params).id).data;
   const locale = (await searchParams).locale === "en" ? "en" : "vi";
   if (!id) notFound();
-  const [tour, settings] = await Promise.all([getTourPreview(id, locale), getPublicSettings()]);
+  const [tour, settings, onlineBooking] = await Promise.all([getTourPreview(id, locale), getPublicSettings(), onlineBookingAvailable()]);
   if (!tour) notFound();
   return (
     <div lang={locale} className="bg-background pb-16">
@@ -42,6 +43,7 @@ async function Preview({ params, searchParams }: Props) {
         related={[]}
         reviews={{ count: 0, average: null, latest: [] }}
         contact={{ phone: settings.contact?.phone ?? null, email: settings.contact?.email ?? null }}
+        onlineBooking={onlineBooking}
         loadDepartures={getTourPreviewDepartures}
         preview
       />
