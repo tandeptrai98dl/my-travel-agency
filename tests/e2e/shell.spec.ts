@@ -23,6 +23,22 @@ test.describe("site shell (desktop)", () => {
     expect(await page.title()).toMatch(/Premium Travel Agency \(sample\)$/);
   });
 
+  test("the footer links the guest booking lookup in both languages (Phase 5 PR 5B)", async ({ page }) => {
+    await dismissConsent(page);
+    for (const [home, name, path, heading] of [
+      ["/", "Tra cứu booking", "/tra-cuu-booking", "Tra cứu đặt chỗ"],
+      ["/en", "Find my booking", "/en/booking-lookup", "Find your booking"],
+    ] as const) {
+      await page.goto(home);
+      const link = page.getByRole("contentinfo").getByRole("link", { name, exact: true });
+      await expect(link).toHaveAttribute("href", path);
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await expect(page.getByTestId("lookup-form")).toBeVisible();
+    }
+  });
+
   test("skip link moves focus to the main content", async ({ page }) => {
     await dismissConsent(page);
     await page.goto("/en");
