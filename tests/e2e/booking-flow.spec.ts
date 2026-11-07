@@ -53,7 +53,7 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   await expect(page.getByTestId("booking-total")).toHaveText(/25\.800\.000/);
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
 
-  await expect(page.getByRole("heading", { level: 2, name: "Liên hệ" })).toBeFocused();
+  await expect(page.getByRole("main").getByRole("heading", { level: 2, name: "Liên hệ" })).toBeFocused();
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
   await expect(page.getByText("Vui lòng điền.").first()).toBeVisible();
   await page.getByLabel("Họ và tên").fill("Trần Thu Hà");
@@ -61,7 +61,7 @@ test("a guest books a group tour and pays through VNPay", async ({ page }) => {
   await page.getByLabel("Số điện thoại").fill("+84 912 345 678");
   await page.getByRole("button", { name: "Tiếp tục", exact: true }).click();
 
-  await expect(page.getByRole("heading", { level: 2, name: "Xác nhận" })).toBeFocused();
+  await expect(page.getByRole("main").getByRole("heading", { level: 2, name: "Xác nhận" })).toBeFocused();
   await page.getByLabel("Thanh toán toàn bộ").check();
   await page.getByRole("button", { name: "Tiếp tục thanh toán" }).click();
   await expect(page.getByText("Vui lòng đồng ý để tiếp tục.")).toBeVisible();

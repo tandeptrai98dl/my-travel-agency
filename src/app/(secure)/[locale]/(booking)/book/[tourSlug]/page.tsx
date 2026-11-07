@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPathname, Link } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
 import { bookingEnabled, getBookingForm } from "@/modules/booking/checkout.service";
+import { getPolicyLinks } from "@/modules/content/public/content-public.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 import { BookingMessages } from "../../messages";
@@ -92,6 +93,7 @@ async function Book({ params, searchParams }: Props) {
   const departure = form.departures.find((item) => item.id === requested) ?? form.departures[0];
   const adults = Math.max(count(first(query.adults), 1, Math.max(form.tour.minPax, 2)), 1);
   const children = count(first(query.children), 0, 0);
+  const policyLinks = await getPolicyLinks(locale);
   const policy = form.tour.policy ? (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-small">
       <h3 className="font-semibold">{t("policyTitle")}</h3>
@@ -116,8 +118,8 @@ async function Book({ params, searchParams }: Props) {
           turnstileSiteKey={form.turnstileSiteKey}
           checkoutPath={getPathname({ locale, href: { pathname: "/checkout/[code]/payment", params: { code: "{code}" } } }).replace(encodeURIComponent("{code}"), "{code}")}
           links={{
-            terms: getPathname({ locale, href: { pathname: "/policies/[slug]", params: { slug: "terms" } } }),
-            privacy: getPathname({ locale, href: { pathname: "/policies/[slug]", params: { slug: "privacy" } } }),
+            terms: policyLinks.find((link) => link.key === "terms")?.href ?? getPathname({ locale, href: "/contact" }),
+            privacy: policyLinks.find((link) => link.key === "privacy")?.href ?? getPathname({ locale, href: "/contact" }),
           }}
           policy={policy}
         />

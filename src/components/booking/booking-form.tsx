@@ -20,8 +20,9 @@ import { type CheckoutDraftInput, checkoutDraftSchema } from "@/modules/booking/
 import type { BookingFormDeparture } from "@/modules/booking/checkout.service";
 import type { Quote } from "@/modules/booking/pricing";
 
+import { useTurnstile } from "@/components/forms/use-turnstile";
+
 import { PriceSummary } from "./price-summary";
-import { useTurnstile } from "./use-turnstile";
 
 type Props = {
   locale: "vi" | "en";
@@ -77,7 +78,8 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
   const [alert, setAlert] = useState<string | null>(null);
   const [pricing, startPricing] = useTransition();
   const [invoice, setInvoice] = useState(false);
-  const turnstile = useTurnstile(turnstileSiteKey, locale, "booking");
+  const formRef = useRef<HTMLFormElement>(null);
+  const turnstile = useTurnstile({ siteKey: turnstileSiteKey, locale, action: "booking", formRef });
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const form = useForm<CheckoutDraftInput>({
@@ -136,12 +138,9 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
 
   async function onSubmit(values: CheckoutDraftInput) {
     setAlert(null);
-    if (turnstile.required && !turnstile.token) {
-      turnstile.start();
-      setAlert(errors("turnstile"));
-      return;
-    }
-    const result = await createBookingAction({ ...values, invoice: invoice ? values.invoice : null, turnstileToken: turnstile.token ?? "" });
+    // The widget puts its single-use token in the form (shared hook, ADR-035).
+    const token = formRef.current ? String(new FormData(formRef.current).get("cf-turnstile-response") ?? "") : "";
+    const result = await createBookingAction({ ...values, invoice: invoice ? values.invoice : null, turnstileToken: token });
     if (!result.ok) {
       turnstile.reset();
       if ("fields" in result && result.fields && Object.keys(result.fields).length > 0) {
@@ -162,7 +161,18 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <Form {...form}>
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)} onFocus={turnstile.start} className="flex flex-col gap-8" aria-labelledby={ids.title}>
+        <form
+          ref={formRef}
+          noValidate
+          onSubmit={(event) => {
+            // Turnstile first (it re-submits the form once its token arrives), then the form checks.
+            turnstile.onSubmit(event);
+            if (!event.defaultPrevented) void form.handleSubmit(onSubmit)(event);
+          }}
+          onFocus={turnstile.start}
+          className="flex flex-col gap-8"
+          aria-labelledby={ids.title}
+        >
           <nav aria-label={t("steps.label")}>
             <ol className="flex flex-wrap gap-x-6 gap-y-2 text-small">
               {STEPS.map((name, index) => (
@@ -399,7 +409,7 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
                   </FormItem>
                 )}
               />
-              <div ref={turnstile.ref} />
+              <div ref={turnstile.widgetRef} />
             </div>
           )}
 
@@ -414,8 +424,8 @@ export function BookingForm({ locale, tour, departures, initial, turnstileSiteKe
                 {t("next")}
               </Button>
             ) : (
-              <Button type="submit" size="lg" disabled={form.formState.isSubmitting || !quote} aria-busy={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? t("submitting") : t("submit")}
+              <Button type="submit" size="lg" disabled={form.formState.isSubmitting || turnstile.waiting || !quote} aria-busy={form.formState.isSubmitting || turnstile.waiting}>
+                {form.formState.isSubmitting || turnstile.waiting ? t("submitting") : t("submit")}
               </Button>
             )}
           </div>

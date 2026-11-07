@@ -8,9 +8,11 @@ import { CookieConsentBanner } from "@/components/layout/cookie-consent-banner";
 import { LabelsProvider, type LabelTree } from "@/components/layout/labels";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { getPathname } from "@/i18n/navigation";
 import { isLocale, routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/site-url";
 import { getDestinationTree } from "@/modules/catalog/destinations.service";
+import { getPolicyLinks } from "@/modules/content/public/content-public.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
 import "../../globals.css";
@@ -58,12 +60,14 @@ export default async function SecureLayout({ children, params }: Props) {
     Navigation: plain(messages.Navigation),
     Consent: plain(messages.Consent),
   };
-  const [settings, destinations, t, tMeta] = await Promise.all([
+  const [settings, destinations, t, tMeta, policyLinks] = await Promise.all([
     getPublicSettings(),
     getDestinationTree(locale),
     getTranslations({ locale, namespace: "Navigation" }),
     getTranslations({ locale, namespace: "Metadata" }),
+    getPolicyLinks(locale),
   ]);
+  const privacyHref = policyLinks.find((link) => link.key === "privacy")?.href ?? getPathname({ locale, href: "/contact" });
   const brandName = settings.company?.name ?? tMeta("siteName");
 
   return (
@@ -80,8 +84,8 @@ export default async function SecureLayout({ children, params }: Props) {
           <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
-          <SiteFooter settings={settings} brandName={brandName} locale={locale} />
-          <CookieConsentBanner />
+          <SiteFooter settings={settings} brandName={brandName} locale={locale} policyLinks={policyLinks} />
+          <CookieConsentBanner privacyHref={privacyHref} />
         </LabelsProvider>
       </body>
     </html>
