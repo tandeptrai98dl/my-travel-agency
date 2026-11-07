@@ -12,7 +12,7 @@ import { booking, closeTestDepartures, heldBooking, testDeparture } from "./supp
 test.describe.configure({ mode: "serial" });
 test.afterAll(closeTestDepartures);
 
-const ROUTES = ["/api/cron/balance-reminders", "/api/cron/departure-checks"];
+const ROUTES = ["/api/cron/balance-reminders", "/api/cron/departure-checks", "/api/cron/health-checks", "/api/cron/housekeeping"];
 const secret = process.env.CRON_SECRET;
 
 function vietnamDay(offset: number): string {

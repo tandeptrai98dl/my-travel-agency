@@ -34,6 +34,19 @@ export async function removeStaged(path: string) {
   return createAdminClient().storage.from(UPLOADS_BUCKET).remove([path]);
 }
 
+/**
+ * One page of the staging bucket under `prefix` (`pending` or `pending/<user id>`), for the daily
+ * cleanup of abandoned uploads (`/api/cron/housekeeping`, after the CRON_SECRET check). Storage
+ * lists one level at a time: folders come back with `id` null.
+ */
+export async function listStaged(prefix: string, offset: number, limit: number) {
+  return createAdminClient().storage.from(UPLOADS_BUCKET).list(prefix, { limit, offset, sortBy: { column: "name", order: "asc" } });
+}
+
+export async function removeStagedMany(paths: string[]) {
+  return createAdminClient().storage.from(UPLOADS_BUCKET).remove(paths);
+}
+
 export async function uploadPublic(path: string, body: Buffer, contentType: string) {
   return createAdminClient()
     .storage.from(MEDIA_BUCKET)
