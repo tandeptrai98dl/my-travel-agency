@@ -14,8 +14,10 @@ test("browser errors reach Sentry, without personal data", async ({ page }) => {
   });
 
   await page.goto("/en?utm_source=newsletter&email=someone%40example.test");
+  // The language switcher keeps the query (#49 review), so the current page carries the address too
+  // and the referrer does as well: neither may reach Sentry.
   await page.getByRole("banner").getByRole("link", { name: "Tiếng Việt" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/\?utm_source=newsletter&email=someone%40example\.test$/);
 
   // The SDK loads lazily after the page is idle: keep raising probe errors until one arrives.
   await expect

@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { adminCsp, createNonce, isAdminPath, isSecurePath, PUBLIC_CSP_SOURCE, publicCsp, SECURE_ROUTES, secureAlternatives, secureCsp } from "./csp";
+import { NO_ANALYTICS_ROUTES } from "@/components/analytics/routes";
+import { pathnames } from "@/i18n/pathnames";
+import { localizedPath } from "@/i18n/paths";
+
+import {
+  adminCsp,
+  ANALYTICS_SECURE_ROUTES,
+  createNonce,
+  isAdminPath,
+  isAnalyticsSecurePath,
+  isSecurePath,
+  PUBLIC_CSP_SOURCE,
+  publicCsp,
+  SECURE_ROUTES,
+  secureAlternatives,
+  secureCsp,
+} from "./csp";
 
 const SUPABASE = "https://x.supabase.co";
 const DSN = "https://publickey@o123.ingest.de.sentry.io/456";
@@ -84,6 +100,30 @@ describe("Google Analytics hosts (ADR-039)", () => {
       expect(policy).not.toContain("unsafe-eval");
       expect(directive(policy, "frame-src")).not.toContain("google");
     }
+  });
+
+  it("are scoped to the secure routes where GA may load: book, checkout and its result (#55 m4)", () => {
+    for (const path of ["/dat-tour/ha-long", "/en/book/ha-long", "/thanh-toan/PTA-2611-0042", "/en/checkout/PTA-2611-0042", "/thanh-toan/PTA-2611-0042/phuong-thuc", "/en/checkout/PTA-2611-0042/payment", "/thanh-toan/PTA-2611-0042/ket-qua", "/en/checkout/PTA-2611-0042/result"]) {
+      expect(isAnalyticsSecurePath(path), path).toBe(true);
+    }
+    // The payment link shares checkout's Vietnamese prefix (/thanh-toan/link/…) and must not match.
+    for (const path of ["/thanh-toan/link/abc", "/en/pay/abc", "/tra-cuu-booking", "/en/booking-lookup", "/dang-nhap", "/en/login", "/dang-ky", "/quen-mat-khau", "/en/reset-password", "/tai-khoan", "/tai-khoan/booking/PTA-2611-0042", "/en/account/profile", "/", "/tours", "/admin"]) {
+      expect(isAnalyticsSecurePath(path), path).toBe(false);
+    }
+  });
+
+  it("agree with the loader: a secure route lists Google's hosts exactly when GA may run there", () => {
+    let secure = 0;
+    for (const route of Object.keys(pathnames) as (keyof typeof pathnames)[]) {
+      for (const locale of ["vi", "en"] as const) {
+        const path = localizedPath(locale, { pathname: route, params: { slug: "x", tourSlug: "x", code: "PTA-2611-0042", token: "t".repeat(43) } });
+        if (!isSecurePath(path)) continue;
+        secure += 1;
+        expect(isAnalyticsSecurePath(path), `${route} (${locale})`).toBe(!NO_ANALYTICS_ROUTES.has(route));
+      }
+    }
+    expect(secure).toBeGreaterThan(20);
+    for (const route of ANALYTICS_SECURE_ROUTES) expect(NO_ANALYTICS_ROUTES.has(route), route).toBe(false);
   });
 
   it("are absent without a measurement ID, and never in the admin", () => {

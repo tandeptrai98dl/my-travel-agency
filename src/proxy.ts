@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
-import { adminCsp, createNonce, isAdminPath, isSecurePath, secureCsp } from "@/lib/csp";
+import { adminCsp, createNonce, isAdminPath, isAnalyticsSecurePath, isSecurePath, secureCsp } from "@/lib/csp";
 import { createRedirectLookup } from "@/lib/redirect-lookup";
 import { isSitePath } from "@/lib/site-path";
 import { refreshSession } from "@/lib/supabase/proxy";
@@ -80,6 +80,8 @@ export async function proxy(request: NextRequest) {
   if (isSecurePath(pathname)) {
     policy = secureCsp({
       ...hosts,
+      // Google's hosts only where GA may load (book, checkout, result; #55 review m4).
+      gaMeasurementId: isAnalyticsSecurePath(pathname) ? hosts.gaMeasurementId : undefined,
       nonce: createNonce(),
       paymentUrl: process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
     });

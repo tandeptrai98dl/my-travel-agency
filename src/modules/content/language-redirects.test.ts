@@ -60,4 +60,27 @@ describe("liveTopicRows", () => {
     // c2 has no English article: no pair, so /en/journal/topics/cam-nang is not sent to a 404.
     expect(languagePairs(liveTopicRows(topics, posts), "/journal/topics/[slug]").map(([from]) => from)).toEqual(["/journal/chu-de/inspiration", "/en/journal/topics/cam-hung"]);
   });
+
+  it("pairs a topic only where it has a published article in both languages (#49 review)", () => {
+    const topics = [
+      { id: "c1", locale: "vi", slug: "cam-hung" },
+      { id: "c1", locale: "en", slug: "inspiration" },
+      { id: "c2", locale: "vi", slug: "cam-nang" },
+      { id: "c2", locale: "en", slug: "guides" },
+      { id: "c3", locale: "vi", slug: "am-thuc" },
+      { id: "c3", locale: "en", slug: "food" },
+    ];
+    const posts = [
+      // c1: one article in Vietnamese only, another in English only: live in both, so a pair.
+      { category_id: "c1", post_translations: [{ locale: "vi" }] },
+      { category_id: "c1", post_translations: [{ locale: "en" }] },
+      // c2: English only; c3: no article at all. Neither pairs, in either direction.
+      { category_id: "c2", post_translations: [{ locale: "en" }] },
+    ];
+    const pairs = languagePairs(liveTopicRows(topics, posts), "/journal/topics/[slug]");
+    expect(pairs).toEqual([
+      ["/journal/chu-de/inspiration", "/journal/chu-de/cam-hung"],
+      ["/en/journal/topics/cam-hung", "/en/journal/topics/inspiration"],
+    ]);
+  });
 });

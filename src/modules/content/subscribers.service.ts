@@ -87,21 +87,29 @@ export async function exportSubscribers(): Promise<ExportResult> {
   const links = new Map<string, string>();
   for (let from = 0; from < rows.length; from += 1000) {
     const chunk = rows.slice(from, from + 1000).map((row) => ({ row, ...createUnsubscribeToken() }));
-    const { error: issueError } = await repo.issueUnsubscribeTokens(
+    const { data: issued, error: issueError } = await repo.issueUnsubscribeTokens(
       chunk.map((entry) => entry.row.id),
       chunk.map((entry) => entry.hash),
     );
-    if (issueError) {
-      logger.error("subscribers.export_tokens_failed", { code: issueError.code ?? null });
+    if (issueError || !Array.isArray(issued)) {
+      logger.error("subscribers.export_tokens_failed", { code: issueError?.code ?? null });
       return { ok: false, error: "failed" };
     }
+    // Only subscribers still active when their token was stored get one (#55 review m6).
+    const stored = new Set(issued);
     for (const { row, token } of chunk) {
+      if (!stored.has(row.id)) continue;
       links.set(row.id, new URL(localizedPath(row.locale, { pathname: "/newsletter/unsubscribe", query: { token } }), siteUrl).toString());
     }
   }
+  // A subscriber who unsubscribed between the read and the tokens has no link and no longer agrees
+  // to the newsletter: the row is left out, so no row carries a dead or empty link. The audit row
+  // keeps the count read; the difference is logged (a count, no address).
+  const exported = rows.filter((row) => links.has(row.id));
+  if (exported.length < rows.length) logger.warn("subscribers.export_left_out", { count: rows.length - exported.length });
   const csv = toCsv(
     ["email", "locale", "source", "confirmed_at", "created_at", "unsubscribe_url"],
-    rows.map((row) => [row.email, row.locale, row.source, row.confirmed_at, row.created_at, links.get(row.id) ?? ""]),
+    exported.map((row) => [row.email, row.locale, row.source, row.confirmed_at, row.created_at, links.get(row.id)!]),
   );
-  return { ok: true, csv, filename: `subscribers-${new Date().toISOString().slice(0, 10)}.csv`, count: rows.length };
+  return { ok: true, csv, filename: `subscribers-${new Date().toISOString().slice(0, 10)}.csv`, count: exported.length };
 }

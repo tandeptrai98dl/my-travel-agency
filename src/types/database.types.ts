@@ -1082,7 +1082,7 @@ isOneToOne: false
 { Args: { "email": string,"target_code": string,"token_hash": string,"valid_minutes"?: number }; Returns: Json
                            },
 "issue_newsletter_unsubscribe_tokens":
-{ Args: { "p_subscriber_ids": (string)[],"p_token_hashes": (string)[] }; Returns: number
+{ Args: { "p_subscriber_ids": (string)[],"p_token_hashes": (string)[] }; Returns: (string)[]
                            },
 "itinerary_media_ids":
 { Args: { "itinerary": Json }; Returns: (string)[]
@@ -1121,6 +1121,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "purge_cron_history":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"purge_newsletter_unsubscribe_tokens":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "raise_on_email_problems":

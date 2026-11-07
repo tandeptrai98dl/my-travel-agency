@@ -37,7 +37,9 @@ export function languagePairs(rows: SlugRow[], route: SlugRoute): [source: strin
 
 /**
  * Topics that render in a language: those with a published article in it (the topic page is a 404
- * otherwise, so neither a redirect to it nor its slug as a real page may count).
+ * otherwise, so neither a redirect to it nor its slug as a real page may count). `languagePairs()`
+ * pairs only ids with a row in both languages, so a topic's pair needs a published article in
+ * both languages (#49 review); its slug in one language still counts as a real page there.
  */
 export function liveTopicRows(topics: SlugRow[], posts: { category_id: string | null; post_translations: { locale: string }[] }[]): SlugRow[] {
   const live = new Set(posts.flatMap((post) => (post.category_id ? post.post_translations.map((t) => `${post.category_id}:${t.locale}`) : [])));
