@@ -181,6 +181,10 @@
     "body": "The link in your email lets this browser open booking {code}.",
     "open": "Open the booking",
     "opening": "Opening…",
-    "failed": "This link no longer works. Please get in touch with us."
+    "failed": "This link no longer works. Please get in touch with us.",
+    "usedTitle": "This link has been used",
+    "usedBody": "The link in your email opens your booking once. To open it on another device, please get in touch and we will send a new link.",
+    "expiredTitle": "This link has expired",
+    "expiredBody": "The link in your email has expired. Please get in touch and we will send a new link."
   }
 }

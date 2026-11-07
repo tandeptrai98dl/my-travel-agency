@@ -400,35 +400,46 @@ export async function redeemPaymentLink(token: string): Promise<RedeemResult> {
 
 const CODE_PATTERN = /^PTA-\d{4}-\d{4,}$/;
 
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+export type EmailLinkState = "valid" | "used" | "expired" | "invalid";
+
 /**
- * Whether `?access=<token>` from an email (4E, `checkoutUrl()`) opens this booking. No side
- * effects: the checkout page shows only an "open" button until the customer clicks it, so a mail
- * scanner that follows the link sees no booking details and sets no cookie.
+ * What `?access=<token>` from an email (4E, ADR-038) can do for this booking: a single-use token
+ * from `booking_access_tokens`. No side effects: the checkout page shows only an "open" button
+ * until the customer clicks it, so a mail scanner that follows the link sees no booking details,
+ * uses nothing and sets no cookie.
  */
-export async function emailLinkValid(code: string, token: string | undefined): Promise<boolean> {
-  const secret = serverEnv.BOOKING_ACCESS_SECRET;
-  if (!secret || !token || !CODE_PATTERN.test(code)) return false;
-  const { data } = await repo.findBookingIdByCode(code);
-  return Boolean(data && verifyAccess(secret, data.id, token));
+export async function emailLinkState(code: string, token: string | undefined): Promise<EmailLinkState> {
+  if (!serverEnv.BOOKING_ACCESS_SECRET || !token || !TOKEN_PATTERN.test(token) || !CODE_PATTERN.test(code)) return "invalid";
+  const { data } = await repo.accessTokenState(code, hashLinkToken(token));
+  return data === "valid" || data === "used" || data === "expired" ? data : "invalid";
 }
 
-export type OpenLinkResult = { ok: true; code: string; locale: Locale } | { ok: false };
+export type OpenLinkResult = { ok: true; code: string; locale: Locale } | { ok: false; error: "used" | "expired" | "invalid" };
 
-/** The customer's click on an emailed checkout link: this browser gets the booking's access cookie. */
+/**
+ * The customer's click on an emailed checkout link: the token is used up and this browser gets a
+ * fresh access cookie for the booking (the emailed token itself never becomes the cookie).
+ */
 export async function openEmailLink(code: string, token: string): Promise<OpenLinkResult> {
   const secret = serverEnv.BOOKING_ACCESS_SECRET;
-  if (!secret || !CODE_PATTERN.test(code)) return { ok: false };
-  const { data } = await repo.findBookingIdByCode(code);
-  if (!data || !verifyAccess(secret, data.id, token)) return { ok: false };
-  // The cookie keeps the link's own expiry: opening a link never extends access.
-  (await cookies()).set(accessCookieName(data.code), token, {
+  if (!secret || !TOKEN_PATTERN.test(token) || !CODE_PATTERN.test(code)) return { ok: false, error: "invalid" };
+  const { data, error } = await repo.redeemAccessToken(code, hashLinkToken(token));
+  if (error || !data) {
+    const reason = error?.message === "link_used" ? "used" : error?.message === "link_expired" ? "expired" : "invalid";
+    return { ok: false, error: reason };
+  }
+  const row = data as { booking_id: string; code: string; locale: Locale };
+  const access = signAccess(secret, row.booking_id);
+  (await cookies()).set(accessCookieName(row.code), access.value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    expires: new Date(Number(token.split(".")[0])),
+    expires: access.expires,
   });
-  return { ok: true, code: data.code, locale: data.locale };
+  return { ok: true, code: row.code, locale: row.locale };
 }
 
 /**

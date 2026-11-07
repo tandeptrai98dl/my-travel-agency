@@ -117,7 +117,8 @@
         "transfer_assigned": "Transfer assigned",
         "other": "Event",
         "payment_link_created": "Payment link created",
-        "payment_link_opened": "Customer opened the payment link"
+        "payment_link_opened": "Customer opened the payment link",
+        "email_resent": "Email resent"
       },
       "system": "System",
       "errors": {
@@ -259,7 +260,33 @@
       "requestHelp": "An operator cancels it and works out the refund from the policy.",
       "requestSubmit": "Send request",
       "requested": "Cancellation requested",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "emailsTitle": "Emails sent",
+      "noEmails": "No emails for this booking yet.",
+      "emailsHint": "Emails that failed, or were logged before Resend was set up, are not sent again on their own; use “Resend” after checking the address.",
+      "emailResend": "Resend",
+      "emailResending": "Sending…",
+      "emailResent": "The email was sent again.",
+      "emailResendSkipped": "Recorded, but email is not set up, so nothing was sent.",
+      "emailResendFailed": "This email could not be sent again.",
+      "emailIsResend": "resent",
+      "emailTemplates": {
+        "booking_received": "Booking received",
+        "payment_received": "Payment received",
+        "booking_confirmed": "Booking confirmed",
+        "booking_cancelled": "Cancelled",
+        "balance_reminder": "Balance reminder",
+        "payment_link": "Payment link",
+        "staff_booking_confirmed": "Team: confirmed",
+        "staff_attention": "Team: needs attention",
+        "other": "Other email"
+      },
+      "emailStatuses": {
+        "queued": "Queued",
+        "sent": "Sent",
+        "failed": "Failed",
+        "skipped": "Not set up"
+      }
     },
     "Attention": {
       "title": "Needs attention",
@@ -336,9 +363,8 @@
       "copy": "Copy link",
       "copied": "Copied",
       "email": {
-        "sent": "The link was emailed to the customer.",
-        "skipped": "Email is not set up: copy the link and send it to the customer.",
-        "failed": "The email could not be sent: copy the link and send it to the customer."
+        "queued": "The link is being emailed to the customer; the result shows under Emails below.",
+        "skipped": "Email is not set up: copy the link and send it to the customer."
       }
     }
   }

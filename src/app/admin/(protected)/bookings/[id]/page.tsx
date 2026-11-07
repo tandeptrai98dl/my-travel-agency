@@ -10,6 +10,7 @@ import { ContactForm } from "@/components/admin/bookings/contact-form";
 import { MoneyActionForm } from "@/components/admin/bookings/money-action-form";
 import { NoteActionForm } from "@/components/admin/bookings/note-action-form";
 import { PaymentLinkForm } from "@/components/admin/bookings/payment-link-form";
+import { ResendEmailButton } from "@/components/admin/bookings/resend-email-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import { can, rolesFor } from "@/lib/auth/permissions";
 import { formatVnd } from "@/lib/money";
 import { type BookingDetail, canResolveAttention } from "@/modules/booking/booking-admin.schemas";
 import { getBooking } from "@/modules/booking/booking-admin.service";
+import { listBookingEmails } from "@/modules/booking/booking-emails.service";
 import { canCancel } from "@/modules/booking/state-machine";
 
 import { requireAdminAccess } from "../../../admin-gate";
@@ -43,7 +45,20 @@ const KNOWN_EVENTS = [
   "transfer_assigned",
   "payment_link_created",
   "payment_link_opened",
+  "email_resent",
 ] as const;
+
+const EMAIL_TEMPLATES = [
+  "booking_received",
+  "payment_received",
+  "booking_confirmed",
+  "booking_cancelled",
+  "balance_reminder",
+  "payment_link",
+  "staff_booking_confirmed",
+  "staff_attention",
+] as const;
+const EMAIL_STATUSES = ["queued", "sent", "failed", "skipped"] as const;
 
 /** Booking detail (spec Phase 4 step 16): lines, travellers, payments, timeline and the role's actions. */
 export default async function BookingDetailPage({ params }: Props) {
@@ -95,6 +110,9 @@ async function Detail({ params }: Props) {
           <Travellers booking={booking} />
           <Payments booking={booking} />
           <Timeline booking={booking} />
+          <AdminMessages namespaces={["BookingDetail"]}>
+            <Emails booking={booking} user={user} />
+          </AdminMessages>
         </div>
         <AdminMessages namespaces={["BookingDetail", "Bookings", "PaymentLink"]}>
           <Actions booking={booking} user={user} />
@@ -356,6 +374,54 @@ async function Timeline({ booking }: { booking: BookingDetail }) {
             </li>
           ))}
         </ol>
+      )}
+    </Section>
+  );
+}
+
+/** The emails sent about the booking, with "resend" for customer emails (4F; #36 review). */
+async function Emails({ booking, user }: { booking: BookingDetail; user: CurrentUser }) {
+  const t = await getTranslations({ locale: "vi", namespace: "Admin" });
+  const format = await getFormatter({ locale: "vi" });
+  const emails = await listBookingEmails(booking.id);
+  const canResend = can(user.role, "bookings.edit");
+  const templateLabel = (template: string) =>
+    (EMAIL_TEMPLATES as readonly string[]).includes(template)
+      ? t(`BookingDetail.emailTemplates.${template as (typeof EMAIL_TEMPLATES)[number]}`)
+      : t("BookingDetail.emailTemplates.other");
+  const statusLabel = (status: string) =>
+    (EMAIL_STATUSES as readonly string[]).includes(status) ? t(`BookingDetail.emailStatuses.${status as (typeof EMAIL_STATUSES)[number]}`) : status;
+  return (
+    <Section id="booking-emails" title={t("BookingDetail.emailsTitle")}>
+      {emails.length === 0 ? (
+        <p className="text-small text-muted-foreground">{t("BookingDetail.noEmails")}</p>
+      ) : (
+        <>
+          <ul className="flex flex-col divide-y divide-border text-small" data-testid="booking-emails">
+            {emails.map((email) => (
+              <li key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3" data-template={email.template} data-status={email.status}>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="font-medium">
+                    {templateLabel(email.template)}
+                    {email.isResend && <span className="text-muted-foreground"> · {t("BookingDetail.emailIsResend")}</span>}
+                  </span>
+                  <span className="break-all text-muted-foreground">
+                    {email.to} · <time dateTime={email.createdAt}>{adminDateTime(format, email.createdAt)}</time>
+                  </span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <Badge variant={email.status === "sent" ? "success" : email.status === "failed" ? "destructive" : email.status === "queued" ? "warning" : "secondary"}>
+                    {statusLabel(email.status)}
+                  </Badge>
+                  {canResend && email.resend && !email.isResend && (
+                    <ResendEmailButton logId={email.id} bookingId={booking.id} label={templateLabel(email.template)} />
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-small text-muted-foreground">{t("BookingDetail.emailsHint")}</p>
+        </>
       )}
     </Section>
   );

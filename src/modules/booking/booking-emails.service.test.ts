@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   findBookingForEmail: vi.fn(),
@@ -7,15 +7,33 @@ const mocks = vi.hoisted(() => ({
   claimedEmailKeys: vi.fn(),
   getPublicSettings: vi.fn(),
   after: vi.fn(),
+  isEmailConfigured: vi.fn(),
+  issueAccessToken: vi.fn(),
+  findEmailLogForStaff: vi.fn(),
+  eventGroup: vi.fn(),
+  logEmailResent: vi.fn(),
+  requirePermission: vi.fn(),
 }));
-vi.mock("./booking-emails.repository", () => ({ findBookingForEmail: mocks.findBookingForEmail, recentBookingEvents: mocks.recentBookingEvents }));
-vi.mock("@/modules/notification/email.service", () => ({ sendEmail: mocks.sendEmail, claimedEmailKeys: mocks.claimedEmailKeys }));
+vi.mock("./booking-emails.repository", () => ({
+  findBookingForEmail: mocks.findBookingForEmail,
+  recentBookingEvents: mocks.recentBookingEvents,
+  issueAccessToken: mocks.issueAccessToken,
+  findEmailLogForStaff: mocks.findEmailLogForStaff,
+  eventGroup: mocks.eventGroup,
+  logEmailResent: mocks.logEmailResent,
+}));
+vi.mock("@/modules/notification/email.service", () => ({
+  sendEmail: mocks.sendEmail,
+  claimedEmailKeys: mocks.claimedEmailKeys,
+  isEmailConfigured: mocks.isEmailConfigured,
+}));
+vi.mock("@/lib/auth/require-role", () => ({ requirePermission: mocks.requirePermission }));
 vi.mock("@/modules/settings/settings.service", () => ({ getPublicSettings: mocks.getPublicSettings }));
 vi.mock("@/lib/site-url", () => ({ siteUrl: new URL("https://travel.example") }));
 vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
-const { notifyBooking, sendBookingEmails, sendPaymentLinkEmail } = await import("./booking-emails.service");
+const { notifyBooking, queuePaymentLinkEmail, resendBookingEmail, sendBookingEmails, sendPaymentLinkEmail } = await import("./booking-emails.service");
 const { logger } = await import("@/lib/logger");
 
 const booking = {
@@ -50,8 +68,15 @@ beforeEach(() => {
   mocks.recentBookingEvents.mockResolvedValue({ data: events, error: null });
   mocks.claimedEmailKeys.mockResolvedValue({ keys: new Set() });
   mocks.sendEmail.mockResolvedValue("sent");
+  mocks.isEmailConfigured.mockReturnValue(true);
+  mocks.issueAccessToken.mockResolvedValue({ data: "2026-11-14T00:00:00Z", error: null });
+  mocks.requirePermission.mockResolvedValue({ id: "staff-1", role: "sales" });
+  mocks.logEmailResent.mockResolvedValue({ error: null });
+  vi.stubEnv("BOOKING_ACCESS_SECRET", "test-access-secret-0123456789abcdef");
   mocks.getPublicSettings.mockResolvedValue({ company: { name: "Lumière" }, contact: { email: "team@travel.example", phone: null }, social: {} });
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe("sendBookingEmails", () => {
   it("sends the confirmation to the customer and the alert to the team, keyed on the event", async () => {
@@ -64,6 +89,20 @@ describe("sendBookingEmails", () => {
     ]);
     expect(sent[0].subject).toBe("Your journey is confirmed · PTA-2611-0042");
     expect(sent[0].html).toContain("Lumière");
+    // The confirmation links to the checkout with a fresh single-use token (ADR-038): only its hash is stored.
+    const [bookingId, tokenHash, minutes] = mocks.issueAccessToken.mock.calls[0] as [string, string, number];
+    expect([bookingId, minutes]).toEqual(["b-1", 7 * 24 * 60]);
+    const token = /\?access=([A-Za-z0-9_-]{43})/.exec(sent[0].html)![1];
+    expect(tokenHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(tokenHash).not.toContain(token);
+    expect(mocks.issueAccessToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("issues no token when email cannot be sent, so nothing is stored for a skipped email", async () => {
+    mocks.isEmailConfigured.mockReturnValue(false);
+    await sendBookingEmails("b-1");
+    expect(mocks.issueAccessToken).not.toHaveBeenCalled();
+    expect(mocks.sendEmail.mock.calls[0][0].html).not.toContain("?access=");
   });
 
   it("skips emails already claimed, so a second call (or a replayed IPN) sends nothing new", async () => {
@@ -115,5 +154,40 @@ describe("sendPaymentLinkEmail", () => {
     expect(message.dedupeKey).toMatch(/^payment_link:[0-9a-f]{40}$/);
     expect(message.subject).not.toContain("SECRET_TOKEN");
     expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain("SECRET_TOKEN");
+  });
+});
+
+describe("queuePaymentLinkEmail", () => {
+  it("sends after the response and tells the form whether email is set up", async () => {
+    const input = { bookingId: "b-1", url: "https://travel.example/en/pay/T", amount: 1, kind: "full" as const, expiresAt: "2026-11-09T10:00:00Z" };
+    expect(queuePaymentLinkEmail(input)).toBe("queued");
+    expect(mocks.after).toHaveBeenCalledTimes(1);
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    mocks.isEmailConfigured.mockReturnValue(false);
+    expect(queuePaymentLinkEmail(input)).toBe("skipped");
+  });
+});
+
+describe("resendBookingEmail", () => {
+  it("rebuilds a customer email from its event and sends it with a fresh key", async () => {
+    mocks.findEmailLogForStaff.mockResolvedValue({ data: { id: "l-1", booking_id: "b-1", template: "booking_confirmed", dedupe_key: "booking_confirmed:e2" }, error: null });
+    mocks.eventGroup.mockResolvedValue({ data: events, error: null });
+    expect(await resendBookingEmail("l-1")).toEqual({ ok: true, status: "sent" });
+    expect(mocks.requirePermission).toHaveBeenCalledWith("bookings.edit");
+    const message = mocks.sendEmail.mock.calls[0][0];
+    expect(message.template).toBe("booking_confirmed");
+    expect(message.to).toBe("anna@example.com");
+    expect(message.dedupeKey).toMatch(/^booking_confirmed:e2:resend:[0-9a-f-]{36}$/);
+    expect(mocks.logEmailResent).toHaveBeenCalledWith("b-1", "staff-1", "booking_confirmed");
+  });
+
+  it("never resends payment links or team alerts, and refuses rows it cannot see", async () => {
+    mocks.findEmailLogForStaff.mockResolvedValue({ data: { id: "l-2", booking_id: "b-1", template: "payment_link", dedupe_key: "payment_link:abc" }, error: null });
+    expect(await resendBookingEmail("l-2")).toEqual({ ok: false, error: "not_resendable" });
+    mocks.findEmailLogForStaff.mockResolvedValue({ data: { id: "l-3", booking_id: "b-1", template: "staff_attention", dedupe_key: "staff_attention:e9" }, error: null });
+    expect(await resendBookingEmail("l-3")).toEqual({ ok: false, error: "not_resendable" });
+    mocks.findEmailLogForStaff.mockResolvedValue({ data: null, error: null });
+    expect(await resendBookingEmail("l-4")).toEqual({ ok: false, error: "not_found" });
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
   });
 });

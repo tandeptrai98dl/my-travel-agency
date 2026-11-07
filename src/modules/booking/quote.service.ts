@@ -7,7 +7,7 @@ import { requirePermission } from "@/lib/auth/require-role";
 import { logger } from "@/lib/logger";
 import { siteUrl } from "@/lib/site-url";
 
-import { sendPaymentLinkEmail } from "./booking-emails.service";
+import { queuePaymentLinkEmail } from "./booking-emails.service";
 import * as repo from "./quote.repository";
 import { type CreatePaymentLinkValues, type CreateQuoteValues, type PaymentLinkResult, type QuoteActionResult, quoteErrorCode } from "./quote.schemas";
 
@@ -68,8 +68,8 @@ export async function createPaymentLink(values: CreatePaymentLinkValues): Promis
   const row = data as { amount: number; kind: "deposit" | "full" | "balance"; expires_at: string; locale: "vi" | "en" };
   const path = getPathname({ locale: row.locale, href: { pathname: "/pay/[token]", params: { token } } });
   const url = new URL(path, siteUrl).toString();
-  const sent = await sendPaymentLinkEmail({ bookingId: values.bookingId, url, amount: row.amount, kind: row.kind, expiresAt: row.expires_at });
-  const email = sent === "sent" ? "sent" : sent === "unavailable" ? "skipped" : "failed";
+  // Sent after the answer (#36 review); its outcome shows in the booking's email list.
+  const email = queuePaymentLinkEmail({ bookingId: values.bookingId, url, amount: row.amount, kind: row.kind, expiresAt: row.expires_at });
   return { ok: true, url, amount: row.amount, expiresAt: row.expires_at, email };
 }
 

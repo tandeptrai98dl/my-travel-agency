@@ -61,9 +61,14 @@ export async function findLinkBooking(tokenHash: string) {
   return db().from("payment_links").select("booking_id, bookings!inner(code, locale)").eq("token_hash", tokenHash).maybeSingle();
 }
 
-/** The id and language behind a booking code (the emailed checkout link is checked against the id). */
-export async function findBookingIdByCode(code: string) {
-  return db().from("bookings").select("id, code, locale").eq("code", code).maybeSingle();
+/** An emailed checkout token's state for the booking named in the URL (no side effects). */
+export async function accessTokenState(code: string, tokenHash: string) {
+  return db().rpc("booking_access_token_state", { target_code: code, token_hash: tokenHash });
+}
+
+/** Uses an emailed checkout token once (ADR-038). */
+export async function redeemAccessToken(code: string, tokenHash: string) {
+  return db().rpc("redeem_booking_access_token", { target_code: code, token_hash: tokenHash });
 }
 
 export async function redeemPaymentLink(tokenHash: string) {

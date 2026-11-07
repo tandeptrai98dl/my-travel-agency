@@ -15,14 +15,12 @@ import {
   type PlannedEmail,
   planBookingEmails,
 } from "./booking-emails";
-import { verifyAccess } from "./booking-access";
 
 const messages = { vi: await loadMessages("vi"), en: await loadMessages("en") };
 const site = new URL("https://travel.example");
 const context = {
   brand: { name: "Lumière Voyages", email: "hello@travel.example", phone: "+84 28 0000 0000" },
   siteUrl: site,
-  accessSecret: "test-secret-0123456789abcdef0123456789",
   messages,
 };
 
@@ -111,15 +109,12 @@ describe("planBookingEmails", () => {
 });
 
 describe("checkoutUrl", () => {
-  it("is the localized checkout with an access token the 4B cookie check accepts", () => {
-    const now = Date.UTC(2026, 10, 7);
-    const vi = new URL(checkoutUrl(booking(), site, "s3cret", now));
+  it("is the localized checkout, with the single-use token when one was issued", () => {
+    const token = "t".repeat(43);
+    const vi = new URL(checkoutUrl(booking(), site, token));
     expect(vi.pathname).toBe("/thanh-toan/PTA-2611-0042");
-    const token = vi.searchParams.get("access")!;
-    expect(Number(token.split(".")[0])).toBe(now + 7 * 86_400_000);
-    expect(verifyAccess("s3cret", booking().id, token, now)).toBe(true);
-    expect(verifyAccess("s3cret", "another-booking", token, now)).toBe(false);
-    expect(new URL(checkoutUrl(booking({ locale: "en" }), site, undefined)).toString()).toBe("https://travel.example/en/checkout/PTA-2611-0042");
+    expect(vi.searchParams.get("access")).toBe(token);
+    expect(new URL(checkoutUrl(booking({ locale: "en" }), site, null)).toString()).toBe("https://travel.example/en/checkout/PTA-2611-0042");
   });
 });
 
@@ -157,19 +152,19 @@ describe("templates", () => {
   });
 
   it("writes Vietnamese and English copy with formatted amounts and dates", async () => {
-    const vi = await renderEmail(buildBookingEmail({ template: "booking_confirmed", key: "k" }, booking(), context).element);
+    const vi = await renderEmail(buildBookingEmail({ template: "booking_confirmed", key: "k" }, booking(), context, "tok_vi").element);
     expect(vi.text).toContain("Chuyến đi của bạn đã được xác nhận");
     expect(vi.text).toContain("Kính gửi Nguyễn Thị Lan");
     expect(vi.text).toContain("2 người lớn, 1 trẻ em");
     expect(vi.text).toMatch(/21\.000\.000\s?₫/);
     expect(vi.text).toContain("Hoàn 80% khi hủy trước 30 ngày.");
-    expect(vi.html).toContain("/thanh-toan/PTA-2611-0042?access=");
+    expect(vi.html).toContain("/thanh-toan/PTA-2611-0042?access=tok_vi");
 
-    const en = await renderEmail(buildBookingEmail({ template: "booking_confirmed", key: "k" }, booking({ locale: "en", adults: 1, children: 0 }), context).element);
+    const en = await renderEmail(buildBookingEmail({ template: "booking_confirmed", key: "k" }, booking({ locale: "en", adults: 1, children: 0 }), context, null).element);
     expect(en.text).toContain("Your journey is confirmed");
     expect(en.text).toContain("1 adult");
     expect(en.text).toContain("80% back up to 30 days before.");
-    expect(en.html).toContain("/en/checkout/PTA-2611-0042?access=");
+    expect(en.html).toContain('href="https://travel.example/en/checkout/PTA-2611-0042"');
   });
 
   it("states the hold in Vietnam time and the amount due now", async () => {
