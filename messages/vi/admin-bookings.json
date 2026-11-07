@@ -115,7 +115,9 @@
         "cancel_requested": "Yêu cầu huỷ",
         "attention_resolved": "Đã xử lý",
         "transfer_assigned": "Gán chuyển khoản",
-        "other": "Sự kiện"
+        "other": "Sự kiện",
+        "payment_link_created": "Tạo liên kết thanh toán",
+        "payment_link_opened": "Khách mở liên kết thanh toán"
       },
       "system": "Hệ thống",
       "errors": {
@@ -134,11 +136,19 @@
         "bookingNotFound": "Không tìm thấy đặt tour với mã này.",
         "not_found": "Không tìm thấy đặt tour.",
         "not_cancellable": "Đặt tour này không thể huỷ ở trạng thái hiện tại.",
-        "not_payable": "Đặt tour nháp chưa thể nhận tiền.",
+        "not_payable": "Đặt tour này không còn khoản cần thanh toán.",
         "refund_too_large": "Số tiền hoàn lớn hơn số tiền đã nhận.",
         "not_unmatched": "Chuyển khoản này đã được xử lý.",
         "retry": "Đặt tour đang được xử lý ở nơi khác. Vui lòng thử lại.",
-        "failed": "Không lưu được. Vui lòng thử lại."
+        "failed": "Không lưu được. Vui lòng thử lại.",
+        "dateInvalid": "Ngày không hợp lệ.",
+        "outOfRange": "Giá trị nằm ngoài khoảng cho phép.",
+        "tooManyInfants": "Tối đa một em bé cho hai người lớn.",
+        "invalid_quote": "Báo giá chưa hợp lệ (khách, giá, ngày hoặc liên hệ).",
+        "plan_unavailable": "Ngày này quá gần để đặt cọc; chọn thanh toán toàn bộ.",
+        "inquiryNotFound": "Không tìm thấy yêu cầu tư vấn với mã này.",
+        "inquiryTaken": "Yêu cầu này đã có báo giá.",
+        "invalid_link": "Không tạo được liên kết."
       }
     },
     "BookingDetail": {
@@ -287,6 +297,44 @@
       "bookingCode": "Mã đặt tour",
       "assign": "Gán",
       "assigned": "Đã gán vào {reference}"
+    },
+    "Quote": {
+      "title": "Tạo báo giá",
+      "description": "Báo giá cho chuyến đi riêng: giá cuối cùng theo người, hạn báo giá, rồi gửi liên kết thanh toán cho khách.",
+      "new": "Tạo báo giá",
+      "tour": "Tour",
+      "chooseTour": "Chọn tour",
+      "private": "riêng",
+      "group": "đoàn",
+      "startDate": "Ngày khởi hành",
+      "locale": "Ngôn ngữ của khách",
+      "adults": "Người lớn",
+      "children": "Trẻ em",
+      "infants": "Em bé",
+      "priceAdult": "Giá mỗi người lớn (VND)",
+      "priceChild": "Giá mỗi trẻ em (VND)",
+      "plan": "Hình thức thanh toán",
+      "planDeposit": "Đặt cọc theo tỷ lệ của tour",
+      "planFull": "Thanh toán toàn bộ",
+      "validDays": "Báo giá có hiệu lực (ngày)",
+      "contactName": "Họ tên khách",
+      "contactEmail": "Email",
+      "contactPhone": "Điện thoại",
+      "specialRequests": "Ghi chú cho chuyến đi",
+      "inquiryCode": "Mã yêu cầu tư vấn (không bắt buộc)",
+      "create": "Tạo báo giá",
+      "creating": "Đang tạo…",
+      "created": "Đã tạo báo giá"
+    },
+    "PaymentLink": {
+      "title": "Liên kết thanh toán",
+      "help": "Tạo liên kết cho khoản cần thanh toán lúc này. Liên kết dùng một lần và chỉ hiện một lần: hãy sao chép và gửi cho khách.",
+      "validHours": "Hiệu lực (giờ)",
+      "create": "Tạo liên kết",
+      "creating": "Đang tạo…",
+      "created": "Liên kết cho {amount}, hết hạn {time}",
+      "copy": "Sao chép liên kết",
+      "copied": "Đã sao chép"
     }
   }
 }

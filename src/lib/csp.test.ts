@@ -4,11 +4,11 @@ import { createNonce, isSecurePath, secureCsp } from "./csp";
 
 describe("secure CSP", () => {
   it("covers the localized checkout and account paths only", () => {
-    for (const path of ["/dat-tour/ha-long", "/thanh-toan/PTA-2611-0042", "/thanh-toan/PTA-2611-0042/ket-qua", "/en/book/ha-long", "/en/checkout/PTA-2611-0042/result"]) {
+    for (const path of ["/dat-tour/ha-long", "/thanh-toan/PTA-2611-0042", "/thanh-toan/PTA-2611-0042/ket-qua", "/en/book/ha-long", "/en/checkout/PTA-2611-0042/result", "/thanh-toan/link/abc", "/en/pay/abc"]) {
       expect(isSecurePath(path), path).toBe(true);
     }
-    // Not served by the secure root yet (payment links, account): the public root answers them.
-    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/thanh-toan/link/abc", "/tai-khoan", "/en/pay/abc", "/en/account/bookings", "/book/x"]) {
+    // Not served by the secure root yet (the account): the public root answers them.
+    for (const path of ["/", "/en", "/tours/ha-long", "/en/tours", "/diem-den", "/admin", "/api/health", "/bookings", "/thanh-toanx", "/tai-khoan", "/en/account/bookings", "/book/x"]) {
       expect(isSecurePath(path), path).toBe(false);
     }
   });

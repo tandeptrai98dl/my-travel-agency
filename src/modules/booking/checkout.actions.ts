@@ -3,12 +3,15 @@
 import { headers } from "next/headers";
 import type { z } from "zod";
 
+import { getPathname } from "@/i18n/navigation";
+
 import { checkoutDraftSchema, quoteInputSchema, startCheckoutPaymentSchema } from "./booking.schemas";
 import {
   checkoutStatus,
   createCheckoutBooking,
   loadCheckout,
   quoteForForm,
+  redeemPaymentLink,
   type StatusView,
   startCheckoutPayment,
 } from "./checkout.service";
@@ -56,4 +59,15 @@ export async function startPaymentAction(input: unknown) {
 export async function checkoutStatusAction(code: unknown): Promise<StatusView | null> {
   if (typeof code !== "string" || !/^PTA-\d{4}-\d{4,}$/.test(code)) return null;
   return checkoutStatus(code);
+}
+
+/** "Continue to payment" on a payment link: a button, so mail scanners never use the link up. */
+export async function redeemLinkAction(token: unknown) {
+  if (typeof token !== "string") return { ok: false as const, error: "invalid" as const };
+  const result = await redeemPaymentLink(token);
+  if (!result.ok) return result;
+  return {
+    ok: true as const,
+    path: getPathname({ locale: result.locale, href: { pathname: "/checkout/[code]/payment", params: { code: result.code } } }),
+  };
 }

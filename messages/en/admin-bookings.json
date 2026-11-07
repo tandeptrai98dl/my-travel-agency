@@ -115,7 +115,9 @@
         "cancel_requested": "Cancellation requested",
         "attention_resolved": "Resolved",
         "transfer_assigned": "Transfer assigned",
-        "other": "Event"
+        "other": "Event",
+        "payment_link_created": "Payment link created",
+        "payment_link_opened": "Customer opened the payment link"
       },
       "system": "System",
       "errors": {
@@ -134,11 +136,19 @@
         "bookingNotFound": "No booking has this code.",
         "not_found": "Booking not found.",
         "not_cancellable": "This booking cannot be cancelled in its current status.",
-        "not_payable": "A draft booking cannot take payments.",
+        "not_payable": "Nothing is due on this booking.",
         "refund_too_large": "The refund is more than what was received.",
         "not_unmatched": "This transfer has already been handled.",
         "retry": "The booking is busy. Please try again.",
-        "failed": "Could not save. Please try again."
+        "failed": "Could not save. Please try again.",
+        "dateInvalid": "Invalid date.",
+        "outOfRange": "Out of range.",
+        "tooManyInfants": "At most one infant per two adults.",
+        "invalid_quote": "The quote is not complete (guests, prices, date or contact).",
+        "plan_unavailable": "This date is too close for a deposit; choose pay in full.",
+        "inquiryNotFound": "No inquiry has this code.",
+        "inquiryTaken": "This inquiry already has a quote.",
+        "invalid_link": "Could not create the link."
       }
     },
     "BookingDetail": {
@@ -287,6 +297,44 @@
       "bookingCode": "Booking code",
       "assign": "Assign",
       "assigned": "Assigned as {reference}"
+    },
+    "Quote": {
+      "title": "New quote",
+      "description": "A quote for a private trip: the final price per guest, a quote expiry, then a payment link for the customer.",
+      "new": "New quote",
+      "tour": "Tour",
+      "chooseTour": "Choose a tour",
+      "private": "private",
+      "group": "group",
+      "startDate": "Start date",
+      "locale": "Customer language",
+      "adults": "Adults",
+      "children": "Children",
+      "infants": "Infants",
+      "priceAdult": "Price per adult (VND)",
+      "priceChild": "Price per child (VND)",
+      "plan": "Payment",
+      "planDeposit": "Deposit at the tour's rate",
+      "planFull": "Pay in full",
+      "validDays": "Quote valid for (days)",
+      "contactName": "Customer name",
+      "contactEmail": "Email",
+      "contactPhone": "Phone",
+      "specialRequests": "Trip notes",
+      "inquiryCode": "Inquiry code (optional)",
+      "create": "Create quote",
+      "creating": "Creating…",
+      "created": "Quote created"
+    },
+    "PaymentLink": {
+      "title": "Payment link",
+      "help": "Creates a link for what is due now. It works once and is shown only once: copy it and send it to the customer.",
+      "validHours": "Valid for (hours)",
+      "create": "Create link",
+      "creating": "Creating…",
+      "created": "Link for {amount}, expires {time}",
+      "copy": "Copy link",
+      "copied": "Copied"
     }
   }
 }

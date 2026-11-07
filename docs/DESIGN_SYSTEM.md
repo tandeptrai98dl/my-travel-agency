@@ -121,6 +121,7 @@ Calm, specific and visual. Describe experiences instead of adjectives ("a privat
 - `src/components/content` (Phase 3 PR K): RichPage (static pages in a 680 px column), JournalCard, TopicNav, ReviewCard, ContactForm (Turnstile on first interaction, server field errors linked to their fields, disabled without its services); `src/components/seo/page-metadata.ts` (canonical, hreflang for published languages, Open Graph)
 - `src/components/admin/bookings` (Phase 4 PR 4F): NoteActionForm (resolve, request cancellation, cancel with an inline confirmation), MoneyActionForm (manual payment or refund), ContactForm, AssignTransferForm; the booking detail page's summary, price lines, payments table and event timeline; the dashboard's "Việc cần làm" counts
 - `src/components/booking` (Phase 4 PR 4B): BookingForm (three steps: date and guests with steppers, contact, plan, VAT invoice and terms; the server's price in a sticky summary), PriceSummary, HoldCountdown, PaymentMethodForm, VietQrPanel (server-rendered QR with copy buttons), BookingSummaryCard, ResultStatus (polls until the IPN or webhook is recorded); pages under `src/app/(secure)/[locale]` with their own root layout and nonce CSP
+- Phase 4 PR 4D: QuoteForm and PaymentLinkForm (`src/components/admin/bookings`), RedeemLinkButton and the payment-link page (`src/components/booking`, `(secure)/[locale]/(booking)/pay/[token]`)
 - `/admin/design-system`: staff-only review page of every token and component (404 in production builds unless `SHOW_DESIGN_SYSTEM=true`)
 
 ### Planned

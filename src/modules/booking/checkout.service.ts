@@ -20,6 +20,7 @@ import type { CheckoutDraftValues } from "./booking.schemas";
 import * as bookingRepo from "./booking.repository";
 import { type BookingError, buildDraft, mapBookingError, quote as quoteBooking, repriceStaleDraft, startPayment } from "./booking.service";
 import * as repo from "./checkout.repository";
+import { hashLinkToken } from "./quote.service";
 import { availablePlans, type PaymentPlan, type Quote } from "./pricing";
 
 /**
@@ -359,4 +360,40 @@ export async function checkoutStatus(code: string): Promise<StatusView | null> {
     total: Number(row.total ?? view.total),
     holdExpiresAt: typeof row.hold_expires_at === "string" ? row.hold_expires_at : null,
   };
+}
+
+export type LinkState = "valid" | "used" | "expired" | "invalid";
+
+/** What the payment-link page shows before the customer continues (no side effects). */
+export async function paymentLinkState(token: string): Promise<LinkState> {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return "invalid";
+  const { data } = await repo.paymentLinkState(hashLinkToken(token));
+  return data === "valid" || data === "used" || data === "expired" ? data : "invalid";
+}
+
+export type RedeemResult = { ok: true; code: string; locale: Locale } | { ok: false; error: LinkState | "not_payable" | "unavailable" };
+
+/**
+ * The customer continues from a payment link (spec Phase 4 step 14): the link is used up, this
+ * browser gets the booking's access cookie, and the standard payment step takes over.
+ */
+export async function redeemPaymentLink(token: string): Promise<RedeemResult> {
+  const secret = serverEnv.BOOKING_ACCESS_SECRET;
+  if (!secret) return { ok: false, error: "unavailable" };
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return { ok: false, error: "invalid" };
+  const { data, error } = await repo.redeemPaymentLink(hashLinkToken(token));
+  if (error || !data) {
+    const reason = error?.message === "link_used" ? "used" : error?.message === "link_expired" ? "expired" : error?.message === "not_payable" ? "not_payable" : "invalid";
+    return { ok: false, error: reason };
+  }
+  const row = data as { booking_id: string; code: string; locale: Locale };
+  const access = signAccess(secret, row.booking_id);
+  (await cookies()).set(accessCookieName(row.code), access.value, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: access.expires,
+  });
+  return { ok: true, code: row.code, locale: row.locale };
 }

@@ -12,7 +12,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { currentQuery, listHref, parseListParams } from "@/lib/admin/list-params";
-import { rolesFor } from "@/lib/auth/permissions";
+import { can, rolesFor } from "@/lib/auth/permissions";
 import { formatVnd } from "@/lib/money";
 import { BOOKING_SORTS, BOOKING_STATUSES, type BookingListRow } from "@/modules/booking/booking-admin.schemas";
 import { bookingFilterOptions, listBookings } from "@/modules/booking/booking-admin.service";
@@ -29,7 +29,7 @@ const DEFAULTS = { sort: "created_at", dir: "desc" } as const;
 
 /** Bookings list (spec Phase 4 step 16): sales, operator, accountant and admin. */
 export default async function BookingsPage({ searchParams }: Props) {
-  await requireAdminAccess(rolesFor("bookings.read"));
+  const user = await requireAdminAccess(rolesFor("bookings.read"));
   const t = await getTranslations({ locale: "vi", namespace: "Admin" });
   return (
     <div className="flex flex-col gap-8 px-4 py-10 md:px-8">
@@ -37,9 +37,16 @@ export default async function BookingsPage({ searchParams }: Props) {
         title={t("Bookings.title")}
         description={t("Bookings.description")}
         actions={
-          <Link href={`${BASE}/attention`} className={buttonVariants({ variant: "outline" })}>
-            {t("Bookings.queueLink")}
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href={`${BASE}/attention`} className={buttonVariants({ variant: "outline" })}>
+              {t("Bookings.queueLink")}
+            </Link>
+            {can(user.role, "bookings.edit") && (
+              <Link href={`${BASE}/new`} className={buttonVariants()}>
+                {t("Quote.new")}
+              </Link>
+            )}
+          </div>
         }
       />
       <Suspense fallback={<ListSkeleton />}>

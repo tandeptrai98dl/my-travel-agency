@@ -156,5 +156,23 @@
     "viewBooking": "View booking",
     "policy": "Cancellation policy",
     "priceChanged": "The departure's price has just changed; the new total is {total}. Check it, then pay to continue."
+  },
+  "PayLink": {
+    "metaTitle": "Payment link",
+    "eyebrow": "Payment",
+    "title": "Your payment link",
+    "validBody": "This link opens the payment page for the trip we designed with you. Each link can be used once.",
+    "continue": "Continue to payment",
+    "continuing": "Opening…",
+    "usedTitle": "This link has been used",
+    "usedBody": "If you opened it on this device, continue from your confirmation email, or ask your travel designer for a new link.",
+    "expiredTitle": "This link has expired",
+    "expiredBody": "Please ask your travel designer for a new link.",
+    "invalidTitle": "This link is not valid",
+    "invalidBody": "Please check the address in your email, or contact us.",
+    "notPayableTitle": "Nothing to pay on this booking",
+    "notPayableBody": "This booking is paid, cancelled or its quote has expired. Please contact us.",
+    "unavailableTitle": "Online payment is paused",
+    "unavailableBody": "Please call us to complete your payment."
   }
 }

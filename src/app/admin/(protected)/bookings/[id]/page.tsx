@@ -9,6 +9,7 @@ import { AdminMessages } from "@/components/admin/admin-messages";
 import { ContactForm } from "@/components/admin/bookings/contact-form";
 import { MoneyActionForm } from "@/components/admin/bookings/money-action-form";
 import { NoteActionForm } from "@/components/admin/bookings/note-action-form";
+import { PaymentLinkForm } from "@/components/admin/bookings/payment-link-form";
 import { PageHeader } from "@/components/admin/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ const KNOWN_EVENTS = [
   "cancel_requested",
   "attention_resolved",
   "transfer_assigned",
+  "payment_link_created",
+  "payment_link_opened",
 ] as const;
 
 /** Booking detail (spec Phase 4 step 16): lines, travellers, payments, timeline and the role's actions. */
@@ -93,7 +96,7 @@ async function Detail({ params }: Props) {
           <Payments booking={booking} />
           <Timeline booking={booking} />
         </div>
-        <AdminMessages namespaces={["BookingDetail", "Bookings"]}>
+        <AdminMessages namespaces={["BookingDetail", "Bookings", "PaymentLink"]}>
           <Actions booking={booking} user={user} />
         </AdminMessages>
       </div>
@@ -371,6 +374,11 @@ async function Actions({ booking, user }: { booking: BookingDetail; user: Curren
         <NoteActionForm bookingId={booking.id} code={booking.code} kind="resolve" />
       </div>,
     );
+  }
+  const linkable =
+    ["draft", "quoted", "pending_payment"].includes(booking.status) || (booking.status === "confirmed" && booking.amountPaid < booking.total);
+  if (linkable && can(user.role, "bookings.send_payment_link")) {
+    panels.push(<PaymentLinkForm key="link" bookingId={booking.id} />);
   }
   if (booking.status !== "draft" && can(user.role, "payments.record")) {
     panels.push(<MoneyActionForm key="payment" bookingId={booking.id} kind="payment" defaultAmount={amountDue(booking)} />);
