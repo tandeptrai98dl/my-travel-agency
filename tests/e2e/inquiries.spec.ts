@@ -31,28 +31,26 @@ test.beforeAll(async () => {
   const api = adminApi();
   const { data: tour } = await api.from("tours").select("id").eq("code", "VN-HER-05").single();
   const adminId = await profileId("admin@example.test");
-  const { data, error } = await api
-    .from("inquiries")
-    .insert([
-      {
-        code: open.code,
-        name: "Anna Berg",
-        email: `anna-${stamp}@example.test`,
-        phone: "+46 70 000 00 00",
-        locale: "en",
-        source: "tour_inquiry",
-        tour_id: tour?.id ?? null,
-        adults: 3,
-        children: 1,
-        travel_month: "2027-03",
-        message: "We would love a slow week in Hoi An.",
-      },
-      { code: owned.code, name: "Minh Trần", email: `minh-${stamp}@example.test`, locale: "vi", source: "contact", assigned_to: adminId, message: "Xin tư vấn." },
-    ])
-    .select("id, code");
-  if (error) throw error;
-  open.id = data.find((row) => row.code === open.code)!.id;
-  owned.id = data.find((row) => row.code === owned.code)!.id;
+  // One insert per row: a bulk insert sends the union of the keys, with null for the missing ones.
+  const insert = async (row: Record<string, unknown>) => {
+    const { data, error } = await api.from("inquiries").insert(row).select("id").single();
+    if (error) throw error;
+    return data.id as string;
+  };
+  open.id = await insert({
+    code: open.code,
+    name: "Anna Berg",
+    email: `anna-${stamp}@example.test`,
+    phone: "+46 70 000 00 00",
+    locale: "en",
+    source: "tour_inquiry",
+    tour_id: tour?.id ?? null,
+    adults: 3,
+    children: 1,
+    travel_month: "2027-03",
+    message: "We would love a slow week in Hoi An.",
+  });
+  owned.id = await insert({ code: owned.code, name: "Minh Trần", email: `minh-${stamp}@example.test`, locale: "vi", source: "contact", assigned_to: adminId, message: "Xin tư vấn." });
 });
 
 test("sales take an inquiry, record the first contact and quote it", async ({ page }) => {
@@ -97,7 +95,7 @@ test("sales take an inquiry, record the first contact and quote it", async ({ pa
   const form = page.getByRole("form", { name: "Tạo báo giá" });
   await expect(form.getByLabel("Mã yêu cầu tư vấn (không bắt buộc)")).toHaveValue(open.code);
   await expect(form.getByLabel("Họ tên khách")).toHaveValue("Anna Berg");
-  await expect(form.getByLabel("Người lớn")).toHaveValue("3");
+  await expect(form.getByLabel("Người lớn", { exact: true })).toHaveValue("3");
   await expect(form.getByLabel("Ngày khởi hành")).toHaveValue("2027-03-01");
   await form.getByLabel("Giá mỗi người lớn (VND)").fill("20.000.000");
   await form.getByLabel("Giá mỗi trẻ em (VND)").fill("10.000.000");

@@ -294,9 +294,8 @@ async function Actions({ inquiry, user, t }: { inquiry: InquiryDetail; user: Cur
       <h2 id="inquiry-actions" className="font-serif text-h3 font-semibold">
         {t("Detail.actionsTitle")}
       </h2>
-      {panels.length === 0 ? (
-        <p className="text-small text-muted-foreground">{t("Detail.readOnly")}</p>
-      ) : (
+      {!works && <p className="text-small text-muted-foreground">{t("Detail.readOnly")}</p>}
+      {panels.length > 0 && (
         <AdminMessages namespaces={["Inquiries"]}>
           {panels.map((panel, index) => (
             <div key={index} className={index > 0 ? "border-t border-border pt-6" : undefined}>
