@@ -181,6 +181,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"cookie_consents": {
+                  Row: {
+                    "action": string,"banner_version": string,"choices": Json,"created_at": string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"banner_version": string,"choices": Json,"created_at"?: string,"id": string,"locale": Database["public"]['Enums']["locale"],"record_id"?: never
+                  }
+                  Update: {
+                    "action"?: string,"banner_version"?: string,"choices"?: Json,"created_at"?: string,"id"?: string,"locale"?: Database["public"]['Enums']["locale"],"record_id"?: never
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"departures": {
                   Row: {
                     "capacity": number,"created_at": string,"end_date": string,"id": string,"note": string | null,"price_adult": number,"price_child": number | null,"price_infant": number | null,"seats_reserved": number,"single_supplement": number | null,"start_date": string,"status": Database["public"]['Enums']["departure_status"],"tour_id": string,"updated_at": string
@@ -1069,11 +1083,17 @@ isOneToOne: false
 "payment_link_state":
 { Args: { "token_hash": string }; Returns: string
                            },
+"purge_cookie_consents":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "raise_on_email_problems":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"record_cookie_consent":
+{ Args: { "p_action": string,"p_analytics": boolean,"p_banner_version": string,"p_id": string,"p_locale": Database["public"]['Enums']["locale"],"p_marketing": boolean }; Returns: undefined
                            },
 "record_manual_payment":
 { Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json

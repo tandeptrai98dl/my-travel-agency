@@ -17,7 +17,7 @@ Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 - Customer profiles are soft-deleted (`deleted_at`) and anonymised on request; content uses `archived`.
 - `updated_at` is maintained by a shared `set_updated_at()` trigger.
 
-## Table groups (37 tables)
+## Table groups (38 tables)
 
 | Group | Tables |
 | --- | --- |
@@ -28,7 +28,7 @@ Supabase Postgres. **Row Level Security is enabled on every table** (ADR-004).
 | Payments | payments, payment_links, webhook_events |
 | Inquiries | inquiries, internal_notes |
 | Content | posts, post_translations, post_categories, post_category_translations, pages, page_translations, reviews, media, redirects, subscribers |
-| System & compliance | settings, consent_records, email_logs, audit_logs |
+| System & compliance | settings, consent_records, cookie_consents, email_logs, audit_logs |
 
 Main relationships: `tours 1──* departures 1──* bookings`; `tours *──* destinations`; `inquiries 1──0..1 bookings`; `bookings 1──* payments`; `bookings 1──* booking_items / travellers / booking_events`; `auth.users 1──1 profiles 1──* bookings`.
 
@@ -574,6 +574,17 @@ create table consent_records (
   created_at       timestamptz not null default now()
 );
 
+create table cookie_consents (  -- Phase 6 PR 6P, ADR-039: proof of cookie choices, pseudonymous
+  record_id      bigint generated always as identity primary key,
+  id             uuid not null,  -- random UUID kept in the visitor's `consent` cookie; never sent to GA, Sentry or logs
+  action         text not null check (action in ('accept_all', 'essential_only', 'custom', 'withdraw')),
+  choices        jsonb not null,  -- exactly {"analytics": bool, "marketing": bool}; agrees with the action
+  banner_version text not null check (banner_version ~ '^banner-(vi|en)-[0-9a-f]{16}$'),  -- hash of the banner and settings texts
+  locale         locale not null,
+  created_at     timestamptz not null default now()
+  -- no IP, user agent or account link; a changed choice is a new row with the same id
+);
+
 create table email_logs (
   id                  uuid primary key default gen_random_uuid(),
   to_email            text not null,
@@ -647,6 +658,7 @@ Customer reads (Phase 5, `*_customer_reads.sql`, closes the last Phase 0 limit):
 | payment_links, webhook_events | — | — | accountant, admin read; writes only via service role |
 | settings | Read keys with `is_public` | Same as anon | admin writes |
 | consent_records, email_logs, audit_logs | — | — | admin reads; `email_logs` rows of a booking also for staff who read bookings (resend); writes only via service role or triggers |
+| cookie_consents | — | — | No policy and no privilege for any API role; written by `record_cookie_consent()` (service role), purged after 5 years |
 | booking_access_tokens | — | — | admin reads; writes only via service-role functions |
 | redirects, subscribers | — | — | editor, admin |
 
@@ -721,6 +733,8 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 | `set_marketing_consent(target_id, granted, document_version)` | service_role (`*_customer_reads_review.sql`) | The account's marketing choice and its `consent_records` row in one transaction; the version must be a published privacy-policy version (`privacy-vi-` or `privacy-en-` and 16 hex digits), passed by the account service |
 | `record_signup_consent(target_id, privacy_version, marketing, ip, user_agent)` | service_role | Privacy (and marketing, when ticked) consent of a new account, once |
 | `current_customer_id()`, `customer_travellers_editable(status, start_date)`, `is_real_date(value)` | service_role | Helpers of the customer functions (`is_real_date`: a real `YYYY-MM-DD` calendar date) |
+| `record_cookie_consent(id, action, analytics, marketing, banner_version, locale)` | service_role | One cookie choice from the banner or the settings dialog (Phase 6 PR 6P, ADR-039): the consent Server Action calls it after Zod and a per-IP rate limit; the table's checks keep the choices to the two booleans and make them agree with the action |
+| `purge_cookie_consents()` | `pg_cron` daily (`cookie-consents-purge`, 03:10 Vietnam) | Deletes `cookie_consents` rows older than 5 years (retention confirmed by counsel, owner item 4a); returns the count |
 | `raise_on_email_problems()` | `pg_cron`, every 15 min | Fails the run (the alert) when an email stayed `queued` 10–25 minutes or one `failed` in the last 15 minutes |
 | `hold_minutes()`, `booking_prices_current()`, `take_seats()`, `release_seats()`, `refresh_payment_state()`, `log_booking_event()`, `check_draft_payload()` | service_role | Helpers of the booking functions (`*_booking_functions.sql`) |
 
