@@ -118,7 +118,7 @@ test("a guest's earlier booking is attached after sign-up and email confirmation
   await page.goto(await emailLinkPath(email));
   await expect(page).toHaveURL(/\/tai-khoan$/);
   await expect(page.getByRole("heading", { level: 1, name: "Xin chào, Khách Tài Khoản" })).toBeVisible();
-  await expect(page.getByText(ownCode)).toBeVisible();
+  await expect(page.getByText(ownCode, { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await expectNoSeriousViolations(page, `account overview at ${width}`);
