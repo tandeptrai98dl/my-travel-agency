@@ -557,14 +557,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"country": string | null,"created_at": string,"deleted_at": string | null,"email": string,"full_name": string | null,"id": string,"is_active": boolean,"locale": Database["public"]['Enums']["locale"],"marketing_consent": boolean,"phone": string | null,"role": Database["public"]['Enums']["user_role"],"updated_at": string
+                    "avatar_url": string | null,"country": string | null,"created_at": string,"deleted_at": string | null,"deletion_requested_at": string | null,"email": string,"full_name": string | null,"id": string,"is_active": boolean,"locale": Database["public"]['Enums']["locale"],"marketing_consent": boolean,"phone": string | null,"role": Database["public"]['Enums']["user_role"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_url"?: string | null,"country"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"email": string,"full_name"?: string | null,"id": string,"is_active"?: boolean,"locale"?: Database["public"]['Enums']["locale"],"marketing_consent"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"updated_at"?: string
+                    "avatar_url"?: string | null,"country"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"deletion_requested_at"?: string | null,"email": string,"full_name"?: string | null,"id": string,"is_active"?: boolean,"locale"?: Database["public"]['Enums']["locale"],"marketing_consent"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"updated_at"?: string
                   }
                   Update: {
-                    "avatar_url"?: string | null,"country"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"email"?: string,"full_name"?: string | null,"id"?: string,"is_active"?: boolean,"locale"?: Database["public"]['Enums']["locale"],"marketing_consent"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"updated_at"?: string
+                    "avatar_url"?: string | null,"country"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"deletion_requested_at"?: string | null,"email"?: string,"full_name"?: string | null,"id"?: string,"is_active"?: boolean,"locale"?: Database["public"]['Enums']["locale"],"marketing_consent"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -856,6 +856,9 @@ isOneToOne: false
             "assign_unmatched_transfer":
 { Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
                            },
+"attach_customer_bookings":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "attention_resolvers":
 { Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
                            },
@@ -907,8 +910,22 @@ isOneToOne: false
 "create_redirect":
 { Args: { "source": string,"status"?: number,"target": string }; Returns: string
                            },
+"current_customer_id":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "current_user_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
+                           },
+"customer_booking":
+{ Args: { "target_code": string }; Returns: Json
+                           },
+"customer_bookings":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "adults": number,"amount_paid": number,"balance_due_date": string,"children": number,"code": string,"created_at": string,"end_date": string,"infants": number,"payment_state": Database["public"]['Enums']["booking_payment_state"],"start_date": string,"status": Database["public"]['Enums']["booking_status"],"total": number,"tour_code": string,"tour_title": string
+            }[]
+                           },
+"customer_travellers_editable":
+{ Args: { "booking_status": Database["public"]['Enums']["booking_status"],"start_date": string }; Returns: boolean
                            },
 "default_cancellation_policy_id":
 { Args: Record<PropertyKey, never>; Returns: string
@@ -994,6 +1011,9 @@ isOneToOne: false
 "record_refund":
 { Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json
                            },
+"record_signup_consent":
+{ Args: { "ip": unknown,"marketing": boolean,"privacy_version": string,"target_id": string,"user_agent": string }; Returns: undefined
+                           },
 "record_slug_redirect":
 { Args: { "source": string,"target": string }; Returns: undefined
                            },
@@ -1033,6 +1053,9 @@ isOneToOne: false
 "rich_text_media_ids":
 { Args: { "doc": Json }; Returns: (string)[]
                            },
+"save_customer_travellers":
+{ Args: { "target_code": string,"travellers": Json }; Returns: number
+                           },
 "search_site":
 { Args: { "p_limit"?: number,"p_locale": Database["public"]['Enums']["locale"],"p_q": string }; Returns: {
               "id": string,"kind": string,"published_at": string,"slug": string,"summary": string,"title": string
@@ -1045,6 +1068,9 @@ isOneToOne: false
                            },
 "set_default_cancellation_policy":
 { Args: { "policy_id": string }; Returns: undefined
+                           },
+"set_marketing_consent":
+{ Args: { "document_version": string,"granted": boolean }; Returns: undefined
                            },
 "set_tour_links":
 { Args: { "destination_ids": (string)[],"media_ids": (string)[],"target_id": string,"travel_style_ids": (string)[] }; Returns: undefined
