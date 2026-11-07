@@ -5,8 +5,11 @@
  */
 
 const DRAFT_KEY = "pta:tailor-made:draft:v1";
-/** Never kept in the draft: consent is given at submit time; tokens and the honeypot are per request. */
-const NOT_DRAFTED = new Set(["consent", "cf-turnstile-response", "website", "source", "locale"]);
+/**
+ * Never kept in the draft: personal contact details and the free-text message (this browser may be
+ * shared, and the draft has no expiry), consent (given at submit time), tokens and the honeypot.
+ */
+const NOT_DRAFTED = new Set(["name", "email", "phone", "message", "consent", "cf-turnstile-response", "website", "source", "locale"]);
 /** React's hidden fields for the no-JavaScript post (`$ACTION_…`) belong to this render only. */
 const skipped = (name: string) => NOT_DRAFTED.has(name) || name.startsWith("$ACTION");
 

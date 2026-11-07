@@ -19,7 +19,7 @@ function stubStorage(initial: Record<string, string>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("tailor-made draft", () => {
-  it("drops React's action fields, consent, tokens and malformed entries", () => {
+  it("drops contact details, React's action fields, consent, tokens and malformed entries", () => {
     stubStorage({
       [KEY]: JSON.stringify([
         ["$ACTION_REF_1", ""],
@@ -28,6 +28,11 @@ describe("tailor-made draft", () => {
         ["consent", "on"],
         ["cf-turnstile-response", "token"],
         ["website", "x"],
+        ["name", "Nguyễn Văn Ân"],
+        ["email", "an@example.com"],
+        ["phone", "0900000000"],
+        ["message", "Kỷ niệm ngày cưới"],
+        ["preferredContact", "zalo"],
         ["dest", "vietnam"],
         ["adults", "3"],
         ["broken"],
@@ -35,6 +40,7 @@ describe("tailor-made draft", () => {
       ]),
     });
     expect(readDraft()).toEqual([
+      ["preferredContact", "zalo"],
       ["dest", "vietnam"],
       ["adults", "3"],
     ]);
