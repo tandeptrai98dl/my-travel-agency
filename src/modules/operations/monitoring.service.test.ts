@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   lapsedHolds: vi.fn(),
   claimedKeys: vi.fn(),
   sendEmail: vi.fn(),
+  claimExtraKeys: vi.fn(),
   buildContext: vi.fn(),
   captureMessage: vi.fn(),
   revalidateTag: vi.fn(),
@@ -12,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./monitoring.repository", () => ({ cronFailures: mocks.cronFailures, lapsedHolds: mocks.lapsedHolds }));
 vi.mock("./operations.repository", () => ({ claimedKeys: mocks.claimedKeys }));
 vi.mock("@/modules/booking/booking-emails.service", () => ({ buildContext: mocks.buildContext }));
-vi.mock("@/modules/notification/email.service", () => ({ sendEmail: mocks.sendEmail }));
+vi.mock("@/modules/notification/email.service", () => ({ sendEmail: mocks.sendEmail, claimExtraKeys: mocks.claimExtraKeys }));
 vi.mock("@sentry/nextjs", () => ({ captureMessage: mocks.captureMessage }));
 vi.mock("next/cache", () => ({ revalidateTag: mocks.revalidateTag }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
@@ -45,6 +46,10 @@ beforeEach(() => {
     if (claimed.has(message.dedupeKey)) return "duplicate";
     claimed.add(message.dedupeKey);
     return "sent";
+  });
+  mocks.claimExtraKeys.mockImplementation(async (_message: unknown, keys: string[]) => {
+    for (const key of keys) claimed.add(key);
+    return 0;
   });
   mocks.buildContext.mockResolvedValue(context("team@example.test"));
 });
@@ -86,11 +91,55 @@ describe("runHealthChecks", () => {
     expect(without.alerts).toEqual({ considered: 2, sent: 0, skipped: 2, failed: 0, duplicate: 0 });
     expect(mocks.sendEmail).not.toHaveBeenCalled();
     expect(claimed.size).toBe(0);
+    // Nothing claimed, so nothing reported to Sentry on every check either (#54 review).
+    expect(mocks.captureMessage).not.toHaveBeenCalled();
 
     mocks.buildContext.mockResolvedValue(context("team@example.test"));
     const later = await runHealthChecks(new Date(NOW.getTime() + 15 * 60_000));
     expect(later.alerts.sent).toBe(2);
     expect(claimed.size).toBe(2);
+  });
+
+  it("sends at most one email per job per check, listing its runs and claiming every key", async () => {
+    const run = (minute: string) => ({ ...FAILED, job_name: "booking-expire-holds", run_at: `2026-11-10T01:${minute}:00+00:00` });
+    mocks.cronFailures.mockResolvedValue({
+      data: [run("45"), run("50"), run("55"), { ...MISSED, job_name: "booking-expire-holds", run_at: "2026-11-10T01:20:00+00:00" }],
+      error: null,
+    });
+    const first = await runHealthChecks(NOW);
+    expect(first.alerts).toEqual({ considered: 4, sent: 1, skipped: 0, failed: 0, duplicate: 0 });
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(1);
+    const { text, dedupeKey } = mocks.sendEmail.mock.calls[0]![0] as { text: string; dedupeKey: string };
+    expect(dedupeKey).toBe("cron_failure:booking-expire-holds:2026-11-10T01:45:00.000Z");
+    expect(text).toContain("10/11/2026 08:45 (UTC+7), 10/11/2026 08:50 (UTC+7), 10/11/2026 08:55 (UTC+7)");
+    expect(text).toContain("10/11/2026 08:20 (UTC+7)");
+    expect(mocks.claimExtraKeys.mock.calls[0]![1]).toEqual([
+      "cron_failure:booking-expire-holds:2026-11-10T01:50:00.000Z",
+      "cron_failure:booking-expire-holds:2026-11-10T01:55:00.000Z",
+      "cron_missed:booking-expire-holds:2026-11-10T01:20:00.000Z",
+    ]);
+    expect(mocks.captureMessage).toHaveBeenCalledTimes(1);
+
+    // Fifteen minutes later the job failed three more times: one more email with those three only.
+    vi.clearAllMocks();
+    mocks.cronFailures.mockResolvedValue({
+      data: [run("45"), run("50"), run("55"), { ...FAILED, job_name: "booking-expire-holds", run_at: "2026-11-10T02:00:00+00:00" }],
+      error: null,
+    });
+    const second = await runHealthChecks(new Date(NOW.getTime() + 15 * 60_000));
+    expect(second.alerts).toEqual({ considered: 4, sent: 1, skipped: 0, failed: 0, duplicate: 3 });
+    expect((mocks.sendEmail.mock.calls[0]![0] as { dedupeKey: string }).dedupeKey).toBe("cron_failure:booking-expire-holds:2026-11-10T02:00:00.000Z");
+    expect(mocks.claimExtraKeys).not.toHaveBeenCalled();
+  });
+
+  it("lists at most ten runs and counts the rest", async () => {
+    const runs = Array.from({ length: 13 }, (_, i) => ({ ...FAILED, job_name: "x", run_at: new Date(Date.parse("2026-11-10T00:00:00Z") + i * 300_000).toISOString() }));
+    mocks.cronFailures.mockResolvedValue({ data: runs, error: null });
+    await runHealthChecks(NOW);
+    const { text } = mocks.sendEmail.mock.calls[0]![0] as { text: string };
+    expect(text).toContain("và 3 lần khác");
+    expect(text).not.toContain("07:00 (UTC+7)");
+    expect(mocks.claimExtraKeys.mock.calls[0]![1]).toHaveLength(12);
   });
 
   it("the email (Vietnamese) shows Vietnam time, the run's message and the runbook", async () => {

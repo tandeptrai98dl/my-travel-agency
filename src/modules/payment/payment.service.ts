@@ -30,9 +30,21 @@ type Provider = "vnpay" | "bank_transfer";
  * An IPN or webhook problem: logged, and sent to Sentry with the tag `payment.webhook` (the
  * provider) and `payment.event`, for the payments alert rule (docs/specs/phase-6-hardening-launch.md
  * decision 3). Sentry gets the event name and tags only, never references, amounts or payloads.
+ * Requests anyone can send again and again (a bad signature, a missing key) are warnings sampled
+ * at 10 %, so they cannot drain the Sentry quota until the 6A source-IP allow-lists land; the log
+ * line is always written.
  */
-function reportPaymentProblem(event: string, provider: Provider | "sepay" | "casso", fields: Record<string, string | number | boolean | null | undefined>, level: "error" | "warning" = "error") {
+type ProblemOptions = { level?: "error" | "warning"; sampleRate?: number };
+const PUBLIC_PROBLEM: ProblemOptions = { level: "warning", sampleRate: 0.1 };
+
+function reportPaymentProblem(
+  event: string,
+  provider: Provider | "sepay" | "casso",
+  fields: Record<string, string | number | boolean | null | undefined>,
+  { level = "error", sampleRate = 1 }: ProblemOptions = {},
+) {
   logger.error(event, { provider, ...fields });
+  if (sampleRate < 1 && Math.random() >= sampleRate) return;
   Sentry.captureMessage(event, { level, tags: { "payment.webhook": provider, "payment.event": event }, fingerprint: ["payment", event, provider] });
 }
 
@@ -54,7 +66,7 @@ export async function recordEvent(provider: Provider, event: GatewayEvent): Prom
   const result = data as unknown as RecordResult;
   if (result.needs_attention) {
     // Monitored (ARCHITECTURE.md "Monitoring"); never the payload or card data.
-    reportPaymentProblem("payment.needs_attention", provider, { reference: event.reference, reason: result.attention_reason }, "warning");
+    reportPaymentProblem("payment.needs_attention", provider, { reference: event.reference, reason: result.attention_reason }, { level: "warning" });
   }
   // After the commit: payment received, booking confirmed and staff alerts, each once (4E). A
   // duplicate event returns "duplicate" and sends nothing.
@@ -84,7 +96,7 @@ export async function handleVnpayIpn(params: Record<string, string>): Promise<Ip
   }
   const check = checkIpn(config, params);
   if (!check.ok) {
-    reportPaymentProblem("payment.vnpay_bad_signature", "vnpay", { reference: params.vnp_TxnRef ?? null });
+    reportPaymentProblem("payment.vnpay_bad_signature", "vnpay", { reference: params.vnp_TxnRef ?? null }, PUBLIC_PROBLEM);
     return { RspCode: check.rspCode, Message: check.message };
   }
   const { data: payment } = await repo.findPaymentByReference(check.event.reference, "vnpay");
@@ -159,7 +171,7 @@ export async function handleBankWebhook(headers: Headers, body: unknown): Promis
   const config = bankWebhookConfig();
   if (!config) return { status: 503, body: { success: false } };
   if (!authorized(config.provider, headers, config.secret)) {
-    reportPaymentProblem("payment.bank_webhook_unauthorized", config.provider, {});
+    reportPaymentProblem("payment.bank_webhook_unauthorized", config.provider, {}, PUBLIC_PROBLEM);
     return { status: 401, body: { success: false } };
   }
   const parsed = parseBankWebhook(config.provider, body);
@@ -169,7 +181,7 @@ export async function handleBankWebhook(headers: Headers, body: unknown): Promis
     const result = await recordEvent("bank_transfer", event);
     // The provider retries on a non-2xx answer; events already recorded come back as duplicates.
     if (!result) return { status: 500, body: { success: false } };
-    if (result.result === "unmatched") reportPaymentProblem("payment.bank_transfer_unmatched", "bank_transfer", { eventKey: event.eventKey }, "warning");
+    if (result.result === "unmatched") reportPaymentProblem("payment.bank_transfer_unmatched", "bank_transfer", { eventKey: event.eventKey }, { level: "warning" });
     if (result.result === "recorded" && result.booking_id) await refreshBooking(result.booking_id);
   }
   return { status: 200, body: { success: true } };

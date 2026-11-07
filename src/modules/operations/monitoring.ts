@@ -52,6 +52,30 @@ export function planCronAlerts(rows: CronFailureRow[], claimed: ReadonlySet<stri
   return alerts;
 }
 
+/**
+ * One email per job per check (#54 review: a job failing every 5 minutes must not send 288 emails
+ * a day through the Resend quota the booking emails share). The group lists every unclaimed run of
+ * the job; its first key is the email's own exactly-once key and the others are claimed with it,
+ * so each run is still reported once.
+ */
+export type CronAlertGroup = { job: string; keys: string[]; failed: CronAlert[]; missed: CronAlert | null };
+
+/** The most failed runs one email lists; the rest are counted. */
+export const MAX_LISTED_RUNS = 10;
+
+export function groupCronAlerts(alerts: CronAlert[]): CronAlertGroup[] {
+  const groups = new Map<string, CronAlertGroup>();
+  for (const alert of alerts) {
+    const group = groups.get(alert.job) ?? { job: alert.job, keys: [], failed: [], missed: null };
+    group.keys.push(alert.key);
+    if (alert.kind === "failed") group.failed.push(alert);
+    else group.missed = alert;
+    groups.set(alert.job, group);
+  }
+  for (const group of groups.values()) group.failed.sort((a, b) => (a.at ?? "").localeCompare(b.at ?? ""));
+  return [...groups.values()];
+}
+
 const VIETNAM_TIME = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Asia/Ho_Chi_Minh",
   day: "2-digit",

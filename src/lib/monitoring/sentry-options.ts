@@ -79,9 +79,26 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
   return event;
 }
 
-/** Drops console breadcrumbs (they can echo anything) and query strings from recorded URLs. */
+/** The cron heartbeat's origin (server only): its URL carries the monitor's token in the path. */
+function heartbeatOrigin(): string | null {
+  const url = process.env.CRON_HEARTBEAT_URL;
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Drops console breadcrumbs (they can echo anything) and requests to the cron heartbeat (its path
+ * is a secret, Phase 6 PR 6B), and query strings from recorded URLs.
+ */
 export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   if (breadcrumb.category === "console") return null;
+  const origin = heartbeatOrigin();
+  const url = breadcrumb.data?.url;
+  if (origin && typeof url === "string" && url.startsWith(origin)) return null;
   redactUrlsIn(breadcrumb.data);
   return breadcrumb;
 }

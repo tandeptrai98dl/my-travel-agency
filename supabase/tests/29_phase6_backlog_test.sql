@@ -2,7 +2,7 @@
 -- dashboard counts confirmed and completed travellers per departure, as departures_below_minimum()
 -- does.
 begin;
-select plan(11);
+select plan(12);
 
 create function pg_temp.as_user(uid uuid, aal text default 'aal1')
 returns void
@@ -48,6 +48,12 @@ select ok(
 select ok(
   (select p.prosrc ~ 'failed_at > now\(\) - interval ''15 minutes''' from pg_proc p where p.oid = 'public.raise_on_email_problems()'::regprocedure),
   'the alert windows failures on failed_at'
+);
+insert into public.email_logs (to_email, template, subject, status, dedupe_key)
+values ('team29@example.test', 'cron_alert', 'S', 'failed', 'cron_failure:x29:2026-11-10T01:00:00.000Z');
+select lives_ok(
+  $$ select public.raise_on_email_problems() $$,
+  'a failed health-check alert email does not fail the email alert (no feedback loop on a Resend outage)'
 );
 
 -- Dashboard and departures_below_minimum() agree -------------------------------------------------------

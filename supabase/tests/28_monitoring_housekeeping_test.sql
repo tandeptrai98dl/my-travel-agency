@@ -3,7 +3,7 @@
 -- unmatched transfer older than 400 days can still be assigned afterwards), the job history purge
 -- and the schedules.
 begin;
-select plan(45);
+select plan(46);
 
 create function pg_temp.claims(uid uuid, aal text default 'aal1')
 returns void
@@ -70,15 +70,6 @@ declare
   purged int;
   scheduled int;
 begin
-  if to_regclass('cron.job_run_details') is null then
-    if exists (select 1 from public.cron_failures(now() - interval '1 day')) then
-      return 'rows without pg_cron';
-    end if;
-    if public.purge_cron_history() <> 0 then
-      return 'purged without pg_cron';
-    end if;
-    return 'failed:test-daily|missed:test-daily|missed:test-fast; purged 1; scheduled 3';
-  end if;
   daily := cron.schedule('test-daily', '10 20 * * *', 'select 1');
   fast := cron.schedule('test-fast', '*/5 * * * *', 'select 1');
   -- The daily job last succeeded 27 hours ago and failed an hour ago; the fast job last succeeded
@@ -101,11 +92,19 @@ begin
 end;
 $$;
 
-select is(
-  pg_temp.cron_case(),
-  'failed:test-daily|missed:test-daily|missed:test-fast; purged 1; scheduled 3',
-  'cron_failures(): the failed run in the window and both overdue jobs; old history purged; the three jobs scheduled'
-);
+select case when to_regclass('cron.job_run_details') is null
+  then skip('needs pg_cron (CI has it; the local shim does not)', 1)
+  else is(
+    pg_temp.cron_case(),
+    'failed:test-daily|missed:test-daily|missed:test-fast; purged 1; scheduled 3',
+    'cron_failures(): the failed run in the window and both overdue jobs; old history purged; the three jobs scheduled'
+  ) end;
+select case when to_regclass('cron.job_run_details') is not null
+  then skip('pg_cron is installed', 1)
+  else ok(
+    not exists (select 1 from public.cron_failures(now() - interval '1 day')) and public.purge_cron_history() = 0,
+    'without pg_cron: no failures reported and nothing purged'
+  ) end;
 
 -- Access tokens -----------------------------------------------------------------------------------------
 insert into public.bookings (id, code, type, status, tour_id, start_date, adults, contact_name, contact_email, contact_phone,

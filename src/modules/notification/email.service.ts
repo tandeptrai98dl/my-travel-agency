@@ -106,6 +106,31 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   return status;
 }
 
+/**
+ * Claims more exactly-once keys for an email already claimed under its own key (a grouped alert:
+ * one email for several events). Each key gets its own `skipped` row naming the template, so a
+ * later run sees it as claimed and sends nothing for it. A key someone else already holds is left
+ * alone. Returns how many keys could not be written (logged by code only).
+ */
+export async function claimExtraKeys(message: Pick<EmailMessage, "to" | "subject" | "template">, keys: string[]): Promise<number> {
+  let failed = 0;
+  for (const key of keys) {
+    const { error } = await repo.insertEmailLog({
+      to_email: message.to,
+      template: message.template,
+      subject: message.subject,
+      dedupe_key: key,
+      status: "skipped",
+      error: "grouped",
+    });
+    if (error && error.code !== UNIQUE_VIOLATION) {
+      failed += 1;
+      logger.error("email.log_failed", { template: message.template, code: error.code ?? null });
+    }
+  }
+  return failed;
+}
+
 /** Dedupe keys already claimed for a booking (sent, failed, skipped or in flight). */
 export async function claimedEmailKeys(bookingId: string): Promise<{ keys: Set<string> } | { error: string }> {
   const { data, error } = await repo.claimedKeysForBooking(bookingId);

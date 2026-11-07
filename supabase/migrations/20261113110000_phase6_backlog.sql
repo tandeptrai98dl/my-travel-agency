@@ -33,7 +33,9 @@ create trigger email_logs_failed_at
 
 create index email_logs_failed_at_idx on public.email_logs (failed_at) where failed_at is not null;
 
--- Same rule and message as *_email_polish.sql, with failures windowed on failed_at.
+-- Same rule and message as *_email_polish.sql, with failures windowed on failed_at. The health
+-- check's own alert emails (`cron_alert`) are left out, so a Resend outage cannot feed back into
+-- more alerts: it already reports this job's failures (#54 review).
 create or replace function public.raise_on_email_problems()
 returns void
 language plpgsql
@@ -45,9 +47,10 @@ declare
   failed int;
 begin
   select count(*) into stuck from public.email_logs
-   where status = 'queued' and created_at <= now() - interval '10 minutes' and created_at > now() - interval '25 minutes';
+   where status = 'queued' and created_at <= now() - interval '10 minutes' and created_at > now() - interval '25 minutes'
+     and template <> 'cron_alert';
   select count(*) into failed from public.email_logs
-   where status = 'failed' and failed_at > now() - interval '15 minutes';
+   where status = 'failed' and failed_at > now() - interval '15 minutes' and template <> 'cron_alert';
   if stuck > 0 or failed > 0 then
     raise exception 'email: % stuck in queued, % failed in the last 15 minutes; see email_logs and README "Runbooks"', stuck, failed;
   end if;

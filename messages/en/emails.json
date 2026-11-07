@@ -200,11 +200,12 @@
       "introFailed": "A run of a scheduled database job failed. The alert jobs fail on purpose when something needs attention.",
       "introMissed": "This scheduled job has had no successful run for too long.",
       "job": "Job",
-      "failedAt": "Run started",
+      "failedAt": "Failed runs",
       "lastSuccess": "Last success",
       "never": "Never",
-      "message": "Message",
-      "runbook": "See the runbook \"A job failed or was missed\" in the README (Runbooks). This email is sent once per incident."
+      "message": "Latest message",
+      "runbook": "See the runbook \"A job failed or was missed\" in the README (Runbooks). Each failed run is reported once; each check sends at most one email per job.",
+      "more": "and {count, plural, one {# more} other {# more}}"
     }
   }
 }

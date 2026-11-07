@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
-import { redactUrl, sentryOptions } from "./sentry-options";
+import { redactUrl, scrubBreadcrumb, sentryOptions } from "./sentry-options";
 
 const DSN = "https://publickey@o0.ingest.sentry.io/0";
 
@@ -37,6 +37,14 @@ describe("Sentry options", () => {
       vi.stubEnv("NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "");
       expect("release" in sentryOptions(DSN)).toBe(false);
     });
+  });
+
+  it("drops breadcrumbs of requests to the cron heartbeat (a secret URL)", () => {
+    vi.stubEnv("CRON_HEARTBEAT_URL", "https://hb.example.test/ping/secret-token-{job}");
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://hb.example.test/ping/secret-token-health-checks", method: "GET" } })).toBeNull();
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://api.resend.com/emails", method: "POST" } })).not.toBeNull();
+    vi.unstubAllEnvs();
+    expect(scrubBreadcrumb({ category: "fetch", data: { url: "https://hb.example.test/ping/x" } })).not.toBeNull();
   });
 
   it("records errors only, no performance traces", () => {

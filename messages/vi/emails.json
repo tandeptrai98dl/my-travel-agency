@@ -200,11 +200,12 @@
       "introFailed": "Một lần chạy của tác vụ định kỳ trong cơ sở dữ liệu đã thất bại. Các tác vụ cảnh báo cố ý thất bại khi có việc cần xử lý.",
       "introMissed": "Tác vụ định kỳ này đã quá lâu không có lần chạy thành công.",
       "job": "Tác vụ",
-      "failedAt": "Thời điểm chạy",
+      "failedAt": "Lần chạy thất bại",
       "lastSuccess": "Lần thành công gần nhất",
       "never": "Chưa có",
-      "message": "Thông báo",
-      "runbook": "Xem hướng dẫn xử lý \"A job failed or was missed\" trong README (mục Runbooks). Email này chỉ gửi một lần cho mỗi sự cố."
+      "message": "Thông báo gần nhất",
+      "runbook": "Xem hướng dẫn xử lý \"A job failed or was missed\" trong README (mục Runbooks). Mỗi lần chạy thất bại chỉ được báo một lần; mỗi lần kiểm tra gửi tối đa một email cho mỗi tác vụ.",
+      "more": "và {count, plural, other {# lần khác}}"
     }
   }
 }
