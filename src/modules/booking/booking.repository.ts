@@ -33,6 +33,35 @@ export async function findBooking(id: string) {
     .maybeSingle();
 }
 
+/** What a stale draft is repriced from (the booking row is the source, never the browser). */
+export async function findDraftForReprice(id: string) {
+  return db()
+    .from("bookings")
+    .select(
+      "id, status, customer_id, departure_id, locale, adults, children, infants, single_rooms, payment_plan, contact_name, contact_email, contact_phone, contact_country, special_requests, idempotency_key, invoice_requested, invoice_info",
+    )
+    .eq("id", id)
+    .maybeSingle();
+}
+
+export async function createCheckoutDraft(input: {
+  payload: Json;
+  termsVersion: string | null;
+  privacyVersion: string;
+  marketing: boolean;
+  ip: string | null;
+  userAgent: string | null;
+}) {
+  return db().rpc("create_checkout_draft", {
+    payload: input.payload,
+    terms_version: input.termsVersion as string,
+    privacy_version: input.privacyVersion,
+    marketing: input.marketing,
+    ip: input.ip as unknown as string,
+    user_agent: input.userAgent as string,
+  });
+}
+
 export async function bookingCutoffDays() {
   return db().rpc("booking_cutoff_days");
 }

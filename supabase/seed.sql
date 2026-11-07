@@ -30,6 +30,13 @@ insert into public.settings (key, value, is_public) values
     "booking_lookup_link_minutes": 30,
     "sales_manager_can_edit_departure_prices": false
   }', false),
+  -- Sample receiving account (development and CI only): turns on the VietQR method locally.
+  ('bank_account', '{
+    "bank_name": "Vietcombank",
+    "bank_bin": "970436",
+    "account_number": "0011000000000",
+    "account_holder": "CONG TY TNHH DU LICH MAU"
+  }', false),
   ('homepage', '{
     "hero": {
       "eyebrow": {"vi": "Hành trình riêng tư", "en": "Private journeys"},

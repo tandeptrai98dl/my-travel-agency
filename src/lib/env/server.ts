@@ -30,4 +30,5 @@ export const serverEnv = parseEnv("server", serverEnvSchema, {
   VNPAY_STUB: process.env.VNPAY_STUB,
   BANK_WEBHOOK_PROVIDER: process.env.BANK_WEBHOOK_PROVIDER,
   BANK_WEBHOOK_SECRET: process.env.BANK_WEBHOOK_SECRET,
+  BOOKING_ACCESS_SECRET: process.env.BOOKING_ACCESS_SECRET,
 });

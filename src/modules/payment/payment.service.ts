@@ -106,7 +106,7 @@ export async function bankAccount(): Promise<BankAccount | null> {
   const { data } = await repo.bankAccountSetting();
   const value = (data?.value ?? {}) as Record<string, unknown>;
   const text = (key: string) => (typeof value[key] === "string" ? (value[key] as string) : "");
-  const account = { bankBin: text("bank_bin"), accountNumber: text("account_number"), accountHolder: text("account_holder") };
+  const account = { bankBin: text("bank_bin"), bankName: text("bank_name"), accountNumber: text("account_number"), accountHolder: text("account_holder") };
   return /^\d{6}$/.test(account.bankBin) && account.accountNumber && account.accountHolder ? account : null;
 }
 

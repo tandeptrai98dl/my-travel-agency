@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
+import { createNonce, isSecurePath, secureCsp } from "@/lib/csp";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
@@ -27,12 +28,26 @@ export async function proxy(request: NextRequest) {
   // 1. Refresh the session first, so the locale handler forwards the refreshed cookies.
   const session = await refreshSession(request);
 
-  // 2. Locale routing for the public website; everything else passes through.
+  // 2. Checkout and account (ADR-027): a per-request nonce. Next.js reads it from the request's
+  // CSP header and puts it on every script of these fully dynamic pages.
+  let policy: string | null = null;
+  if (isSecurePath(request.nextUrl.pathname)) {
+    policy = secureCsp({
+      nonce: createNonce(),
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      paymentUrl: process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+      development: process.env.NODE_ENV === "development",
+    });
+    request.headers.set("Content-Security-Policy", policy);
+  }
+
+  // 3. Locale routing for the public website; everything else passes through.
   const response = NON_LOCALIZED.test(request.nextUrl.pathname)
     ? NextResponse.next({ request })
     : handleLocale(request);
+  if (policy) response.headers.set("Content-Security-Policy", policy);
 
-  // 3. Hand the refreshed cookies (and their no-store cache headers) to the browser.
+  // 4. Hand the refreshed cookies (and their no-store cache headers) to the browser.
   for (const { name, value, options } of session.cookies) {
     response.cookies.set(name, value, options);
   }

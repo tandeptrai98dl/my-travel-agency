@@ -12,10 +12,16 @@ import {
   useFormContext,
   useFormState,
 } from "react-hook-form";
+import { z } from "zod";
 
 import { cn } from "@/lib/utils";
 
 import { Label } from "./label";
+
+// Zod 4 probes `Function("")` on its first parse to decide whether to compile fast parsers. Under
+// the nonce CSP of checkout, account and admin (no 'unsafe-eval', ADR-027) that probe is a CSP
+// violation, so every form parses without it (same results, a little slower).
+z.config({ jitless: true });
 
 /**
  * React Hook Form + Zod wiring (shadcn new-york "form"). Use with

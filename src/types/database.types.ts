@@ -839,6 +839,9 @@ isOneToOne: false
 "attention_resolvers":
 { Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
                            },
+"booking_checkout_status":
+{ Args: { "target_code": string }; Returns: Json
+                           },
 "booking_cutoff_days":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -862,6 +865,9 @@ isOneToOne: false
                            },
 "confirm_newsletter_subscription":
 { Args: { "p_document_version": string,"p_ip"?: unknown,"p_token_hash": string,"p_user_agent"?: string }; Returns: boolean
+                           },
+"create_checkout_draft":
+{ Args: { "ip": unknown,"marketing": boolean,"payload": Json,"privacy_version": string,"terms_version": string,"user_agent": string }; Returns: string
                            },
 "create_contact_inquiry":
 { Args: { "p_email": string,"p_ip"?: unknown,"p_locale": Database["public"]['Enums']["locale"],"p_message": string,"p_name": string,"p_phone": string,"p_preferred_contact": string,"p_privacy_version": string,"p_tour_code": string,"p_user_agent"?: string }; Returns: string

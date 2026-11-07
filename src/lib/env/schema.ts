@@ -94,6 +94,12 @@ export const serverEnvSchema = z
   ),
   // CI only: a local stand-in for VNPay's payment page that signs its IPN with VNPAY_HASH_SECRET.
   VNPAY_STUB: booleanFlag,
+  // HMAC key of the guest checkout cookie (docs/specs/phase-4-booking-payments.md decision 7).
+  // Without it online booking is off: the booking page offers the hotline instead.
+  BOOKING_ACCESS_SECRET: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().min(32, "must be at least 32 characters").optional(),
+  ),
   // SePay or Casso (ADR-013). Without both, the bank webhook answers 503 and records nothing.
   BANK_WEBHOOK_PROVIDER: z.preprocess((value) => (value === "" ? undefined : value), z.enum(["sepay", "casso"]).optional()),
   BANK_WEBHOOK_SECRET: z.preprocess(

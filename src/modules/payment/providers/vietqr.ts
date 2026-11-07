@@ -9,7 +9,8 @@ import type { PaymentInstructions, PaymentProvider, PaymentToStart } from "../pr
  * the server: no third-party image service sees the account, amount or memo.
  */
 
-export type BankAccount = { bankBin: string; accountNumber: string; accountHolder: string };
+/** `bankName` is shown to the customer; the BIN goes only into the QR payload. */
+export type BankAccount = { bankBin: string; accountNumber: string; accountHolder: string; bankName?: string };
 
 const tlv = (id: string, value: string) => `${id}${String(value.length).padStart(2, "0")}${value}`;
 
@@ -63,6 +64,7 @@ export function vietQrProvider(account: BankAccount): PaymentProvider {
         kind: "transfer",
         payload: vietQrPayload(account, payment.amount, memo),
         bankBin: account.bankBin,
+        bankName: account.bankName ?? "",
         accountNumber: account.accountNumber,
         accountHolder: account.accountHolder,
         amount: payment.amount,

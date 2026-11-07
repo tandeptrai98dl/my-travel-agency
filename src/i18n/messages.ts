@@ -10,6 +10,7 @@ export const MESSAGE_FILES = [
   "public-home",
   "public-tours",
   "public-pages",
+  "public-booking",
   "admin",
   "admin-media",
   "admin-taxonomy",
