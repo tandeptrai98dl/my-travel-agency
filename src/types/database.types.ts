@@ -839,6 +839,9 @@ isOneToOne: false
 "attention_resolvers":
 { Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
                            },
+"booking_checkout_status":
+{ Args: { "target_code": string }; Returns: Json
+                           },
 "booking_cutoff_days":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -940,6 +943,9 @@ isOneToOne: false
                            },
 "raise_on_seat_mismatch":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"record_booking_consent":
+{ Args: { "ip": unknown,"marketing": boolean,"privacy_version": string,"target_id": string,"terms_version": string,"user_agent": string }; Returns: undefined
                            },
 "record_manual_payment":
 { Args: { "amount": number,"method": Database["public"]['Enums']["payment_provider"],"note": string,"target_id": string }; Returns: Json
