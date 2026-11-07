@@ -3,7 +3,7 @@
 -- bookings attached only once GoTrue confirmed their address, and cannot write consent or
 -- deletion state on their profile.
 begin;
-select plan(39);
+select plan(46);
 
 create function pg_temp.claims(uid uuid, email text default null)
 returns void
@@ -59,16 +59,26 @@ select ok(
   not has_function_privilege('anon', 'public.customer_bookings()', 'execute')
   and not has_function_privilege('anon', 'public.customer_booking(text)', 'execute')
   and not has_function_privilege('anon', 'public.save_customer_travellers(text, jsonb)', 'execute')
-  and not has_function_privilege('anon', 'public.attach_customer_bookings()', 'execute')
-  and not has_function_privilege('anon', 'public.set_marketing_consent(boolean, text)', 'execute'),
+  and not has_function_privilege('anon', 'public.attach_customer_bookings(uuid)', 'execute')
+  and not has_function_privilege('anon', 'public.set_marketing_consent(uuid, boolean, text)', 'execute'),
   'anon cannot call the customer functions'
 );
 select ok(
   has_function_privilege('authenticated', 'public.customer_bookings()', 'execute')
   and has_function_privilege('authenticated', 'public.customer_booking(text)', 'execute')
-  and has_function_privilege('authenticated', 'public.save_customer_travellers(text, jsonb)', 'execute')
-  and has_function_privilege('authenticated', 'public.attach_customer_bookings()', 'execute'),
-  'signed-in users can call the customer functions'
+  and has_function_privilege('authenticated', 'public.save_customer_travellers(text, jsonb)', 'execute'),
+  'signed-in users can call the customer read and traveller functions'
+);
+-- PR #42 review: a session could call attach directly through PostgREST and skip the app's
+-- email-confirmation guard; attach and the marketing write are service-role only.
+select ok(
+  not has_function_privilege('authenticated', 'public.attach_customer_bookings(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.set_marketing_consent(uuid, boolean, text)', 'execute')
+  and has_function_privilege('service_role', 'public.attach_customer_bookings(uuid)', 'execute')
+  and has_function_privilege('service_role', 'public.set_marketing_consent(uuid, boolean, text)', 'execute')
+  and not exists (select 1 from pg_proc where proname = 'attach_customer_bookings' and pronargs = 0)
+  and not exists (select 1 from pg_proc where proname = 'set_marketing_consent' and pronargs = 2),
+  'attach and the marketing write are service-role only, and the session-callable versions are gone'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.record_signup_consent(uuid, text, boolean, inet, text)', 'execute')
@@ -165,6 +175,10 @@ select throws_ok(
   'P0002', 'not_found', 'another customer''s booking cannot be edited'
 );
 select throws_ok(
+  $$ select public.save_customer_travellers('PTA-2611-9401', '[{"full_name": "Odd", "is_lead": true, "date_of_birth": "2020-13-45"}]') $$,
+  '22023', 'invalid_traveller', 'a date in the right shape that does not exist is invalid_traveller'
+);
+select throws_ok(
   $$ insert into public.travellers (booking_id, full_name) values ('50000000-0000-4000-8000-000000002401', 'Direct') $$,
   '42501', null, 'travellers cannot be inserted directly'
 );
@@ -178,8 +192,18 @@ select throws_ok(
   $$ update public.profiles set deletion_requested_at = now() where id = '00000000-0000-4000-8000-000000002401' $$,
   '42501', null, 'a customer cannot set deletion_requested_at'
 );
+select throws_ok(
+  $$ select public.set_marketing_consent('00000000-0000-4000-8000-000000002401', true, 'privacy-vi-0123456789abcdef') $$,
+  '42501', null, 'a customer cannot call set_marketing_consent() directly'
+);
+reset role;
+set local role service_role;
+select throws_ok(
+  $$ select public.set_marketing_consent('00000000-0000-4000-8000-000000002401', true, 'anything-goes') $$,
+  '22023', 'invalid_consent', 'a consent version that is not a privacy-policy version is refused'
+);
 select lives_ok(
-  $$ select public.set_marketing_consent(true, 'privacy-vi-0123456789abcdef') $$,
+  $$ select public.set_marketing_consent('00000000-0000-4000-8000-000000002401', true, 'privacy-vi-0123456789abcdef') $$,
   'set_marketing_consent() changes the choice'
 );
 reset role;
@@ -190,24 +214,23 @@ select ok(
   'the flag and its consent row are written together'
 );
 
--- Attaching earlier bookings ------------------------------------------------------------------------
--- A forged JWT `email` claim and a changed profiles.email are both ignored: the address is the
--- confirmed auth.users email of auth.uid().
-update public.profiles set email = 'cust-c@example.test' where id = '00000000-0000-4000-8000-000000002404';
-select pg_temp.claims('00000000-0000-4000-8000-000000002404', 'cust-c@example.test');
+-- Attaching earlier bookings (service role, called by the identity service) ------------------------
 set local role authenticated;
-select is(public.attach_customer_bookings(), 0, 'neither the JWT email claim nor profiles.email attaches anything');
-reset role;
-
-select pg_temp.claims('00000000-0000-4000-8000-000000002403');
-set local role authenticated;
-select is(public.attach_customer_bookings(), 0, 'an unconfirmed address attaches nothing');
-reset role;
-
 select pg_temp.claims('00000000-0000-4000-8000-000000002401');
-set local role authenticated;
-select is(public.attach_customer_bookings(), 1, 'a confirmed address attaches its unowned guest booking (any letter case)');
-select is(public.attach_customer_bookings(), 0, 'attaching again changes nothing');
+select throws_ok(
+  $$ select public.attach_customer_bookings('00000000-0000-4000-8000-000000002401') $$,
+  '42501', null, 'a session cannot call attach_customer_bookings() through the API'
+);
+reset role;
+
+set local role service_role;
+-- A changed profiles.email is ignored: the address is the confirmed auth.users email of the id.
+update public.profiles set email = 'cust-c@example.test' where id = '00000000-0000-4000-8000-000000002404';
+select is(public.attach_customer_bookings('00000000-0000-4000-8000-000000002404'), 0, 'profiles.email never attaches anything');
+select is(public.attach_customer_bookings('00000000-0000-4000-8000-000000002403'), 0, 'an unconfirmed address attaches nothing');
+select is(public.attach_customer_bookings(null), 0, 'no user, nothing attached');
+select is(public.attach_customer_bookings('00000000-0000-4000-8000-000000002401'), 1, 'a confirmed address attaches its unowned guest booking (any letter case)');
+select is(public.attach_customer_bookings('00000000-0000-4000-8000-000000002401'), 0, 'attaching again changes nothing');
 reset role;
 select is(
   (select customer_id from public.bookings where code = 'PTA-2611-9402'),
@@ -225,6 +248,10 @@ update public.profiles set deleted_at = now() where id = '00000000-0000-4000-800
 select pg_temp.claims('00000000-0000-4000-8000-000000002402');
 set local role authenticated;
 select is((select count(*)::int from public.customer_bookings()), 0, 'a deleted profile reads no bookings');
+reset role;
+update public.bookings set customer_id = null where code = 'PTA-2611-9402';
+set local role service_role;
+select is(public.attach_customer_bookings('00000000-0000-4000-8000-000000002402'), 0, 'a deleted profile gets nothing attached');
 reset role;
 
 -- Sign-up consent (service role) ----------------------------------------------------------------

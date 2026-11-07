@@ -44,7 +44,7 @@ export async function saveMarketingAction(_previous: AccountFormState, formData:
   if (!user) return { status: "expired" };
   const parsed = marketingSchema.safeParse({ marketing: text(formData, "marketing"), locale: text(formData, "locale") });
   if (!parsed.success) return { status: "invalid" };
-  return { status: await saveMyMarketing(parsed.data.marketing, parsed.data.locale) };
+  return { status: await saveMyMarketing(user.id, parsed.data.marketing, parsed.data.locale) };
 }
 
 /** Travellers come as parallel fields (`fullName`, `dateOfBirth`, … repeated per row). */

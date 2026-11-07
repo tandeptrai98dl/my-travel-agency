@@ -12,11 +12,13 @@ import { logger } from "@/lib/logger";
  */
 
 const CACHE_MS = 5 * 60_000;
+/** An unreadable answer is retried soon, so a short outage does not turn sign-up off for minutes. */
+const FAILURE_MS = 30_000;
 const TIMEOUT_MS = 3000;
 
 export type ConfirmationGuard = { ok: true } | { ok: false; reason: "autoconfirm" | "unreachable" };
 
-type Cached = { value: ConfirmationGuard; at: number };
+type Cached = { value: ConfirmationGuard; at: number; ttl: number };
 let cached: Cached | null = null;
 
 type Fetcher = (input: string, init: RequestInit) => Promise<Response>;
@@ -41,14 +43,15 @@ export async function readConfirmationGuard(fetcher: Fetcher = fetch): Promise<C
 }
 
 /**
- * The guard, cached for five minutes per server instance; a refusal is logged once per period.
+ * The guard, cached per server instance: five minutes for an answer GoTrue gave (on or off), 30
+ * seconds when the settings could not be read. A refusal is logged once per period.
  * Timed with `performance.now()` (monotonic), which Next.js allows while rendering, unlike
  * `Date.now()`.
  */
 export async function confirmationGuard(now = performance.now(), fetcher?: Fetcher): Promise<ConfirmationGuard> {
-  if (cached && now - cached.at < CACHE_MS) return cached.value;
+  if (cached && now - cached.at < cached.ttl) return cached.value;
   const value = await readConfirmationGuard(fetcher);
-  cached = { value, at: now };
+  cached = { value, at: now, ttl: !value.ok && value.reason === "unreachable" ? FAILURE_MS : CACHE_MS };
   if (!value.ok) logger.warn("auth.autoconfirm_guard", { reason: value.reason, attach: "refused", signUp: "disabled" });
   return value;
 }

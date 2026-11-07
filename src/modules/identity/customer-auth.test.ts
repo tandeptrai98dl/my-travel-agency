@@ -36,7 +36,7 @@ const supabase = {
   from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: profileRow, error: null }) }) }) }),
 };
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => supabase }));
-const adminRpc = vi.fn(async () => ({ data: null, error: null }));
+const adminRpc = vi.fn(async (fn: string, args?: unknown) => (void args, { data: fn === "attach_customer_bookings" ? 2 : null, error: null }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc: adminRpc }) }));
 const getPrivacyConsent = vi.fn(async () => ({ href: "/chinh-sach/bao-mat", version: "privacy-vi-0123456789abcdef" }));
 vi.mock("@/modules/content/public/content-public.service", () => ({ getPrivacyConsent }));
@@ -99,19 +99,37 @@ describe("email confirmation guard (decision 6, review M1)", () => {
   it("attaches nothing while emails are auto-confirmed", async () => {
     await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: true }));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(0);
-    expect(rpc).not.toHaveBeenCalled();
+    expect(adminRpc).not.toHaveBeenCalledWith("attach_customer_bookings", expect.anything());
   });
 
   it("attaches nothing when the settings are unreachable", async () => {
     await settings.confirmationGuard(undefined, settingsResponse({}, false));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(0);
+    expect(adminRpc).not.toHaveBeenCalledWith("attach_customer_bookings", expect.anything());
+  });
+
+  it("caches an unreadable answer for 30 seconds only", async () => {
+    const down = settingsResponse({}, false);
+    await settings.confirmationGuard(0, down);
+    await settings.confirmationGuard(20_000, down);
+    expect(down).toHaveBeenCalledTimes(1);
+    const up = settingsResponse({ mailer_autoconfirm: false });
+    expect(await settings.confirmationGuard(31_000, up)).toEqual({ ok: true });
+    expect(up).toHaveBeenCalledTimes(1);
+  });
+
+  it("attaches only for the user the Auth server returns, through the service role", async () => {
+    await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: false }));
+    auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: { status: 403 } });
+    expect(await service.attachEarlierBookings(supabase as never)).toBe(0);
+    expect(adminRpc).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
 
   it("attaches when confirmations are on", async () => {
     await settings.confirmationGuard(undefined, settingsResponse({ mailer_autoconfirm: false }));
     expect(await service.attachEarlierBookings(supabase as never)).toBe(2);
-    expect(rpc).toHaveBeenCalledWith("attach_customer_bookings");
+    expect(adminRpc).toHaveBeenCalledWith("attach_customer_bookings", { target_id: "00000000-0000-4000-8000-000000000001" });
   });
 
   it("disables sign-up while emails are auto-confirmed", async () => {
@@ -174,7 +192,7 @@ describe("sign-in", () => {
       status: "redirect",
       to: "/tai-khoan/booking",
     });
-    expect(rpc).toHaveBeenCalledWith("attach_customer_bookings");
+    expect(adminRpc).toHaveBeenCalledWith("attach_customer_bookings", { target_id: "00000000-0000-4000-8000-000000000001" });
     expect(await service.signIn({ email: "a@example.test", password: "x", locale: "en", next: "//evil.example", surface: "customer" }, { ip: null, userAgent: null })).toEqual({
       status: "redirect",
       to: "/en/account",
@@ -188,7 +206,7 @@ describe("sign-in", () => {
       status: "redirect",
       to: "/admin",
     });
-    expect(rpc).not.toHaveBeenCalled();
+    expect(adminRpc).not.toHaveBeenCalledWith("attach_customer_bookings", expect.anything());
   });
 
   it("signs a deactivated profile out again", async () => {

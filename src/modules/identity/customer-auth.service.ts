@@ -85,12 +85,17 @@ async function loadProfile(supabase: Supabase): Promise<Profile | null> {
 
 /**
  * Attaches earlier guest bookings with the confirmed address (decision 6), unless GoTrue
- * auto-confirms emails. Never fails the sign-in.
+ * auto-confirms emails. `attach_customer_bookings()` is service-role only (PR #42 review: a session
+ * could otherwise call it through PostgREST and skip this guard), so it runs with the admin client
+ * for the user the Auth server vouches for (`getUser()`). Never fails the sign-in.
  */
 export async function attachEarlierBookings(supabase: Supabase): Promise<number> {
   const guard = await confirmationGuard();
   if (!guard.ok) return 0;
-  const { data, error } = await supabase.rpc("attach_customer_bookings");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const userId = userData?.user?.id;
+  if (userError || !userId) return 0;
+  const { data, error } = await createAdminClient().rpc("attach_customer_bookings", { target_id: userId });
   if (error) {
     logger.error("auth.attach_failed", { code: error.code ?? null });
     return 0;

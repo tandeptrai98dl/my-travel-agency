@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Json } from "@/types/database.types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -32,6 +33,10 @@ export async function updateProfile(id: string, values: { full_name: string; pho
   return (await createClient()).from("profiles").update(values).eq("id", id).select("id").maybeSingle();
 }
 
-export async function setMarketingConsent(granted: boolean, documentVersion: string) {
-  return (await createClient()).rpc("set_marketing_consent", { granted, document_version: documentVersion });
+/**
+ * Service role (PR #42 review): the function stores the consent version it is given, so only the
+ * account service calls it, for the signed-in customer, with the published policy's version.
+ */
+export async function setMarketingConsent(userId: string, granted: boolean, documentVersion: string) {
+  return createAdminClient().rpc("set_marketing_consent", { target_id: userId, granted, document_version: documentVersion });
 }

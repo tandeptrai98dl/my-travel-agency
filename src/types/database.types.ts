@@ -857,7 +857,7 @@ isOneToOne: false
 { Args: { "event_id": string,"note": string,"target_id": string }; Returns: Json
                            },
 "attach_customer_bookings":
-{ Args: Record<PropertyKey, never>; Returns: number
+{ Args: { "target_id": string }; Returns: number
                            },
 "attention_resolvers":
 { Args: { "reason": string }; Returns: (Database["public"]['Enums']["user_role"])[]
@@ -956,6 +956,9 @@ isOneToOne: false
                            },
 "is_mfa_verified":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_real_date":
+{ Args: { "value": string }; Returns: boolean
                            },
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -1070,7 +1073,7 @@ isOneToOne: false
 { Args: { "policy_id": string }; Returns: undefined
                            },
 "set_marketing_consent":
-{ Args: { "document_version": string,"granted": boolean }; Returns: undefined
+{ Args: { "document_version": string,"granted": boolean,"target_id": string }; Returns: undefined
                            },
 "set_tour_links":
 { Args: { "destination_ids": (string)[],"media_ids": (string)[],"target_id": string,"travel_style_ids": (string)[] }; Returns: undefined

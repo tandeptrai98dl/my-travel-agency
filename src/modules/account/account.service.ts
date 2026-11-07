@@ -247,10 +247,10 @@ export async function saveMyProfile(userId: string, input: ProfileInput): Promis
 }
 
 /** A marketing change needs the published privacy policy of the page's language (its version). */
-export async function saveMyMarketing(granted: boolean, locale: Locale): Promise<"saved" | "unavailable" | "failed"> {
+export async function saveMyMarketing(userId: string, granted: boolean, locale: Locale): Promise<"saved" | "unavailable" | "failed"> {
   const privacy = await getPrivacyConsent(locale);
   if (!privacy) return "unavailable";
-  const { error } = await repo.setMarketingConsent(granted, privacy.version);
+  const { error } = await repo.setMarketingConsent(userId, granted, privacy.version);
   if (error) {
     logger.error("account.marketing_failed", { code: error.code ?? null });
     return "failed";
