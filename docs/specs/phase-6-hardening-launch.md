@@ -215,6 +215,13 @@ One pull request per group, one commit per step. Items that need the owner are m
 
 13. Protected migration workflow (manual dispatch, admin approval, backup first); production env guards (decision 11); the restore rehearsal and its runbook [owner 5].
 
+    As shipped (PR 6C, ADR-040):
+    - **Workflow:** `.github/workflows/db-migrate.yml` (Actions → "Database migrations"): manual dispatch from `main` for `staging` or `production`, each a GitHub environment with `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` and `SUPABASE_ACCESS_TOKEN`; required reviewers and a `main`-only rule on `production` are owner settings (`README.md` "Deployment" step 5). Steps: commit on `main`, secrets present, CLI from the lockfile without install scripts, PITR read through the Management API (production refuses without it) with the restore point in the run summary, a schema-only dump and the migration list kept 7 days, dry run, push (no seed, no `--include-all`), remote types compared with `database.types.ts` (`scripts/compare-db-types.mjs`, formatting differences ignored). `src/lib/deploy/db-migrate-workflow.test.ts` keeps these properties (triggers, pinned SHAs, step order, no secret in a script, retention).
+    - **"After a manual backup"** (decision 11) is the PITR check and the recorded restore point: Supabase has no on-demand physical backup, and a full data dump in GitHub would copy personal data out of Supabase. With PITR, Supabase keeps no daily backups (PITR replaces them), so decision 8's "plus daily backups" becomes "PITR".
+    - **Release order:** Vercel's "Auto-assign Custom Production Domains" off, so a `main` build is staged until the migrations ran; then promote (`README.md` "Deploy to production").
+    - **Env guards:** `src/lib/env/deployment.ts` with `STAGING_HOSTS` and `PRODUCTION_HOSTS` (set in every Vercel environment). Production also refuses `SHOW_DESIGN_SYSTEM`, CI's `G-E2ETEST000`, Turnstile test keys, `E2E_*`/`SEED_*` variables, VNPay keys with the sandbox gateway and a non-https site URL; previews refuse production hosts and VNPay's production gateway; a legacy JWT key must belong to the URL's project. Found on the way: `server.ts` never passed `CRON_HEARTBEAT_URL` (6B's heartbeat never pinged) or `NEXT_PUBLIC_GA_MEASUREMENT_ID` (its format was never validated); a unit test now requires every schema variable.
+    - **Rehearsal:** `README.md` "Restore from backup" (staging, "Restore to a New Project", a branch-scoped preview, `scripts/restore-check.sql`, RTO and RPO, clean-up) and the real-incident path, plus "Deploy to production" and "Rotate a secret". The rehearsal itself waits for owner item 5; its numbers go into `docs/LAUNCH_CHECKLIST.md`, which this PR starts with the evidence CI already gives (6L completes it).
+
 ### PR 6L — Launch (both streams)
 
 14. UAT (`docs/UAT.md`) with findings triaged [owner 12]; VNPay and bank-transfer sign-off [owners 8, 9].
@@ -269,8 +276,11 @@ Launch
 | `DEVELOPMENT_PLAN.md` | Phase 6 links this spec | this spec |
 | `ARCHITECTURE.md` "Security", "Monitoring" | allow-lists; health checks, heartbeat and housekeeping | 6A, 6B |
 | `DATABASE.md` | `cookie_consents`, the unsubscribe function; `cron_failures()`, cleanup jobs | 6P, 6B |
-| `README.md` | runbooks, protected migration workflow, production env checklist, new env variables (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, allow-lists) | 6B, 6C, 6P |
-| `docs/SECURITY_REVIEW.md`, `docs/QA_REPORT.md`, `docs/UAT.md`, `docs/LAUNCH_CHECKLIST.md` | new | 6A, 6Q, 6L |
+| `README.md` | runbooks, protected migration workflow, production env checklist, new env variables (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, allow-lists; `STAGING_HOSTS`, `PRODUCTION_HOSTS` in 6C) | 6B, 6C (done: "Deployment" steps 3–5, "Deploy to production", "Restore from backup", "Rotate a secret"), 6P |
+| `ARCHITECTURE.md` "Environments" | environments table, deployment pipeline, env guards, backups | 6C (done) |
+| `DECISIONS.md` | ADR-040 (deployment pipeline: protected migrations, backups, environment guards) | 6C (done) |
+| `docs/SECURITY_REVIEW.md`, `docs/QA_REPORT.md`, `docs/UAT.md` | new | 6A, 6Q, 6L |
+| `docs/LAUNCH_CHECKLIST.md` | new: started with CI evidence, completed at launch | 6C (started), 6L |
 
 ## Out of scope
 

@@ -440,3 +440,22 @@ Template:
   - One small table of pseudonymous records.
   - Counsel confirms the retention and the wording (owner).
   - Stream B owns the table, its pgTAP, the loader and the events. Stream A takes the one `purchase` call on the secure result page.
+
+## ADR-040: Deployment pipeline: protected migrations, backups and environment guards
+
+- **Date:** 2026-11-07
+- **Status:** Accepted under the owner's standing instruction of 2026-11-06 ("allow recommended solution"); listed in the owner report so it can be reverted
+- **Context:** Phase 6 decision 11 asks for migrations through a protected workflow run by an admin after a backup, and for production to use only production values and previews never production ones. Decision 8 asks for PITR and a rehearsed restore. Supabase has no on-demand physical backup: with the PITR add-on its daily backups stop, since PITR replaces them, and its WAL is archived about every two minutes. A full `supabase db dump` would put customers' personal data into a GitHub artifact. Vercel deploys `main` to production as soon as it builds, which could serve code before its migration has run.
+- **Decision:**
+  - **Workflow:** `.github/workflows/db-migrate.yml`, `workflow_dispatch` only, from `main` only (a job condition and an ancestor check), one GitHub environment per target (`staging`, `production`) holding `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` and `SUPABASE_ACCESS_TOKEN`. The owner gives `production` required reviewers and a `main`-only deployment-branch rule. Secrets are passed only to the steps that use them; npm installs without lifecycle scripts; actions are pinned to commit SHAs; one run per target at a time.
+  - **Backup:** the backup is Supabase's PITR. The workflow reads the project's backup settings through the Management API, refuses a production run without PITR (staging only warns), and writes the restore point (the UTC time before the push) into the run summary. The artifact is a schema-only dump and the migration list, kept 7 days, and holds no table data. A logical data dump would add a second copy of personal data outside Supabase for no gain over PITR.
+  - **Push:** a dry run, then `supabase db push` without the seed and without `--include-all`. The types generated from the remote schema are then compared with the committed `src/types/database.types.ts` (`scripts/compare-db-types.mjs`). Formatting differences between the hosted and the local generator are ignored, and any schema difference fails the run.
+  - **Release order:** Vercel's "Auto-assign Custom Production Domains" is off, so a push to `main` builds a staged production deployment. Migrations run (staging, then production), then the deployment is promoted. Migrations stay backward compatible with the live code, so Instant Rollback never needs a database rollback.
+  - **Environment guards:** `src/lib/env/deployment.ts` runs after the schemas at server start and in Vercel builds. `STAGING_HOSTS` and `PRODUCTION_HOSTS` (host names, set in every Vercel environment) are required in production. Production refuses staging Supabase, Upstash and site hosts, needs its Supabase and Upstash hosts in `PRODUCTION_HOSTS` and an https site URL, and refuses `SHOW_DESIGN_SYSTEM=true`, CI's fake GA4 ID, Cloudflare's Turnstile test keys, `E2E_*` and `SEED_*` variables, and VNPay keys with the sandbox gateway (`VNPAY_STUB` was already refused). A preview refuses every production host and VNPay's production gateway. In every environment, a legacy JWT key must belong to the URL's project. Issues name variables, never values.
+- **Consequences:**
+  - The owner configures the two GitHub environments, the Vercel setting and the host lists.
+  - Secrets the guards cannot recognise by host (`CRON_SECRET`, `BOOKING_ACCESS_SECRET`, the bank webhook key, the Resend key) still rely on Vercel's per-environment scoping and the launch-checklist check.
+  - The workflow cannot run until the hosted projects exist, so its first staging run is its real test. The type comparison's tolerance for formatting may need adjusting after it.
+  - The access token belongs to a person's Supabase account and reaches all its projects, so one token per environment keeps revocation simple.
+  - Storage objects are outside every database backup: `media` is restored from the owner's originals.
+  - Restoring a database loses the payments recorded after the restore point, so the runbook reconciles them from VNPay and the bank statement.

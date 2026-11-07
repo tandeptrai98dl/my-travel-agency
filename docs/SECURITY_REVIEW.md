@@ -47,6 +47,8 @@ Found and fixed by this review (PR 6A):
 | Secret key only in server env vars | pass | `SUPABASE_SECRET_KEY` has no `NEXT_PUBLIC_` form; the env schema refuses a secret key as the publishable key (`schema.test.ts`); CI greps client bundles for the sentinel secret ("Build and E2E"); `src/lib/supabase/admin-importers.test.ts` |
 | RLS on every table | pass | `00_schema_test.sql`; `50_role_matrix_test.sql` fails for a new table until its row in the matrix is reviewed |
 | `supabase db lint` in CI | pass | CI job "Database": `supabase db lint --level warning --fail-on error` |
+| Production uses production values only; previews never production ones (decision 11) | pass (code, PR 6C); environments checked at launch | `src/lib/env/deployment.ts` and `deployment.test.ts`: production needs `STAGING_HOSTS`/`PRODUCTION_HOSTS`, refuses staging hosts, test keys and dev-only switches; previews refuse production hosts and VNPay's production gateway; legacy keys must match the URL's project. Secrets without a recognisable host rely on Vercel's per-environment scoping (`docs/LAUNCH_CHECKLIST.md` S7) |
+| Migrations reach hosted projects only through a protected workflow | pass (code, PR 6C); GitHub environments are owner settings | `.github/workflows/db-migrate.yml` (manual, `main` only, environment secrets in step env only, pinned actions, PITR check, no seed), kept so by `src/lib/deploy/db-migrate-workflow.test.ts` |
 | Security Advisor (and Performance Advisor) clean | open, owner item 5 | runs only against a hosted project; recorded here from staging before launch, each remaining warning fixed or accepted |
 | `security definer` functions pin `search_path = ''` and are not executable by `public`, `anon`, `authenticated` unless intended | pass | `51_definer_functions_test.sql` with the allow-list (role helpers, `booking_cutoff_days()`, the three customer-safe functions, the role-checked staff functions); no definer function is executable by `public` |
 
@@ -76,7 +78,7 @@ Found and fixed by this review (PR 6A):
 | Company details and tour operator licence in the footer | open, owner item 2 | the footer renders them from `settings.company` when set (Stream B, PR 6Q) |
 | No passport numbers | pass | no such column (`travellers` has name, birth date, gender, nationality, dietary notes); `save_customer_travellers()` keeps only known keys (`24_customer_reads_test.sql`) |
 | Audit log for bookings, payments and customer data | pass | `02_audit_test.sql` (catalog, content, settings, profiles), `18_booking_admin_test.sql` (manual payments, refunds, cancellations), `27_operations_test.sql` (passenger and customer exports) |
-| Daily backups + PITR from launch | open, owner item 5 | PR 6C (restore rehearsal) |
+| Daily backups + PITR from launch | code ready (PR 6C); open, owner item 5 | with PITR Supabase keeps no daily backups (ADR-040). `.github/workflows/db-migrate.yml` refuses a production migration without PITR and records the restore point; the rehearsal (`README.md` "Restore from backup", `scripts/restore-check.sql`) and its RTO/RPO wait for the staging project (`docs/LAUNCH_CHECKLIST.md` D1) |
 | SPF, DKIM, DMARC on the sending domain | open, owner item 6 | Resend account and DNS |
 
 ## Decision 1 checks (Stream A)
