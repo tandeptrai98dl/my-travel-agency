@@ -31,6 +31,28 @@ export function formQuery(form: HTMLFormElement): string {
   return serializeTourSearchParams({ ...parseTourSearchParams(params), page: 1 });
 }
 
+/** Folds case and Vietnamese diacritics (đ included) for matching. */
+function fold(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().trim();
+}
+
+/**
+ * The destination finder (an input with `data-filter-list`, shown above long lists) hides the
+ * rows that do not match; ancestors of a match stay visible and hidden rows keep their choice.
+ */
+function filterList(input: HTMLInputElement) {
+  const list = document.getElementById(input.dataset.filterList ?? "");
+  if (!list) return;
+  const term = fold(input.value);
+  const rows = [...list.querySelectorAll<HTMLLIElement>("li")];
+  const visible = new Set<HTMLElement>();
+  for (const row of rows) {
+    if (term && !fold(row.dataset.name ?? "").includes(term)) continue;
+    for (let node: HTMLElement | null = row; node && node !== list; node = node.parentElement) visible.add(node);
+  }
+  for (const row of rows) row.hidden = !visible.has(row);
+}
+
 function panel(): HTMLDialogElement | null {
   return document.getElementById(FILTER_PANEL_ID) as HTMLDialogElement | null;
 }
@@ -63,8 +85,16 @@ export function TourListingForm({ action, children, className }: { action: strin
     const form = formRef.current;
     if (!form) return;
     const listener = (event: Event) => onChange(form, event.target as HTMLInputElement);
+    const finder = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      if (target.dataset.filterList) filterList(target);
+    };
     form.addEventListener("change", listener);
-    return () => form.removeEventListener("change", listener);
+    form.addEventListener("input", finder);
+    return () => {
+      form.removeEventListener("change", listener);
+      form.removeEventListener("input", finder);
+    };
   });
 
   const onChange = (form: HTMLFormElement, target: HTMLInputElement) => {

@@ -1,8 +1,8 @@
 "use client";
 
-import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { CloseIcon, SearchIcon } from "./icons";
 import { useListing } from "./tour-listing-form";
 
 type Props = { defaultValue: string; label: string; placeholder: string; clearLabel: string };
@@ -37,7 +37,7 @@ export function TourSearchInput({ defaultValue, label, placeholder, clearLabel }
       <label htmlFor="tour-search-q" className="sr-only">
         {label}
       </label>
-      <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+      <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
         ref={inputRef}
         id="tour-search-q"
@@ -69,7 +69,7 @@ export function TourSearchInput({ defaultValue, label, placeholder, clearLabel }
           }}
           className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <X className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+          <CloseIcon className="h-4 w-4" />
           <span className="sr-only">{clearLabel}</span>
         </button>
       )}

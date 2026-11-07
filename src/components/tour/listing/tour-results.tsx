@@ -2,8 +2,6 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 
-import { cx } from "@/lib/cx";
-
 import { useListing } from "./tour-listing-form";
 
 type Props = {
@@ -31,14 +29,14 @@ export function TourResults({ count, heading, updating, page, children }: Props)
 
   return (
     <section aria-labelledby="tour-results-heading" aria-busy={pending || undefined} className="relative flex flex-col gap-8">
-      <div aria-hidden="true" className={cx("absolute -top-3 left-0 h-0.5 bg-gold transition-[width,opacity] duration-500", pending ? "w-2/3 opacity-100" : "w-0 opacity-0")} />
+      <div aria-hidden="true" className={`absolute -top-3 left-0 h-0.5 bg-gold transition-[width,opacity] duration-500 ${pending ? "w-2/3 opacity-100" : "w-0 opacity-0"}`} />
       <h2 id="tour-results-heading" ref={headingRef} tabIndex={-1} className="sr-only">
         {heading}
       </h2>
       <p role="status" aria-live="polite" className="sr-only">
         {pending ? updating : count}
       </p>
-      <div className={cx("transition-opacity duration-200", pending && "pointer-events-none opacity-60")}>{children}</div>
+      <div className={pending ? "pointer-events-none opacity-60 transition-opacity duration-200" : "transition-opacity duration-200"}>{children}</div>
     </section>
   );
 }

@@ -14,7 +14,6 @@ import {
   presetValue,
 } from "@/modules/catalog/tour-search-params";
 
-import { DestinationFilterSearch } from "./destination-filter-search";
 import { FilterSheetClose, FilterSheetReset } from "./filter-sheet";
 import { FILTER_PANEL_ID } from "./tour-listing-form";
 
@@ -108,7 +107,18 @@ export async function FilterPanel({ locale, criteria, options, months }: Props) 
 
         {options.destinations.length > 0 && (
           <Group legend={t("destination")}>
-            {countNodes(options.destinations) > 10 && <DestinationFilterSearch listId={`${FILTER_PANEL_ID}-destinations`} label={t("destinationSearch")} />}
+            {countNodes(options.destinations) > 10 && (
+              // No name: it narrows the list (TourListingForm) and never reaches the URL.
+              <input
+                type="search"
+                aria-label={t("destinationSearch")}
+                aria-controls={`${FILTER_PANEL_ID}-destinations`}
+                placeholder={t("destinationSearch")}
+                data-filter-list={`${FILTER_PANEL_ID}-destinations`}
+                autoComplete="off"
+                className="mb-3 h-10 w-full rounded-md border border-input bg-card px-3 text-small text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [[data-js]_&]:block hidden"
+              />
+            )}
             <div id={`${FILTER_PANEL_ID}-destinations`}>{tree(options.destinations, null, false)}</div>
           </Group>
         )}

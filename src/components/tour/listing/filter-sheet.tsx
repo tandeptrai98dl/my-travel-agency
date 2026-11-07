@@ -1,10 +1,9 @@
 "use client";
 
-import { SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
-import { buttonVariants } from "@/components/ui/button-variants";
-
+import { CloseIcon, SlidersIcon } from "./icons";
+import { GHOST_BUTTON, OUTLINE_BUTTON } from "./listing-classes";
 import { FILTER_PANEL_ID } from "./tour-listing-form";
 
 function panel(): HTMLDialogElement | null {
@@ -33,9 +32,9 @@ export function FilterSheetButton({ label }: { label: string }) {
       aria-haspopup="dialog"
       aria-controls={FILTER_PANEL_ID}
       onClick={() => panel()?.showModal()}
-      className={buttonVariants({ variant: "outline", className: "lg:hidden" })}
+      className={`${OUTLINE_BUTTON} lg:hidden`}
     >
-      <SlidersHorizontal className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+      <SlidersIcon className="h-5 w-5" />
       {label}
     </button>
   );
@@ -65,7 +64,7 @@ export function FilterSheetClose({ label }: { label: string }) {
       onClick={() => panel()?.close()}
       className="flex h-11 w-11 items-center justify-center text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+      <CloseIcon className="h-5 w-5" />
       <span className="sr-only">{label}</span>
     </button>
   );
@@ -86,8 +85,12 @@ export function FilterSheetReset({ label }: { label: string }) {
           else if (input.type === "radio") input.checked = input.value === "";
           else if (input.type !== "hidden") input.value = "";
         });
+        // The destination finder is cleared too: show every row again.
+        dialog?.querySelectorAll<HTMLLIElement>("li[hidden]").forEach((row) => {
+          row.hidden = false;
+        });
       }}
-      className={buttonVariants({ variant: "ghost" })}
+      className={GHOST_BUTTON}
     >
       {label}
     </button>

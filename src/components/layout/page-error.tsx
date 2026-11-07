@@ -4,15 +4,17 @@ import { useEffect } from "react";
 
 import { buttonVariants } from "@/components/ui/button-variants";
 
-import { useLabels } from "./labels";
-import { LocaleLink } from "./locale-link";
+import { useLabels, useShellLocale } from "./labels";
 
 /**
  * Error state of a public page whose read failed (an error, never a 404; Phase 3 spec decision
- * 12). Plain markup and labels so it adds almost nothing to the initial JavaScript.
+ * 12). Plain markup and labels so it adds almost nothing to the initial JavaScript: every route
+ * with an error.tsx loads this in its own chunk, so the home link is a plain `<a>` (a full load
+ * after an error is fine) instead of LocaleLink and the route map.
  */
 export function PageError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useLabels("PageError");
+  const home = useShellLocale() === "vi" ? "/" : "/en";
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -24,9 +26,9 @@ export function PageError({ error, reset }: { error: Error & { digest?: string }
         <button type="button" className={buttonVariants()} onClick={reset}>
           {t("retry")}
         </button>
-        <LocaleLink href="/" className={buttonVariants({ variant: "outline" })}>
+        <a href={home} className={buttonVariants({ variant: "outline" })}>
           {t("back")}
-        </LocaleLink>
+        </a>
       </div>
     </div>
   );
