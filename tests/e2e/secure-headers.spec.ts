@@ -37,10 +37,15 @@ function directives(policy: string): Map<string, string> {
   );
 }
 
-function expectNoncePolicy(response: APIResponse, path: string, formAction: RegExp) {
+const NONCE_SCRIPTS = /^'self' 'nonce-[A-Za-z0-9+/=]{16,}' 'strict-dynamic'$/;
+// With a GA4 measurement ID, book and checkout (and only they) also allow gtag.js's host
+// (ADR-039, isAnalyticsSecurePath(); Stream B's analytics-csp.spec.ts checks which routes).
+const NONCE_SCRIPTS_WITH_GA = /^'self' 'nonce-[A-Za-z0-9+/=]{16,}' 'strict-dynamic'( https:\/\/\*\.googletagmanager\.com)?$/;
+
+function expectNoncePolicy(response: APIResponse, path: string, formAction: RegExp, scripts = NONCE_SCRIPTS) {
   const policy = directives(response.headers()["content-security-policy"] ?? "");
   expect(policy.get("default-src"), path).toBe("'self'");
-  expect(policy.get("script-src"), path).toMatch(/^'self' 'nonce-[A-Za-z0-9+/=]{16,}' 'strict-dynamic'$/);
+  expect(policy.get("script-src"), path).toMatch(scripts);
   expect(policy.get("object-src"), path).toBe("'none'");
   expect(policy.get("base-uri"), path).toBe("'none'");
   expect(policy.get("frame-ancestors"), path).toBe("'none'");
@@ -50,12 +55,19 @@ function expectNoncePolicy(response: APIResponse, path: string, formAction: RegE
 }
 
 test("secure pages (checkout, account, customer sign-in) send the baseline and a nonce policy", async ({ request }) => {
-  for (const path of ["/dang-nhap", "/en/login", "/tai-khoan", "/en/account/bookings", "/thanh-toan/PTA-0000-0000", "/en/checkout/PTA-0000-0000/result"]) {
+  const paths = [
+    ["/dang-nhap", NONCE_SCRIPTS],
+    ["/en/login", NONCE_SCRIPTS],
+    ["/tai-khoan", NONCE_SCRIPTS],
+    ["/en/account/bookings", NONCE_SCRIPTS],
+    ["/thanh-toan/PTA-0000-0000", NONCE_SCRIPTS_WITH_GA],
+    ["/en/checkout/PTA-0000-0000/result", NONCE_SCRIPTS_WITH_GA],
+  ] as const;
+  for (const [path, scripts] of paths) {
     const response = await request.get(path, { maxRedirects: 0 });
     expectBaseline(response, path);
     // Checkout may post to VNPay's payment page (the method form); nothing else.
-    expectNoncePolicy(response, path, /^'self'( https:\/\/(sandbox\.vnpayment\.vn|pay\.vnpay\.vn))?$/);
-    expect(directives(response.headers()["content-security-policy"] ?? "").get("script-src"), path).not.toContain("unsafe-inline");
+    expectNoncePolicy(response, path, /^'self'( https:\/\/(sandbox\.vnpayment\.vn|pay\.vnpay\.vn))?$/, scripts);
   }
 });
 
