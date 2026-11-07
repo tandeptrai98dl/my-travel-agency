@@ -223,6 +223,8 @@ jobs:
           VNPAY_STUB: "true"
           BANK_WEBHOOK_PROVIDER: sepay
           BANK_WEBHOOK_SECRET: ci-only-bank-webhook-key-${{ github.run_id }}
+          # Signs the guest checkout cookie (booking-flow.spec.ts); CI-only, never a real key.
+          BOOKING_ACCESS_SECRET: ci-only-booking-access-secret-${{ github.run_id }}
           # Serves /admin/design-system in the production build so axe can check it.
           SHOW_DESIGN_SYSTEM: "true"
         run: npm run test:e2e

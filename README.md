@@ -74,6 +74,7 @@ Never commit real values. `.env.example` lists every variable; `.env.local` is g
 | `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_PAYMENT_URL` | server | VNPay merchant portal (sandbox keys first; production after the merchant contract). Without both keys the VNPay method is hidden and the IPN answers 97. `VNPAY_PAYMENT_URL` defaults to the sandbox | Vercel (production keys only in Production) |
 | `VNPAY_STUB` | server | CI only: replaces VNPay's payment page with `/api/payments/vnpay/stub`, which signs its IPN with `VNPAY_HASH_SECRET`. Refused when `VERCEL_ENV=production`. Keep it off on any staging or preview that holds real-looking data: anyone holding a signed payment URL could confirm that payment there | GitHub Actions |
 | `BANK_WEBHOOK_PROVIDER`, `BANK_WEBHOOK_SECRET` | server | `sepay` (API key, sent as `Authorization: Apikey …`) or `casso` (secure token). Without both the webhook answers 503 and transfers wait for an accountant | Vercel |
+| `BOOKING_ACCESS_SECRET` | server | 32+ random characters (`openssl rand -base64 48`). Signs the `booking_access_<code>` cookie that lets a guest reopen their checkout; without it the booking page shows the hotline instead of the booking form | Vercel, GitHub Actions |
 | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | build only | Sentry → organization auth token (scope: project releases) | Vercel (build); leave empty locally |
 | `SEED_USER_PASSWORD` | local tool | Choose one (at least 12 characters) for `npm run seed:users` | `.env.local` only |
 

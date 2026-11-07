@@ -43,3 +43,22 @@ export const startPaymentSchema = z.object({
   kind: z.enum(["deposit", "full", "balance"]),
 });
 export type StartPaymentValues = z.output<typeof startPaymentSchema>;
+
+/** The book-now form (PR 4B): the draft plus terms consent, marketing opt-in and Turnstile. */
+export const checkoutDraftSchema = draftInputSchema.extend({
+  acceptTerms: z.literal(true, "termsRequired"),
+  marketing: z.boolean().default(false),
+  turnstileToken: z.string().max(2048).default(""),
+});
+export type CheckoutDraftInput = z.input<typeof checkoutDraftSchema>;
+export type CheckoutDraftValues = z.output<typeof checkoutDraftSchema>;
+
+export const quoteInputSchema = draftInputSchema.pick({ departureId: true, party: true, plan: true });
+export type QuoteInput = z.input<typeof quoteInputSchema>;
+
+export const checkoutCodeSchema = z.string().trim().regex(/^PTA-\d{4}-\d{4,}$/);
+
+export const startCheckoutPaymentSchema = z.object({
+  code: checkoutCodeSchema,
+  provider: z.enum(["vnpay", "bank_transfer"]),
+});
