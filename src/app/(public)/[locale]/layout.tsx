@@ -4,7 +4,8 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 
 import { fontVariables } from "@/app/fonts";
 import { ContactFloatingButton } from "@/components/layout/contact-floating-button";
-import { CookieConsentBanner } from "@/components/layout/cookie-consent-banner";
+import { CookieConsent } from "@/components/layout/cookie-consent";
+import { DesktopNav } from "@/components/layout/desktop-nav";
 import { LabelsProvider, type LabelTree } from "@/components/layout/labels";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -83,13 +84,17 @@ export default async function LocaleLayout({ children, params }: Props) {
           >
             {t("skipToContent")}
           </a>
-          <SiteHeader brandName={brandName} destinations={destinations} />
+          <SiteHeader
+            brandName={brandName}
+            destinations={destinations}
+            desktopNav={<DesktopNav locale={locale} destinations={destinations} className="hidden lg:block" />}
+          />
           <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
           <SiteFooter settings={settings} brandName={brandName} locale={locale} policyLinks={policyLinks} />
           <ContactFloatingButton contact={settings.contact} />
-          <CookieConsentBanner privacyHref={privacyHref} />
+          <CookieConsent privacyHref={privacyHref} />
         </LabelsProvider>
       </body>
     </html>
