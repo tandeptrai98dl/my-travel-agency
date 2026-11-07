@@ -1,19 +1,15 @@
 import { z } from "zod";
 
+import { isSitePath } from "@/lib/site-path";
+
+export { isSitePath };
+
 /**
  * Redirects (docs/specs/phase-2-catalog-admin.md step 20, decisions 4 and 5). Paths are
  * site-relative; supabase/migrations/*_redirect_rules.sql repeats the format and chain rules.
  */
 export const REDIRECTS_PAGE_SIZE = 50;
 export const REDIRECT_STATUS_CODES = [301, 302] as const;
-
-/** Lower-level check shared with the form: a path on this site, no query or fragment for sources. */
-export function isSitePath(value: string, { source }: { source: boolean }): boolean {
-  if (!value.startsWith("/") || value.startsWith("//") || value.length > 500) return false;
-  if (/[\s\\]/.test(value)) return false;
-  if (source && (value === "/" || /[?#]/.test(value))) return false;
-  return true;
-}
 
 /**
  * Trims, adds the leading slash people forget, and drops a trailing slash (not from "/"). A full
