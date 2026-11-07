@@ -9,13 +9,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { addDays, todayInVietnam } from "@/lib/dates";
 import { rolesFor } from "@/lib/auth/permissions";
 import { quoteTourOptions } from "@/modules/booking/quote.service";
+import { quotePrefill } from "@/modules/inquiry/inquiry-admin.service";
 
 import { requireAdminAccess } from "../../../admin-gate";
 
 export const metadata: Metadata = { title: "Tạo báo giá" };
 
-/** New private-trip quote (spec Phase 4 step 13): sales, sales managers and admins. */
-export default async function NewQuotePage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+/**
+ * New private-trip quote (spec Phase 4 step 13): sales, sales managers and admins. With
+ * `?inquiry=<code>` the form starts from that inquiry (Phase 5 PR 5C) when the caller may see it.
+ */
+export default async function NewQuotePage({ searchParams }: Props) {
   await requireAdminAccess(rolesFor("bookings.edit"));
   const t = await getTranslations({ locale: "vi", namespace: "Admin" });
   return (
@@ -27,18 +33,32 @@ export default async function NewQuotePage() {
         breadcrumbLabel={t("Shell.breadcrumb")}
       />
       <Suspense fallback={<Skeleton className="h-[32rem] w-full max-w-4xl" aria-hidden="true" />}>
-        <Form />
+        <Form searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Form() {
+async function Form({ searchParams }: Props) {
   await requireAdminAccess(rolesFor("bookings.edit"));
-  const tours = await quoteTourOptions();
+  const code = (await searchParams).inquiry;
+  const [tours, prefill] = await Promise.all([quoteTourOptions(), typeof code === "string" ? quotePrefill(code) : Promise.resolve(null)]);
+  const initial = prefill
+    ? {
+        inquiryCode: prefill.inquiryCode,
+        contactName: prefill.contactName,
+        contactEmail: prefill.contactEmail,
+        contactPhone: prefill.contactPhone,
+        adults: prefill.adults,
+        children: prefill.children,
+        locale: prefill.locale,
+        ...(prefill.tourId && tours.some((tour) => tour.id === prefill.tourId) ? { tourId: prefill.tourId } : {}),
+        ...(prefill.startDate ? { startDate: prefill.startDate } : {}),
+      }
+    : {};
   return (
     <AdminMessages namespaces={["Quote", "Bookings"]}>
-      <QuoteForm tours={tours} defaultDate={addDays(todayInVietnam(), 60)} />
+      <QuoteForm tours={tours} defaultDate={addDays(todayInVietnam(), 60)} initial={initial} />
     </AdminMessages>
   );
 }

@@ -1,0 +1,165 @@
+{
+  "Admin": {
+    "Nav": {
+      "inquiries": "Inquiries"
+    },
+    "Dashboard": {
+      "links": {
+        "inquiries": "Inquiry inbox, owners, notes and quotes"
+      }
+    },
+    "Inquiries": {
+      "title": "Inquiries",
+      "description": "Requests from the contact page, the tailor-made wizard and private tour pages, newest first.",
+      "search": "Search by code, name or email",
+      "code": "Code",
+      "customer": "Customer",
+      "source": "Source",
+      "tour": "Tour",
+      "status": "Status",
+      "owner": "Owner",
+      "receivedAt": "Received",
+      "response": "First response",
+      "allStatuses": "All statuses",
+      "allSources": "All sources",
+      "allOwners": "Everything I can see",
+      "ownerMine": "Mine",
+      "ownerUnassigned": "Unassigned",
+      "unassigned": "Unassigned",
+      "waiting": "Waiting · {time}",
+      "statuses": {
+        "new": "New",
+        "contacted": "Contacted",
+        "quoted": "Quoted",
+        "won": "Won",
+        "lost": "Lost",
+        "spam": "Spam"
+      },
+      "sources": {
+        "tailor_made": "Tailor-made",
+        "tour_inquiry": "Private tour",
+        "contact": "Contact",
+        "other": "Other"
+      },
+      "duration": {
+        "days": "{days} d {hours} h",
+        "hours": "{hours} h {minutes} min",
+        "minutes": "{minutes} min"
+      },
+      "Detail": {
+        "summary": "Summary",
+        "firstResponse": "First response",
+        "responseTime": "Response time",
+        "notAnswered": "Not answered yet",
+        "language": "Customer's language",
+        "languages": {
+          "vi": "Vietnamese",
+          "en": "English"
+        },
+        "contactTitle": "Contact",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "country": "Country",
+        "company": "Company",
+        "channel": "Prefers",
+        "channels": {
+          "email": "Email",
+          "phone": "Phone",
+          "zalo": "Zalo",
+          "whatsapp": "WhatsApp"
+        },
+        "tripTitle": "Trip",
+        "tourLabel": "Tour",
+        "tourTypes": {
+          "private": "private",
+          "group": "group"
+        },
+        "destinations": "Destinations",
+        "destinationsOther": "Other destinations",
+        "style": "Style",
+        "month": "Planned for",
+        "flexible": "{month} (flexible)",
+        "durationLabel": "Length",
+        "durationDays": "{count} days",
+        "partyLabel": "Travellers",
+        "party": "{adults} adults, {children} children",
+        "budget": "Budget per person",
+        "budgets": {
+          "under_30m": "Under 30 million dong",
+          "30_60m": "30–60 million dong",
+          "60_100m": "60–100 million dong",
+          "100_200m": "100–200 million dong",
+          "over_200m": "Over 200 million dong",
+          "not_sure": "Not sure yet"
+        },
+        "none": "—",
+        "messageTitle": "Message",
+        "noMessage": "The customer left no message.",
+        "campaign": "Campaign (UTM)",
+        "consentTitle": "Customer consent",
+        "noConsent": "No consent records.",
+        "consentRow": "{purpose} · version {version}",
+        "purposes": {
+          "terms": "Terms",
+          "privacy": "Privacy policy",
+          "marketing": "Marketing",
+          "analytics": "Analytics"
+        },
+        "notesTitle": "Internal notes",
+        "noNotes": "No notes yet.",
+        "activityTitle": "History",
+        "noActivity": "No changes yet.",
+        "activity": {
+          "assign": "Owner: {from} → {to}",
+          "status": "Status: {from} → {to}",
+          "note": "Note added",
+          "noteContacted": "Note added · customer contacted",
+          "quote": "Quote created",
+          "other": "Change"
+        },
+        "system": "System",
+        "bookingTitle": "Quote",
+        "bookingLink": "Open quote {code}",
+        "createQuote": "Create a quote from this inquiry",
+        "quoteHint": "The quote form is prefilled with the customer, party, language and private tour (if any).",
+        "quoteNeedsPrivate": "Quotes are for private tours only; choose the tour in the quote form.",
+        "actionsTitle": "Actions",
+        "readOnly": "You can only view this inquiry.",
+        "assignTitle": "Owner",
+        "take": "Take this inquiry",
+        "assignee": "Assign to",
+        "nobody": "Nobody",
+        "assignSave": "Save owner",
+        "assigned": "Owner saved",
+        "taken": "The inquiry is yours",
+        "ownedBy": "Handled by {name}.",
+        "statusTitle": "Status",
+        "newStatus": "New status",
+        "chooseStatus": "Choose a status",
+        "statusNote": "Note (optional)",
+        "statusSave": "Update status",
+        "statusSaved": "Status updated",
+        "noteTitle": "Add a note",
+        "noteBody": "Note",
+        "contacted": "I have contacted the customer",
+        "contactedHelp": "The first contact is recorded as the response time; a new inquiry becomes “Contacted”.",
+        "noteSave": "Add note",
+        "noteSaved": "Note added",
+        "saving": "Saving…"
+      },
+      "errors": {
+        "forbidden": "You are not allowed to do this.",
+        "invalid": "Please check the fields.",
+        "required": "Required.",
+        "tooLong": "Too long.",
+        "noteRequired": "Write at least 3 characters.",
+        "note_required": "Write at least 3 characters.",
+        "not_found": "Inquiry not found, or it is assigned to someone else.",
+        "invalid_status": "Invalid status.",
+        "invalid_assignee": "Only active sales staff or admins can own an inquiry.",
+        "failed": "Could not save. Please try again."
+      }
+    }
+  }
+}

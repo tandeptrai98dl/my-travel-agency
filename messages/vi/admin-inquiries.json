@@ -1,0 +1,165 @@
+{
+  "Admin": {
+    "Nav": {
+      "inquiries": "Yêu cầu tư vấn"
+    },
+    "Dashboard": {
+      "links": {
+        "inquiries": "Hộp thư yêu cầu tư vấn, người phụ trách, ghi chú và báo giá"
+      }
+    },
+    "Inquiries": {
+      "title": "Yêu cầu tư vấn",
+      "description": "Yêu cầu từ trang liên hệ, thiết kế hành trình riêng và trang tour riêng, mới nhất ở trên cùng.",
+      "search": "Tìm theo mã, tên hoặc email",
+      "code": "Mã",
+      "customer": "Khách",
+      "source": "Nguồn",
+      "tour": "Tour",
+      "status": "Trạng thái",
+      "owner": "Phụ trách",
+      "receivedAt": "Nhận lúc",
+      "response": "Phản hồi đầu tiên",
+      "allStatuses": "Mọi trạng thái",
+      "allSources": "Mọi nguồn",
+      "allOwners": "Tất cả tôi được xem",
+      "ownerMine": "Của tôi",
+      "ownerUnassigned": "Chưa giao",
+      "unassigned": "Chưa giao",
+      "waiting": "Đang chờ · {time}",
+      "statuses": {
+        "new": "Mới",
+        "contacted": "Đã liên hệ",
+        "quoted": "Đã báo giá",
+        "won": "Thành công",
+        "lost": "Không thành",
+        "spam": "Thư rác"
+      },
+      "sources": {
+        "tailor_made": "Thiết kế riêng",
+        "tour_inquiry": "Tour riêng",
+        "contact": "Liên hệ",
+        "other": "Khác"
+      },
+      "duration": {
+        "days": "{days} ngày {hours} giờ",
+        "hours": "{hours} giờ {minutes} phút",
+        "minutes": "{minutes} phút"
+      },
+      "Detail": {
+        "summary": "Tóm tắt",
+        "firstResponse": "Phản hồi đầu tiên",
+        "responseTime": "Thời gian phản hồi",
+        "notAnswered": "Chưa phản hồi",
+        "language": "Ngôn ngữ của khách",
+        "languages": {
+          "vi": "Tiếng Việt",
+          "en": "Tiếng Anh"
+        },
+        "contactTitle": "Liên hệ",
+        "name": "Họ tên",
+        "email": "Email",
+        "phone": "Điện thoại",
+        "country": "Quốc gia",
+        "company": "Doanh nghiệp",
+        "channel": "Muốn liên hệ qua",
+        "channels": {
+          "email": "Email",
+          "phone": "Điện thoại",
+          "zalo": "Zalo",
+          "whatsapp": "WhatsApp"
+        },
+        "tripTitle": "Chuyến đi",
+        "tourLabel": "Tour",
+        "tourTypes": {
+          "private": "riêng",
+          "group": "đoàn"
+        },
+        "destinations": "Điểm đến",
+        "destinationsOther": "Điểm đến khác",
+        "style": "Phong cách",
+        "month": "Thời gian dự kiến",
+        "flexible": "{month} (linh hoạt)",
+        "durationLabel": "Độ dài",
+        "durationDays": "{count} ngày",
+        "partyLabel": "Số khách",
+        "party": "{adults} người lớn, {children} trẻ em",
+        "budget": "Ngân sách mỗi khách",
+        "budgets": {
+          "under_30m": "Dưới 30 triệu đồng",
+          "30_60m": "30–60 triệu đồng",
+          "60_100m": "60–100 triệu đồng",
+          "100_200m": "100–200 triệu đồng",
+          "over_200m": "Trên 200 triệu đồng",
+          "not_sure": "Chưa rõ, cần tư vấn"
+        },
+        "none": "—",
+        "messageTitle": "Lời nhắn",
+        "noMessage": "Khách không để lại lời nhắn.",
+        "campaign": "Chiến dịch (UTM)",
+        "consentTitle": "Đồng ý của khách",
+        "noConsent": "Không có bản ghi đồng ý.",
+        "consentRow": "{purpose} · phiên bản {version}",
+        "purposes": {
+          "terms": "Điều khoản",
+          "privacy": "Chính sách bảo mật",
+          "marketing": "Nhận tin tiếp thị",
+          "analytics": "Phân tích"
+        },
+        "notesTitle": "Ghi chú nội bộ",
+        "noNotes": "Chưa có ghi chú.",
+        "activityTitle": "Lịch sử",
+        "noActivity": "Chưa có thay đổi.",
+        "activity": {
+          "assign": "Người phụ trách: {from} → {to}",
+          "status": "Trạng thái: {from} → {to}",
+          "note": "Thêm ghi chú",
+          "noteContacted": "Thêm ghi chú · đã liên hệ khách",
+          "quote": "Tạo báo giá",
+          "other": "Thay đổi"
+        },
+        "system": "Hệ thống",
+        "bookingTitle": "Báo giá",
+        "bookingLink": "Mở báo giá {code}",
+        "createQuote": "Tạo báo giá từ yêu cầu này",
+        "quoteHint": "Mẫu báo giá được điền sẵn khách, số người, ngôn ngữ và tour riêng (nếu có).",
+        "quoteNeedsPrivate": "Báo giá chỉ dành cho tour riêng; chọn tour trong mẫu báo giá.",
+        "actionsTitle": "Xử lý",
+        "readOnly": "Bạn chỉ có quyền xem yêu cầu này.",
+        "assignTitle": "Người phụ trách",
+        "take": "Nhận yêu cầu này",
+        "assignee": "Giao cho",
+        "nobody": "Chưa giao ai",
+        "assignSave": "Lưu người phụ trách",
+        "assigned": "Đã lưu người phụ trách",
+        "taken": "Bạn đã nhận yêu cầu này",
+        "ownedBy": "Đang do {name} phụ trách.",
+        "statusTitle": "Trạng thái",
+        "newStatus": "Trạng thái mới",
+        "chooseStatus": "Chọn trạng thái",
+        "statusNote": "Ghi chú (không bắt buộc)",
+        "statusSave": "Cập nhật trạng thái",
+        "statusSaved": "Đã cập nhật trạng thái",
+        "noteTitle": "Thêm ghi chú",
+        "noteBody": "Ghi chú",
+        "contacted": "Tôi đã liên hệ khách",
+        "contactedHelp": "Lần liên hệ đầu tiên được ghi là thời điểm phản hồi; yêu cầu mới chuyển sang “Đã liên hệ”.",
+        "noteSave": "Thêm ghi chú",
+        "noteSaved": "Đã thêm ghi chú",
+        "saving": "Đang lưu…"
+      },
+      "errors": {
+        "forbidden": "Bạn không có quyền thực hiện thao tác này.",
+        "invalid": "Vui lòng kiểm tra lại các trường.",
+        "required": "Bắt buộc.",
+        "tooLong": "Quá dài.",
+        "noteRequired": "Hãy ghi chú ít nhất 3 ký tự.",
+        "note_required": "Hãy ghi chú ít nhất 3 ký tự.",
+        "not_found": "Không tìm thấy yêu cầu, hoặc yêu cầu đã được giao cho người khác.",
+        "invalid_status": "Trạng thái không hợp lệ.",
+        "invalid_assignee": "Chỉ giao được cho nhân viên kinh doanh hoặc quản trị đang hoạt động.",
+        "failed": "Không lưu được. Vui lòng thử lại."
+      }
+    }
+  }
+}
