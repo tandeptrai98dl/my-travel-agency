@@ -38,7 +38,10 @@ npx supabase db reset  # re-apply migrations + seed
 npx supabase test db   # pgTAP tests
 npx supabase db lint   # schema lint
 npm run db:types       # regenerate src/types/database.types.ts after a migration
+node scripts/check-audit.mjs  # npm audit of production dependencies (CI "Security scans")
 ```
+
+CI's "Security scans" job also runs gitleaks over the whole git history. A finding fails it; a verified test fixture is ignored by its exact fingerprint in `.gitleaksignore`, a real secret is revoked and replaced at its provider first (then in Vercel), and only then removed from the history. A high or critical `npm audit` advisory is fixed, or accepted in `scripts/audit-accepted.json` with a reason and an expiry and listed in `docs/SECURITY_REVIEW.md`.
 
 ## End-to-end tests
 

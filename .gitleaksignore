@@ -1,0 +1,14 @@
+# gitleaks findings verified as test fixtures (Phase 6 PR 6A, docs/SECURITY_REVIEW.md "Dependencies and secrets").
+# Exact fingerprints only (commit:file:rule:line), so a real key added later is still reported.
+# src/components/analytics/analytics.test.ts: a made-up payment-link token the GA scrubber must drop
+# src/modules/booking/booking-emails.test.ts, booking-access.test.ts: HMAC keys spelled "test-secret…"
+# src/modules/booking/checkout-schemas.test.ts, booking.service.test.ts: an idempotency key (a UUID, not a secret)
+# src/lib/env/schema.test.ts: the placeholder publishable key "sb_publishable_123"
+15d136404806af022358cbcef5e1d3f550670658:src/modules/booking/booking.service.test.ts:generic-api-key:43
+28d2600b96725f245ed846aab5edc9a72b03dda6:src/modules/booking/booking.service.test.ts:generic-api-key:43
+2960501d9689b7180a9786c2506620b953c7fb95:src/lib/env/schema.test.ts:generic-api-key:13
+4218a89ac7e0e5c5e6fed708523b2b1be8597593:src/modules/booking/booking-access.test.ts:generic-api-key:5
+4218a89ac7e0e5c5e6fed708523b2b1be8597593:src/modules/booking/checkout-schemas.test.ts:generic-api-key:6
+4704a61eaba8d7c8790cf629dd6eca06031293cc:src/modules/booking/booking-emails.test.ts:generic-api-key:25
+783e9f91cec5cdc1bbfdb6bfeaa905fdd0cc0487:src/components/analytics/analytics.test.ts:generic-api-key:16
+86cb1ea87dbc98084ae47807d046d58fe16fc7d4:src/components/analytics/analytics.test.ts:generic-api-key:16
