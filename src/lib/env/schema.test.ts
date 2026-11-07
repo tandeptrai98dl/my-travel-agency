@@ -202,5 +202,65 @@ describe("payment variables", () => {
       /never allowed in production/,
     );
     expect(parseEnv("server", serverEnvSchema, { ...base, VNPAY_STUB: "true", VERCEL_ENV: "preview" }).VNPAY_STUB).toBe(true);
+    // Whatever else is set: real-looking VNPay keys and allow-lists do not make it acceptable.
+    expect(() =>
+      parseEnv("server", serverEnvSchema, {
+        ...base,
+        ...PRODUCTION,
+        VNPAY_TMN_CODE: "CODE1234",
+        VNPAY_HASH_SECRET: "a-long-enough-hash-secret",
+        VNPAY_IPN_ALLOWED_IPS: "203.0.113.0/24",
+        VNPAY_STUB: "true",
+      }),
+    ).toThrow(/never allowed in production/);
+  });
+});
+
+// Everything production requires besides the payment settings.
+const PRODUCTION = {
+  VERCEL_ENV: "production",
+  UPSTASH_REDIS_REST_URL: "https://eu1.upstash.io",
+  UPSTASH_REDIS_REST_TOKEN: "token",
+  CRON_SECRET: "c".repeat(32),
+};
+
+describe("webhook source allow-lists (Phase 6 decision 2)", () => {
+  const base = { SUPABASE_SECRET_KEY: "sb_secret_example" };
+  const vnpay = { VNPAY_TMN_CODE: "CODE1234", VNPAY_HASH_SECRET: "a-long-enough-hash-secret" };
+  const bank = { BANK_WEBHOOK_PROVIDER: "sepay", BANK_WEBHOOK_SECRET: "a-long-enough-secret" };
+
+  it("are off when empty, outside production", () => {
+    const env = parseEnv("server", serverEnvSchema, { ...base, ...vnpay, ...bank, VNPAY_IPN_ALLOWED_IPS: "" });
+    expect(env.VNPAY_IPN_ALLOWED_IPS).toEqual({ mode: "off" });
+    expect(env.BANK_WEBHOOK_ALLOWED_IPS).toEqual({ mode: "off" });
+  });
+
+  it("parse addresses and ranges, IPv4 and IPv6", () => {
+    const env = parseEnv("server", serverEnvSchema, { ...base, VNPAY_IPN_ALLOWED_IPS: "203.0.113.0/24, 198.51.100.7,2001:db8::/32" });
+    expect(env.VNPAY_IPN_ALLOWED_IPS).toMatchObject({ mode: "list", ranges: [{ prefix: 24 }, { prefix: 32 }, { version: 6, prefix: 32 }] });
+  });
+
+  it("name bad entries, refuse /0 and never print other values", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, BANK_WEBHOOK_ALLOWED_IPS: "203.0.113.0/24,10.0.0.300" })).toThrow(
+      /BANK_WEBHOOK_ALLOWED_IPS: not an IPv4\/IPv6 address or CIDR range .*10\.0\.0\.300/,
+    );
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, VNPAY_IPN_ALLOWED_IPS: "0.0.0.0/0" })).toThrow(/VNPAY_IPN_ALLOWED_IPS/);
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, ...vnpay, VNPAY_IPN_ALLOWED_IPS: "nope" })).not.toThrow(/a-long-enough-hash-secret/);
+  });
+
+  it("are required in production for each configured gateway, unless the exception is recorded", () => {
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, ...PRODUCTION, ...vnpay })).toThrow(/VNPAY_IPN_ALLOWED_IPS is required in production/);
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, ...PRODUCTION, ...bank })).toThrow(/BANK_WEBHOOK_ALLOWED_IPS is required in production/);
+    const env = parseEnv("server", serverEnvSchema, {
+      ...base,
+      ...PRODUCTION,
+      ...vnpay,
+      ...bank,
+      VNPAY_IPN_ALLOWED_IPS: "203.0.113.0/24",
+      BANK_WEBHOOK_ALLOWED_IPS: "unrestricted",
+    });
+    expect(env.BANK_WEBHOOK_ALLOWED_IPS).toEqual({ mode: "unrestricted" });
+    // A gateway that is off in production needs no list.
+    expect(() => parseEnv("server", serverEnvSchema, { ...base, ...PRODUCTION })).not.toThrow();
   });
 });

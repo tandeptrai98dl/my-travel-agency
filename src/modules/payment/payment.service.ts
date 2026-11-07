@@ -3,17 +3,19 @@ import "server-only";
 import * as Sentry from "@sentry/nextjs";
 import { revalidateTag } from "next/cache";
 
+import { checkSource, type SourceCheck } from "@/lib/ip-allowlist";
 import { logger } from "@/lib/logger";
+import { redisPipeline } from "@/lib/redis";
 import { notifyBooking } from "@/modules/booking/booking-emails.service";
 import { TOURS_TAG, tourTag } from "@/modules/catalog/cache-tags";
 import type { Json } from "@/types/database.types";
 
-import { bankWebhookConfig, vnpayConfig } from "./payment.config";
+import { bankWebhookConfig, vnpayConfig, webhookAllowList } from "./payment.config";
 import * as repo from "./payment.repository";
 import type { GatewayEvent, PaymentInstructions, PaymentToStart } from "./provider";
 import { authorized, parseBankWebhook } from "./providers/bank-webhook";
 import { type BankAccount, vietQrProvider } from "./providers/vietqr";
-import { checkIpn, vnpayProvider } from "./providers/vnpay";
+import { checkIpn, verifySignature, vnpayProvider } from "./providers/vnpay";
 
 /** What record_payment_event() returns (decision 4). */
 export type RecordResult = {
@@ -29,13 +31,29 @@ type Provider = "vnpay" | "bank_transfer";
 /**
  * An IPN or webhook problem: logged, and sent to Sentry with the tag `payment.webhook` (the
  * provider) and `payment.event`, for the payments alert rule (docs/specs/phase-6-hardening-launch.md
- * decision 3). Sentry gets the event name and tags only, never references, amounts or payloads.
- * Requests anyone can send again and again (a bad signature, a missing key) are warnings sampled
- * at 10 %, so they cannot drain the Sentry quota until the 6A source-IP allow-lists land; the log
- * line is always written.
+ * decision 3). Sentry gets the event name and tags only, never references, amounts, addresses or
+ * payloads.
+ *
+ * Quota (decision 2, revisited in PR 6A now that the source allow-lists exist):
+ * - A request from outside an enforced allow-list is logged every time and sent to Sentry only when
+ *   its signature or key is valid (VNPay: also for our merchant code). That may be the real provider
+ *   calling from an address the list lacks, but a validly signed VNPay set is not secret (VNPay
+ *   signs the browser's return URL with the same parameters and secret), so anyone can replay one.
+ *   It is therefore one Sentry error per provider per 15 minutes, deduplicated in Upstash
+ *   (`webhook_source_refused:<provider>`), and a 10 % sampled warning where Upstash is missing or
+ *   failing (sourceRefused()).
+ * - A bad signature or key from inside an enforced allow-list can only come from the provider's own
+ *   addresses (a wrong secret, a changed format): an error every time.
+ * - Without an enforced list (empty, or the `unrestricted` exception) anyone can send them again
+ *   and again, so they stay warnings sampled at 10 %.
  */
 type ProblemOptions = { level?: "error" | "warning"; sampleRate?: number };
 const PUBLIC_PROBLEM: ProblemOptions = { level: "warning", sampleRate: 0.1 };
+
+/** How loudly a bad signature or key is reported, by where the request came from. */
+function badCredentialsProblem(source: SourceCheck): ProblemOptions {
+  return source.enforced ? { level: "error" } : PUBLIC_PROBLEM;
+}
 
 function reportPaymentProblem(
   event: string,
@@ -88,7 +106,10 @@ export type IpnResponse = { RspCode: "00" | "01" | "02" | "04" | "97" | "99"; Me
  * amount (04: recorded and flagged, confirmed only if the deposit is covered), then 00. Every
  * result goes through record_payment_event(); the return URL never confirms.
  */
-export async function handleVnpayIpn(params: Record<string, string>): Promise<IpnResponse> {
+export async function handleVnpayIpn(
+  params: Record<string, string>,
+  source: SourceCheck = { enforced: false, allowed: true },
+): Promise<IpnResponse> {
   const config = vnpayConfig();
   if (!config) {
     reportPaymentProblem("payment.vnpay_ipn_unconfigured", "vnpay", {});
@@ -96,7 +117,7 @@ export async function handleVnpayIpn(params: Record<string, string>): Promise<Ip
   }
   const check = checkIpn(config, params);
   if (!check.ok) {
-    reportPaymentProblem("payment.vnpay_bad_signature", "vnpay", { reference: params.vnp_TxnRef ?? null }, PUBLIC_PROBLEM);
+    reportPaymentProblem("payment.vnpay_bad_signature", "vnpay", { reference: params.vnp_TxnRef ?? null }, badCredentialsProblem(source));
     return { RspCode: check.rspCode, Message: check.message };
   }
   const { data: payment } = await repo.findPaymentByReference(check.event.reference, "vnpay");
@@ -115,6 +136,48 @@ export async function handleVnpayIpn(params: Record<string, string>): Promise<Ip
   if (amountMismatch) return { RspCode: "04", Message: "Invalid amount" };
   if (!wasPending && event.succeeded) return { RspCode: "02", Message: "Order already confirmed" };
   return { RspCode: "00", Message: "Confirm Success" };
+}
+
+export type IpnReply = { status: 200 | 403; body: IpnResponse };
+
+/**
+ * The IPN route's entry point: the source allow-list first (decision 2), then handleVnpayIpn().
+ * A refused source gets 403 and nothing is recorded (the signature is only checked to decide
+ * whether the refusal is worth an alert); VNPay retries a non-success answer,
+ * so a payment sent from an address the list lacks is confirmed once the list is fixed.
+ */
+export async function receiveVnpayIpn(params: Record<string, string> | null, headers: Headers): Promise<IpnReply> {
+  const source = checkSource(webhookAllowList("vnpay"), headers);
+  if (!source.allowed) {
+    const config = vnpayConfig();
+    // Signed for our own merchant: the only refused IPN worth an alert (still deduplicated).
+    const signed = Boolean(
+      config && params?.vnp_SecureHash && params.vnp_TmnCode === config.tmnCode && verifySignature(params, config.hashSecret),
+    );
+    await sourceRefused("vnpay", signed);
+    return { status: 403, body: { RspCode: "99", Message: "Unknown error" } };
+  }
+  if (!params) return { status: 200, body: { RspCode: "97", Message: "Invalid Checksum" } };
+  return { status: 200, body: await handleVnpayIpn(params, source) };
+}
+
+/** One Sentry error per provider per window for a credentialed call from an unlisted address. */
+const REFUSED_ALERT_WINDOW_SECONDS = 15 * 60;
+
+/**
+ * A webhook call from outside the allow-list: logged every time; reported to Sentry only when it
+ * carries valid credentials, and then at most once per window (see the quota note above).
+ */
+async function sourceRefused(provider: "vnpay" | "sepay" | "casso", signed: boolean) {
+  logger.warn("payment.webhook_source_refused", { provider, signed });
+  if (!signed) return;
+  const claim = await redisPipeline([["SET", `webhook_source_refused:${provider}`, "1", "NX", "EX", REFUSED_ALERT_WINDOW_SECONDS]]);
+  if (claim.configured && claim.ok) {
+    // "OK" for the first call of the window; null while the key exists.
+    if (claim.results[0] === "OK") reportPaymentProblem("payment.webhook_source_refused", provider, { signed: true });
+    return;
+  }
+  reportPaymentProblem("payment.webhook_source_refused", provider, { signed: true }, PUBLIC_PROBLEM);
 }
 
 /** Where the browser goes after VNPay: the checkout result page, which only displays (decision 6). */
@@ -160,18 +223,36 @@ export async function instructionsFor(provider: "vnpay" | "bank_transfer", payme
   return account ? vietQrProvider(account).createPayment(payment) : null;
 }
 
-export type WebhookReply = { status: 200 | 400 | 401 | 500 | 503; body: { success: boolean } };
+export type WebhookReply = { status: 200 | 400 | 401 | 403 | 500 | 503; body: { success: boolean } };
 
 /**
- * SePay/Casso webhook (decision 6): the API key first, then incoming credits only, each recorded
+ * What the bank webhook route checks before it reads the body (decision 2): 503 without settings,
+ * 403 for a source outside BANK_WEBHOOK_ALLOWED_IPS (logged; reported when it carries the valid
+ * key, deduplicated), otherwise null. handleBankWebhook() runs it again, so it is never skipped.
+ */
+export async function bankWebhookGate(headers: Headers): Promise<WebhookReply | null> {
+  const config = bankWebhookConfig();
+  if (!config) return { status: 503, body: { success: false } };
+  if (!checkSource(webhookAllowList("bank"), headers).allowed) {
+    await sourceRefused(config.provider, authorized(config.provider, headers, config.secret));
+    return { status: 403, body: { success: false } };
+  }
+  return null;
+}
+
+/**
+ * SePay/Casso webhook (decision 6): the source allow-list, the API key, then incoming credits only, each recorded
  * through record_payment_event() with the reference found in the memo (none → unmatched, kept for
  * the accountant). Under- and overpayment, late and repeated transfers are handled there.
  */
 export async function handleBankWebhook(headers: Headers, body: unknown): Promise<WebhookReply> {
+  const early = await bankWebhookGate(headers);
+  if (early) return early;
   const config = bankWebhookConfig();
   if (!config) return { status: 503, body: { success: false } };
+  const source = checkSource(webhookAllowList("bank"), headers);
   if (!authorized(config.provider, headers, config.secret)) {
-    reportPaymentProblem("payment.bank_webhook_unauthorized", config.provider, {}, PUBLIC_PROBLEM);
+    reportPaymentProblem("payment.bank_webhook_unauthorized", config.provider, {}, badCredentialsProblem(source));
     return { status: 401, body: { success: false } };
   }
   const parsed = parseBankWebhook(config.provider, body);

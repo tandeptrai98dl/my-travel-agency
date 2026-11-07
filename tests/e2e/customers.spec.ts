@@ -7,6 +7,7 @@ import { adminApi } from "./support/admin-api";
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";
 import { closeTestDepartures, heldBooking, testDeparture } from "./support/booking";
+import { startTotpEnrolment } from "./support/staff";
 import { totp } from "./support/totp";
 
 // Phase 5 PR 5D (docs/specs/phase-5-accounts-inquiries-operations.md decisions 8, 13, 14 and 16):
@@ -44,8 +45,7 @@ async function mfaStaff(page: Page, role: "admin" | "accountant") {
   await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/mfa$/);
-  await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
-  const secret = (await page.getByTestId("mfa-secret").textContent())?.trim() ?? "";
+  const secret = await startTotpEnrolment(page);
   await page.getByLabel("Mã xác thực").fill(totp(secret));
   await page.getByRole("button", { name: "Xác minh" }).click();
   await page.getByRole("button", { name: "Vào trang quản trị" }).click();

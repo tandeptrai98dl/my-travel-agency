@@ -179,6 +179,14 @@ One pull request per group, one commit per step. Items that need the owner are m
 3. Payment hardening of decision 2 (allow-lists, `VNPAY_STUB` refusal in production, Casso check, vectors once sandbox IPNs exist [owner 8]).
 4. `npm audit` and gitleaks in CI; `docs/SECURITY_REVIEW.md` with every line resolved; Security Advisor results from staging [owner 5].
 
+   As shipped (PR 6A):
+   - **pgTAP numbers:** the role matrix is `50_role_matrix_test.sql` and the definer allow-list `51_definer_functions_test.sql` (the coordinator moved Stream A to 50–59 once the numbers below 30 were used up).
+   - **Matrix probe:** each table and role state is measured, not asserted policy by policy: rows read (none, some, all), a copy of a row inserted, a no-op update, a delete, each rolled back. It found operators able to update booking contact, owner and invoice fields; `20261115100000_role_matrix_fixes.sql` limits that to sales roles and admins.
+   - **Permission E2E:** Server Actions are called over HTTP with the action ids from the build's `server-reference-manifest.json`, so a refusal is the server's own; admin and accountant use fresh accounts that enrol TOTP.
+   - **Allow-lists:** `unrestricted` is the explicit value for an accepted exception (Casso); empty stays "not enforced" outside production. Calls refused by the list are logged every time; with valid credentials (VNPay: for our merchant code) they are one Sentry error per provider per 15 minutes, deduplicated in Upstash, because a signed VNPay set from a return URL can be replayed by anyone (a 10 % sampled warning without Upstash). Bad credentials from a listed address are unsampled errors, and the #54 10 % sampling stays only while no list is enforced. The bank webhook route checks the source before it reads the body.
+   - **Secrets scan:** gitleaks runs on every CI run over the whole history (cheap at this size); its first findings were test fixtures, ignored by exact fingerprint in `.gitleaksignore`.
+   - Also fixed: pages no longer send `X-Powered-By` (`poweredByHeader: false`). Rate limits of booking creation, payment start and the auth guard are proved in `src/lib/rate-limit.secure-flows.test.ts`.
+
 ### PR 6B — Monitoring and housekeeping (Stream A)
 
 5. Migration: `cron_failures(since)`, `booking-tokens-cleanup` and the webhook payload trim as `pg_cron` jobs (scheduled only when the extension exists, like Phase 4); pgTAP.

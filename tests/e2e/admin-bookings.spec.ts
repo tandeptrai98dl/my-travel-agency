@@ -4,6 +4,7 @@ import { adminApi } from "./support/admin-api";
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";
 import { booking, closeTestDepartures, heldBooking, testDeparture } from "./support/booking";
+import { startTotpEnrolment } from "./support/staff";
 import { totp } from "./support/totp";
 
 // Admin bookings and payments (docs/specs/phase-4-booking-payments.md PR 4F, steps 16–18), per
@@ -108,8 +109,7 @@ test("an MFA-verified accountant records money, refunds within the cap and assig
   await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/mfa$/);
-  await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
-  const secret = (await page.getByTestId("mfa-secret").textContent())?.trim() ?? "";
+  const secret = await startTotpEnrolment(page);
   await page.getByLabel("Mã xác thực").fill(totp(secret));
   await page.getByRole("button", { name: "Xác minh" }).click();
   await page.getByRole("button", { name: "Vào trang quản trị" }).click();

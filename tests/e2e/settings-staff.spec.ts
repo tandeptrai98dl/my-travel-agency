@@ -3,6 +3,7 @@ import { expect, type Page, test } from "./support/test";
 import { adminApi } from "./support/admin-api";
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";
+import { startTotpEnrolment } from "./support/staff";
 import { totp } from "./support/totp";
 
 // Settings, staff and the dashboard (docs/specs/phase-2-catalog-admin.md steps 21–23, ADR-032).
@@ -75,8 +76,7 @@ test("an aal2 admin edits settings, invites staff and changes their role and acc
   // Enrol TOTP to reach aal2.
   await signIn(page, adminEmail, password);
   await expect(page).toHaveURL(/\/admin\/mfa$/);
-  await page.getByRole("button", { name: "Bắt đầu thiết lập" }).click();
-  const secret = (await page.getByTestId("mfa-secret").textContent())?.trim() ?? "";
+  const secret = await startTotpEnrolment(page);
   await page.getByLabel("Mã xác thực").fill(totp(secret));
   await page.getByRole("button", { name: "Xác minh" }).click();
   await page.getByRole("button", { name: "Vào trang quản trị" }).click();

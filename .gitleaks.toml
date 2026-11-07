@@ -1,0 +1,8 @@
+# gitleaks configuration (docs/specs/phase-6-hardening-launch.md decision 1; CI job "Security scans").
+# The default rules apply. Allow-list entries below are only for values that are verified test
+# fixtures or placeholders, never real keys, each with the reason; docs/SECURITY_REVIEW.md
+# "Secrets" lists the scan result.
+title = "Premium Travel Agency"
+
+[extend]
+useDefault = true
