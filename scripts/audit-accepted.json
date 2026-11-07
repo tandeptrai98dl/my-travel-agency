@@ -1,0 +1,4 @@
+{
+  "$comment": "High or critical npm advisories accepted for a limited time (scripts/check-audit.mjs, docs/SECURITY_REVIEW.md \"Dependencies\"). Each entry: {\"id\": \"GHSA-xxxx-xxxx-xxxx\", \"reason\": \"why it does not apply or what waits for the fix\", \"until\": \"YYYY-MM-DD\"}.",
+  "accepted": []
+}
