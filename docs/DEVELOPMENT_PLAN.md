@@ -68,10 +68,10 @@ Non-code tracks that can block launch start in Phase 0: VNPay merchant contract,
 
 ## Phase 6: Hardening and launch (2.5 weeks) — spec: `docs/specs/phase-6-hardening-launch.md`
 
-- [ ] Security review: RLS and service-role audit, Supabase Security Advisor clean, headers, rate limits, permission tests
+- [ ] Security review: RLS and service-role audit, Supabase Security Advisor clean, headers, rate limits, permission tests (code done in #57 and #58, `docs/SECURITY_REVIEW.md`; Security Advisor waits for staging)
 - [ ] Performance, accessibility and responsive QA (Lighthouse)
-- [ ] Real content, legal pages, GA4 + Consent Mode v2
-- [ ] Enable PITR and rehearse a restore; VNPay production sign-off; staff UAT
+- [ ] Real content, legal pages, GA4 + Consent Mode v2 (GA4 and Consent Mode in #55; content and legal pages wait for the owner)
+- [ ] Enable PITR and rehearse a restore; VNPay production sign-off; staff UAT (pipeline, guards and runbooks in #60; the rehearsal waits for staging)
 - [ ] Production deployment on Vercel; two weeks of close monitoring
 - [ ] Acceptance: launch checklist 100%; no critical bugs open
 
