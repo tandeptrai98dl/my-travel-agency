@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
 
@@ -12,7 +13,7 @@ import { Heading } from "@/components/typography/heading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPathname, Link } from "@/i18n/navigation";
 import { isLocale, type Locale } from "@/i18n/routing";
-import { bookingEnabled, getBookingForm } from "@/modules/booking/checkout.service";
+import { bookingEnabled, getBookingForm, getBookingTitle } from "@/modules/booking/checkout.service";
 import { getPolicyLinks, getPrivacyConsent } from "@/modules/content/public/content-public.service";
 import { getPublicSettings } from "@/modules/settings/settings.service";
 
@@ -26,8 +27,8 @@ type Props = {
 export async function generateMetadata({ params }: Pick<Props, "params">): Promise<Metadata> {
   const { locale, tourSlug } = await params;
   if (!isLocale(locale)) return {};
-  const [t, form] = await Promise.all([getTranslations({ locale, namespace: "Booking" }), getBookingForm(locale, tourSlug)]);
-  return { title: form ? t("metaTitle", { title: form.tour.title }) : undefined };
+  const [t, title] = await Promise.all([getTranslations({ locale, namespace: "Booking" }), getBookingTitle(locale, tourSlug)]);
+  return { title: title ? t("metaTitle", { title }) : undefined };
 }
 
 /** Book a group tour (docs/specs/phase-4-booking-payments.md step 7, decision 13). */
@@ -51,6 +52,9 @@ const count = (value: string | undefined, min: number, fallback: number) => {
 };
 
 async function Book({ params, searchParams }: Props) {
+  // The form reads live departures and today's date (payment plans): request time only, so the
+  // time read never runs while Next.js prerenders (docs/QA_REPORT.md, "Items for Stream A").
+  await connection();
   const { locale, tourSlug } = (await params) as { locale: Locale; tourSlug: string };
   const t = await getTranslations({ locale, namespace: "Booking" });
   const form = await getBookingForm(locale, tourSlug);
