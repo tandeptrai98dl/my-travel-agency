@@ -218,10 +218,34 @@ test("signed-out requests to the account pages are redirected to sign-in by the 
     expect(`${target.pathname}${target.search}`, path).toBe(location);
     expect(response.headers()["cache-control"], path).toContain("no-store");
   }
-  // A cookie that only looks like a session skips the shortcut; the page itself still refuses it.
-  const forged = await request.get("/tai-khoan", { maxRedirects: 0, headers: { cookie: "sb-forged-auth-token=forged" } });
-  expect(forged.status()).toBe(200);
-  await page.context().addCookies([{ name: "sb-forged-auth-token", value: "forged", url: baseURL! }]);
+
+  // Only this project's session cookie counts (`sb-<first host label>-auth-token`, as
+  // @supabase/ssr names it). Another project's leftover cookie is never cleared by the refresh,
+  // so it must not switch the shortcut off.
+  const sessionCookie = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0]}-auth-token`;
+  const leftover = await request.get("/tai-khoan", { maxRedirects: 0, headers: { cookie: "sb-otherproject-auth-token=x" } });
+  expect(leftover.status(), "another project's cookie").toBe(307);
+
+  // This project's cookie holding JSON that is not a session: the session refresh removes it before
+  // the check, so the request is still redirected (refresh first, then the cookie check).
+  const notSession = `base64-${Buffer.from('{"x":1}').toString("base64url")}`;
+  const cleared = await request.get("/tai-khoan", { maxRedirects: 0, headers: { cookie: `${sessionCookie}=${notSession}` } });
+  expect(cleared.status(), "a cookie the refresh removes").toBe(307);
+  expect(new URL(cleared.headers()["location"]!, "http://localhost:3000").pathname).toBe("/dang-nhap");
+
+  // This project's cookie with an unreadable value: Supabase leaves it alone, so the shortcut is
+  // skipped and the account page answers itself. It still carries the account's nonce policy
+  // (no Google host) and no-store, and it still sends the visitor to sign-in.
+  for (const path of ["/tai-khoan", "/en/account/bookings"]) {
+    const forged = await request.get(path, { maxRedirects: 0, headers: { cookie: `${sessionCookie}=forged` } });
+    expect(forged.status(), path).toBe(200);
+    const policies = forged.headersArray().filter((header) => header.name.toLowerCase() === "content-security-policy");
+    expect(policies.length, path).toBe(1);
+    expect(policies[0]!.value, path).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]{16,}' 'strict-dynamic'(;|$)/);
+    expect(policies[0]!.value, path).not.toMatch(/google/);
+    expect(forged.headers()["cache-control"], path).toContain("no-store");
+  }
+  await page.context().addCookies([{ name: sessionCookie, value: "forged", url: baseURL! }]);
   await page.goto("/tai-khoan");
   await expect(page).toHaveURL(/\/dang-nhap\?next=%2Ftai-khoan$/);
 });

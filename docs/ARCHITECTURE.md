@@ -8,7 +8,7 @@ Scope: the full MVP (ADR-005). Decisions referenced as ADR-xxx live in `DECISION
 Customers (VI/EN)        Staff (/admin, by role)        Vercel Cron        Payment gateways
         │                         │                          │              (VNPay IPN, bank webhook)
         ▼                         ▼                          ▼                      │
-Vercel edge ── src/proxy.ts: locale routing, Supabase session refresh, redirects, security headers
+Vercel edge ── src/proxy.ts: locale routing, Supabase session refresh, redirects (incl. signed-out account → sign-in), security headers
         │                                                                           │
         ▼                                                                           ▼
 Next.js app (one deployment, modular monolith — ADR-008)
@@ -125,7 +125,7 @@ Since Phase 5 PR 5A customers sign in on the localized pages of the secure root;
 - **Reads**: Server Components call services; repositories use the server Supabase client (`@/lib/supabase/server`) so RLS applies to the signed-in user (or anon).
 - **Writes**: Server Actions validate with Zod, call `requireRole()` when staff-only, then call a service. Atomic changes (seat holds, payments) go through Postgres functions. After writes, call `revalidateTag()` / `updateTag()` for affected cache tags.
 - **Guest writes** (draft booking, inquiry, newsletter, cookie-consent records): Server Actions use the service-role client after Zod validation, Turnstile and rate limiting. anon has no direct INSERT rights.
-- **Auth**: `proxy.ts` refreshes the session cookie. Layouts and actions verify the user with the Auth server (`getClaims()`/`getUser()`), never from cookie contents alone.
+- **Auth**: `proxy.ts` refreshes the session cookie. Layouts and actions verify the user with the Auth server (`getClaims()`/`getUser()`), never from cookie contents alone. As a fast path, the proxy answers a signed-out GET or HEAD for the account pages (`/tai-khoan…`, `/en/account…`) with a 307 to sign-in (`?next=` through `safeRedirectPath()`), deciding by cookie presence only (this project's `sb-<ref>-auth-token`, after the refresh; `src/lib/auth/account-redirect.ts`); the account pages still verify the user themselves.
 
 ### Supabase clients
 

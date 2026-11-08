@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { accountLocale, hasSessionCookie, signedOutAccountRedirect } from "./account-redirect";
+import { accountLocale, hasSessionCookie, sessionCookieName, signedOutAccountRedirect } from "./account-redirect";
 
+const NAME = "sb-127-auth-token";
 const none: { name: string; value: string }[] = [];
-const session = [{ name: "sb-127-auth-token", value: "base64-eyJ..." }];
+const session = [{ name: NAME, value: "base64-eyJ..." }];
+const redirect = (path: string, search = "", cookies = none) => signedOutAccountRedirect(path, search, cookies, NAME);
 
 describe("accountLocale", () => {
   it.each([
@@ -26,41 +28,65 @@ describe("accountLocale", () => {
   );
 });
 
+describe("sessionCookieName", () => {
+  it.each([
+    ["http://127.0.0.1:54321", "sb-127-auth-token"],
+    ["http://localhost:54321", "sb-localhost-auth-token"],
+    ["https://abcdefghijklmnop.supabase.co", "sb-abcdefghijklmnop-auth-token"],
+  ])("derives %s → %s, as @supabase/ssr does", (url, name) => {
+    expect(sessionCookieName(url)).toBe(name);
+  });
+
+  it("gives null for a value that is not a URL", () => {
+    expect(sessionCookieName("")).toBeNull();
+  });
+});
+
 describe("hasSessionCookie", () => {
   it.each([
-    [[{ name: "sb-abcdefghijklmnop-auth-token", value: "x" }], true],
-    [[{ name: "sb-127-auth-token.0", value: "x" }, { name: "sb-127-auth-token.1", value: "y" }], true],
+    [[{ name: NAME, value: "x" }], true],
+    [[{ name: `${NAME}.0`, value: "x" }, { name: `${NAME}.1`, value: "y" }], true],
     // Removed by the refresh (empty value), the PKCE verifier and unrelated cookies are no session.
-    [[{ name: "sb-127-auth-token", value: "" }], false],
-    [[{ name: "sb-127-auth-token-code-verifier", value: "x" }], false],
+    [[{ name: NAME, value: "" }], false],
+    [[{ name: `${NAME}-code-verifier`, value: "x" }], false],
+    [[{ name: `${NAME}.x`, value: "x" }], false],
     [[{ name: "consent", value: "v1.a0.m0" }, { name: "booking_access_PTA-2611-0001", value: "x" }], false],
+    // Another project's leftover cookie never counts (it is not refreshed or cleared).
+    [[{ name: "sb-localhost-auth-token", value: "x" }], false],
+    [[{ name: "sb-abcdefghijklmnop-auth-token.0", value: "x" }], false],
     [[], false],
   ])("%j → %s", (cookies, expected) => {
-    expect(hasSessionCookie(cookies)).toBe(expected);
+    expect(hasSessionCookie(cookies, NAME)).toBe(expected);
   });
 });
 
 describe("signedOutAccountRedirect", () => {
   it("sends signed-out visitors to sign-in in their language, with the page as next", () => {
-    expect(signedOutAccountRedirect("/tai-khoan", "", none)).toBe("/dang-nhap?next=%2Ftai-khoan");
-    expect(signedOutAccountRedirect("/tai-khoan/booking", "", none)).toBe("/dang-nhap?next=%2Ftai-khoan%2Fbooking");
-    expect(signedOutAccountRedirect("/en/account", "", none)).toBe("/en/login?next=%2Fen%2Faccount");
-    expect(signedOutAccountRedirect("/en/account/bookings", "?page=2", none)).toBe("/en/login?next=%2Fen%2Faccount%2Fbookings%3Fpage%3D2");
+    expect(redirect("/tai-khoan", "")).toBe("/dang-nhap?next=%2Ftai-khoan");
+    expect(redirect("/tai-khoan/booking", "")).toBe("/dang-nhap?next=%2Ftai-khoan%2Fbooking");
+    expect(redirect("/en/account", "")).toBe("/en/login?next=%2Fen%2Faccount");
+    expect(redirect("/en/account/bookings", "?page=2")).toBe("/en/login?next=%2Fen%2Faccount%2Fbookings%3Fpage%3D2");
   });
 
   it("leaves signed-in requests and other pages to the app", () => {
-    expect(signedOutAccountRedirect("/tai-khoan", "", session)).toBeNull();
-    expect(signedOutAccountRedirect("/dang-nhap", "", none)).toBeNull();
-    expect(signedOutAccountRedirect("/tours", "", none)).toBeNull();
+    expect(redirect("/tai-khoan", "", session)).toBeNull();
+    expect(redirect("/dang-nhap", "")).toBeNull();
+    expect(redirect("/tours", "")).toBeNull();
   });
 
   it("falls back to the account root when the path is not a safe next", () => {
     // A path that normalises to another host never becomes `next`.
-    expect(signedOutAccountRedirect("/tai-khoan/..//evil.example", "", none)).toBe("/dang-nhap?next=%2Ftai-khoan");
-    expect(signedOutAccountRedirect("/en/account/../..//evil.example", "", none)).toBe("/en/login?next=%2Fen%2Faccount");
+    expect(redirect("/tai-khoan/..//evil.example", "")).toBe("/dang-nhap?next=%2Ftai-khoan");
+    expect(redirect("/en/account/../..//evil.example", "")).toBe("/en/login?next=%2Fen%2Faccount");
   });
 
-  it("drops a query that would not fit the sign-in page's 500-character next", () => {
-    expect(signedOutAccountRedirect("/tai-khoan/booking", `?q=${"a".repeat(600)}`, none)).toBe("/dang-nhap?next=%2Ftai-khoan%2Fbooking");
+  it("ignores another project's leftover cookie", () => {
+    expect(redirect("/tai-khoan", "", [{ name: "sb-localhost-auth-token", value: "x" }])).toBe("/dang-nhap?next=%2Ftai-khoan");
+  });
+
+  it("drops a query, then a path, that would not fit the sign-in page's 500-character next", () => {
+    expect(redirect(`/tai-khoan/booking/${"A".repeat(600)}`)).toBe("/dang-nhap?next=%2Ftai-khoan");
+    expect(redirect(`/en/account/bookings/${"A".repeat(600)}`, "?page=2")).toBe("/en/login?next=%2Fen%2Faccount");
+    expect(redirect("/tai-khoan/booking", `?q=${"a".repeat(600)}`)).toBe("/dang-nhap?next=%2Ftai-khoan%2Fbooking");
   });
 });
