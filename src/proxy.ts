@@ -2,12 +2,17 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
 import { routing } from "@/i18n/routing";
+import { sessionCookieName, signedOutAccountRedirect } from "@/lib/auth/account-redirect";
+import { publicEnv } from "@/lib/env/public";
 import { adminCsp, createNonce, isAdminPath, isAnalyticsSecurePath, isSecurePath, secureCsp } from "@/lib/csp";
 import { createRedirectLookup } from "@/lib/redirect-lookup";
 import { isSitePath } from "@/lib/site-path";
 import { refreshSession } from "@/lib/supabase/proxy";
 
 const handleLocale = createIntlMiddleware(routing);
+
+/** This project's Supabase session cookie (the signed-out account redirect checks only this one). */
+const SESSION_COOKIE = sessionCookieName(publicEnv.NEXT_PUBLIC_SUPABASE_URL);
 
 /** Paths outside the localized website: no locale prefix or rewrite. */
 const NON_LOCALIZED = /^\/(?:admin|api|auth)(?:\/|$)/;
@@ -90,13 +95,28 @@ export async function proxy(request: NextRequest) {
   }
   if (policy) request.headers.set("Content-Security-Policy", policy);
 
-  // 3. Locale routing for the public website; everything else passes through.
+  // 3. Signed-out visitors of the account pages get a real redirect to sign-in instead of a
+  // streamed page that redirects on the client (docs/QA_REPORT.md). Cookie presence only, after the
+  // refresh above (which drops a dead session); the pages still verify the user themselves.
+  if (SESSION_COOKIE && (request.method === "GET" || request.method === "HEAD")) {
+    const signIn = signedOutAccountRedirect(pathname, request.nextUrl.search, request.cookies.getAll(), SESSION_COOKIE);
+    if (signIn) {
+      const redirect = NextResponse.redirect(new URL(signIn, request.nextUrl.origin), 307);
+      if (policy) redirect.headers.set("Content-Security-Policy", policy);
+      redirect.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate, max-age=0");
+      for (const { name, value, options } of session.cookies) redirect.cookies.set(name, value, options);
+      for (const [name, value] of Object.entries(session.headers)) redirect.headers.set(name, value);
+      return redirect;
+    }
+  }
+
+  // 4. Locale routing for the public website; everything else passes through.
   const response = NON_LOCALIZED.test(pathname)
     ? NextResponse.next({ request })
     : handleLocale(request);
   if (policy) response.headers.set("Content-Security-Policy", policy);
 
-  // 4. Hand the refreshed cookies (and their no-store cache headers) to the browser.
+  // 5. Hand the refreshed cookies (and their no-store cache headers) to the browser.
   for (const { name, value, options } of session.cookies) {
     response.cookies.set(name, value, options);
   }

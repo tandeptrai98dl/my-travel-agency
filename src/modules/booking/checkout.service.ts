@@ -69,7 +69,20 @@ export type BookingForm = {
   turnstileSiteKey: string | null;
 };
 
-/** The published group tour and its bookable departures (live), or null (404). */
+/**
+ * The title of a published group tour for the book page's metadata, or null: the cached tour read
+ * only, without the live departures and the time read of `getBookingForm()`.
+ */
+export async function getBookingTitle(locale: Locale, slug: string): Promise<string | null> {
+  const page = await getTourPage(locale, slug);
+  return page.kind === "found" && page.tour.type === "group" ? page.tour.title : null;
+}
+
+/**
+ * The published group tour and its bookable departures (live), or null (404). It reads the
+ * current time (the payment plans), so callers render it inside a dynamic boundary, after
+ * `connection()`.
+ */
 export async function getBookingForm(locale: Locale, slug: string): Promise<BookingForm | null> {
   const page = await getTourPage(locale, slug);
   if (page.kind !== "found" || page.tour.type !== "group") return null;
