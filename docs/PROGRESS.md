@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 code-complete (acceptance waits for staging); 6 in progress (spec #50, 6P #55 and 6B #54 merged; 6A, the public security PR, 6C, 6Q and 6L left); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: Phase 6 PR 6A (security review, payment hardening, CI scans), then 6C (restore rehearsal, protected migrations). Stream B: public security checks and the public backlog, then 6Q (needs staging and the owner's content); both streams then 6L (`docs/specs/phase-6-hardening-launch.md`). pgTAP numbers: Stream A 50–59, Stream B 36–49. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 code-complete (acceptance waits for staging); 6 code-complete up to the owner's accounts (spec #50, 6P #55, 6B #54, 6A #58, public security #57, local QA #59, 6C #60, public polish #61 merged; secure-page QA fixes in progress; 6Q and 6L need staging, content and the owner); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** Stream A: secure-page QA fixes (footer CLS, server redirect for signed-out account pages, the book route's prerender date error). Then, once the owner's staging exists: the first `db-migrate.yml` run, the restore rehearsal, Lighthouse on staging, URL Inspection and the `curl -I` re-checks (`docs/QA_REPORT.md`), staff UAT, VNPay sign-off and 6L (`docs/LAUNCH_CHECKLIST.md`). pgTAP numbers: Stream A 50–59, Stream B 36–49. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** the 14 numbered items in `docs/specs/phase-6-hardening-launch.md` "What the owner must provide" (accounts: Supabase, Vercel, Sentry, Resend with DNS, Upstash, Turnstile, VNPay, SePay or Casso, Google; Supabase Auth production settings; legal review; brand and content; branch protection on `main`)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -23,13 +23,50 @@ Open items:
 - Phase 3 (staging only): measure the 50 ms redirect timeout on cold starts; with real Upstash, save a tour and `curl -I` its other-language slug (expect a 301 with `Location`). The other PR M items were done in #43 and #49.
 
 - Nit (#48): type the inquiry `panels` as `React.ReactElement[]`.
-- Phase 6 (#55 review, in Stream B's public security PR): scope the Google CSP hosts to book and checkout; purge `newsletter_unsubscribe_tokens`; no dead link for a subscriber who leaves mid-export; pgTAP 34 privilege assertion for update and delete; a unit test for the `ga-disable` switch. Later: a Resend unsubscribe write-back (`List-Unsubscribe` from broadcasts leaves the subscriber active in our list).
+- Phase 6 (#55): a Resend unsubscribe write-back (`List-Unsubscribe` from broadcasts leaves the subscriber active in our list). The other #55 minors were done in #57.
+- Phase 6 (#57, accepted): a payment started from the payment-link button or the account's balance link in the same document sends no `purchase` event (`SECURITY_REVIEW.md`).
+- Phase 6 (#58 nit): an in-process "already claimed" flag could skip the Upstash round trip during a flood of replayed signed IPNs.
+- Phase 6 (#60 nit): filter Supabase hosts out of the migration list in the job summary. First staging run of `db-migrate.yml` checks the Management API field names (`.name`, backups).
+- Flaky E2E: `taxonomy.spec.ts:26` passed on retry once (#59 CI); watch it.
 - Flaky E2E: `tour-publish.spec.ts:47` timed out once waiting for the media dialog's alt field (#55 CI); watch it.
 - Stream A should acknowledge the `begin_checkout` line #55 added to the book page (stream rules).
+- Secure pages (#59 QA, Stream A PR in progress): footer CLS while streaming, the signed-out account redirect on the client, the book route's `new Date()` prerender error, the leftover `hidden lg:block` on `DesktopNav`.
 - Public (#49 review, in Stream B's public security PR): a topic's language pair should need a published article in both languages; the switcher's fallback drops the query string; an E2E should check the server HTML of `/lien-he` for `href="/en/contact"`.
 - Owner (before staging): Supabase "Confirm email" and "Secure email change" ON, the new Auth email templates, minimum password length 10, leaked-password protection; `settings.contact.email` for team alerts.
 
 ## Log
+
+### 2026-11-07 (Phase 6 — public polish)
+
+PR #61, branch `fix/p6-public-polish`. Googlebot and Google-InspectionTool get blocking metadata (`htmlLimitedBots` = Next's default plus the two, ADR-041; about 40 ms per bot request, never cached); filters and the wizard work before hydration (invoker commands, hidden `q`/`sort` on the sheet's native Apply, wizard buttons hidden until ready); lightbox focus unit test; stricter keyboard checks, shared `dismissConsent`. Independent review: approved; minors folded in.
+
+### 2026-11-07 (Phase 6 — 6C: deployment pipeline)
+
+PR #60, branch `feat/p6-deploy-pipeline` (no migration).
+
+- `db-migrate.yml`: manual dispatch to the `staging` or `production` GitHub environment, `main` only (the environments' branch rules are the real guard), project-scoped tokens and a fail-closed project-name check, PITR required for production, dry run then `db push`, hosted types compared with `database.types.ts`; no schema artifact (public repo).
+- Deployment guards in the env schema (`STAGING_HOSTS`, `PRODUCTION_HOSTS`): production refuses staging hosts, dev flags, test keys and the VNPay sandbox; previews refuse production hosts.
+- README runbooks: deploy (staged production deployments, redeploy then promote), restore rehearsal (`scripts/restore-check.sql`, guarded damage SQL), rotate a secret. `docs/LAUNCH_CHECKLIST.md` started. ADR-040 (PITR as the only copy, accepted by the owner in D1). Fixed: `CRON_HEARTBEAT_URL` and the GA ID were never passed to the env check (6B).
+- Independent review: two majors (staging could reach production; redeploy runbooks ignored promotion), fixed; re-review approved. The workflow has never run: the first staging run is its test.
+
+### 2026-11-07 (Phase 6 — local QA pass)
+
+PR #59, branch `chore/p6-local-qa`. Lighthouse 13.5.0 locally (fallback fonts, seed data): Accessibility and Best Practices 100, SEO 100 except `/tours` (92, metadata in the body; fixed in #61), Performance 81–99. Fixed CLS on `/tours` (0.373 → 0) and the wizard, the header breakpoint (desktop nav from 1280 px), the floating buttons over the footer, lightbox focus, the booking-box phone. New keyboard and responsive E2E; `docs/QA_REPORT.md`. Independent review: approved.
+
+### 2026-11-07 (Phase 6 — 6A: security review)
+
+PR #58, branch `feat/p6-security-review` (migration `20261115100000`).
+
+- pgTAP 50 (effective access per role and AAL on all 39 tables) and 51 (91 definer functions, `search_path` and the execute allow-list); the service-role client only in `src/modules/**`.
+- E2E: 42 admin pages per role, 16 Server Actions called directly and refused, secure/admin/API headers; `poweredByHeader: false`.
+- Payment webhooks: IP allow-lists (`VNPAY_IPN_ALLOWED_IPS`, `BANK_WEBHOOK_ALLOWED_IPS`, first `x-forwarded-for` hop, required in production), refused-source alerts deduplicated per provider every 15 minutes.
+- CI job "Security scans": `npm audit` (0 high or critical) and gitleaks with a pinned digest. `docs/SECURITY_REVIEW.md`.
+- Found and fixed: operators could update booking contact, owner and invoice fields.
+- Independent review: one major (a replayed signed IPN would drain Sentry), fixed; re-review approved.
+
+### 2026-11-07 (Phase 6 — public security checks)
+
+PR #57, branch `fix/p6-public-security` (migration `20261114100000`). Header E2E on 26 public paths and `/auth/*`; rate-limit fail modes of the public forms against the real limiter; Google CSP hosts only on book and checkout; unsubscribe-token purge and no dead links in the export; the #49 backlog. Independent review: approved.
 
 ### 2026-11-07 (Phase 6 — 6B: monitoring and housekeeping)
 
@@ -635,6 +672,8 @@ Branch `feat/p0-housekeeping` (spec steps 1–3 + CI skeleton + ADR-020).
 - Vercel previews and the Sentry test event (Phase 0 acceptance) need the owner's Vercel and Sentry accounts; see `README.md` "Deployment".
 
 ## Known issues
+
+- Next 16.4.5 (Phase 3 spec, decisions around lines 149–153): after a content save, the first request to an affected prerendered 404 can get a 200 shell once, and a re-rendered other-language redirect keeps its 308 but loses `Location` until the next build. In production the proxy's Redis `redirects:languages` 301 covers the redirect half (needs Upstash). Re-check on staging with `curl -I` (`docs/QA_REPORT.md`).
 
 - Phase 6 privacy work: `media.original_name` can contain personal data (a person's name in a file name) and is copied into `audit_logs`; cover it in the privacy policy and the deletion procedure.
 - Build cache after a Supabase outage (seen once locally): a webpack build with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9` succeeded with an empty shell; a second webpack build a few minutes later with the URL changed to the local stub, reusing `.next/cache`, served an empty 404 page until `.next` was deleted. The review found only compiler caches in `.next/cache`, so the baked-in `NEXT_PUBLIC_` URL change is the likely cause, not cached data. Re-check against the default Turbopack build on the first Vercel preview (Vercel restores `.next/cache`); if it appears there and the 30 s re-render does not repair it, treat it as a major bug.
