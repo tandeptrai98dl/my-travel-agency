@@ -7,6 +7,7 @@ import { formatVnd } from "@/lib/money";
 import type { FilterDestination, TourFilterOptions } from "@/modules/catalog/public/tour-listing.mapping";
 import type { Locale } from "@/modules/catalog/public/types";
 import {
+  DEFAULT_TOUR_SORT,
   TOUR_DURATIONS,
   TOUR_PRICE_PRESETS,
   TOUR_SCOPES,
@@ -184,6 +185,14 @@ export async function FilterColumn(props: Props) {
   );
 }
 
+/** The toolbar's search and sort as the URL has them (the default sort is left out, as in the URL). */
+function toolbarValues(criteria: TourSearchCriteria): { name: string; value: string }[] {
+  return [
+    ...(criteria.q ? [{ name: "q", value: criteria.q }] : []),
+    ...(criteria.sort !== DEFAULT_TOUR_SORT ? [{ name: "sort", value: criteria.sort }] : []),
+  ];
+}
+
 /**
  * The filter sheet below `lg` (native modal `<dialog>`, opened by FilterSheetButton): full screen on
  * phones, a right-hand panel on tablets. Rendered after the listing form with a form of its own;
@@ -194,7 +203,7 @@ export async function FilterSheet(props: Props & { action: string }) {
   const t = await getTranslations({ locale: props.locale, namespace: "TourListing" });
   return (
     <dialog id={FILTER_PANEL_ID} aria-labelledby={`${FILTER_PANEL_ID}-title`} className="filter-sheet">
-      <FilterSheetForm action={action} className="flex min-h-full flex-col gap-5 px-5 pt-3">
+      <FilterSheetForm action={action} toolbar={toolbarValues(props.criteria)} className="flex min-h-full flex-col gap-5 px-5 pt-3">
         <div className="flex items-center justify-between gap-4">
           <h2 id={`${FILTER_PANEL_ID}-title`} className="font-serif text-h4 font-semibold">
             {t("filters")}

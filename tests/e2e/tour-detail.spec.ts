@@ -1,18 +1,13 @@
 import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded tours (supabase/seed.sql): VN-HLB-03 group tour in VI and EN; VN-HER-05 private tour;
 // JP-KYT-07 with an unpublished English translation; VN-PQC-04 a draft.
 const GROUP_VI = "/tours/du-thuyen-vinh-ha-long";
 const GROUP_EN = "/en/tours/ha-long-bay-cruise";
 const PRIVATE_VI = "/tours/di-san-hoi-an-hue";
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 /**
  * A page that does not exist in this language. Slugs listed at build time (the other language's

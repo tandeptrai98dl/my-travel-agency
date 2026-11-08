@@ -1,11 +1,6 @@
-import { expect, type Page, test } from "./support/test";
+import { expect, test } from "./support/test";
 
-/** Pretend the visitor already chose "essential only", so the banner stays out of the way. */
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
+import { dismissConsent } from "./support/consent";
 
 test.describe("site shell (desktop)", () => {
   test.use({ viewport: { width: 1280, height: 860 } });

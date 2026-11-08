@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 import { PUBLIC_CSP_SOURCE, publicCsp } from "./src/lib/csp";
+import { HTML_LIMITED_BOTS } from "./src/lib/html-limited-bots";
 import { securityHeaders } from "./src/lib/security-headers";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -13,6 +14,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // No `X-Powered-By: Next.js` on pages (docs/SECURITY_REVIEW.md "Headers", Phase 6 PR 6A).
   poweredByHeader: false,
+  // Blocking metadata in <head> for Next's default HTML-limited bots plus Googlebot, so the
+  // listing's canonical and hreflang are not streamed into <body> (src/lib/html-limited-bots.ts).
+  htmlLimitedBots: HTML_LIMITED_BOTS,
   async headers() {
     // Public pages and /auth (ADR-027): a static nonce-free policy; checkout, account and the
     // admin get a nonce policy from src/proxy.ts instead.

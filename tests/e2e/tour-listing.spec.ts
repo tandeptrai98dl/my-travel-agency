@@ -1,16 +1,11 @@
 import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded catalog (supabase/seed.sql): 31 tours published in Vietnamese and 29 in English. Việt Nam
 // has 3 (VN-HLB-03, VN-NTH-06, VN-HER-05); Thái Lan 13 (the "Phase 3 PR L" block), two of them 15
 // days or longer; Pháp 14 in Vietnamese and 13 in English (FR-PAR-07 has no English text).
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 const results = (page: Page) => page.getByRole("region", { name: "Kết quả" });
 const cards = (page: Page) => results(page).getByRole("list").first().getByRole("heading", { level: 3 });
@@ -86,6 +81,39 @@ test.describe("tour listing", () => {
     await page.goBack();
     await expect(page).toHaveURL(/duration=15-plus/);
     await expect(cards(page)).toHaveCount(2);
+  });
+
+  test("Googlebot gets the listing's canonical and hreflang in <head> (htmlLimitedBots, ADR-041)", async ({ request }) => {
+    const googlebot =
+      "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+    const html = await (await request.get("/tours", { headers: { "user-agent": googlebot } })).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    expect(head).toMatch(/<link rel="canonical" href="[^"]*\/tours"/);
+    expect(head).toMatch(/<link rel="alternate" hrefLang="en" href="[^"]*\/en\/tours"/);
+  });
+
+  test("mobile: before hydration, Filters still opens and closes the sheet (invoker commands)", async ({ page }) => {
+    // JavaScript runs (React's inline scripts reveal the streamed results) but the app's chunks
+    // never arrive, so React never hydrates: the buttons work only through command/commandfor.
+    // Scripts only: Turbopack serves the stylesheets from the same folder.
+    await page.route("**/_next/static/chunks/**", (route) => (route.request().resourceType() === "script" ? route.abort() : route.fallback()));
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/tours");
+    const open = page.getByRole("button", { name: "Bộ lọc", exact: true });
+    await open.click();
+    const sheet = page.getByRole("dialog", { name: "Bộ lọc" });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: "Đóng bộ lọc" }).click();
+    await expect(sheet).toBeHidden();
+
+    // "Apply" is then a plain GET of the sheet's form: it keeps the toolbar's search and sort.
+    await page.goto("/tours?q=ha&sort=price_asc");
+    await open.click();
+    await sheet.getByRole("checkbox", { name: "Nước ngoài" }).check();
+    await sheet.getByRole("button", { name: "Áp dụng" }).click();
+    await expect(page).toHaveURL(/[?&]scope=international(&|$)/);
+    expect(new URL(page.url()).searchParams.get("q")).toBe("ha");
+    expect(new URL(page.url()).searchParams.get("sort")).toBe("price_asc");
   });
 
   test("mobile: the filter sheet stages choices until Apply and returns focus", async ({ page }) => {

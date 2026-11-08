@@ -12,6 +12,17 @@ function sheet(): HTMLDialogElement | null {
   return document.getElementById(FILTER_PANEL_ID) as HTMLDialogElement | null;
 }
 
+/**
+ * Invoker commands (`command` + `commandfor`): browsers that support them open and close the sheet
+ * natively, so the buttons work before React hydrates. React 19 passes the attributes through, but
+ * its JSX types do not list them yet, hence a typed spread. The React handlers stay for browsers
+ * without invoker commands; the click handler runs first, so after hydration the native command
+ * finds the sheet already open (or closed) and does nothing.
+ */
+function invoker(command: "show-modal" | "close"): { command: string; commandfor: string } {
+  return { command, commandfor: FILTER_PANEL_ID };
+}
+
 /** The inputs of the sheet back to what the URL says (staged changes dropped). */
 function restore(dialog: HTMLDialogElement) {
   dialog.querySelectorAll<HTMLInputElement>("input").forEach((input) => {
@@ -28,7 +39,8 @@ function restore(dialog: HTMLDialogElement) {
 /**
  * "Filters (n)" below `lg`: opens the filter sheet (native modal `<dialog>`: focus is kept inside,
  * Escape closes it and focus returns to this button). Closing without "Apply" drops the staged
- * changes.
+ * changes. Before hydration the invoker command opens it where supported; "Apply" is then a plain
+ * GET submit of the sheet's form.
  */
 export function FilterSheetButton({ label }: { label: string }) {
   return (
@@ -36,7 +48,11 @@ export function FilterSheetButton({ label }: { label: string }) {
       type="button"
       aria-haspopup="dialog"
       aria-controls={FILTER_PANEL_ID}
-      onClick={() => sheet()?.showModal()}
+      {...invoker("show-modal")}
+      onClick={() => {
+        const dialog = sheet();
+        if (dialog && !dialog.open) dialog.showModal();
+      }}
       className={`${OUTLINE_BUTTON} lg:hidden`}
     >
       <SlidersIcon className="h-5 w-5" />
@@ -49,8 +65,19 @@ export function FilterSheetButton({ label }: { label: string }) {
  * The sheet's own form (outside the listing form, so forms never nest): changes are staged; Apply
  * sends them with the toolbar's search and sort and closes the sheet.
  */
-export function FilterSheetForm({ action, children, className }: { action: string; children: ReactNode; className?: string }) {
-  const { apply } = useListing();
+export function FilterSheetForm({
+  action,
+  children,
+  className,
+  toolbar,
+}: {
+  action: string;
+  children: ReactNode;
+  className?: string;
+  /** The toolbar's search and sort from the URL, for a native submit before hydration. */
+  toolbar: { name: string; value: string }[];
+}) {
+  const { apply, ready } = useListing();
   const ref = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -78,6 +105,12 @@ export function FilterSheetForm({ action, children, className }: { action: strin
         event.currentTarget.closest("dialog")?.close("apply");
       }}
     >
+      {/* Before hydration "Apply" is a plain GET of this form, which would drop the toolbar's
+          search and sort (they live in the listing form); these carry them. Disabled once React
+          runs, so apply() stays the only path with JavaScript. */}
+      {toolbar.map(({ name, value }) => (
+        <input key={name} type="hidden" name={name} value={value} disabled={ready} />
+      ))}
       {children}
     </form>
   );
@@ -104,6 +137,7 @@ export function FilterSheetClose({ label }: { label: string }) {
     <button
       ref={ref}
       type="button"
+      {...invoker("close")}
       onClick={() => sheet()?.close()}
       className="flex h-11 w-11 items-center justify-center text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >

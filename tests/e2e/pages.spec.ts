@@ -1,17 +1,12 @@
 import { expect, type Page, test } from "./support/test";
 
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Seeded content (supabase/seed.sql, "Phase 3 PR K" block): about, FAQ and privacy in both
 // languages, cancellation in Vietnamese only, payment a draft (terms is created by the content
 // admin E2E); three articles in two topics (Kyoto has no published English translation);
 // three approved reviews (5, 5, 4) and one pending. CI has no Turnstile, Upstash or Resend keys.
-
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
 
 async function jsonLd(page: Page) {
   return (await page.locator('script[type="application/ld+json"]').allTextContents()).map((text) => JSON.parse(text));

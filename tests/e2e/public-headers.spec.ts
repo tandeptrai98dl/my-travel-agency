@@ -5,9 +5,11 @@ import { expect, test } from "./support/test";
 // account) and admin page types are covered by Stream A's header E2E. All of these pages are
 // prerendered or static, so they get the nonce-free policy from next.config.ts (ADR-027), never a
 // nonce, and never `unsafe-eval` (ADR-039: no tag manager). Each path asserts its exact status, so
-// this file runs in the "status-codes" project on the fresh build (playwright.config.ts): after
-// another spec refreshes a tag, Next.js 16.4 answers a re-rendered 404 or 308 with its 200 shell
-// once (status-codes.spec.ts).
+// this file runs in the "status-codes" project on the fresh build (playwright.config.ts). After
+// another spec refreshes a tag, Next.js 16.4 re-renders those pages: the first request to a
+// re-rendered 404 may get the 200 shell once, and a re-rendered other-language redirect keeps its
+// 308 but loses its `Location` header until the next build (status-codes.spec.ts; known issue in
+// docs/specs/phase-3-public-site.md step 22).
 
 /** Each path with the status it must answer: the headers must be there on every outcome. */
 const PUBLIC_PAGES: ReadonlyArray<readonly [string, number]> = [
@@ -109,3 +111,37 @@ for (const [kind, paths] of [
     }
   });
 }
+
+// ADR-041: Googlebot matches `htmlLimitedBots`, so it skips the prerendered shells and every public
+// page renders for it at request time, with blocking metadata. Each page must still answer its
+// status, and every 200 page must have its canonical inside <head> (Google ignores one outside).
+const GOOGLEBOT =
+  "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+const CHROME =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36";
+
+const headOf = (html: string) => html.slice(0, Math.max(0, html.indexOf("</head>")));
+
+test("Googlebot gets every public page's status, and the canonical in <head> on each 200", async ({ request }) => {
+  for (const [path, status] of PUBLIC_PAGES) {
+    const response = await request.get(path, { maxRedirects: 0, headers: { "user-agent": GOOGLEBOT } });
+    expect(response.status(), path).toBe(status);
+    if (status === 308) expect(response.headers()["location"], `${path} Location`).toBeTruthy();
+    if (status === 200) expect(headOf(await response.text()), path).toMatch(/<link rel="canonical" href="[^"]+"/);
+  }
+});
+
+test("an unknown slug is a real 404 for Googlebot on its first visit (no prerendered fallback shell)", async ({ request }) => {
+  // Browsers get the fallback shell (200, noindex) on an unknown slug's first visit (Phase 3 spec
+  // step 22); Googlebot's blocking render answers the 404 at once. Slugs used nowhere else.
+  for (const path of ["/tours/googlebot-khong-co-tour-nay", "/diem-den/googlebot-khong-co-diem-den-nay"]) {
+    const response = await request.get(path, { maxRedirects: 0, headers: { "user-agent": GOOGLEBOT } });
+    expect(response.status(), path).toBe(404);
+  }
+});
+
+test("a browser still gets the listing's metadata streamed after <head> (control for ADR-041)", async ({ request }) => {
+  const html = await (await request.get("/tours", { headers: { "user-agent": CHROME } })).text();
+  expect(headOf(html)).not.toContain('rel="canonical"');
+  expect(html).toContain('rel="canonical"');
+});

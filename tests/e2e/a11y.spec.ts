@@ -1,16 +1,11 @@
-import { expect, type Page, test } from "./support/test";
+import { expect, test } from "./support/test";
 
 import { signInAs } from "./support/auth";
 import { expectNoSeriousViolations } from "./support/axe";
+import { dismissConsent } from "./support/consent";
 
 // Phase 1 acceptance (docs/specs/phase-1-design-system.md step 14): no serious or critical axe
 // violations against WCAG 2.2 AA on the public shell and the design system page.
-async function dismissConsent(page: Page) {
-  const url = test.info().project.use.baseURL;
-  if (!url) throw new Error("baseURL is not configured");
-  await page.context().addCookies([{ name: "consent", value: "v1.a0.m0", url }]);
-}
-
 for (const viewport of [
   { name: "desktop", width: 1280, height: 860 },
   { name: "mobile", width: 375, height: 812 },
