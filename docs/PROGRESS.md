@@ -4,8 +4,8 @@ Update this log at the start and end of each work session. Newest first.
 
 ## Current status
 
-- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 code-complete (acceptance waits for staging); 6 code-complete up to the owner's accounts (spec #50, 6P #55, 6B #54, 6A #58, public security #57, local QA #59, 6C #60, public polish #61 merged; secure-page QA fixes in progress; 6Q and 6L need staging, content and the owner); Phases 0 and 1 code-complete
-- **Next up (two streams, ADR-025):** Stream A: secure-page QA fixes (footer CLS, server redirect for signed-out account pages, the book route's prerender date error). Then, once the owner's staging exists: the first `db-migrate.yml` run, the restore rehearsal, Lighthouse on staging, URL Inspection and the `curl -I` re-checks (`docs/QA_REPORT.md`), staff UAT, VNPay sign-off and 6L (`docs/LAUNCH_CHECKLIST.md`). pgTAP numbers: Stream A 50–59, Stream B 36–49. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
+- **Phase:** 2 complete; 3 and 4 code-complete (acceptance waits for the owner's Vercel, Upstash and VNPay accounts); 5 code-complete (acceptance waits for staging); 6 code-complete up to the owner's accounts (spec #50, 6P #55, 6B #54, 6A #58, public security #57, local QA #59, 6C #60, public polish #61 merged; secure-page QA fixes #63 merged; 6Q and 6L need staging, content and the owner); Phases 0 and 1 code-complete
+- **Next up (two streams, ADR-025):** No code work is waiting. Once the owner's staging exists: the first `db-migrate.yml` run, the restore rehearsal, Lighthouse on staging, URL Inspection and the `curl -I` re-checks (`docs/QA_REPORT.md`), staff UAT, VNPay sign-off and 6L (`docs/LAUNCH_CHECKLIST.md`). pgTAP numbers: Stream A 50–59, Stream B 36–49. The repository is public (2026-11-07) so CI is free. Design system and mockups: https://claude.ai/artifact/2cDe2RLf3kBQ1ej9isBioC and https://claude.ai/artifact/RUFGxvZzdHML6F3WHZBmyH.
 - **Owner actions:** the 14 numbered items in `docs/specs/phase-6-hardening-launch.md` "What the owner must provide" (accounts: Supabase, Vercel, Sentry, Resend with DNS, Upstash, Turnstile, VNPay, SePay or Casso, Google; Supabase Auth production settings; legal review; brand and content; branch protection on `main`)
 
 ## Phase backlog (non-blocking review findings, ADR-025)
@@ -30,11 +30,15 @@ Open items:
 - Flaky E2E: `taxonomy.spec.ts:26` passed on retry once (#59 CI); watch it.
 - Flaky E2E: `tour-publish.spec.ts:47` timed out once waiting for the media dialog's alt field (#55 CI); watch it.
 - Stream A should acknowledge the `begin_checkout` line #55 added to the book page (stream rules).
-- Secure pages (#59 QA, Stream A PR in progress): footer CLS while streaming, the signed-out account redirect on the client, the book route's `new Date()` prerender error, the leftover `hidden lg:block` on `DesktopNav`.
+- Secure pages (#63 nits): `min-h` to the fold instead of `min-h-screen` on the secure `<main>`; visitors with an unverifiable session cookie still get the streamed client redirect.
 - Public (#49 review, in Stream B's public security PR): a topic's language pair should need a published article in both languages; the switcher's fallback drops the query string; an E2E should check the server HTML of `/lien-he` for `href="/en/contact"`.
 - Owner (before staging): Supabase "Confirm email" and "Secure email change" ON, the new Auth email templates, minimum password length 10, leaked-password protection; `settings.contact.email` for team alerts.
 
 ## Log
+
+### 2026-11-09 (Phase 6 — secure-page QA fixes)
+
+PR #63, branch `fix/p6-secure-qa`. Secure `<main>` is `min-h-screen`, so streamed content no longer moves the footer (CLS 0.039–0.107 → 0 on book, checkout and sign-in); signed-out GET/HEAD to `/tai-khoan…` and `/en/account…` get a 307 to sign-in from the proxy (only this project's session cookie counts, checked after the refresh; `next` through `safeRedirectPath()`, long paths fall back; the pages still verify with `getClaims()`): CLS 0.573 → 0, redirect 3.8 s → 0.6 s; the book page reads the date after `connection()` (no prerender error); leftover nav class removed. Independent review: approved; minors folded in.
 
 ### 2026-11-07 (Phase 6 — public polish)
 
