@@ -84,7 +84,7 @@ export default async function SecureLayout({ children, params }: Props) {
           <SiteHeader
             brandName={brandName}
             destinations={destinations}
-            desktopNav={<DesktopNav locale={locale} destinations={destinations} className="hidden lg:block" />}
+            desktopNav={<DesktopNav locale={locale} destinations={destinations} />}
           />
           {/* At least a screen tall, so the footer starts below the fold and the streamed content
               (Suspense fallbacks, then the form or the sign-in redirect) never moves it in view
