@@ -150,12 +150,19 @@ New E2E: `tests/e2e/responsive.spec.ts` covers:
 4. **Fonts and diacritics with the real Google-hosted fonts** at every size, on staging.
 5. **Images on 360 px phones:** the floating contact buttons overlap the right 32 px of content while scrolling. That is normal for floating buttons, and the Tab walk found no focused element hidden. Check on real devices.
 
-### For Stream A (secure pages; not changed here)
+### For Stream A (secure pages)
 
-- **Footer layout shift on secure pages:** CLS 0.039 on checkout, 0.053 on sign-in and up to 0.107 on book. The culprit is `body.flex > footer`. The footer starts inside the first viewport and moves down as the streamed main content arrives. A `min-h` on `<main>` that keeps the footer below the fold should remove it.
-- **Signed-out `/tai-khoan`:** the redirect to sign-in is streamed and then done on the client. Lighthouse counts about 3.8 s for it, and CLS 0.573 in two of three runs during the switch.
-- **Book page log:** each request to `/[locale]/book/[tourSlug]` logs "Next.js encountered the unstable value `new Date()` while prerendering" from `src/lib/dates.ts`.
-- **SEO 54 on secure pages:** expected (`noindex`, no meta description).
+Found in the pass above; fixed by Stream A in the secure-page QA PR. "After" is the same local Turbopack build and stub, Lighthouse 13.5.0 mobile, two runs per page.
+
+| Item | Fix | Before | After | Commit |
+| --- | --- | --- | --- | --- |
+| Footer layout shift on book, checkout and sign-in. The footer (`body.flex > footer`) started inside the first viewport and moved down as the streamed main content arrived | `<main>` in the secure root is at least a screen tall (`min-h-screen`), so the footer starts below the fold. E2E `secure-layout.spec.ts`: footer below the fold from the first paint at 412 and 1280 px, no layout shift from the footer, CLS < 0.1 | CLS 0–0.107 (book), 0–0.039 (checkout), 0–0.053 (sign-in) | CLS 0 on all three | `8982038` |
+| Signed-out `/tai-khoan` (`/en/account`): the redirect to sign-in was streamed and then done on the client | `src/proxy.ts` answers a signed-out GET or HEAD for an account page with a 307 to `/dang-nhap?next=…` (`/en/login?next=…`): cookie presence only (`src/lib/auth/account-redirect.ts`), checked after the session refresh; `next` through `safeRedirectPath()`. The pages still verify the user with `getClaims()`. E2E: 307, `Location`, `no-store`; a forged cookie skips the shortcut and the page still sends to sign-in | Redirect 3.8 s, CLS 0.573 in two of three runs, Perf 46–82 | Redirect 0.61 s (one simulated round trip), CLS 0, Perf 88–89 | `ff2fca3` |
+| Book page logged "Next.js encountered the unstable value `new Date()` while prerendering" (`todayInVietnam()` in `getBookingForm()`, from the page and its metadata) | The form renders after `connection()` inside its Suspense boundary; the metadata reads only the cached tour title (`getBookingTitle()`) | Logged on every request | No log over the book, checkout, sign-in and account routes | `421151e` |
+| The secure root passed `hidden lg:block` to `DesktopNav`, although `SiteHeader` owns the breakpoint (`xl`) | Class removed | — | — | `b08c822` |
+
+- **SEO 54 on secure pages:** expected (`noindex`, no meta description). Not changed.
+- Book, checkout and sign-in after the fixes: Perf 86–90, A11y 100, BP 100, LCP 3.4–3.8 s (stub data, uncompressed fonts, shared machine). They are re-checked on staging with the public pages.
 
 ### Known limitations (low priority)
 
