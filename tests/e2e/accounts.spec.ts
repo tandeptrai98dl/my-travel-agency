@@ -200,6 +200,32 @@ test("the reset page needs a recovery link; a password change signs other sessio
   await fresh.close();
 });
 
+test("signed-out requests to the account pages are redirected to sign-in by the server", async ({ page, request, baseURL }) => {
+  // docs/QA_REPORT.md: the redirect used to be streamed and done on the client (about 3.8 s and
+  // CLS 0.573 in Lighthouse). The proxy now answers before rendering; the pages still check.
+  for (const [path, location] of [
+    ["/tai-khoan", "/dang-nhap?next=%2Ftai-khoan"],
+    ["/tai-khoan/booking", "/dang-nhap?next=%2Ftai-khoan%2Fbooking"],
+    ["/tai-khoan/booking/PTA-2611-0001", "/dang-nhap?next=%2Ftai-khoan%2Fbooking%2FPTA-2611-0001"],
+    ["/tai-khoan/ho-so", "/dang-nhap?next=%2Ftai-khoan%2Fho-so"],
+    ["/en/account", "/en/login?next=%2Fen%2Faccount"],
+    ["/en/account/bookings?page=2", "/en/login?next=%2Fen%2Faccount%2Fbookings%3Fpage%3D2"],
+    ["/en/account/profile", "/en/login?next=%2Fen%2Faccount%2Fprofile"],
+  ] as const) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(307);
+    const target = new URL(response.headers()["location"]!, "http://localhost:3000");
+    expect(`${target.pathname}${target.search}`, path).toBe(location);
+    expect(response.headers()["cache-control"], path).toContain("no-store");
+  }
+  // A cookie that only looks like a session skips the shortcut; the page itself still refuses it.
+  const forged = await request.get("/tai-khoan", { maxRedirects: 0, headers: { cookie: "sb-forged-auth-token=forged" } });
+  expect(forged.status()).toBe(200);
+  await page.context().addCookies([{ name: "sb-forged-auth-token", value: "forged", url: baseURL! }]);
+  await page.goto("/tai-khoan");
+  await expect(page).toHaveURL(/\/dang-nhap\?next=%2Ftai-khoan$/);
+});
+
 test("signed-out visitors go to sign-in; staff sign-up redirects; the sign-in page is accessible", async ({ page, request }) => {
   await page.goto("/tai-khoan/booking");
   await expect(page).toHaveURL(/\/dang-nhap\?next=%2Ftai-khoan%2Fbooking$/);
