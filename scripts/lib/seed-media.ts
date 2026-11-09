@@ -7,6 +7,11 @@
  * an SVG scene (sky, layered landscape, sun or moon, in the brand palette; no text, no network) is
  * rendered by sharp, uploaded at the row's path with `upsert: false`, and the row gets its real
  * `size_bytes` and a 16 px WebP `blur_data_url` made the way the media service makes it.
+ *
+ * With `--photos` a `PhotoProvider` (`scripts/lib/seed-photos.ts`) is asked first: a real photo,
+ * checked and re-encoded, is uploaded instead of the drawing (also in place of a drawing an earlier
+ * run left, which is removed first) and the row's credit becomes the photographer's. Any failure
+ * falls back to the drawing and keeps `Sample image`, so a later `--photos` run retries.
  */
 import { createHash } from "node:crypto";
 
@@ -677,17 +682,36 @@ export type SampleRow = {
 
 export type UploadOutcome = "created" | "exists" | "failed";
 
+/** The columns the seeder writes; `credit` only for a real photo (it then stops being a sample row). */
+export type RowUpdate = { size_bytes: number; blur_data_url: string; credit?: string };
+
 /** What the seeder needs from Supabase; `createSupabaseStore()` is the real one. */
 export interface SeedStore {
   listSampleRows(): Promise<SampleRow[]>;
   listExistingPaths(folders: string[]): Promise<Set<string>>;
   upload(path: string, body: Buffer, contentType: string): Promise<UploadOutcome>;
   /** True only when exactly one sample row was updated. */
-  updateRow(id: string, values: { size_bytes: number; blur_data_url: string }): Promise<boolean>;
+  updateRow(id: string, values: RowUpdate): Promise<boolean>;
   remove(path: string): Promise<void>;
 }
 
-export type SeedCounts = { created: number; skipped: number; failed: number };
+/**
+ * Where `--photos` gets a real photo for a row (`scripts/lib/seed-photos.ts`): `photo` with the
+ * checked, re-encoded JPEG and its credit; `none` when the row has no photo (drawn as before);
+ * `failed` when it has one that could not be used (drawn instead, credit kept, retried next run).
+ */
+export type PhotoResult = { kind: "photo"; image: Buffer; credit: string } | { kind: "none" } | { kind: "failed" };
+
+export interface PhotoProvider {
+  photoFor(row: SampleRow, size: { width: number; height: number }): Promise<PhotoResult>;
+}
+
+/**
+ * `created` counts every upload; `photos` of them are real photos (the rest drawings).
+ * `fallbacks` counts rows with a photo in the manifest that could not be used, so a drawing was
+ * uploaded or an earlier drawing kept (those are also counted as skipped).
+ */
+export type SeedCounts = { created: number; photos: number; fallbacks: number; skipped: number; failed: number };
 
 const MIME_EXTENSION: Record<ImageMime, string> = {
   "image/jpeg": "jpg",
@@ -704,11 +728,26 @@ function folderOf(path: string): string {
   return path.slice(0, path.lastIndexOf("/"));
 }
 
+/** Asks the provider for a photo; only JPEG rows (all seeded ones) take one, as photos are JPEG. */
+async function photoForRow(
+  photos: PhotoProvider | undefined,
+  row: SampleRow,
+  size: { width: number; height: number },
+): Promise<PhotoResult> {
+  if (!photos || row.mime_type !== "image/jpeg") return { kind: "none" };
+  try {
+    return await photos.photoFor(row, size);
+  } catch {
+    return { kind: "failed" };
+  }
+}
+
 export async function seedSampleMedia(
   store: SeedStore,
   generate: typeof generateSampleImage = generateSampleImage,
+  photos?: PhotoProvider,
 ): Promise<SeedCounts> {
-  const counts: SeedCounts = { created: 0, skipped: 0, failed: 0 };
+  const counts: SeedCounts = { created: 0, photos: 0, fallbacks: 0, skipped: 0, failed: 0 };
   // The query already filters; checked again so no other row is ever written.
   const rows = (await store.listSampleRows()).filter(
     (row) => row.bucket === BUCKET && row.credit === SAMPLE_CREDIT,
@@ -716,7 +755,11 @@ export async function seedSampleMedia(
   const existing = await store.listExistingPaths([...new Set(rows.map((row) => folderOf(row.path)))]);
 
   for (const row of rows) {
-    if (existing.has(row.path)) {
+    // An object at a sample row's path is one this script uploaded earlier (a drawing: a photo
+    // would have changed the credit). Without --photos it is left alone; with --photos it is
+    // replaced only once a usable photo is in hand, so a failed photo keeps the drawing.
+    const exists = existing.has(row.path);
+    if (exists && !photos) {
       counts.skipped += 1;
       continue;
     }
@@ -731,12 +774,27 @@ export async function seedSampleMedia(
       width > MAX_EDGE ||
       height > MAX_EDGE
     ) {
-      counts.failed += 1;
+      if (exists) counts.skipped += 1;
+      else counts.failed += 1;
       continue;
     }
+    const size = { width, height };
     try {
-      const image = await generate({ id: row.id, alt: row.alt, width, height, mimeType: row.mime_type });
+      const photo = await photoForRow(photos, row, size);
+      let image: Buffer;
+      let credit: string | undefined;
+      if (photo.kind === "photo") {
+        image = photo.image;
+        credit = photo.credit;
+      } else if (exists) {
+        counts.skipped += 1;
+        if (photo.kind === "failed") counts.fallbacks += 1;
+        continue;
+      } else {
+        image = await generate({ id: row.id, alt: row.alt, ...size, mimeType: row.mime_type });
+      }
       const blur = await blurDataUrl(image);
+      if (exists) await store.remove(row.path);
       const outcome = await store.upload(row.path, image, row.mime_type);
       if (outcome === "exists") {
         counts.skipped += 1;
@@ -746,13 +804,17 @@ export async function seedSampleMedia(
         counts.failed += 1;
         continue;
       }
-      if (!(await store.updateRow(row.id, { size_bytes: image.length, blur_data_url: blur }))) {
+      const values: RowUpdate = { size_bytes: image.length, blur_data_url: blur };
+      if (credit !== undefined) values.credit = credit;
+      if (!(await store.updateRow(row.id, values))) {
         // Not exactly one row updated: remove the file again, so the next run regenerates it.
         await store.remove(row.path);
         counts.failed += 1;
         continue;
       }
       counts.created += 1;
+      if (credit !== undefined) counts.photos += 1;
+      else if (photo.kind === "failed") counts.fallbacks += 1;
     } catch {
       counts.failed += 1;
     }
