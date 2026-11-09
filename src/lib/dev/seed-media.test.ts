@@ -171,6 +171,7 @@ function fakeStore(rows: SampleRow[], existing: string[] = []) {
     listSampleRows: vi.fn(async () => rows),
     listExistingPaths: vi.fn(async () => new Set(existing)),
     upload: vi.fn(async () => "created" as const),
+    replace: vi.fn(async () => true),
     updateRow: vi.fn(async () => true),
     remove: vi.fn(async () => undefined),
   } satisfies SeedStore;
@@ -182,7 +183,7 @@ describe("seedSampleMedia", () => {
     const store = fakeStore([row(1), row(2)], [`2026/01/${id(2)}.jpg`]);
     const counts = await seedSampleMedia(store);
 
-    expect(counts).toEqual({ created: 1, skipped: 1, failed: 0 });
+    expect(counts).toEqual({ created: 1, photos: 0, fallbacks: 0, skipped: 1, failed: 0 });
     expect(store.listExistingPaths).toHaveBeenCalledWith(["2026/01"]);
     expect(store.upload).toHaveBeenCalledTimes(1);
     const [path, body, contentType] = store.upload.mock.calls[0] as unknown as [string, Buffer, string];
@@ -202,7 +203,7 @@ describe("seedSampleMedia", () => {
 
   it("never touches rows with another credit or bucket", async () => {
     const store = fakeStore([row(3, { credit: "Owner photo" }), row(4, { bucket: "private" })]);
-    expect(await seedSampleMedia(store)).toEqual({ created: 0, skipped: 0, failed: 0 });
+    expect(await seedSampleMedia(store)).toEqual({ created: 0, photos: 0, fallbacks: 0, skipped: 0, failed: 0 });
     expect(store.upload).not.toHaveBeenCalled();
     expect(store.updateRow).not.toHaveBeenCalled();
   });
@@ -210,14 +211,14 @@ describe("seedSampleMedia", () => {
   it("counts an object created meanwhile as skipped and a refused upload as failed", async () => {
     const store = fakeStore([row(5), row(6)]);
     store.upload.mockResolvedValueOnce("exists" as never).mockResolvedValueOnce("failed" as never);
-    expect(await seedSampleMedia(store)).toEqual({ created: 0, skipped: 1, failed: 1 });
+    expect(await seedSampleMedia(store)).toEqual({ created: 0, photos: 0, fallbacks: 0, skipped: 1, failed: 1 });
     expect(store.updateRow).not.toHaveBeenCalled();
   });
 
   it("removes the uploaded file again when the row cannot be updated", async () => {
     const store = fakeStore([row(7)]);
     store.updateRow.mockResolvedValueOnce(false);
-    expect(await seedSampleMedia(store)).toEqual({ created: 0, skipped: 0, failed: 1 });
+    expect(await seedSampleMedia(store)).toEqual({ created: 0, photos: 0, fallbacks: 0, skipped: 0, failed: 1 });
     expect(store.remove).toHaveBeenCalledWith(`2026/01/${id(7)}.jpg`);
   });
 
@@ -228,7 +229,7 @@ describe("seedSampleMedia", () => {
       row(10, { path: `2026/01/${id(10)}.png` }),
       row(11, { width: 99999 }),
     ]);
-    expect(await seedSampleMedia(store)).toEqual({ created: 0, skipped: 0, failed: 4 });
+    expect(await seedSampleMedia(store)).toEqual({ created: 0, photos: 0, fallbacks: 0, skipped: 0, failed: 4 });
     expect(store.upload).not.toHaveBeenCalled();
   });
 });
