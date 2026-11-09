@@ -676,7 +676,7 @@ Guests create draft bookings, inquiries and newsletter sign-ups only through Ser
 
 ## Storage
 
-- `media`: public read; editor and admin may list and delete, but only the service role writes: it holds the checked, re-encoded copies (ADR-023). JPEG, PNG, WebP and AVIF only (no SVG), up to 20 MB. Replaces the draft `tour-images` bucket. Locally, `npm run seed:media` uploads generated placeholders (service role, never overwriting) for the seed's `Sample image` rows, which `seed.sql` inserts without files.
+- `media`: public read; editor and admin may list and delete, but only the service role writes: it holds the checked, re-encoded copies (ADR-023). JPEG, PNG, WebP and AVIF only (no SVG), up to 20 MB. Replaces the draft `tour-images` bucket. Locally, `npm run seed:media` uploads generated placeholders (service role, never overwriting) for the seed's `Sample image` rows, which `seed.sql` inserts without files; with `-- --photos` it downloads free Unsplash photos (`scripts/lib/seed-photos.ts`), re-encodes them like an admin upload and sets the photographer's credit, replacing only its own earlier drawings on rows still credited `Sample image`.
 - `media-uploads`: private staging for originals uploaded through signed URLs (`pending/<user id>/<uuid>.<ext>`); no API-role policies; the service role signs, reads and deletes. Same type and size limits.
 - `private`: no public access and no API-role policies; signed URLs created by the service role only (vouchers and PDF quotes, P1). PDF only, up to 10 MB.
 

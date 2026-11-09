@@ -17,10 +17,13 @@ npx supabase status -o env  # prints the local URL and keys used below
 cp .env.example .env.local  # then fill in the values (see the table below)
 npm run seed:users          # one sample account per role: <role>@example.test (needs SEED_USER_PASSWORD)
 npm run seed:media          # placeholder images for the seed's tour heroes and journal covers
+                            # or: npm run seed:media -- --photos  (real free photos, needs internet)
 npm run dev                 # http://localhost:3000
 ```
 
 `npm run seed` runs both seeding steps. `seed:media` fills in the files behind the seed's `Sample image` media rows, which `seed.sql` can only insert as rows: it draws a landscape in the brand palette with sharp (no network, nothing committed), uploads it to the `media` bucket and sets the row's size and blur placeholder. It skips files that already exist, so it is safe to re-run, and it is local-only like `seed:users` (`--allow-remote=<host>` for a staging project, never with `VERCEL_ENV=production`). The images are generated placeholders: real photos go in through `/admin/media`. CI does not run it, so its E2E and axe checks see the empty image frames.
+
+`npm run seed:media -- --photos` uses real photos instead: eighteen free Unsplash photos listed with their photographer and licence in `scripts/lib/seed-photos.ts` (no image is committed). It needs internet access. Each photo is downloaded once into memory from an https allow-list of image hosts (20 s and 20 MB at most), checked like an admin upload (real type JPEG or WebP, size and pixel limits), re-encoded to the row's 2400 × 1600 JPEG without metadata, and credited on the row as `Photo: <photographer> / Unsplash`. It also replaces the drawings an earlier run left, once a photo is in hand. A photo that cannot be used (offline, a moved photo, a refused redirect) falls back to the drawing for that row and keeps the `Sample image` credit, so running `--photos` again retries it; the run prints counts and the keys of the photos it could not use. The photos are for local development and demos only: for production the owner uploads their own photography through `/admin/media`.
 
 - Public site: `/` (Vietnamese) and `/en` (English).
 - Staff sign-in: `/auth/login`, then `/admin`. Admin and accountant must enrol TOTP MFA at `/admin/mfa` on first sign-in.
