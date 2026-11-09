@@ -313,9 +313,10 @@ cross join lateral (
 ) d
 where t.type = 'group';
 
--- Hero images for the sample tours. Rows only: the files are not in Storage, so admin previews show
--- an empty frame until real photos are uploaded through /admin/media. Ids are deterministic
--- version-4 UUIDs (the admin validates ids as RFC 9562 UUIDs).
+-- Hero images for the sample tours. Rows only (credit 'Sample image'): SQL cannot upload files, so
+-- pages show an empty frame until `npm run seed:media` uploads generated placeholders for these rows
+-- (or real photos replace them through /admin/media). Ids are deterministic version-4 UUIDs (the
+-- admin validates ids as RFC 9562 UUIDs).
 create function pg_temp.seed_uuid(seed text)
 returns uuid
 language sql
@@ -347,7 +348,7 @@ where code in ('VN-HLB-03', 'VN-NTH-06', 'VN-HER-05', 'JP-KYT-07', 'FR-PRV-09');
 -- Phase 3 PR K: sample journal, pages and reviews (development only)
 -- ============================================================================================
 
--- Journal covers (rows only, like the tour heroes).
+-- Journal covers (rows only, like the tour heroes; files from `npm run seed:media`).
 insert into public.media (id, path, mime_type, width, height, size_bytes, alt, credit)
 select pg_temp.seed_uuid('seed-post-' || v.key),
        '2026/01/' || pg_temp.seed_uuid('seed-post-' || v.key) || '.jpg',
