@@ -14,7 +14,7 @@ import {
   SAMPLE_CREDIT,
   type SeedStore,
   seedSampleMedia,
-} from "../../../scripts/seed-media";
+} from "../../../scripts/lib/seed-media";
 
 /** `media_blur_data_url_webp` in `20261106145000_media_uploads_bucket.sql`. */
 const BLUR_CHECK = /^data:image\/webp;base64,[A-Za-z0-9+/=]+$/;
@@ -53,6 +53,30 @@ describe("checkTarget", () => {
         vercelEnv: "production",
       }).ok,
     ).toBe(false);
+  });
+
+  it("compares VERCEL_ENV without regard to case", () => {
+    expect(checkTarget({ url: local, allowRemote: undefined, vercelEnv: "Production" }).ok).toBe(false);
+    expect(checkTarget({ url: local, allowRemote: undefined, vercelEnv: " PRODUCTION " }).ok).toBe(false);
+  });
+
+  it("refuses a Supabase host listed in PRODUCTION_HOSTS, even with --allow-remote", () => {
+    const url = "https://prodref.supabase.co";
+    const productionHosts = "www.example.vn, PRODREF.supabase.co., prod-db.upstash.io";
+    expect(checkTarget({ url, allowRemote: "prodref.supabase.co", vercelEnv: undefined, productionHosts })).toEqual({
+      ok: false,
+      message: expect.stringContaining("PRODUCTION_HOSTS"),
+    });
+    expect(
+      checkTarget({ url: "https://prodref.supabase.co./", allowRemote: "prodref.supabase.co", vercelEnv: undefined, productionHosts })
+        .ok,
+    ).toBe(false);
+    // A staging host that is not listed still works with --allow-remote; an empty list changes nothing.
+    expect(
+      checkTarget({ url: "https://stagingref.supabase.co", allowRemote: "stagingref.supabase.co", vercelEnv: undefined, productionHosts })
+        .ok,
+    ).toBe(true);
+    expect(checkTarget({ url: local, allowRemote: undefined, vercelEnv: undefined, productionHosts: " , " }).ok).toBe(true);
   });
 
   it("refuses a missing or malformed URL", () => {
@@ -210,7 +234,9 @@ describe("seedSampleMedia", () => {
 });
 
 describe("createSupabaseStore", () => {
-  function fakeClient(options: { uploadError?: { message: string; statusCode?: string } } = {}) {
+  function fakeClient(
+    options: { uploadError?: { message: string; statusCode?: string }; updatedRows?: unknown[] | null } = {},
+  ) {
     const filters: Array<[string, unknown]> = [];
     const query = {
       select: vi.fn(() => query),
@@ -221,7 +247,8 @@ describe("createSupabaseStore", () => {
       }),
       order: vi.fn(() => query),
       range: vi.fn(async () => ({ data: [row(1)], error: null })),
-      then: (resolve: (value: { error: null }) => void) => resolve({ error: null }),
+      then: (resolve: (value: { data: unknown[] | null; error: null }) => void) =>
+        resolve({ data: options.updatedRows === undefined ? [{ id: id(1) }] : options.updatedRows, error: null }),
     };
     const bucket = {
       list: vi.fn(async () => ({ data: [{ name: `${id(1)}.jpg` }], error: null })),
@@ -274,10 +301,19 @@ describe("createSupabaseStore", () => {
     const values = { size_bytes: 10, blur_data_url: "data:image/webp;base64,AA==" };
     expect(await createSupabaseStore(client as never).updateRow(id(1), values)).toBe(true);
     expect(query.update).toHaveBeenCalledWith(values);
+    expect(query.select).toHaveBeenCalledWith("id");
     expect(filters).toEqual([
       ["id", id(1)],
       ["bucket", "media"],
       ["credit", SAMPLE_CREDIT],
     ]);
+  });
+
+  it("counts an update as done only when exactly one row came back", async () => {
+    const values = { size_bytes: 10, blur_data_url: "data:image/webp;base64,AA==" };
+    for (const updatedRows of [[], [{ id: id(1) }, { id: id(2) }], null]) {
+      const { client } = fakeClient({ updatedRows });
+      expect(await createSupabaseStore(client as never).updateRow(id(1), values)).toBe(false);
+    }
   });
 });
