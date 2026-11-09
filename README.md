@@ -16,8 +16,11 @@ npx supabase start          # local Postgres, Auth, REST and Storage; applies mi
 npx supabase status -o env  # prints the local URL and keys used below
 cp .env.example .env.local  # then fill in the values (see the table below)
 npm run seed:users          # one sample account per role: <role>@example.test (needs SEED_USER_PASSWORD)
+npm run seed:media          # placeholder images for the seed's tour heroes and journal covers
 npm run dev                 # http://localhost:3000
 ```
+
+`npm run seed` runs both seeding steps. `seed:media` fills in the files behind the seed's `Sample image` media rows, which `seed.sql` can only insert as rows: it draws a landscape in the brand palette with sharp (no network, nothing committed), uploads it to the `media` bucket and sets the row's size and blur placeholder. It skips files that already exist, so it is safe to re-run, and it is local-only like `seed:users` (`--allow-remote=<host>` for a staging project, never with `VERCEL_ENV=production`). The images are generated placeholders: real photos go in through `/admin/media`. CI does not run it, so its E2E and axe checks see the empty image frames.
 
 - Public site: `/` (Vietnamese) and `/en` (English).
 - Staff sign-in: `/auth/login`, then `/admin`. Admin and accountant must enrol TOTP MFA at `/admin/mfa` on first sign-in.
