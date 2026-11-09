@@ -10,7 +10,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:types": "mkdir -p src/types && supabase gen types typescript --local --schema public > src/types/database.types.ts",
-    "seed:users": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/seed-users.ts"
+    "seed:users": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/seed-users.ts",
+    "seed:media": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/seed-media.ts",
+    "seed": "npm run seed:users && npm run seed:media"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",
