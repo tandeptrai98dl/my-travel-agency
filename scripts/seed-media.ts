@@ -13,8 +13,9 @@
  *
  * `--photos` downloads the Unsplash photos listed in `scripts/lib/seed-photos.ts` (nothing is
  * committed or written to disk), checks and re-encodes them like an admin upload and credits the
- * photographer on the row. It also replaces drawings an earlier run left on rows still credited
- * `Sample image`, once a usable photo is in hand. A photo that cannot be used falls back to the
+ * photographer on the row. It also replaces drawings an earlier run left, once a usable photo is in
+ * hand, but only on rows `seed.sql` created (seeded id at the seed's path; never another row, whatever
+ * its credit), in one overwrite. A photo that cannot be used falls back to the
  * drawing for that row and keeps `Sample image`, so the next `--photos` run tries again. Without
  * the flag nothing is fetched and nothing that exists is replaced.
  *

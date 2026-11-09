@@ -227,12 +227,25 @@ function escapeRegExp(text: string): string {
 }
 
 /**
- * The photo for a sample row: by its seeded id first, else the first photo with a keyword in the
- * row's alt text (either language), else none (the drawing).
+ * A row `supabase/seed.sql` created: a seed id from `SEED_ROW_PHOTOS` in the `media` bucket at the
+ * seed's own path (`2026/01/<id>.jpg`). Only such rows may have an existing object overwritten:
+ * admin uploads use the same path shape, and an editor can type any credit, `Sample image` too.
  */
-export function photoForRow(row: Pick<SampleRow, "id" | "alt">): SeedPhoto | null {
+export function isSeedRow(row: Pick<SampleRow, "id" | "bucket" | "path">): boolean {
+  return CHOICE_BY_ID.has(row.id) && row.bucket === "media" && row.path === `2026/01/${row.id}.jpg`;
+}
+
+/**
+ * The photo for a sample row: by its seeded id first, else (unless `seedOnly`) the first photo with
+ * a keyword in the row's alt text (either language), else none (the drawing).
+ */
+export function photoForRow(
+  row: Pick<SampleRow, "id" | "alt">,
+  options: { seedOnly?: boolean } = {},
+): SeedPhoto | null {
   const choice = CHOICE_BY_ID.get(row.id.toLowerCase());
   if (choice !== undefined) return choice === DRAWING ? null : (PHOTOS_BY_KEY.get(choice) ?? null);
+  if (options.seedOnly) return null;
   const text = altText(row.alt);
   if (!text) return null;
   for (const photo of SEED_PHOTOS) {
@@ -435,9 +448,11 @@ export function createPhotoProvider(options: PhotoProviderOptions = {}): PhotoPr
   }
 
   return {
-    async photoFor(row, size): Promise<PhotoResult> {
+    isSeedRow,
+    async photoFor(row, size, lookup = {}): Promise<PhotoResult> {
       if (row.credit !== SAMPLE_CREDIT) return { kind: "none" };
-      const photo = photoForRow(row);
+      if (lookup.seedOnly && !isSeedRow(row)) return { kind: "none" };
+      const photo = photoForRow(row, lookup);
       if (!photo) return { kind: "none" };
       let download = downloads.get(photo.key);
       if (!download) {

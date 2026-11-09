@@ -171,6 +171,7 @@ function fakeStore(rows: SampleRow[], existing: string[] = []) {
     listSampleRows: vi.fn(async () => rows),
     listExistingPaths: vi.fn(async () => new Set(existing)),
     upload: vi.fn(async () => "created" as const),
+    replace: vi.fn(async () => true),
     updateRow: vi.fn(async () => true),
     remove: vi.fn(async () => undefined),
   } satisfies SeedStore;

@@ -25,6 +25,7 @@ import {
   PHOTO_MAX_DIMENSION,
   PHOTO_MAX_PIXELS,
   PhotoError,
+  isSeedRow,
   photoForRow,
   processPhoto,
   SEED_PHOTOS,
@@ -96,7 +97,13 @@ describe("manifest", () => {
   it("maps every one of the 36 seeded sample rows to a photo or, explicitly, the drawing", () => {
     const seeded = seededSampleKeys();
     expect(seeded).toHaveLength(36);
-    expect(new Set(seeded).size).toBe(36);
+    // Independent of how the inserts are laid out: every tour code named anywhere in the seed
+    // (every tour gets a hero row) is among the parsed ones.
+    const named = new Set([...SEED_SQL.matchAll(/'([A-Z]{2}-[A-Z]{2,3}-\d{2})'/g)].map((m) => `seed-media-${m[1]}`));
+    expect(seeded.filter((key) => key.startsWith("seed-media-")).sort()).toEqual([...named].sort());
+    // Likewise every post the seed names (posts reuse their cover's id) has a parsed cover row.
+    const posts = new Set([...SEED_SQL.matchAll(/seed_uuid\('seed-post-([a-z-]+)'\)/g)].map((m) => `seed-post-${m[1]}`));
+    expect(seeded.filter((key) => key.startsWith("seed-post-")).sort()).toEqual([...posts].sort());
     expect(Object.keys(SEED_ROW_PHOTOS).sort()).toEqual([...seeded].sort());
     const keys = new Set(SEED_PHOTOS.map((photo) => photo.key));
     for (const choice of Object.values(SEED_ROW_PHOTOS)) {
@@ -133,6 +140,28 @@ describe("photoForRow", () => {
     expect(photoForRow({ id, alt: { en: "Old temples of Bangkok" } })?.key).toBe("bangkok-wat-arun");
     expect(photoForRow({ id, alt: { en: "A quiet afternoon" } })).toBeNull();
     expect(photoForRow({ id, alt: null })).toBeNull();
+  });
+
+  it("never uses keywords when only seed rows may match", () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    expect(photoForRow({ id, alt: { en: "Paris" } }, { seedOnly: true })).toBeNull();
+    expect(photoForRow(sampleRow("seed-media-FR-PAR-03"), { seedOnly: true })?.key).toBe("paris");
+  });
+});
+
+describe("isSeedRow", () => {
+  it("accepts only a seed id in the media bucket at the seed's own path", () => {
+    const seed = sampleRow("seed-media-VN-HLB-03");
+    expect(isSeedRow(seed)).toBe(true);
+    expect(isSeedRow({ ...seed, path: `2026/02/${seed.id}.jpg` })).toBe(false);
+    expect(isSeedRow({ ...seed, path: `2026/01/${seed.id}.png` })).toBe(false);
+    expect(isSeedRow({ ...seed, bucket: "private" })).toBe(false);
+    expect(isSeedRow({ ...seed, id: seed.id.toUpperCase(), path: `2026/01/${seed.id.toUpperCase()}.jpg` })).toBe(false);
+    const other = "5f0c2d1e-3a4b-4c5d-8e6f-7a8b9c0d1e2f";
+    expect(isSeedRow({ id: other, bucket: "media", path: `2026/01/${other}.jpg` })).toBe(false);
+    for (const seedText of Object.keys(SEED_ROW_PHOTOS)) {
+      expect(isSeedRow(sampleRow(seedText))).toBe(true);
+    }
   });
 });
 
@@ -321,6 +350,16 @@ describe("createPhotoProvider", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("matches only seed rows when asked to overwrite", async () => {
+    const fetch = vi.fn<FetchLike>();
+    const provider = createPhotoProvider({ fetch });
+    const other = "5f0c2d1e-3a4b-4c5d-8e6f-7a8b9c0d1e2f";
+    const row = sampleRow("x", { id: other, path: `2026/01/${other}.jpg`, alt: { en: "Paris" } });
+    expect(await provider.photoFor(row, { width: 48, height: 32 }, { seedOnly: true })).toEqual({ kind: "none" });
+    expect(provider.isSeedRow(row)).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("reports a failed photo once per key and answers failed", async () => {
     const onFailure = vi.fn();
     const fetch = vi.fn<FetchLike>(async () => {
@@ -341,14 +380,16 @@ function fakeStore(rows: SampleRow[], existing: string[] = []) {
     listSampleRows: vi.fn(async () => rows),
     listExistingPaths: vi.fn(async () => new Set(existing)),
     upload: vi.fn<SeedStore["upload"]>(async () => "created"),
+    replace: vi.fn<SeedStore["replace"]>(async () => true),
     updateRow: vi.fn<SeedStore["updateRow"]>(async () => true),
     remove: vi.fn<SeedStore["remove"]>(async () => undefined),
   } satisfies SeedStore;
 }
 
 describe("seedSampleMedia with photos", () => {
-  const provider = (result: Awaited<ReturnType<PhotoProvider["photoFor"]>>): PhotoProvider => ({
-    photoFor: vi.fn(async () => result),
+  const provider = (result: Awaited<ReturnType<PhotoProvider["photoFor"]>>) => ({
+    photoFor: vi.fn<PhotoProvider["photoFor"]>(async () => result),
+    isSeedRow,
   });
   const drawing = vi.fn(async () => sharp({ create: { width: 48, height: 32, channels: 3, background: "#0F1B2D" } }).jpeg().toBuffer());
 
@@ -374,6 +415,7 @@ describe("seedSampleMedia with photos", () => {
   it("falls back when the provider throws, and draws rows without a photo", async () => {
     const store = fakeStore([sampleRow("seed-media-VN-HLB-03"), sampleRow("seed-post-kyoto")]);
     const throwing: PhotoProvider = {
+      isSeedRow,
       photoFor: vi.fn(async (row: SampleRow) => {
         if (row.id === seedUuid("seed-post-kyoto")) return { kind: "none" as const };
         throw new Error("boom");
@@ -388,16 +430,23 @@ describe("seedSampleMedia with photos", () => {
     });
   });
 
-  it("replaces an earlier drawing only once a photo is in hand", async () => {
+  it("replaces an earlier drawing on a seed row in one upsert, only once a photo is in hand", async () => {
     const photoImage = await jpeg(48, 32);
     const row = sampleRow("seed-media-VN-HLB-03");
     const replaced = fakeStore([row], [row.path]);
-    expect(
-      await seedSampleMedia(replaced, drawing, provider({ kind: "photo", image: photoImage, credit: "Photo: A / Unsplash" })),
-    ).toMatchObject({ created: 1, photos: 1, skipped: 0 });
-    expect(replaced.remove).toHaveBeenCalledWith(row.path);
-    expect(replaced.remove.mock.invocationCallOrder[0]).toBeLessThan(replaced.upload.mock.invocationCallOrder[0]);
-    expect(replaced.upload).toHaveBeenCalledWith(row.path, photoImage, "image/jpeg");
+    const photos = provider({ kind: "photo", image: photoImage, credit: "Photo: A / Unsplash" });
+    expect(await seedSampleMedia(replaced, drawing, photos)).toEqual({
+      created: 1,
+      photos: 1,
+      fallbacks: 0,
+      skipped: 0,
+      failed: 0,
+    });
+    expect(photos.photoFor.mock.calls[0][2]).toEqual({ seedOnly: true });
+    expect(replaced.replace).toHaveBeenCalledWith(row.path, photoImage, "image/jpeg");
+    expect(replaced.remove).not.toHaveBeenCalled();
+    expect(replaced.upload).not.toHaveBeenCalled();
+    expect(replaced.updateRow.mock.calls[0][1]).toMatchObject({ credit: "Photo: A / Unsplash" });
 
     const kept = fakeStore([row], [row.path]);
     expect(await seedSampleMedia(kept, drawing, provider({ kind: "failed" }))).toEqual({
@@ -407,8 +456,47 @@ describe("seedSampleMedia with photos", () => {
       skipped: 1,
       failed: 0,
     });
+    expect(kept.replace).not.toHaveBeenCalled();
     expect(kept.remove).not.toHaveBeenCalled();
     expect(kept.upload).not.toHaveBeenCalled();
+  });
+
+  it("keeps the earlier drawing when the overwrite fails, and the file when the row update fails", async () => {
+    const photoImage = await jpeg(48, 32);
+    const row = sampleRow("seed-media-VN-HLB-03");
+    const photos = provider({ kind: "photo", image: photoImage, credit: "Photo: A / Unsplash" });
+    const refused = fakeStore([row], [row.path]);
+    refused.replace.mockResolvedValueOnce(false);
+    expect(await seedSampleMedia(refused, drawing, photos)).toMatchObject({ created: 0, failed: 1 });
+    expect(refused.updateRow).not.toHaveBeenCalled();
+    expect(refused.remove).not.toHaveBeenCalled();
+
+    const changed = fakeStore([row], [row.path]);
+    changed.updateRow.mockResolvedValueOnce(false);
+    expect(await seedSampleMedia(changed, drawing, photos)).toMatchObject({ created: 0, failed: 1 });
+    expect(changed.remove).not.toHaveBeenCalled();
+  });
+
+  it("never overwrites an existing object on a row the seed did not create", async () => {
+    // An editor's upload: the same path shape, credited "Sample image" by hand, a matching alt.
+    const ownerId = "5f0c2d1e-3a4b-4c5d-8e6f-7a8b9c0d1e2f";
+    const owner = sampleRow("x", { id: ownerId, path: `2026/03/${ownerId}.jpg`, alt: { en: "Paris at dusk", vi: "Paris" } });
+    // A seed id whose path is not the seed's.
+    const moved = sampleRow("seed-media-FR-PAR-03", { path: `2026/05/${seedUuid("seed-media-FR-PAR-03")}.jpg` });
+    const store = fakeStore([owner, moved], [owner.path, moved.path]);
+    const photos = provider({ kind: "photo", image: await jpeg(48, 32), credit: "Photo: A / Unsplash" });
+    expect(await seedSampleMedia(store, drawing, photos)).toEqual({
+      created: 0,
+      photos: 0,
+      fallbacks: 0,
+      skipped: 2,
+      failed: 0,
+    });
+    expect(photos.photoFor).not.toHaveBeenCalled();
+    expect(store.replace).not.toHaveBeenCalled();
+    expect(store.remove).not.toHaveBeenCalled();
+    expect(store.upload).not.toHaveBeenCalled();
+    expect(store.updateRow).not.toHaveBeenCalled();
   });
 
   it("never asks for a photo for rows that are not sample rows or not JPEG", async () => {
@@ -420,6 +508,22 @@ describe("seedSampleMedia with photos", () => {
     ]);
     expect(await seedSampleMedia(store, drawing, photos)).toMatchObject({ created: 1, photos: 0 });
     expect(photos.photoFor).not.toHaveBeenCalled();
+  });
+});
+
+describe("createSupabaseStore replace", () => {
+  it("overwrites in one upload call with a short cache", async () => {
+    const bucket = { upload: vi.fn(async () => ({ data: null, error: null })) };
+    const client = { from: vi.fn(), storage: { from: vi.fn(() => bucket) } };
+    const body = Buffer.from("x");
+    expect(await createSupabaseStore(client as never).replace("2026/01/a.jpg", body, "image/jpeg")).toBe(true);
+    expect(bucket.upload).toHaveBeenCalledWith("2026/01/a.jpg", body, {
+      contentType: "image/jpeg",
+      upsert: true,
+      cacheControl: "60",
+    });
+    bucket.upload.mockResolvedValueOnce({ data: null, error: { message: "denied" } } as never);
+    expect(await createSupabaseStore(client as never).replace("2026/01/a.jpg", body, "image/jpeg")).toBe(false);
   });
 });
 

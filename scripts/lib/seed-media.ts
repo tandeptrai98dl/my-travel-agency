@@ -9,9 +9,11 @@
  * `size_bytes` and a 16 px WebP `blur_data_url` made the way the media service makes it.
  *
  * With `--photos` a `PhotoProvider` (`scripts/lib/seed-photos.ts`) is asked first: a real photo,
- * checked and re-encoded, is uploaded instead of the drawing (also in place of a drawing an earlier
- * run left, which is removed first) and the row's credit becomes the photographer's. Any failure
- * falls back to the drawing and keeps `Sample image`, so a later `--photos` run retries.
+ * checked and re-encoded, is uploaded instead of the drawing and the row's credit becomes the
+ * photographer's. It also replaces a drawing an earlier run left, but only on a row the seed itself
+ * created (`isSeedRow()`: its id from `seed.sql` and the seed's path), since admin uploads share the
+ * path shape and anyone may type `Sample image` as a credit. Any failure falls back to the drawing
+ * and keeps `Sample image`, so a later `--photos` run retries.
  */
 import { createHash } from "node:crypto";
 
@@ -690,6 +692,8 @@ export interface SeedStore {
   listSampleRows(): Promise<SampleRow[]>;
   listExistingPaths(folders: string[]): Promise<Set<string>>;
   upload(path: string, body: Buffer, contentType: string): Promise<UploadOutcome>;
+  /** Overwrites an object in one call (`upsert: true`); used only for seed rows (`isSeedRow()`). */
+  replace(path: string, body: Buffer, contentType: string): Promise<boolean>;
   /** True only when exactly one sample row was updated. */
   updateRow(id: string, values: RowUpdate): Promise<boolean>;
   remove(path: string): Promise<void>;
@@ -703,7 +707,17 @@ export interface SeedStore {
 export type PhotoResult = { kind: "photo"; image: Buffer; credit: string } | { kind: "none" } | { kind: "failed" };
 
 export interface PhotoProvider {
-  photoFor(row: SampleRow, size: { width: number; height: number }): Promise<PhotoResult>;
+  /**
+   * With `seedOnly`, only a row the seed created is matched (by its id), never by alt-text keywords;
+   * used when an object already exists and would be overwritten.
+   */
+  photoFor(
+    row: SampleRow,
+    size: { width: number; height: number },
+    options?: { seedOnly?: boolean },
+  ): Promise<PhotoResult>;
+  /** True only for a row `supabase/seed.sql` created: a known seed id at the seed's own path. */
+  isSeedRow(row: SampleRow): boolean;
 }
 
 /**
@@ -733,10 +747,11 @@ async function photoForRow(
   photos: PhotoProvider | undefined,
   row: SampleRow,
   size: { width: number; height: number },
+  options: { seedOnly?: boolean } = {},
 ): Promise<PhotoResult> {
   if (!photos || row.mime_type !== "image/jpeg") return { kind: "none" };
   try {
-    return await photos.photoFor(row, size);
+    return await photos.photoFor(row, size, options);
   } catch {
     return { kind: "failed" };
   }
@@ -755,11 +770,12 @@ export async function seedSampleMedia(
   const existing = await store.listExistingPaths([...new Set(rows.map((row) => folderOf(row.path)))]);
 
   for (const row of rows) {
-    // An object at a sample row's path is one this script uploaded earlier (a drawing: a photo
-    // would have changed the credit). Without --photos it is left alone; with --photos it is
-    // replaced only once a usable photo is in hand, so a failed photo keeps the drawing.
+    // An existing object is never touched without --photos. With --photos it is replaced only on
+    // a row the seed created (known id at the seed's path: an earlier drawing of this script), and
+    // only once a usable photo is in hand. Admin uploads share the path shape and editors may type
+    // any credit, so any other row with an object is skipped: its file may be the owner's photo.
     const exists = existing.has(row.path);
-    if (exists && !photos) {
+    if (exists && !(photos && photos.isSeedRow(row))) {
       counts.skipped += 1;
       continue;
     }
@@ -780,7 +796,7 @@ export async function seedSampleMedia(
     }
     const size = { width, height };
     try {
-      const photo = await photoForRow(photos, row, size);
+      const photo = await photoForRow(photos, row, size, { seedOnly: exists });
       let image: Buffer;
       let credit: string | undefined;
       if (photo.kind === "photo") {
@@ -794,7 +810,24 @@ export async function seedSampleMedia(
         image = await generate({ id: row.id, alt: row.alt, ...size, mimeType: row.mime_type });
       }
       const blur = await blurDataUrl(image);
-      if (exists) await store.remove(row.path);
+      if (exists) {
+        // One overwrite, so a failure leaves the earlier drawing in place, never an empty frame.
+        if (!(await store.replace(row.path, image, row.mime_type))) {
+          counts.failed += 1;
+          continue;
+        }
+        const values: RowUpdate = { size_bytes: image.length, blur_data_url: blur };
+        if (credit !== undefined) values.credit = credit;
+        // The file is the photo now either way; a row that changed meanwhile keeps it (removing it
+        // would leave nothing), and the run reports the failure.
+        if (!(await store.updateRow(row.id, values))) {
+          counts.failed += 1;
+          continue;
+        }
+        counts.created += 1;
+        if (credit !== undefined) counts.photos += 1;
+        continue;
+      }
       const outcome = await store.upload(row.path, image, row.mime_type);
       if (outcome === "exists") {
         counts.skipped += 1;
@@ -871,6 +904,11 @@ export function createSupabaseStore(supabase: SupabaseClient): SeedStore {
         .eq("credit", SAMPLE_CREDIT)
         .select("id");
       return !error && Array.isArray(data) && data.length === 1;
+    },
+    async replace(path, body, contentType) {
+      // A short cache, so browsers and the CDN stop showing the earlier drawing within a minute.
+      const { error } = await bucket.upload(path, body, { contentType, upsert: true, cacheControl: "60" });
+      return !error;
     },
     async remove(path) {
       await bucket.remove([path]);
